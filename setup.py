@@ -3,6 +3,7 @@ from os import path, getcwd
 
 # from https://packaging.python.org/tutorials/packaging-projects/
 
+# noinspection SpellCheckingInspection
 package_name = 'sparkpipelineframework'
 
 with open("README.md", "r") as fh:
@@ -13,6 +14,29 @@ try:
         version = version_file.read().strip()
 except IOError:
     raise
+
+
+def fix_setuptools():
+    """Work around bugs in setuptools.
+
+    Some versions of setuptools are broken and raise SandboxViolation for normal
+    operations in a virtualenv. We therefore disable the sandbox to avoid these
+    issues.
+    """
+    try:
+        from setuptools.sandbox import DirectorySandbox
+
+        # noinspection PyUnusedLocal
+        def violation(operation, *args, **_):
+            print("SandboxViolation: %s" % (args,))
+
+        DirectorySandbox._violation = violation
+    except ImportError:
+        pass
+
+
+# Fix bugs in setuptools.
+fix_setuptools()
 
 
 def parse_requirements(file):

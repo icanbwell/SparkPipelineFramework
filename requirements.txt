@@ -1,3 +1,4 @@
 setuptools
 wheel
 twine
+pyspark>=3.0.0
