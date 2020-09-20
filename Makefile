@@ -19,5 +19,13 @@ devsetup:venv
     pip install -r requirements.txt
 
 .PHONY:package
-package:
-	python3 setup.py sdist bdist_wheel
+package:venv
+	source $(VENV_NAME)/bin/activate && \
+    pip install --upgrade pip && \
+    python setup.py install && \
+    pip install -r requirements.txt && \
+    python3 setup.py sdist bdist_wheel && \
+	python3 -m twine upload -u __token__ --repository testpypi dist/*
+
+# password can be set in TWINE_PASSWORD. https://twine.readthedocs.io/en/latest/
+
