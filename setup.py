@@ -14,8 +14,19 @@ try:
 except IOError:
     raise
 
-# classifiers: https://pypi.org/classifiers/
 
+def parse_requirements(file):
+    with open(file, "r") as fs:
+        return [r for r in fs.read().splitlines() if
+                (len(r.strip()) > 0 and not r.strip().startswith("#") and not r.strip().startswith("--"))]
+
+
+requirements = parse_requirements('requirements.txt')
+test_requirements = parse_requirements('requirements-test.txt')
+
+# classifiers list is here: https://pypi.org/classifiers/
+
+# create the package setup
 setup(
     name=package_name,
     version=version,
@@ -26,6 +37,8 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/imranq2/SparkPipelineFramework",
     packages=find_packages(),
+    install_requires=requirements,
+    tests_require=test_requirements,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",
@@ -33,4 +46,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    dependency_links=[],
+    include_package_data=True,
+    zip_safe=False
 )
