@@ -18,6 +18,12 @@ devsetup:venv
     python setup.py install && \
     pip install --upgrade -r requirements.txt
 
+.PHONY:check
+check:venv
+	source $(VENV_NAME)/bin/activate && \
+    pip install --upgrade -r requirements.txt && \
+    mypy spark_pipeline_framework
+
 .PHONY:testpackage
 testpackage:venv
 	source $(VENV_NAME)/bin/activate && \

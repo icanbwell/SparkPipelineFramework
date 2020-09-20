@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 .idea/
 venv_sparkpipelineframework/
+.DS_Store
