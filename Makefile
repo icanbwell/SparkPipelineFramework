@@ -16,4 +16,8 @@ devsetup:venv
 	source $(VENV_NAME)/bin/activate && \
     pip install --upgrade pip && \
     python setup.py install && \
-    pip install -r requirements-test.txt
+    pip install -r requirements.txt
+
+.PHONY:package
+package:
+	python3 setup.py sdist bdist_wheel
