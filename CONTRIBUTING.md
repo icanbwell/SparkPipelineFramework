@@ -18,3 +18,10 @@ Then:
 Increment version in VERSION file
 
 Run ```make package```
+
+
+# Developer Setup
+Run ```make devsetup```
+
+Install following PyCharm plugins:
+1. MyPy: https://plugins.jetbrains.com/plugin/11086-mypy

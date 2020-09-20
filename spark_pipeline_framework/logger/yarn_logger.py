@@ -1,3 +1,4 @@
+# noinspection DuplicatedCode
 from sys import stderr
 from logging import Logger, getLogger, StreamHandler, Formatter, INFO
 
