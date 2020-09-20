@@ -16,7 +16,8 @@ devsetup:venv
 	source $(VENV_NAME)/bin/activate && \
     pip install --upgrade pip && \
     python setup.py install && \
-    pip install --upgrade -r requirements.txt
+    pip install --upgrade -r requirements.txt && \
+    pip install --upgrade -r requirements-test.txt
 
 .PHONY:check
 check:venv
@@ -45,3 +46,7 @@ package:venv
     python3 setup.py sdist bdist_wheel && \
 	python3 -m twine upload -u __token__ --repository pypi dist/*
 # password can be set in TWINE_PASSWORD. https://twine.readthedocs.io/en/latest/
+
+.PHONY:test
+test:
+	pytest tests

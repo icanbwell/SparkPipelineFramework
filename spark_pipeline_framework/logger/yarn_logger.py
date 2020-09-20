@@ -3,7 +3,7 @@ from sys import stderr
 from logging import Logger, getLogger, StreamHandler, Formatter, INFO
 
 
-def get_logger(name: str, level=INFO):
+def get_logger(name: str, level=INFO) -> Logger:
     logger: Logger = getLogger(name)
     logger.setLevel(level)
 
