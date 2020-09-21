@@ -6,7 +6,8 @@ import pytest
 from pyspark.sql import SparkSession
 
 # make sure env variables are set correctly
-# print(os.environ['SPARK_HOME'])
+if 'SPARK_HOME' not in os.environ:
+    os.environ['SPARK_HOME'] = '/usr/local/opt/spark'
 
 
 def quiet_py4j() -> None:
@@ -61,6 +62,10 @@ def clean_close(session) -> None:
 
 @pytest.fixture(scope="session")
 def spark_session(request) -> SparkSession:
+    # make sure env variables are set correctly
+    if 'SPARK_HOME' not in os.environ:
+        os.environ['SPARK_HOME'] = '/usr/local/opt/spark'
+
     clean_spark_dir()
 
     session = SparkSession.builder.appName("pytest-pyspark-local-testing"). \

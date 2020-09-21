@@ -95,21 +95,21 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
         if not path_to_csv:
             raise ValueError(f"path_to_csv is empty: {path_to_csv}")
 
-        if type(path_to_csv) is str:
+        if isinstance(path_to_csv, str):
             if path_to_csv.__contains__(":"):
-                full_path_to_csv = path_to_csv
+                absolute_paths_to_csv: List[str] = [path_to_csv]
             else:
                 data_dir = Path(__file__).parent.parent.joinpath('./')
-                full_path_to_csv = f"file://{data_dir.joinpath(path_to_csv[0])}"
+                if isinstance(path_to_csv, list):
+                    absolute_paths_to_csv = [f"file://{data_dir.joinpath(path)}" for path in path_to_csv]
+                else:
+                    absolute_paths_to_csv = [f"file://{data_dir.joinpath(path_to_csv)}"]
         else:
-            if path_to_csv[0].__contains__(":"):
-                full_path_to_csv = path_to_csv
-            else:
-                data_dir = Path(__file__).parent.parent.joinpath('./')
-                full_path_to_csv = [f"file://{data_dir.joinpath(path)}" for path in path_to_csv]
+            data_dir = Path(__file__).parent.parent.joinpath('./')
+            absolute_paths_to_csv = [f"file://{data_dir.joinpath(path)}" for path in path_to_csv]
 
         self.logger.info(
-            f"Loading csv file for view {view}: {full_path_to_csv}, infer_schema: {infer_schema}")
+            f"Loading csv file for view {view}: {absolute_paths_to_csv}, infer_schema: {infer_schema}")
 
         df_reader: DataFrameReader = df.sql_ctx.read
 
@@ -124,13 +124,13 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
             df2 = df_reader.format("com.databricks.spark.csv") \
                 .option("header", "true" if has_header else "false") \
                 .option("delimiter", delimiter) \
-                .load(full_path_to_csv) \
+                .load(absolute_paths_to_csv) \
                 .withColumn("file_path", input_file_name())
         else:
             df2 = df_reader.format("com.databricks.spark.csv") \
                 .option("header", "true" if has_header else "false") \
                 .option("delimiter", delimiter) \
-                .load(full_path_to_csv)
+                .load(absolute_paths_to_csv)
 
         if limit and limit > -1:
             df2 = df2.limit(limit)
@@ -143,7 +143,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
             df.sql_ctx.sql(f"CACHE TABLE {view}")
 
         self.logger.info(
-            f"Finished Loading csv file for View[{view}]: {full_path_to_csv}, "
+            f"Finished Loading csv file for View[{view}]: {absolute_paths_to_csv}, "
             + f"infer_schema: {infer_schema}, delimiter: {delimiter}")
 
         return df

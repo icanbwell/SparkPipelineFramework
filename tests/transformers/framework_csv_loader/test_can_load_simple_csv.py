@@ -28,6 +28,8 @@ def test_can_load_simple_csv(spark_session: SparkSession):
     result.show()
 
     # Assert
-    assert result.count() == 1180
+    assert result.count() == 3
 
-    assert result.collect()[1][0] == "110"
+    assert result.collect()[1][0] == "2"
+    assert result.collect()[1][1] == "bar"
+    assert result.collect()[1][2] == "bar2"
