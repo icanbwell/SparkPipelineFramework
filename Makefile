@@ -6,6 +6,8 @@ BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 VERSION=$(shell cat VERSION)
 VENV_NAME=venv_sparkpipelineframework
 GIT_HASH=${CIRCLE_SHA1}
+SPARK_VER=3.0.1
+HADOOP_VER=3.2
 
 .PHONY:venv
 venv:
@@ -50,6 +52,16 @@ package:venv
 .PHONY:test
 test:
 	pytest tests
+
+.PHONY:spark
+spark:
+	wget http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
+	mkdir -p /usr/local/opt/spark && \
+	rm -r /usr/local/opt/spark/ && \
+	mkdir -p /usr/local/opt/spark && \
+	tar -zxvf spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -C /usr/local/opt/spark && \
+	cp -a /usr/local/opt/spark/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER)/ /usr/local/opt/spark/ && \
+	rm -r /usr/local/opt/spark/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER)
 
 .PHONY:dockerspark
 dockerspark:
