@@ -8,30 +8,41 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 
 
 class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
+    # noinspection PyUnusedLocal
     @keyword_only
-    def __init__(self):
+    def __init__(self,
+                 sql: str = None,
+                 name: str = None,
+                 view: str = None
+                 ) -> None:
         super().__init__()
         self.logger = get_logger(__name__)
 
-        self.sql = Param(self, "sql", "")
-        self._setDefault(sql=None)
+        if not sql:
+            raise ValueError("sql is None or empty")
 
-        self.name = Param(self, "name", "")
-        self._setDefault(name=None)
+        if not view:
+            raise ValueError("view is None or empty")
 
-        self.view = Param(self, "view", "")
-        self._setDefault(view=None)
+        self.sql: Param = Param(self, "sql", "")
+        self._setDefault(sql=None)  # type: ignore
 
-        kwargs = self._input_kwargs
+        self.name: Param = Param(self, "name", "")
+        self._setDefault(name=None)  # type: ignore
+
+        self.view: Param = Param(self, "view", "")
+        self._setDefault(view=None)  # type: ignore
+
+        kwargs = self._input_kwargs  # type: ignore
         self.setParams(**kwargs)
 
     # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
     @keyword_only
-    def setParams(self, sql=None, name: str = None, view: str = None):
+    def setParams(self, sql: str = None, name: str = None, view: str = None):
         kwargs = self._input_kwargs  # type: ignore
         return self._set(**kwargs)  # type: ignore
 
-    def _transform(self, df: DataFrame):
+    def _transform(self, df: DataFrame) -> DataFrame:
         sql_text: str = self.getSql()
         name = self.getName()
         view = self.getView()

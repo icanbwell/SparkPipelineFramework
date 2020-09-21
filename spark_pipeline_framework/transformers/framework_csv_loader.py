@@ -31,36 +31,36 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
         self.logger: Logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
-        super()._setDefault(view=None)  # type: ignore
+        self._setDefault(view=None)  # type: ignore
 
         self.path_to_csv: Param = Param(self, "path_to_csv", "")
-        super()._setDefault(path_to_csv=None)  # type: ignore
+        self._setDefault(path_to_csv=None)  # type: ignore
 
         self.delimiter: Param = Param(self, "delimiter", "")
-        super()._setDefault(delimiter=",")  # type: ignore
+        self._setDefault(delimiter=",")  # type: ignore
 
         self.schema: Param = Param(self, "schema", "")
-        super()._setDefault(schema=None)  # type: ignore
+        self._setDefault(schema=None)  # type: ignore
 
         self.cache_table: Param = Param(self, "cache_table", "")
-        super()._setDefault(cache_table=True)  # type: ignore
+        self._setDefault(cache_table=True)  # type: ignore
 
         self.has_header: Param = Param(self, "has_header", "")
-        super()._setDefault(has_header=True)  # type: ignore
+        self._setDefault(has_header=True)  # type: ignore
 
         self.limit: Param = Param(self, "limit", "")
-        super()._setDefault(limit=-1)  # type: ignore
+        self._setDefault(limit=-1)  # type: ignore
 
         self.infer_schema: Param = Param(self, "infer_schema", "")
-        super()._setDefault(infer_schema=False)  # type: ignore
+        self._setDefault(infer_schema=False)  # type: ignore
 
         self.create_file_path: Param = Param(self, "create_file_path", "")
         self._setDefault(create_file_path=False)  # type: ignore
 
         if not path_to_csv:
-            raise ValueError("path_to_csv is empty")
+            raise ValueError("path_to_csv is None or empty")
 
-        self.logger.info(f"passed path_to_csv: {path_to_csv}")
+        self.logger.info(f"Received path_to_csv: {path_to_csv}")
 
         kwargs = self._input_kwargs  # type: ignore
         self.setParams(**kwargs)
