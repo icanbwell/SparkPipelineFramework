@@ -53,6 +53,30 @@ package:venv
 test:
 	pytest tests
 
+.PHONY:sdkman
+sdkman:
+	sdk list java || \
+	curl -s "https://get.sdkman.io" | bash
+
+.PHONY:java
+java:
+	source "$(HOME)/.sdkman/bin/sdkman-init.sh" && \
+	sdk install java 11.0.8.hs-adpt || echo "java installed"
+
+.PHONY:scala
+scala:
+	source "$(HOME)/.sdkman/bin/sdkman-init.sh" && \
+	sdk install scala 2.12.12 || echo "scala installed"
+
+.PHONY:brew
+brew:
+	brew config || \
+	curl -s "https://raw.githubusercontent.com/Homebrew/install/master/install.sh" | bash
+
+.PHONY:wget
+wget:
+	brew install wget
+
 .PHONY:spark
 spark:
 	wget http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
@@ -67,3 +91,7 @@ spark:
 dockerspark:
 	docker run --name spark-master -h spark-master -e ENABLE_INIT_DAEMON=false -d bde2020/spark-master:3.0.0-hadoop3.2
 	docker run --name spark-worker-1 --link spark-master:spark-master -e ENABLE_INIT_DAEMON=false -d bde2020/spark-worker:3.0.0-hadoop3.2
+
+.PHONY:firsttime
+firsttime: sdkman java scala brew wget spark devsetup test
+

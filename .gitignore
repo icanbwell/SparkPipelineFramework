@@ -130,4 +130,4 @@ dmypy.json
 .idea/
 venv_sparkpipelineframework/
 .DS_Store
-spark*.tgz
+spark*.tgz*
