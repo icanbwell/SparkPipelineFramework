@@ -95,3 +95,6 @@ dockerspark:
 .PHONY:firsttime
 firsttime: sdkman java scala brew wget spark devsetup test
 
+.PHONY:proxies
+proxies:
+	python3 spark_pipeline_framework/proxy_generator/generate_proxies.py

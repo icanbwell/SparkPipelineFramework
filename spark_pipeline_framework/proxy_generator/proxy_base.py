@@ -17,12 +17,14 @@ class ProxyBase:
 
     def __init__(self,
                  parameters: AttrDict,
-                 progress_logger: ProgressLogger = None,
-                 verify_count_remains_same=False
+                 location: str,
+                 progress_logger: Optional[ProgressLogger] = None,
+                 verify_count_remains_same: bool = False
                  ) -> None:
         self.parameters: AttrDict = parameters
         self.progress_logger: Optional[ProgressLogger] = progress_logger
         self.verify_count_remains_same: bool = verify_count_remains_same
+        self.location = location
 
         assert self.location
         # Iterate over files to create transformers
@@ -40,7 +42,7 @@ class ProxyBase:
                     progress_logger=progress_logger,
                     log_sql=parameters.get("debug_log_sql", False)
                 )
-            elif file.endswith('.csv') and self.loader == FileNotFoundError:
+            elif file.endswith('.csv') and self.loader is None:
                 file_name = file.replace('.csv', '')
                 self.loader = FrameworkCsvLoader(view=file_name, path_to_csv=path.join(self.location, file))
             elif file == 'convert.sql':
@@ -51,7 +53,7 @@ class ProxyBase:
                     progress_logger=progress_logger,
                     log_sql=parameters.get("debug_log_sql", False)
                 )
-            elif file.endswith('.sql') and self.loader == FileNotFoundError and self.converter == FileNotFoundError:
+            elif file.endswith('.sql') and self.loader is None and self.converter is None:
                 feature_sql: str = self.read_file_as_string(path.join(self.location, file)) \
                     .format(parameters=parameters)
                 self.feature = FrameworkSqlTransformer(

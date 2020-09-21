@@ -11,7 +11,7 @@ if 'SPARK_HOME' not in os.environ:
 
 
 def quiet_py4j() -> None:
-    """ turn down spark logging for the test context """
+    """ turn down spark logging for the carriers context """
     logger = logging.getLogger('py4j')
     logger.setLevel(logging.ERROR)
 

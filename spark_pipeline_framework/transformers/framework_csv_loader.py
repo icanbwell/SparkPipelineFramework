@@ -2,7 +2,7 @@
 from logging import Logger
 from pathlib import Path
 from typing import Union, List
-from logger.yarn_logger import get_logger  # type: ignore
+from spark_pipeline_framework.logger.yarn_logger import get_logger
 from pyspark import keyword_only
 from pyspark.ml import Transformer
 from pyspark.ml.param.shared import Param
