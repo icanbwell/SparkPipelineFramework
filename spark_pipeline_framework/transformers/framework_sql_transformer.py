@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pyspark import keyword_only
 from pyspark.ml.base import Transformer
 from pyspark.ml.param import Param
@@ -5,6 +7,7 @@ from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
 
 class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
@@ -13,7 +16,10 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
     def __init__(self,
                  sql: str = None,
                  name: str = None,
-                 view: str = None
+                 view: str = None,
+                 log_sql: bool = False,
+                 progress_logger: Optional[ProgressLogger] = None,
+                 verify_count_remains_same: bool = False
                  ) -> None:
         super().__init__()
         self.logger = get_logger(__name__)
@@ -33,12 +39,28 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
         self.view: Param = Param(self, "view", "")
         self._setDefault(view=None)  # type: ignore
 
+        self.log_sql: Param = Param(self, "log_sql", "")
+        self._setDefault(log_sql=False)  # type: ignore
+
+        self.progress_logger: Param = Param(self, "progress_logger", "")
+        self._setDefault(progress_logger=None)  # type: ignore
+
+        self.verify_count_remains_same: Param = Param(self, "verify_count_remains_same", "")
+        self._setDefault(verify_count_remains_same=None)  # type: ignore
+
         kwargs = self._input_kwargs  # type: ignore
         self.setParams(**kwargs)
 
     # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
     @keyword_only
-    def setParams(self, sql: str = None, name: str = None, view: str = None):
+    def setParams(self,
+                  sql: str = None,
+                  name: str = None,
+                  view: str = None,
+                  log_sql: bool = False,
+                  progress_logger: Optional[ProgressLogger] = None,
+                  verify_count_remains_same: bool = False
+                  ):
         kwargs = self._input_kwargs  # type: ignore
         return self._set(**kwargs)  # type: ignore
 
@@ -86,3 +108,30 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
         return self.getOrDefault(self.view)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setProgressLogger(self, value):
+        self._paramMap[self.progress_logger] = value
+        return self
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getProgressLogger(self) -> ProgressLogger:
+        return self.getOrDefault(self.progress_logger)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setLogSql(self, value):
+        self._paramMap[self.log_sql] = value
+        return self
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getLogSql(self) -> str:
+        return self.getOrDefault(self.log_sql)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setVerifyCountRemainsSame(self, value):
+        self._paramMap[self.verify_count_remains_same] = value
+        return self
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getVerifyCountRemainsSame(self) -> bool:
+        return self.getOrDefault(self.verify_count_remains_same)
