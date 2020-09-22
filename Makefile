@@ -51,6 +51,7 @@ package:venv
 
 .PHONY:test
 test:
+	source $(VENV_NAME)/bin/activate && \
 	pytest tests
 
 .PHONY:sdkman
