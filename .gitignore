@@ -128,6 +128,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .idea/
+
+# virtual environment
 venv_sparkpipelineframework/
 .DS_Store
+
+# spark tarfiles
 spark*.tgz*
+
+# test files
+tests/**/temp*/

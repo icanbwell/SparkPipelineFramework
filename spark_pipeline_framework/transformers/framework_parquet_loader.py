@@ -16,7 +16,7 @@ class FrameworkParquetLoader(Transformer):
     @keyword_only
     def __init__(self,
                  view: str,
-                 path: Union[str, List[str]],
+                 file_path: Union[str, List[str]],
                  name: str = None,
                  progress_logger: ProgressLogger = None,
                  merge_schema: bool = False,
@@ -32,8 +32,8 @@ class FrameworkParquetLoader(Transformer):
         self.name: Param = Param(self, "name", "")
         self._setDefault(name=None)  # type: ignore
 
-        self.path: Param = Param(self, "path", "")
-        self._setDefault(path=None)  # type: ignore
+        self.file_path: Param = Param(self, "file_path", "")
+        self._setDefault(file_path=None)  # type: ignore
 
         self.progress_logger: Param = Param(self, "progress_logger", "")
         self._setDefault(progress_logger=None)  # type: ignore
@@ -51,7 +51,7 @@ class FrameworkParquetLoader(Transformer):
     @keyword_only
     def setParams(self,
                   view: str,
-                  path: Union[str, List[str]],
+                  file_path: Union[str, List[str]],
                   name: str = None,
                   progress_logger: ProgressLogger = None
                   ):
@@ -60,7 +60,7 @@ class FrameworkParquetLoader(Transformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        path: Union[str, List[str]] = self.getPath()
+        path: Union[str, List[str]] = self.getFilePath()
         name: str = self.getName()
         progress_logger: ProgressLogger = self.getProgressLogger()
         merge_schema: bool = self.getMergeSchema()
@@ -93,13 +93,13 @@ class FrameworkParquetLoader(Transformer):
         return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setPath(self, value) -> 'FrameworkParquetLoader':
-        self._paramMap[self.path] = value  # type: ignore
+    def setFilePath(self, value) -> 'FrameworkParquetLoader':
+        self._paramMap[self.file_path] = value  # type: ignore
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getPath(self) -> Union[str, List[str]]:
-        return self.getOrDefault(self.path)
+    def getFilePath(self) -> Union[str, List[str]]:
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setName(self, value) -> 'FrameworkParquetLoader':
