@@ -14,7 +14,8 @@ This code is available as a package to import into your project.
 https://pypi.org/project/sparkpipelineframework/
 
 # Using it in your project
-1. Add sparkpipelineframework to your project requirements.txt
+(For an example project that uses SparkPipelineFramework, see https://github.com/imranq2/TestSparkPipelineFramework)
+1. Add sparkpipelineframework package to your project requirements.txt
 2. Create a folder called library in your project
 
 ## To create a new pipeline
