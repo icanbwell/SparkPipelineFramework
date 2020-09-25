@@ -39,6 +39,11 @@ class MyPipeline(FrameworkPipeline):
 
 ## To Add a SQL transformation
 1. Create a new folder and a .sql file in that folder. This folder should be in the library folder or any subfolder you choose under the library folder.
+2. The name of the file is the name of the view that will be created/updated to store the result of your sql code e.g., carriers.sql means we will create/update a view called carriers with the results of your sql code.
+2. Add your sql to it.  This can be any valid SparkSQL and can refer to any view created by the pipeline before this transformer is run.  For example:
+```
+SELECT carrier, crsarrtime FROM flights
+```
 2. Run the generate_proxies command as shown in the Generating Proxies section below
 3. Now go to your Pipeline class __init__ and add to self.transformers.  Start the folder name and hit ctrl-space for PyCharm to autocomplete the name
 4. That's it.  Your sql has been automaticaly wrapped in a Transformer which will do logging, monitor performance and do error checking
@@ -47,6 +52,12 @@ class MyPipeline(FrameworkPipeline):
 ## To Add a Python transformation
 1. Create a new folder and .py file in that folder.  This folder should be in the library folder or any subfolder you choose under the library folder.
 2. In the .py file, create a new class and derive from Transformer (from spark ML).  Implement the _transform() function
+For example:
+```
+class MyPythonTransformer(Transformer):
+	def _transform(self, df: DataFrame) -> DataFrame:
+		# read parameters and do your stuff here.  You can either create/update a view or just update the passed in dataframe.
+```
 3. Run the generate_proxies command as shown in the Generating Proxies section below
 3. Now go to your Pipeline class __init__ and add to self.transformers.  Start the folder name and hit ctrl-space for PyCharm to autocomplete the name
 
@@ -83,7 +94,12 @@ class MyPipeline(FrameworkPipeline):
 ```
 
 ## Generating Proxies
-1. Run the following command to generate proxy classes.  These automatically wrap your sql with a Spark Transformer that can be included in a Pipeline with no additional code. ```python3 spark_pipeline_framework/proxy_generator/generate_proxies.py```.  You can also add this to your project Makefile to make it easier to run: 
+1. Run the following command to generate proxy classes.  These automatically wrap your sql with a Spark Transformer that can be included in a Pipeline with no additional code. 
+
+```python3 spark_pipeline_framework/proxy_generator/generate_proxies.py```.  
+
+You can also add this to your project Makefile to make it easier to run: 
+
 ```
 .PHONY:proxies
 proxies:
