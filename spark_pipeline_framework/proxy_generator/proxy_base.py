@@ -1,5 +1,8 @@
+from importlib import import_module
+from inspect import signature
 from typing import Optional, List
 from os import listdir, path
+import re
 
 from pyspark.ml.base import Transformer
 
@@ -24,7 +27,7 @@ class ProxyBase:
         self.parameters: AttrDict = parameters
         self.progress_logger: Optional[ProgressLogger] = progress_logger
         self.verify_count_remains_same: bool = verify_count_remains_same
-        self.location = location
+        self.location: str = location
 
         assert self.location
         # Iterate over files to create transformers
@@ -33,7 +36,7 @@ class ProxyBase:
         module_name: str = self.location[index_of_module + 1:].replace("/", ".")
 
         for file in files:
-            if file == 'load.sql':
+            if file == 'my_view.sql':
                 load_sql: str = self.read_file_as_string(path.join(
                     self.location, file)).format(parameters=parameters)
                 self.loader = FrameworkSqlTransformer(
@@ -64,6 +67,8 @@ class ProxyBase:
                     view=file.replace('.sql', ''),
                     verify_count_remains_same=verify_count_remains_same
                 )
+            elif file == 'calculate.py':
+                self.feature = self.get_python_transformer('.calculate')
 
     @staticmethod
     def read_file_as_string(file_path) -> str:
@@ -81,3 +86,18 @@ class ProxyBase:
 
     def __call__(self, parameters, progress_logger, *args, **kwargs):
         self.__init__(parameters, progress_logger)
+
+    def get_python_transformer(self, import_module_name: str) -> Transformer:
+        assert self.location
+        lib_path = self.location[re.search(r'/library/', self.location).start() +
+                                 1:].replace('/', '.').replace('', '')
+        module = import_module(import_module_name, lib_path)
+        md = module.__dict__
+        my_class = [md[c] for c in md if (isinstance(md[c], type) and md[c].__module__ == module.__name__)][0]
+        my_class_signature = signature(my_class.__init__)
+        my_class_args = [param.name for param in my_class_signature.parameters.values() if param.name != 'self']
+        if len(my_class_args) > 0 and len(self.parameters) > 0:
+            self.parameters['progress_logger'] = self.progress_logger
+            return my_class(**{k: v for k, v in self.parameters.items() if k in my_class_args})
+        else:
+            return my_class()
