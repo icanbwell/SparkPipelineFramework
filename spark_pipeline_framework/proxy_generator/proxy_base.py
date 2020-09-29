@@ -33,7 +33,7 @@ class ProxyBase:
         module_name: str = self.location[index_of_module + 1:].replace("/", ".")
 
         for file in files:
-            if file == 'load.sql':
+            if file == 'my_view.sql':
                 load_sql: str = self.read_file_as_string(path.join(
                     self.location, file)).format(parameters=parameters)
                 self.loader = FrameworkSqlTransformer(

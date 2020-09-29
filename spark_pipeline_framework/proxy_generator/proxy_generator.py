@@ -1,17 +1,3 @@
-from os import path, getcwd
-from pathlib import Path
-from sys import exit
-import sys
-
-# data_dir: Path = Path(__file__).parent.joinpath('./')
-#
-# PACKAGE_PARENT = '..'
-# SCRIPT_DIR = path.dirname(path.realpath(data_dir))
-# print(SCRIPT_DIR)
-# normpath = path.normpath(path.join(SCRIPT_DIR, PACKAGE_PARENT))
-# print(normpath)
-# sys.path.append(normpath)
-
 from os import walk, path, listdir
 from re import search
 from shutil import rmtree
@@ -106,13 +92,3 @@ class ProxyGenerator:
             with open(transformer_proxy_file_name, 'w+') as file:
                 print(f"Creating {transformer_proxy_file_name}")
                 file.write(transformer_reader_string)
-
-
-def main():
-    library_folder: str = path.join(getcwd(), 'library')
-    ProxyGenerator.remove_empty_dirs(library_folder)
-    ProxyGenerator.generate_proxies(library_folder)
-
-
-if __name__ == "__main__":
-    exit(main())
