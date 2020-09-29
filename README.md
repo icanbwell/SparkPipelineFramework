@@ -130,6 +130,84 @@ proxies:
 	python3 spark_pipeline_framework/proxy_generator/generate_proxies.py
   ```
 
+# Testing
+## Test a pipeline
+A pipeline can be tested by providing test data in csv (or parquet), running the pipeline and then asserting for data in any view or dataframe.
+
+```
+def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
+    # Arrange
+    data_dir: Path = Path(__file__).parent.joinpath('./')
+    flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
+
+    schema = StructType([])
+
+    df: DataFrame = spark_session.createDataFrame(
+        spark_session.sparkContext.emptyRDD(), schema)
+
+    spark_session.sql("DROP TABLE IF EXISTS default.flights")
+
+    # Act
+    parameters = AttrDict(
+        {
+            "flights_path": flights_path
+        }
+    )
+
+    with ProgressLogger() as progress_logger:
+        pipeline: MyPipeline = MyPipeline(parameters=parameters, progress_logger=progress_logger)
+        transformer = pipeline.fit(df)
+        transformer.transform(df)
+
+    # Assert
+    result_df: DataFrame = spark_session.sql("SELECT * FROM flights2")
+    result_df.show()
+
+    assert result_df.count() > 0
+```
+
+## Testing a single Transformer directly
+Each Transformer can be tested individually by setting up the data to pass into it (e.g., loading from csv) and then testing the result of running the transformer.
+```
+from pathlib import Path
+
+from pyspark.sql.dataframe import DataFrame
+from pyspark.sql.session import SparkSession
+from pyspark.sql.types import StructType
+from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
+from spark_pipeline_framework.utilities.attr_dict import AttrDict
+
+from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
+
+
+def test_carriers_v1(spark_session: SparkSession):
+    # Arrange
+    data_dir: Path = Path(__file__).parent.joinpath('./')
+    flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
+
+    schema = StructType([])
+
+    df: DataFrame = spark_session.createDataFrame(
+        spark_session.sparkContext.emptyRDD(), schema)
+
+    spark_session.sql("DROP TABLE IF EXISTS default.flights")
+
+    FrameworkCsvLoader(
+        view="flights",
+        path_to_csv=flights_path
+    ).transform(dataset=df)
+
+    parameters = AttrDict({
+    })
+
+    FeaturesCarriersV1(parameters=parameters).transformers[0].transform(dataset=df)
+
+    result_df: DataFrame = spark_session.sql("SELECT * FROM flights2")
+    result_df.show()
+
+    assert result_df.count() > 0
+```
+
 # Contributing
 Run ```make firstime```
 This will install Java, Scala, Spark and other packages
