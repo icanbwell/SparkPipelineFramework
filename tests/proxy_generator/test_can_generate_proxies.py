@@ -33,6 +33,7 @@ def test_can_generate_proxies():
     assert (path.exists(data_source_path))
 
     assert(path.join(temp_library_folder, "features", "my_sql_feature", "features_my_sql_feature.py"))
+    assert(path.join(temp_library_folder, "features", "my_python_feature", "features_my_python_feature.py"))
 
 
 def recursive_overwrite(src, dst, ignore=None):

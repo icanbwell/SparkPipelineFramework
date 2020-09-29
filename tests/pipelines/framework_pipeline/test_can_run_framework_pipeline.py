@@ -6,6 +6,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
 from library.features.carriers.features_carriers import FeaturesCarriers
+from library.features.carriers_python.features_carriers_python import FeaturesCarriersPython
 from spark_pipeline_framework.pipelines.framework_pipeline import FrameworkPipeline
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
@@ -25,6 +26,7 @@ class MyPipeline(FrameworkPipeline):
                 )
             ],
             FeaturesCarriers(parameters=parameters).transformers,
+            FeaturesCarriersPython(parameters=parameters).transformers
         ])
 
 
