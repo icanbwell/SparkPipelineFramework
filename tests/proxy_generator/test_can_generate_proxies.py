@@ -29,11 +29,12 @@ def test_can_generate_proxies():
     ProxyGenerator.generate_proxies(folder=temp_library_folder)
 
     # Assert
-    data_source_path = path.join(temp_library_folder, "datasources", "my_data_source", "datasources_my_data_source.py")
+    data_source_path = path.join(temp_library_folder, "datasources", "my_data_source", "v1",
+                                 "datasources_my_data_source_v1.py")
     assert (path.exists(data_source_path))
 
-    assert(path.join(temp_library_folder, "features", "my_sql_feature", "features_my_sql_feature.py"))
-    assert(path.join(temp_library_folder, "features", "my_python_feature", "features_my_python_feature.py"))
+    assert (path.join(temp_library_folder, "features", "my_sql_feature", "v1", "features_my_sql_feature_v1.py"))
+    assert (path.join(temp_library_folder, "features", "my_python_feature", "v1", "features_my_python_feature_v1.py"))
 
 
 def recursive_overwrite(src, dst, ignore=None):
