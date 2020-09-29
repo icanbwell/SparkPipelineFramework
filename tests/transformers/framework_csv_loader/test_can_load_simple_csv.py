@@ -3,6 +3,7 @@ from pathlib import Path
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
+from tests.conftest import clean_spark_session
 
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
 
@@ -10,6 +11,8 @@ from spark_pipeline_framework.transformers.framework_csv_loader import Framework
 # noinspection SqlNoDataSourceInspection
 def test_can_load_simple_csv(spark_session: SparkSession):
     # Arrange
+    clean_spark_session(spark_session)
+
     data_dir: Path = Path(__file__).parent.joinpath('./')
     test_file_path: str = f"{data_dir.joinpath('test.csv')}"
 

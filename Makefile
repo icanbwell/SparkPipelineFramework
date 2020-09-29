@@ -90,8 +90,16 @@ spark:
 
 .PHONY:dockerspark
 dockerspark:
-	docker run --name spark-master -h spark-master -e ENABLE_INIT_DAEMON=false -d bde2020/spark-master:3.0.0-hadoop3.2
-	docker run --name spark-worker-1 --link spark-master:spark-master -e ENABLE_INIT_DAEMON=false -d bde2020/spark-worker:3.0.0-hadoop3.2
+	docker run --name spark-master -p 8080:8080 -p 6066:6066 -p 7077:7077 -v /Users/imranqureshi/git/SparkPipelineFramework/tests:/Users/imranqureshi/git/SparkPipelineFramework/tests -h spark-master -e ENABLE_INIT_DAEMON=false -d bitnami/spark:3.0.1
+	docker run --name spark-worker-1 -v /Users/imranqureshi/git/SparkPipelineFramework/tests:/Users/imranqureshi/git/SparkPipelineFramework/tests --link spark-master:spark-master -e ENABLE_INIT_DAEMON=false -d bitnami/spark:3.0.1
+
+.PHONY:up
+up:
+	docker-compose up
+
+.PHONY:down
+down:
+	docker-compose down
 
 .PHONY:firsttime
 firsttime: sdkman java scala brew wget spark devsetup test
