@@ -5,7 +5,7 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
-from library.features.carriers.features_carriers import FeaturesCarriers
+from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
 from spark_pipeline_framework.utilities.attr_dict import AttrDict
 from spark_pipeline_framework.utilities.flattener import flatten
@@ -34,7 +34,7 @@ def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
                 path_to_csv=flights_path
             )
         ],
-        FeaturesCarriers(parameters=parameters).transformers,
+        FeaturesCarriersV1(parameters=parameters).transformers,
     ])
 
     pipeline: Pipeline = Pipeline(stages=stages)

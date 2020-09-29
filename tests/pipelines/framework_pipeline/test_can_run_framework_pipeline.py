@@ -1,12 +1,11 @@
 from pathlib import Path
 
-from pyspark.ml.pipeline import Pipeline
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
-from library.features.carriers.features_carriers import FeaturesCarriers
-from library.features.carriers_python.features_carriers_python import FeaturesCarriersPython
+from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
+from library.features.carriers_python.v1.features_carriers_python_v1 import FeaturesCarriersPythonV1
 from spark_pipeline_framework.pipelines.framework_pipeline import FrameworkPipeline
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
@@ -25,8 +24,8 @@ class MyPipeline(FrameworkPipeline):
                     path_to_csv=parameters["flights_path"]
                 )
             ],
-            FeaturesCarriers(parameters=parameters).transformers,
-            FeaturesCarriersPython(parameters=parameters).transformers
+            FeaturesCarriersV1(parameters=parameters).transformers,
+            FeaturesCarriersPythonV1(parameters=parameters).transformers
         ])
 
 
