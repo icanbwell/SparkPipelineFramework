@@ -55,9 +55,32 @@ SELECT carrier, crsarrtime FROM flights
 2. In the .py file, create a new class and derive from Transformer (from spark ML).  Implement the _transform() function
 For example:
 ```
-class MyPythonTransformer(Transformer):
-	def _transform(self, df: DataFrame) -> DataFrame:
-		# read parameters and do your stuff here.  You can either create/update a view or just update the passed in dataframe.
+from typing import Optional
+
+from pyspark import keyword_only
+from pyspark.sql.dataframe import DataFrame
+
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.proxy_generator.python_proxy_base import PythonProxyBase
+from spark_pipeline_framework.utilities.attr_dict import AttrDict
+
+
+class FeatureTransformer(PythonProxyBase):
+    # noinspection PyUnusedLocal
+    @keyword_only
+    def __init__(self,
+                 name: str = None,
+                 parameters: Optional[AttrDict] = None,
+                 progress_logger: Optional[ProgressLogger] = None,
+                 verify_count_remains_same: bool = False
+                 ) -> None:
+        super(FeatureTransformer, self).__init__(name=name,
+                                                 parameters=parameters,
+                                                 progress_logger=progress_logger,
+                                                 verify_count_remains_same=verify_count_remains_same)
+
+    def _transform(self, df: DataFrame) -> DataFrame:
+        # Put your code in here
 ```
 3. Run the generate_proxies command as shown in the Generating Proxies section below
 3. Now go to your Pipeline class __init__ and add to self.transformers.  Start the folder name and hit ctrl-space for PyCharm to autocomplete the name
