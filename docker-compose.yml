@@ -14,6 +14,7 @@ services:
       - '7077:7077'
     volumes:
     - ${PWD}/tests:${PWD}/tests
+    restart: always
   spark-worker-1:
     image: docker.io/bitnami/spark:3.0.1-debian-10-r25
     environment:
@@ -27,3 +28,4 @@ services:
       - SPARK_SSL_ENABLED=no
     volumes:
     - ${PWD}/tests:${PWD}/tests
+    restart: always
