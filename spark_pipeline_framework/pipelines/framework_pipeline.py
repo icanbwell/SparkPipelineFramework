@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -12,12 +12,12 @@ from spark_pipeline_framework.utilities.attr_dict import AttrDict
 
 class FrameworkPipeline(Transformer):
     def __init__(self,
-                 parameters: AttrDict,
+                 parameters: Dict[str, Any],
                  progress_logger: ProgressLogger
                  ):
         super(FrameworkPipeline, self).__init__()
         self.transformers: List[Transformer] = []
-        self.parameters: AttrDict = parameters
+        self.parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
 
     # noinspection PyUnusedLocal
@@ -41,11 +41,11 @@ class FrameworkPipeline(Transformer):
                 with ProgressLogMetric(progress_logger=self.progress_logger, name=stage_name or "unknown"):
                     df = transformer.transform(dataset=df)
             except Exception as e:
-                logger.warn(f"======== stage threw exception =======")
+                logger.warning(f"======== stage threw exception =======")
                 if hasattr(transformer, "getSql"):
                     # noinspection Mypy
                     logger.info(transformer.getSql())
-                logger.warn(f"======== stage threw exception =======")
+                logger.warning(f"======== stage threw exception =======")
                 # use exception chaining to add stage name but keep original exception
                 raise FriendlySparkException(str(e), stage_name=stage_name)
         return df

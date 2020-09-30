@@ -138,3 +138,4 @@ spark*.tgz*
 
 # test files
 tests/**/temp*/
+/tests/metastore_db/

@@ -1,7 +1,9 @@
-# noinspection PyProtectedMember
 from logging import Logger
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Optional
+
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from pyspark import keyword_only
 from pyspark.ml import Transformer
@@ -25,8 +27,9 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
                  infer_schema: bool = False,
                  cache_table: bool = True,
                  schema: StructType = None,
-                 create_file_path: bool = False
-                 ):
+                 create_file_path: bool = False,
+                 progress_logger: Optional[ProgressLogger] = None
+                 ) -> None:
         super().__init__()
         self.logger: Logger = get_logger(__name__)
 
@@ -57,6 +60,9 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
         self.create_file_path: Param = Param(self, "create_file_path", "")
         self._setDefault(create_file_path=False)  # type: ignore
 
+        self.progress_logger: Param = Param(self, "progress_logger", "")
+        self._setDefault(progress_logger=None)  # type: ignore
+
         if not path_to_csv:
             raise ValueError("path_to_csv is None or empty")
 
@@ -76,7 +82,8 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
                   cache_table: bool = True,
                   has_header: bool = True,
                   infer_schema: bool = False,
-                  create_file_path: bool = False
+                  create_file_path: bool = False,
+                  progress_logger: Optional[ProgressLogger] = None
                   ):
         kwargs = self._input_kwargs  # type: ignore
         return self._set(**kwargs)  # type: ignore
@@ -91,6 +98,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
         limit = self.getLimit()
         create_file_path = self.getCreateFilePath()
         delimiter = self.getDelimiter()
+        progress_logger: ProgressLogger = self.getProgressLogger()
 
         if not path_to_csv:
             raise ValueError(f"path_to_csv is empty: {path_to_csv}")
@@ -108,7 +116,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
             data_dir = Path(__file__).parent.parent.joinpath('./')
             absolute_paths_to_csv = [f"file://{data_dir.joinpath(path)}" for path in path_to_csv]
 
-        self.logger.info(
+        progress_logger and progress_logger.write_to_log(
             f"Loading csv file for view {view}: {absolute_paths_to_csv}, infer_schema: {infer_schema}")
 
         df_reader: DataFrameReader = df.sql_ctx.read
@@ -142,7 +150,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
             self.logger.info(f"Caching table {view}")
             df.sql_ctx.sql(f"CACHE TABLE {view}")
 
-        self.logger.info(
+        progress_logger and progress_logger.write_to_log(
             f"Finished Loading csv file for View[{view}]: {absolute_paths_to_csv}, "
             + f"infer_schema: {infer_schema}, delimiter: {delimiter}")
 
@@ -232,3 +240,12 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
         return self.getView()
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setProgressLogger(self, value):
+        self._paramMap[self.progress_logger] = value
+        return self
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getProgressLogger(self) -> ProgressLogger:
+        return self.getOrDefault(self.progress_logger)

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Dict, Any
 
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
@@ -9,23 +10,23 @@ from library.features.carriers_python.v1.features_carriers_python_v1 import Feat
 from spark_pipeline_framework.pipelines.framework_pipeline import FrameworkPipeline
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
-from spark_pipeline_framework.utilities.attr_dict import AttrDict
 from spark_pipeline_framework.utilities.flattener import flatten
 
 
 class MyPipeline(FrameworkPipeline):
-    def __init__(self, parameters: AttrDict, progress_logger: ProgressLogger):
+    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
         super(MyPipeline, self).__init__(parameters=parameters,
                                          progress_logger=progress_logger)
         self.transformers = flatten([
             [
                 FrameworkCsvLoader(
                     view="flights",
-                    path_to_csv=parameters["flights_path"]
+                    path_to_csv=parameters["flights_path"],
+                    progress_logger=progress_logger
                 )
             ],
-            FeaturesCarriersV1(parameters=parameters).transformers,
-            FeaturesCarriersPythonV1(parameters=parameters).transformers
+            FeaturesCarriersV1(parameters=parameters, progress_logger=progress_logger).transformers,
+            FeaturesCarriersPythonV1(parameters=parameters, progress_logger=progress_logger).transformers
         ])
 
 
@@ -42,11 +43,9 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     # Act
-    parameters = AttrDict(
-        {
-            "flights_path": flights_path
-        }
-    )
+    parameters = {
+        "flights_path": flights_path
+    }
 
     with ProgressLogger() as progress_logger:
         pipeline: MyPipeline = MyPipeline(parameters=parameters, progress_logger=progress_logger)

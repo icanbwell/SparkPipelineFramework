@@ -1,38 +1,31 @@
-from typing import Optional
+from typing import Optional, List
 
 from pyspark import keyword_only
 from pyspark.ml.base import Transformer
 from pyspark.ml.param import Param
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 from pyspark.sql.dataframe import DataFrame
-from spark_pipeline_framework.progress_logger.progress_log_metric import ProgressLogMetric
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
 
-class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
+class FrameworkSelectColumnsTransformer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
     # noinspection PyUnusedLocal
     @keyword_only
     def __init__(self,
-                 sql: str = None,
                  name: str = None,
                  view: str = None,
-                 log_sql: bool = False,
+                 drop_columns: Optional[List[str]] = None,
+                 keep_columns: Optional[List[str]] = None,
                  progress_logger: Optional[ProgressLogger] = None,
                  verify_count_remains_same: bool = False
                  ) -> None:
         super().__init__()
         self.logger = get_logger(__name__)
 
-        if not sql:
-            raise ValueError("sql is None or empty")
-
         if not view:
             raise ValueError("view is None or empty")
-
-        self.sql: Param = Param(self, "sql", "")
-        self._setDefault(sql=None)  # type: ignore
 
         self.name: Param = Param(self, "name", "")
         self._setDefault(name=None)  # type: ignore
@@ -40,8 +33,11 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
         self.view: Param = Param(self, "view", "")
         self._setDefault(view=None)  # type: ignore
 
-        self.log_sql: Param = Param(self, "log_sql", "")
-        self._setDefault(log_sql=False)  # type: ignore
+        self.drop_columns: Param = Param(self, "drop_columns", "")
+        self._setDefault(drop_columns=None)  # type: ignore
+
+        self.keep_columns: Param = Param(self, "keep_columns", "")
+        self._setDefault(keep_columns=None)  # type: ignore
 
         self.progress_logger: Param = Param(self, "progress_logger", "")
         self._setDefault(progress_logger=None)  # type: ignore
@@ -55,10 +51,10 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
     # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
     @keyword_only
     def setParams(self,
-                  sql: str = None,
                   name: str = None,
                   view: str = None,
-                  log_sql: bool = False,
+                  drop_columns: Optional[List[str]] = None,
+                  keep_columns: Optional[List[str]] = None,
                   progress_logger: Optional[ProgressLogger] = None,
                   verify_count_remains_same: bool = False
                   ):
@@ -66,26 +62,21 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        sql_text: str = self.getSql()
         name = self.getName()
         view = self.getView()
         progress_logger: ProgressLogger = self.getProgressLogger()
+        drop_columns: Optional[List[str]] = self.getOrDefault("drop_columns")
+        keep_columns: Optional[List[str]] = self.getOrDefault("keep_columns")
 
-        with ProgressLogMetric(name=name, progress_logger=progress_logger):
-            if progress_logger and name:
-                # mlflow opens .txt files inline so we use that extension
-                progress_logger.log_artifact(key=f"{name}.sql.txt", contents=sql_text)
-                progress_logger.write_to_log(name=name)
-            try:
-                df = df.sql_ctx.sql(sql_text)
-            except Exception:
-                self.logger.info(f"Error in {name}")
-                self.logger.info(sql_text)
-                raise
+        result_df: DataFrame = df.sql_ctx.table(view)
 
-            df.createOrReplaceTempView(view)
-            self.logger.info(
-                f"GenericSqlTransformer [{name}] finished running SQL")
+        if keep_columns and len(keep_columns) > 0:
+            all_columns = result_df.columns
+            drop_columns = list(set(all_columns).difference(set(keep_columns)))
+
+        if drop_columns and len(drop_columns) > 0:
+            self.logger.info(f"FrameworkSelectColumnsTransformer: Dropping columns {drop_columns} from {view}")
+            result_df.drop(*drop_columns).createOrReplaceTempView(view)
 
         return df
 

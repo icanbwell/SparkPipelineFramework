@@ -25,7 +25,7 @@ def test_simple_csv_loader_pipeline(spark_session: SparkSession) -> None:
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     # Act
-    # parameters = AttrDict({
+    # parameters = Dict[str, Any]({
     # })
 
     stages: List[Union[Estimator, Transformer]] = [

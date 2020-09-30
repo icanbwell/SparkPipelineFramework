@@ -1,15 +1,14 @@
+import re
 from importlib import import_module
 from inspect import signature
-from typing import Optional, List
 from os import listdir, path
-import re
+from typing import Optional, List, Dict, Any
 
 from pyspark.ml.base import Transformer
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
 from spark_pipeline_framework.transformers.framework_sql_transformer import FrameworkSqlTransformer
-from spark_pipeline_framework.utilities.attr_dict import AttrDict
 
 
 class ProxyBase:
@@ -19,12 +18,12 @@ class ProxyBase:
     location: Optional[str] = None
 
     def __init__(self,
-                 parameters: AttrDict,
+                 parameters: Dict[str, Any],
                  location: str,
                  progress_logger: Optional[ProgressLogger] = None,
                  verify_count_remains_same: bool = False
                  ) -> None:
-        self.parameters: AttrDict = parameters
+        self.parameters: Dict[str, Any] = parameters
         self.progress_logger: Optional[ProgressLogger] = progress_logger
         self.verify_count_remains_same: bool = verify_count_remains_same
         self.location: str = location
@@ -89,7 +88,9 @@ class ProxyBase:
 
     def get_python_transformer(self, import_module_name: str) -> Transformer:
         assert self.location
-        lib_path = self.location[re.search(r'/library/', self.location).start() +
+        search = re.search(r'/library/', self.location)
+        assert search
+        lib_path = self.location[search.start() +
                                  1:].replace('/', '.').replace('', '')
         module = import_module(import_module_name, lib_path)
         md = module.__dict__
