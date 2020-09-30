@@ -1,8 +1,6 @@
-from os import path, getcwd, makedirs, listdir
+from os import path, makedirs, listdir
 from pathlib import Path
-from shutil import rmtree, copytree, copy, copyfile
-import errno
-import distutils
+from shutil import rmtree, copyfile
 
 from spark_pipeline_framework.proxy_generator.proxy_generator import ProxyGenerator
 
@@ -29,8 +27,8 @@ def test_can_generate_proxies():
     ProxyGenerator.generate_proxies(folder=temp_library_folder)
 
     # Assert
-    data_source_path = path.join(temp_library_folder, "datasources", "my_data_source", "v1",
-                                 "datasources_my_data_source_v1.py")
+    data_source_path = path.join(temp_library_folder, "data_sources", "my_data_source", "v1",
+                                 "data_sources_my_data_source_v1.py")
     assert (path.exists(data_source_path))
 
     assert (path.join(temp_library_folder, "features", "my_sql_feature", "v1", "features_my_sql_feature_v1.py"))

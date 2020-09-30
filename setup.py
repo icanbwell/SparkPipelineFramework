@@ -1,3 +1,4 @@
+# noinspection Mypy
 from setuptools import setup, find_packages
 from os import path, getcwd
 
@@ -24,7 +25,7 @@ def fix_setuptools():
     issues.
     """
     try:
-        from setuptools.sandbox import DirectorySandbox
+        from setuptools.sandbox import DirectorySandbox  # type: ignore
 
         # noinspection PyUnusedLocal
         def violation(operation, *args, **_):

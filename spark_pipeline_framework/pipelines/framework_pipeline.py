@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -12,12 +12,12 @@ from spark_pipeline_framework.utilities.attr_dict import AttrDict
 
 class FrameworkPipeline(Transformer):
     def __init__(self,
-                 parameters: AttrDict,
+                 parameters: Dict[str, Any],
                  progress_logger: ProgressLogger
                  ):
         super(FrameworkPipeline, self).__init__()
         self.transformers: List[Transformer] = []
-        self.parameters: AttrDict = parameters
+        self.parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
 
     # noinspection PyUnusedLocal

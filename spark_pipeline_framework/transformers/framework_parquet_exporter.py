@@ -59,7 +59,7 @@ class FrameworkParquetExporter(Transformer):
         path: str = self.getFilePath()
         name: str = self.getName()
         progress_logger: ProgressLogger = self.getProgressLogger()
-        limit: int = self.getLimit()
+        # limit: int = self.getLimit()
 
         with ProgressLogMetric(name=f"{name or view}_table_loader", progress_logger=progress_logger):
             try:
@@ -117,4 +117,3 @@ class FrameworkParquetExporter(Transformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
         return self.getOrDefault(self.limit)
-

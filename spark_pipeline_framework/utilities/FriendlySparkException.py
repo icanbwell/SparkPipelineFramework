@@ -2,6 +2,7 @@ import traceback
 
 
 class FriendlySparkException(Exception):
+    # noinspection PyUnusedLocal
     def __init__(self, *args, **kwargs):
         try:
             # Summary is a boolean argument

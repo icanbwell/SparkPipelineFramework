@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 
+# noinspection PyPackageRequirements
 import pytest
 from pyspark.sql import SparkSession
 

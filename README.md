@@ -24,7 +24,7 @@ https://pypi.org/project/sparkpipelineframework/
 For example:
 ```
 class MyPipeline(FrameworkPipeline):
-    def __init__(self, parameters: AttrDict, progress_logger: ProgressLogger):
+    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
         super(MyPipeline, self).__init__(parameters=parameters,
                                          progress_logger=progress_logger)
         self.transformers = flatten([
@@ -70,7 +70,7 @@ class FeatureTransformer(PythonProxyBase):
     @keyword_only
     def __init__(self,
                  name: str = None,
-                 parameters: Optional[AttrDict] = None,
+                 parameters: Optional[Dict[str, Any]] = None,
                  progress_logger: Optional[ProgressLogger] = None,
                  verify_count_remains_same: bool = False
                  ) -> None:
@@ -102,7 +102,7 @@ Pipelines are fully composable so you can include one pipeline as a transformer 
 For example:
 ```
 class MyPipeline(FrameworkPipeline):
-    def __init__(self, parameters: AttrDict, progress_logger: ProgressLogger):
+    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
         super(MyPipeline, self).__init__(parameters=parameters,
                                          progress_logger=progress_logger)
         self.transformers = flatten([

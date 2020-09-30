@@ -1,11 +1,10 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from pyspark import keyword_only
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.python_proxy_base import PythonProxyBase
-from spark_pipeline_framework.utilities.attr_dict import AttrDict
 
 
 class FeatureTransformer(PythonProxyBase):
@@ -13,7 +12,7 @@ class FeatureTransformer(PythonProxyBase):
     @keyword_only
     def __init__(self,
                  name: str = None,
-                 parameters: Optional[AttrDict] = None,
+                 parameters: Optional[Dict[str, Any]] = None,
                  progress_logger: Optional[ProgressLogger] = None,
                  verify_count_remains_same: bool = False
                  ) -> None:

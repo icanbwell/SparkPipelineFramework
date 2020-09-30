@@ -1,11 +1,10 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from pyspark import keyword_only
 from pyspark.ml.base import Transformer
 from pyspark.ml.param import Param
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 from pyspark.sql.dataframe import DataFrame
-from spark_pipeline_framework.utilities.attr_dict import AttrDict
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
@@ -15,7 +14,7 @@ class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable)
     @keyword_only
     def __init__(self,
                  name: str = None,
-                 parameters: Optional[AttrDict] = None,
+                 parameters: Optional[Dict[str, Any]] = None,
                  progress_logger: Optional[ProgressLogger] = None,
                  verify_count_remains_same: bool = False
                  ) -> None:
@@ -40,7 +39,7 @@ class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable)
     @keyword_only
     def setParams(self,
                   name: str = None,
-                  parameters: Optional[AttrDict] = None,
+                  parameters: Optional[Dict[str, Any]] = None,
                   progress_logger: Optional[ProgressLogger] = None,
                   verify_count_remains_same: bool = False):
         kwargs = self._input_kwargs  # type: ignore

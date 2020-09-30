@@ -1,4 +1,3 @@
-# noinspection PyProtectedMember
 from logging import Logger
 from pathlib import Path
 from typing import Union, List, Optional
