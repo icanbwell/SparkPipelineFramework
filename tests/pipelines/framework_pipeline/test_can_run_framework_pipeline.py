@@ -21,11 +21,12 @@ class MyPipeline(FrameworkPipeline):
             [
                 FrameworkCsvLoader(
                     view="flights",
-                    path_to_csv=parameters["flights_path"]
+                    path_to_csv=parameters["flights_path"],
+                    progress_logger=progress_logger
                 )
             ],
-            FeaturesCarriersV1(parameters=parameters).transformers,
-            FeaturesCarriersPythonV1(parameters=parameters).transformers
+            FeaturesCarriersV1(parameters=parameters, progress_logger=progress_logger).transformers,
+            FeaturesCarriersPythonV1(parameters=parameters, progress_logger=progress_logger).transformers
         ])
 
 

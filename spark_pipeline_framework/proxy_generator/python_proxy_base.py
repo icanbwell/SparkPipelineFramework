@@ -56,7 +56,7 @@ class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getOrDefault(self.name)
+        return self.getOrDefault(self.name or self.__class__.__name__)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setProgressLogger(self, value) -> 'PythonProxyBase':

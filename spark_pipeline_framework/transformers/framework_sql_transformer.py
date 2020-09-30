@@ -5,6 +5,7 @@ from pyspark.ml.base import Transformer
 from pyspark.ml.param import Param
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 from pyspark.sql.dataframe import DataFrame
+from spark_pipeline_framework.progress_logger.progress_log_metric import ProgressLogMetric
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -68,17 +69,23 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
         sql_text: str = self.getSql()
         name = self.getName()
         view = self.getView()
+        progress_logger: ProgressLogger = self.getProgressLogger()
 
-        try:
-            df = df.sql_ctx.sql(sql_text)
-        except Exception:
-            self.logger.info(f"Error in {name}")
-            self.logger.info(sql_text)
-            raise
+        with ProgressLogMetric(name=name, progress_logger=progress_logger):
+            if progress_logger and name:
+                # mlflow opens .txt files inline so we use that extension
+                progress_logger.log_artifact(key=f"{name}.sql.txt", contents=sql_text)
+                progress_logger.write_to_log(name=name)
+            try:
+                df = df.sql_ctx.sql(sql_text)
+            except Exception:
+                self.logger.info(f"Error in {name}")
+                self.logger.info(sql_text)
+                raise
 
-        df.createOrReplaceTempView(view)
-        self.logger.info(
-            f"GenericSqlTransformer [{name}] finished running SQL")
+            df.createOrReplaceTempView(view)
+            self.logger.info(
+                f"GenericSqlTransformer [{name}] finished running SQL")
 
         return df
 

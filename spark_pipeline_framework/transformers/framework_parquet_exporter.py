@@ -98,7 +98,7 @@ class FrameworkParquetExporter(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getOrDefault(self.name)
+        return self.getOrDefault(self.name or self.getView())
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setProgressLogger(self, value) -> 'FrameworkParquetExporter':
@@ -117,3 +117,4 @@ class FrameworkParquetExporter(Transformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
         return self.getOrDefault(self.limit)
+
