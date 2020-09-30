@@ -13,7 +13,7 @@ services:
       - '8081:8081'
       - '7077:7077'
     volumes:
-    - /Users/imranqureshi/git/SparkPipelineFramework/tests:/Users/imranqureshi/git/SparkPipelineFramework/tests
+    - ${PWD}/tests:${PWD}/tests
   spark-worker-1:
     image: docker.io/bitnami/spark:3.0.1-debian-10-r25
     environment:
@@ -26,4 +26,4 @@ services:
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
     volumes:
-    - /Users/imranqureshi/git/SparkPipelineFramework/tests:/Users/imranqureshi/git/SparkPipelineFramework/tests
+    - ${PWD}/tests:${PWD}/tests

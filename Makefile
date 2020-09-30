@@ -78,6 +78,17 @@ brew:
 wget:
 	brew install wget
 
+.PHONY:docker
+docker:
+	# brew install docker  # this is different than cask install below
+	# https://stackoverflow.com/questions/40523307/brew-install-docker-does-not-include-docker-engine
+	brew cask install docker && \
+	brew install bash-completion && \
+	brew install docker-completion && \
+	brew install docker-compose-completion && \
+	brew install docker-machine-completion && \
+	open /Applications/Docker.app
+
 .PHONY:helm
 helm:
 	brew install kubernetes-helm
@@ -116,7 +127,7 @@ down:
 installspark: sdkman java scala brew wget helm spark
 
 .PHONY:firsttime
-firsttime: installspark devsetup test
+firsttime: installspark docker up devsetup proxies test
 
 .PHONY:proxies
 proxies:
