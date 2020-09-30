@@ -49,13 +49,13 @@ package:venv buildpackage
 	python3 -m twine upload -u __token__ --repository pypi dist/*
 # password can be set in TWINE_PASSWORD. https://twine.readthedocs.io/en/latest/
 
-.PHONY:test
-test:
+.PHONY:tests
+tests:
 	source $(VENV_NAME)/bin/activate && \
 	pytest tests
 
-.PHONY:firsttime
-firsttime: installspark docker up devsetup proxies test
+.PHONY:init
+init: installspark docker up devsetup proxies tests
 
 .PHONY:proxies
 proxies:
