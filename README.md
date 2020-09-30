@@ -55,14 +55,13 @@ SELECT carrier, crsarrtime FROM flights
 2. In the .py file, create a new class and derive from Transformer (from spark ML).  Implement the _transform() function
 For example:
 ```
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from pyspark import keyword_only
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.python_proxy_base import PythonProxyBase
-from spark_pipeline_framework.utilities.attr_dict import AttrDict
 
 
 class FeatureTransformer(PythonProxyBase):
@@ -80,7 +79,7 @@ class FeatureTransformer(PythonProxyBase):
                                                  verify_count_remains_same=verify_count_remains_same)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        # Put your code in here
+        pass
 ```
 3. Run the generate_proxies command as shown in the Generating Proxies section below
 3. Now go to your Pipeline class __init__ and add to self.transformers.  Start the folder name and hit ctrl-space for PyCharm to autocomplete the name
@@ -135,6 +134,38 @@ proxies:
 A pipeline can be tested by providing test data in csv (or parquet), running the pipeline and then asserting for data in any view or dataframe.
 
 ```
+from pathlib import Path
+from typing import Dict, Any
+
+from pyspark.sql.dataframe import DataFrame
+from pyspark.sql.session import SparkSession
+from pyspark.sql.types import StructType
+
+from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
+from library.features.carriers_python.v1.features_carriers_python_v1 import FeaturesCarriersPythonV1
+from spark_pipeline_framework.pipelines.framework_pipeline import FrameworkPipeline
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
+from spark_pipeline_framework.utilities.flattener import flatten
+
+
+class MyPipeline(FrameworkPipeline):
+    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
+        super(MyPipeline, self).__init__(parameters=parameters,
+                                         progress_logger=progress_logger)
+        self.transformers = flatten([
+            [
+                FrameworkCsvLoader(
+                    view="flights",
+                    path_to_csv=parameters["flights_path"],
+                    progress_logger=progress_logger
+                )
+            ],
+            FeaturesCarriersV1(parameters=parameters, progress_logger=progress_logger).transformers,
+            FeaturesCarriersPythonV1(parameters=parameters, progress_logger=progress_logger).transformers
+        ])
+
+
 def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath('./')
@@ -148,11 +179,9 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     # Act
-    parameters = AttrDict(
-        {
-            "flights_path": flights_path
-        }
-    )
+    parameters = {
+        "flights_path": flights_path
+    }
 
     with ProgressLogger() as progress_logger:
         pipeline: MyPipeline = MyPipeline(parameters=parameters, progress_logger=progress_logger)
