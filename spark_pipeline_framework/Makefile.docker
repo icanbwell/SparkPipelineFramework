@@ -24,10 +24,10 @@ helmchart:
 
 .PHONY:up
 up:
-	docker-compose  -p sparkpipelineframework up --detach && \
+	docker-compose -p sparkpipelineframework -f spark_pipeline_framework/docker-compose.yml up --detach && \
 	sleep 5 && \
 	open http://localhost:8080/
 
 .PHONY:down
 down:
-	docker-compose -p sparkpipelineframework down
+	docker-compose -p sparkpipelineframework -f spark_pipeline_framework/docker-compose.yml down
