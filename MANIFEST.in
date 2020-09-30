@@ -3,5 +3,5 @@ include requirements.txt
 include requirements-test.txt
 include VERSION
 include Makefile
-include Makefile.spark
-include Makefile.docker
+include spark_pipeline_framework/Makefile.spark
+include spark_pipeline_framework/Makefile.docker

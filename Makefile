@@ -9,8 +9,8 @@ GIT_HASH=${CIRCLE_SHA1}
 SPARK_VER=3.0.1
 HADOOP_VER=3.2
 
-include Makefile.spark
-include Makefile.docker
+include spark_pipeline_framework/Makefile.spark
+include spark_pipeline_framework/Makefile.docker
 
 .PHONY:venv
 venv:
