@@ -16,7 +16,9 @@ https://pypi.org/project/sparkpipelineframework/
 # Using it in your project
 (For an example project that uses SparkPipelineFramework, see https://github.com/imranq2/TestSparkPipelineFramework)
 1. Add sparkpipelineframework package to your project requirements.txt
-2. Create a folder called library in your project
+2. pip install -r requirements.txt
+3. make init. (this will setup Spark, Docker (to run Spark) )
+4. Create a folder called library in your project
 
 ## To create a new pipeline
 1. Create a class derived from ```FrameworkPipeline```
