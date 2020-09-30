@@ -2,11 +2,6 @@ BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 VERSION=$(shell cat VERSION)
 GIT_HASH=${CIRCLE_SHA1}
 
-.PHONY:brew
-brew:
-	brew config || \
-	curl -s "https://raw.githubusercontent.com/Homebrew/install/master/install.sh" | bash
-
 .PHONY:docker
 docker:
 	# brew install docker  # this is different than cask install below

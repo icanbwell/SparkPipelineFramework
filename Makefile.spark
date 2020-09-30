@@ -32,26 +32,6 @@ brew:
 wget:
 	brew install wget
 
-.PHONY:docker
-docker:
-	# brew install docker  # this is different than cask install below
-	# https://stackoverflow.com/questions/40523307/brew-install-docker-does-not-include-docker-engine
-	brew cask install docker && \
-	brew install bash-completion && \
-	brew install docker-completion && \
-	brew install docker-compose-completion && \
-	brew install docker-machine-completion && \
-	open /Applications/Docker.app
-
-.PHONY:helm
-helm:
-	brew install kubernetes-helm
-
-.PHONY:helmchart
-helmchart:
-	helm repo add bitnami https://charts.bitnami.com/bitnami
-	helm install my-release bitnami/spark
-
 .PHONY:spark
 spark:
 	wget -c http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -O ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
@@ -61,15 +41,5 @@ spark:
 	tar -zxvf ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -C /usr/local/opt/spark && \
 	cp -a /usr/local/opt/spark/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER)/ /usr/local/opt/spark/
 
-.PHONY:up
-up:
-	docker-compose -p sparkpipelineframework up --detach && \
-	sleep 5 && \
-	open http://localhost:8080/
-
-.PHONY:down
-down:
-	docker-compose  -p sparkpipelineframework down
-
 .PHONY:installspark
-installspark: sdkman java scala brew wget helm spark
+installspark: sdkman java scala brew wget spark

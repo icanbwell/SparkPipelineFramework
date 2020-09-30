@@ -30,25 +30,22 @@ check:venv
     pip install --upgrade -r requirements.txt && \
     mypy spark_pipeline_framework
 
-.PHONY:testpackage
-testpackage:venv
+.PHONY:buildpackage
+buildpackage:venv
 	source $(VENV_NAME)/bin/activate && \
     pip install --upgrade pip && \
     python setup.py install && \
     pip install --upgrade -r requirements.txt && \
     rm -r dist/ && \
-    python3 setup.py sdist bdist_wheel && \
+    python3 setup.py sdist bdist_wheel
+
+.PHONY:testpackage
+testpackage:venv buildpackage
 	python3 -m twine upload -u __token__ --repository testpypi dist/*
 # password can be set in TWINE_PASSWORD. https://twine.readthedocs.io/en/latest/
 
 .PHONY:package
-package:venv
-	source $(VENV_NAME)/bin/activate && \
-    pip install --upgrade pip && \
-    python setup.py install && \
-    pip install --upgrade -r requirements.txt && \
-    rm -r dist/ && \
-    python3 setup.py sdist bdist_wheel && \
+package:venv buildpackage
 	python3 -m twine upload -u __token__ --repository pypi dist/*
 # password can be set in TWINE_PASSWORD. https://twine.readthedocs.io/en/latest/
 
