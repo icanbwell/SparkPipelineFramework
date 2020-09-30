@@ -1,0 +1,33 @@
+BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+VERSION=$(shell cat VERSION)
+GIT_HASH=${CIRCLE_SHA1}
+
+.PHONY:docker
+docker:
+	# brew install docker  # this is different than cask install below
+	# https://stackoverflow.com/questions/40523307/brew-install-docker-does-not-include-docker-engine
+	brew cask install docker && \
+	brew install bash-completion && \
+	brew install docker-completion && \
+	brew install docker-compose-completion && \
+	brew install docker-machine-completion && \
+	open /Applications/Docker.app
+
+.PHONY:helm
+helm:
+	brew install kubernetes-helm
+
+.PHONY:helmchart
+helmchart:
+	helm repo add bitnami https://charts.bitnami.com/bitnami
+	helm install my-release bitnami/spark
+
+.PHONY:up
+up:
+	docker-compose -p sparkpipelineframework -f spark_pipeline_framework/docker-compose.yml up --detach && \
+	sleep 5 && \
+	open http://localhost:8080/
+
+.PHONY:down
+down:
+	docker-compose -p sparkpipelineframework -f spark_pipeline_framework/docker-compose.yml down

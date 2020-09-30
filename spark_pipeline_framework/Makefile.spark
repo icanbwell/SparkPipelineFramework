@@ -1,0 +1,45 @@
+LANG=en_US.utf-8
+
+export LANG
+
+BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+VERSION=$(shell cat VERSION)
+GIT_HASH=${CIRCLE_SHA1}
+SPARK_VER=3.0.1
+HADOOP_VER=3.2
+
+.PHONY:sdkman
+sdkman:
+	sdk list java || \
+	curl -s "https://get.sdkman.io" | bash
+
+.PHONY:java
+java:
+	source "$(HOME)/.sdkman/bin/sdkman-init.sh" && \
+	sdk install java 11.0.8.hs-adpt || echo "java installed"
+
+.PHONY:scala
+scala:
+	source "$(HOME)/.sdkman/bin/sdkman-init.sh" && \
+	sdk install scala 2.12.12 || echo "scala installed"
+
+.PHONY:brew
+brew:
+	brew config || \
+	curl -s "https://raw.githubusercontent.com/Homebrew/install/master/install.sh" | bash
+
+.PHONY:wget
+wget:
+	brew install wget
+
+.PHONY:spark
+spark:
+	wget -c http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -O ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
+	mkdir -p /usr/local/opt/spark && \
+	rm -r /usr/local/opt/spark/ && \
+	mkdir -p /usr/local/opt/spark && \
+	tar -zxvf ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -C /usr/local/opt/spark && \
+	cp -a /usr/local/opt/spark/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER)/ /usr/local/opt/spark/
+
+.PHONY:installspark
+installspark: sdkman java scala brew wget spark

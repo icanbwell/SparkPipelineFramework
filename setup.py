@@ -73,5 +73,9 @@ setup(
     python_requires='>=3.6',
     dependency_links=[],
     include_package_data=True,
-    zip_safe=False
+    zip_safe=False,
+    data_files=[
+        'spark_pipeline_framework/Makefile.spark',
+        'spark_pipeline_framework/Makefile.docker'
+    ]
 )
