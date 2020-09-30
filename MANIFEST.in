@@ -2,3 +2,6 @@ include README.md
 include requirements.txt
 include requirements-test.txt
 include VERSION
+include Makefile
+include Makefile.spark
+include Makefile.docker
