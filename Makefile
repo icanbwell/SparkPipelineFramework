@@ -78,6 +78,15 @@ brew:
 wget:
 	brew install wget
 
+.PHONY:helm
+helm:
+	brew install kubernetes-helm
+
+.PHONY:helmchart
+helmchart:
+	helm repo add bitnami https://charts.bitnami.com/bitnami
+	helm install my-release bitnami/spark
+
 .PHONY:spark
 spark:
 	wget http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
@@ -95,14 +104,19 @@ dockerspark:
 
 .PHONY:up
 up:
-	docker-compose up
+	docker-compose up --detach && \
+	sleep 5 && \
+	open http://localhost:8080/
 
 .PHONY:down
 down:
 	docker-compose down
 
+.PHONY:installspark
+installspark: sdkman java scala brew wget helm spark
+
 .PHONY:firsttime
-firsttime: sdkman java scala brew wget spark devsetup test
+firsttime: installspark devsetup test
 
 .PHONY:proxies
 proxies:
