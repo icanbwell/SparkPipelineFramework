@@ -78,6 +78,26 @@ brew:
 wget:
 	brew install wget
 
+.PHONY:docker
+docker:
+	# brew install docker  # this is different than cask install below
+	# https://stackoverflow.com/questions/40523307/brew-install-docker-does-not-include-docker-engine
+	brew cask install docker && \
+	brew install bash-completion && \
+	brew install docker-completion && \
+	brew install docker-compose-completion && \
+	brew install docker-machine-completion && \
+	open /Applications/Docker.app
+
+.PHONY:helm
+helm:
+	brew install kubernetes-helm
+
+.PHONY:helmchart
+helmchart:
+	helm repo add bitnami https://charts.bitnami.com/bitnami
+	helm install my-release bitnami/spark
+
 .PHONY:spark
 spark:
 	wget http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
@@ -90,11 +110,24 @@ spark:
 
 .PHONY:dockerspark
 dockerspark:
-	docker run --name spark-master -h spark-master -e ENABLE_INIT_DAEMON=false -d bde2020/spark-master:3.0.0-hadoop3.2
-	docker run --name spark-worker-1 --link spark-master:spark-master -e ENABLE_INIT_DAEMON=false -d bde2020/spark-worker:3.0.0-hadoop3.2
+	docker run --name spark-master -p 8080:8080 -p 6066:6066 -p 7077:7077 -v /Users/imranqureshi/git/SparkPipelineFramework/tests:/Users/imranqureshi/git/SparkPipelineFramework/tests -h spark-master -e ENABLE_INIT_DAEMON=false -d bitnami/spark:3.0.1
+	docker run --name spark-worker-1 -v /Users/imranqureshi/git/SparkPipelineFramework/tests:/Users/imranqureshi/git/SparkPipelineFramework/tests --link spark-master:spark-master -e ENABLE_INIT_DAEMON=false -d bitnami/spark:3.0.1
+
+.PHONY:up
+up:
+	docker-compose up --detach && \
+	sleep 5 && \
+	open http://localhost:8080/
+
+.PHONY:down
+down:
+	docker-compose down
+
+.PHONY:installspark
+installspark: sdkman java scala brew wget helm spark
 
 .PHONY:firsttime
-firsttime: sdkman java scala brew wget spark devsetup test
+firsttime: installspark docker up devsetup proxies test
 
 .PHONY:proxies
 proxies:

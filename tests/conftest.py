@@ -69,9 +69,7 @@ def spark_session(request) -> SparkSession:
     clean_spark_dir()
 
     session = SparkSession.builder.appName("pytest-pyspark-local-testing"). \
-        master("local[2]"). \
-        config("spark.executor.memory", "4g"). \
-        config("spark.driver.memory", "4g"). \
+        master("spark://localhost:7077"). \
         config("spark.ui.showConsoleProgress", "false"). \
         config("spark.sql.shuffle.partitions", "2"). \
         config("spark.default.parallelism", "4"). \
