@@ -41,11 +41,11 @@ class FrameworkPipeline(Transformer):
                 with ProgressLogMetric(progress_logger=self.progress_logger, name=stage_name or "unknown"):
                     df = transformer.transform(dataset=df)
             except Exception as e:
-                logger.warn(f"======== stage threw exception =======")
+                logger.warning(f"======== stage threw exception =======")
                 if hasattr(transformer, "getSql"):
                     # noinspection Mypy
                     logger.info(transformer.getSql())
-                logger.warn(f"======== stage threw exception =======")
+                logger.warning(f"======== stage threw exception =======")
                 # use exception chaining to add stage name but keep original exception
                 raise FriendlySparkException(str(e), stage_name=stage_name)
         return df
