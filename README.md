@@ -209,5 +209,5 @@ def test_carriers_v1(spark_session: SparkSession):
 ```
 
 # Contributing
-Run ```make firstime```
+Run ```make init```
 This will install Java, Scala, Spark and other packages
