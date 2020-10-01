@@ -242,3 +242,8 @@ def test_carriers_v1(spark_session: SparkSession):
 # Contributing
 Run ```make init```
 This will install Java, Scala, Spark and other packages
+
+# Publishing a new package
+1. Edit VERSION to increment the version
+2. Create a new release
+3. The GitHub Action should automatically kick in and publish the package
