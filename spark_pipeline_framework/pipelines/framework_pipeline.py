@@ -7,7 +7,6 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import ProgressLogMetric
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.FriendlySparkException import FriendlySparkException
-from spark_pipeline_framework.utilities.attr_dict import AttrDict
 
 
 class FrameworkPipeline(Transformer):

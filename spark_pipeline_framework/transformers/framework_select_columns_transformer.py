@@ -62,9 +62,9 @@ class FrameworkSelectColumnsTransformer(Transformer, DefaultParamsReadable, Defa
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        name = self.getName()
+        # name = self.getName()
         view = self.getView()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        # progress_logger: ProgressLogger = self.getProgressLogger()
         drop_columns: Optional[List[str]] = self.getOrDefault("drop_columns")
         keep_columns: Optional[List[str]] = self.getOrDefault("keep_columns")
 

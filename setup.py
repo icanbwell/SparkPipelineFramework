@@ -74,6 +74,7 @@ setup(
     dependency_links=[],
     include_package_data=True,
     zip_safe=False,
+    package_data={package_name: ["py.typed"]},
     data_files=[
         'spark_pipeline_framework/Makefile.spark',
         'spark_pipeline_framework/Makefile.docker'

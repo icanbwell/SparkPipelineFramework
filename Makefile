@@ -25,7 +25,13 @@ devsetup:venv
 check:venv
 	source $(VENV_NAME)/bin/activate && \
     pip install --upgrade -r requirements.txt && \
+    flake8 spark_pipeline_framework && \
     mypy spark_pipeline_framework
+
+.PHONY:update
+update:
+	source $(VENV_NAME)/bin/activate && \
+	pip install --upgrade -r requirements.txt
 
 .PHONY:build
 build:venv
