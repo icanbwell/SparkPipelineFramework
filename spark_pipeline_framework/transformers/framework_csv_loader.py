@@ -163,7 +163,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setPathToCsv(self, value):
@@ -172,7 +172,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPathToCsv(self) -> Union[str, List[str]]:
-        return self.getOrDefault(self.path_to_csv)
+        return self.getOrDefault(self.path_to_csv)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setDelimiter(self, value):
@@ -181,7 +181,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDelimiter(self) -> str:
-        return self.getOrDefault(self.delimiter)
+        return self.getOrDefault(self.delimiter)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setSchema(self, value):
@@ -190,7 +190,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
-        return self.getOrDefault(self.schema)
+        return self.getOrDefault(self.schema)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setCacheTable(self, value):
@@ -199,7 +199,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCacheTable(self) -> bool:
-        return self.getOrDefault(self.cache_table)
+        return self.getOrDefault(self.cache_table)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setHasHeader(self, value):
@@ -208,7 +208,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getHasHeader(self) -> bool:
-        return self.getOrDefault(self.has_header)
+        return self.getOrDefault(self.has_header)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setInferSchema(self, value):
@@ -217,7 +217,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getInferSchema(self) -> bool:
-        return self.getOrDefault(self.infer_schema)
+        return self.getOrDefault(self.infer_schema)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setLimit(self, value):
@@ -226,7 +226,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)
+        return self.getOrDefault(self.limit)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setCreateFilePath(self, value: bool):
@@ -235,7 +235,7 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCreateFilePath(self) -> bool:
-        return self.getOrDefault(self.create_file_path)
+        return self.getOrDefault(self.create_file_path)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
@@ -248,4 +248,4 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getProgressLogger(self) -> ProgressLogger:
-        return self.getOrDefault(self.progress_logger)
+        return self.getOrDefault(self.progress_logger)  # type: ignore

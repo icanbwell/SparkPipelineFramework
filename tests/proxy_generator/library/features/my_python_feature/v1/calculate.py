@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 
+# noinspection PyProtectedMember
 from pyspark import keyword_only
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.python_proxy_base import PythonProxyBase
-from spark_pipeline_framework.utilities.attr_dict import AttrDict
 
 
 class FeatureTransformer(PythonProxyBase):

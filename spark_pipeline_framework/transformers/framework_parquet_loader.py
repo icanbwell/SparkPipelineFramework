@@ -90,7 +90,7 @@ class FrameworkParquetLoader(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setFilePath(self, value) -> 'FrameworkParquetLoader':
@@ -99,7 +99,7 @@ class FrameworkParquetLoader(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[str, List[str]]:
-        return self.getOrDefault(self.file_path)
+        return self.getOrDefault(self.file_path)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setName(self, value) -> 'FrameworkParquetLoader':
@@ -108,7 +108,7 @@ class FrameworkParquetLoader(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getOrDefault(self.name)
+        return self.getOrDefault(self.name)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setProgressLogger(self, value) -> 'FrameworkParquetLoader':
@@ -117,7 +117,7 @@ class FrameworkParquetLoader(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getProgressLogger(self) -> ProgressLogger:
-        return self.getOrDefault(self.progress_logger)
+        return self.getOrDefault(self.progress_logger)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setMergeSchema(self, value) -> 'FrameworkParquetLoader':
@@ -126,7 +126,7 @@ class FrameworkParquetLoader(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMergeSchema(self) -> bool:
-        return self.getOrDefault(self.merge_schema)
+        return self.getOrDefault(self.merge_schema)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setLimit(self, value) -> 'FrameworkParquetLoader':
@@ -135,4 +135,4 @@ class FrameworkParquetLoader(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)
+        return self.getOrDefault(self.limit)  # type: ignore
