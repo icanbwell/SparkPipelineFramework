@@ -19,6 +19,7 @@ devsetup:venv
     pip install --upgrade pip && \
     pip install --upgrade -r requirements.txt && \
     pip install --upgrade -r requirements-test.txt && \
+    pre-commit install && \
     python setup.py install
 
 .PHONY:check

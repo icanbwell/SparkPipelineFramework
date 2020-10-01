@@ -1,8 +1,10 @@
 setuptools
 wheel
 twine
-numpy>=1.16.2
+numpy>=1.19.2
 pyspark==3.0.1
 mypy
 logger
 flake8
+importlib-metadata<2.0
+pre-commit==2.1.1
