@@ -96,7 +96,7 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSql(self) -> str:
-        return self.getOrDefault(self.sql)
+        return self.getOrDefault(self.sql)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setName(self, value):
@@ -105,7 +105,7 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getOrDefault(self.name)
+        return self.getOrDefault(self.name)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setView(self, value):
@@ -114,7 +114,7 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setProgressLogger(self, value):
@@ -123,7 +123,7 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getProgressLogger(self) -> ProgressLogger:
-        return self.getOrDefault(self.progress_logger)
+        return self.getOrDefault(self.progress_logger)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setLogSql(self, value):
@@ -132,7 +132,7 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLogSql(self) -> str:
-        return self.getOrDefault(self.log_sql)
+        return self.getOrDefault(self.log_sql)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setVerifyCountRemainsSame(self, value):
@@ -141,4 +141,4 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
-        return self.getOrDefault(self.verify_count_remains_same)
+        return self.getOrDefault(self.verify_count_remains_same)  # type: ignore

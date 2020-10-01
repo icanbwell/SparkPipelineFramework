@@ -1,0 +1,23 @@
+BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+VERSION=$(shell cat VERSION)
+GIT_HASH=${CIRCLE_SHA1}
+
+# from https://www.chrisjmendez.com/2017/08/03/installing-multiple-versions-of-python-on-your-mac-using-homebrew/
+~/.pyenv/versions/3.6.0/bin/python3:
+	pyenv install 3.6.0 --skip-existing && \
+	pyenv local 3.6.0 && \
+	python -V
+
+.PHONY:python
+python: ~/.pyenv/versions/3.6.0/bin/python3
+	python -V
+
+.PHONY:pyenv
+pyenv:
+	pyenv version || brew install pyenv && \
+	echo eval "$(pyenv init -)" >> ~/.bash_profile && \
+	source ~/.bash_profile
+
+.PHONY:venv
+venv: pyenv
+	~/.pyenv/versions/3.6.0/bin/python3 -m venv $(VENV_NAME)

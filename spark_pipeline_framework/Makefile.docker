@@ -3,7 +3,9 @@ VERSION=$(shell cat VERSION)
 GIT_HASH=${CIRCLE_SHA1}
 
 .PHONY:docker
-docker:
+docker: /Applications/Docker.app
+
+/Applications/Docker.app:
 	# brew install docker  # this is different than cask install below
 	# https://stackoverflow.com/questions/40523307/brew-install-docker-does-not-include-docker-engine
 	brew cask install docker && \

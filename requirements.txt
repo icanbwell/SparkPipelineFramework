@@ -5,3 +5,4 @@ numpy>=1.16.2
 pyspark==3.0.1
 mypy
 logger
+flake8

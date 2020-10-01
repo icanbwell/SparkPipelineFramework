@@ -55,7 +55,7 @@ class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getOrDefault(self.name or self.__class__.__name__)
+        return self.getOrDefault(self.name or self.__class__.__name__)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setProgressLogger(self, value) -> 'PythonProxyBase':
@@ -64,4 +64,4 @@ class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getProgressLogger(self) -> ProgressLogger:
-        return self.getOrDefault(self.progress_logger)
+        return self.getOrDefault(self.progress_logger)  # type: ignore
