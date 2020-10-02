@@ -32,8 +32,8 @@ brew:
 wget:
 	brew install wget
 
-.PHONY:spark
-spark:
+.PHONY:download_spark
+download_spark:
 	wget -c http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -O ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
 	mkdir -p /usr/local/opt/spark && \
 	rm -r /usr/local/opt/spark/ && \
@@ -42,4 +42,7 @@ spark:
 	cp -a /usr/local/opt/spark/spark-${SPARK_VER}-bin-hadoop${HADOOP_VER}/* /usr/local/opt/spark/
 
 .PHONY:installspark
-installspark: sdkman java scala brew wget spark
+installspark: spark
+
+.PHONY:spark
+spark: sdkman java scala brew wget download_spark
