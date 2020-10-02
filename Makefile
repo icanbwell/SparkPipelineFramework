@@ -58,6 +58,8 @@ package:venv build
 .PHONY:tests
 tests:
 	source $(VENV_NAME)/bin/activate && \
+    pip install --upgrade -r requirements.txt && \
+	pip install --upgrade -r requirements-test.txt && \
 	pytest tests
 
 .PHONY:init

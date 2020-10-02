@@ -38,8 +38,8 @@ spark:
 	mkdir -p /usr/local/opt/spark && \
 	rm -r /usr/local/opt/spark/ && \
 	mkdir -p /usr/local/opt/spark && \
-	tar -zxvf ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -C /usr/local/opt/spark && \
-	cp -a /usr/local/opt/spark/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER)/ /usr/local/opt/spark/
+	tar -zxvf ${TMPDIR}/spark-${SPARK_VER}-bin-hadoop${HADOOP_VER}.tgz -C /usr/local/opt/spark && \
+	cp -a /usr/local/opt/spark/spark-${SPARK_VER}-bin-hadoop${HADOOP_VER}/* /usr/local/opt/spark/
 
 .PHONY:installspark
 installspark: sdkman java scala brew wget spark
