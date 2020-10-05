@@ -22,8 +22,8 @@ devsetup:venv
     pre-commit install && \
     python setup.py install
 
-.PHONY:check
-check:venv
+.PHONY:checks
+checks:venv
 	source $(VENV_NAME)/bin/activate && \
     pip install --upgrade -r requirements.txt && \
     flake8 spark_pipeline_framework && \

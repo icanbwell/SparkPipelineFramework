@@ -75,7 +75,7 @@ class FrameworkSqlTransformer(Transformer, DefaultParamsReadable, DefaultParamsW
             if progress_logger and name:
                 # mlflow opens .txt files inline so we use that extension
                 progress_logger.log_artifact(key=f"{name}.sql.txt", contents=sql_text)
-                progress_logger.write_to_log(name=name)
+                progress_logger.write_to_log(name=name, message=sql_text)
             try:
                 df = df.sql_ctx.sql(sql_text)
             except Exception:
