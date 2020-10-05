@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
 
-from pyspark import SparkContext, SQLContext
+from pyspark import SparkContext, SQLContext, Row
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
 
@@ -64,3 +64,15 @@ def add_metadata_to_column(df: DataFrame, column: str, metadata: Any) -> DataFra
 
 def get_metadata_of_column(df: DataFrame, column: str) -> Any:
     return df.select(column).schema[0].metadata
+
+
+def to_dicts(df: DataFrame, limit: int) -> List[Dict[str, Any]]:
+    """
+    converts a data frame into a list of dictionaries
+    :param df:
+    :param limit:
+    :return:
+    """
+    row: Row
+    rows = [row.asDict(recursive=True) for row in df.limit(limit).collect()]
+    return rows
