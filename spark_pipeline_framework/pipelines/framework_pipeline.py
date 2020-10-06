@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -7,6 +7,7 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import ProgressLogMetric
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.FriendlySparkException import FriendlySparkException
+from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
 class FrameworkPipeline(Transformer):
@@ -48,3 +49,7 @@ class FrameworkPipeline(Transformer):
                 # use exception chaining to add stage name but keep original exception
                 raise FriendlySparkException(str(e), stage_name=stage_name)
         return df
+
+    # noinspection PyMethodMayBeStatic
+    def create_steps(self, my_list: List[Union[Transformer, List[Transformer]]]) -> List[Transformer]:
+        return create_steps(my_list)
