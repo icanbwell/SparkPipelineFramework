@@ -51,6 +51,7 @@ class FrameworkParquetExporter(FrameworkTransformer):
                   limit: int = -1
                   ):
         kwargs = self._input_kwargs  # type: ignore
+        super().setParams(name=name, parameters=parameters, progress_logger=progress_logger)
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
