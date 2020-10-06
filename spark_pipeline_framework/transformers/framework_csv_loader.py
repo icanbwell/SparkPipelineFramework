@@ -1,22 +1,24 @@
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Dict, Any
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+# noinspection PyProtectedMember
 from pyspark import keyword_only
-from pyspark.ml import Transformer
 from pyspark.ml.param.shared import Param
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import input_file_name
 from pyspark.sql.readwriter import DataFrameReader
 from pyspark.sql.types import StructType
-from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
+
+from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.framework_transformer import FrameworkTransformer
 
 
-class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritable):
+class FrameworkCsvLoader(FrameworkTransformer):
     # noinspection PyUnusedLocal
+    # keyword_only: A decorator that forces keyword arguments in the wrapped method
+    #     and saves actual input keyword arguments in `_input_kwargs`.
     @keyword_only
     def __init__(self,
                  view: str,
@@ -28,9 +30,11 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
                  cache_table: bool = True,
                  schema: StructType = None,
                  create_file_path: bool = False,
+                 name: str = None,
+                 parameters: Dict[str, Any] = None,
                  progress_logger: Optional[ProgressLogger] = None
                  ) -> None:
-        super().__init__()
+        super().__init__(name=name, parameters=parameters, progress_logger=progress_logger)
         self.logger: Logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
@@ -60,9 +64,6 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
         self.create_file_path: Param = Param(self, "create_file_path", "")
         self._setDefault(create_file_path=False)  # type: ignore
 
-        self.progress_logger: Param = Param(self, "progress_logger", "")
-        self._setDefault(progress_logger=None)  # type: ignore
-
         if not path_to_csv:
             raise ValueError("path_to_csv is None or empty")
 
@@ -78,14 +79,17 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
                   path_to_csv: Union[str, List[str]],
                   delimiter: str = ",",
                   limit: int = -1,
-                  schema: StructType = None,
-                  cache_table: bool = True,
                   has_header: bool = True,
                   infer_schema: bool = False,
+                  cache_table: bool = True,
+                  schema: StructType = None,
                   create_file_path: bool = False,
+                  name: str = None,
+                  parameters: Dict[str, Any] = None,
                   progress_logger: Optional[ProgressLogger] = None
                   ):
         kwargs = self._input_kwargs  # type: ignore
+        super().setParams(name=name, parameters=parameters, progress_logger=progress_logger)
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
@@ -240,12 +244,3 @@ class FrameworkCsvLoader(Transformer, DefaultParamsReadable, DefaultParamsWritab
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
         return self.getView()
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setProgressLogger(self, value):
-        self._paramMap[self.progress_logger] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getProgressLogger(self) -> ProgressLogger:
-        return self.getOrDefault(self.progress_logger)  # type: ignore
