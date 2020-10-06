@@ -27,15 +27,13 @@ For example:
 ```
 class MyPipeline(FrameworkPipeline):
     def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
-        super(MyPipeline, self).__init__(parameters=parameters,
+        super().__init__(parameters=parameters,
                                          progress_logger=progress_logger)
-        self.transformers = flatten([
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    path_to_csv=parameters["flights_path"]
-                )
-            ],
+        self.transformers = self.create_steps([
+            FrameworkCsvLoader(
+                view="flights",
+                path_to_csv=parameters["flights_path"]
+            ),
             FeaturesCarriers(parameters=parameters).transformers,
         ])
 ```
@@ -106,13 +104,11 @@ class MyPipeline(FrameworkPipeline):
     def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
         super(MyPipeline, self).__init__(parameters=parameters,
                                          progress_logger=progress_logger)
-        self.transformers = flatten([
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    path_to_csv=parameters["flights_path"]
-                )
-            ],
+        self.transformers = self.create_steps([
+            FrameworkCsvLoader(
+                view="flights",
+                path_to_csv=parameters["flights_path"]
+            ),
             PipelineFoo(parameters=parameters).transformers,
             FeaturesCarriers(parameters=parameters).transformers,
         ])
@@ -155,14 +151,12 @@ class MyPipeline(FrameworkPipeline):
     def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
         super(MyPipeline, self).__init__(parameters=parameters,
                                          progress_logger=progress_logger)
-        self.transformers = flatten([
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    path_to_csv=parameters["flights_path"],
-                    progress_logger=progress_logger
-                )
-            ],
+        self.transformers = self.create_steps([
+            FrameworkCsvLoader(
+                view="flights",
+                path_to_csv=parameters["flights_path"],
+                progress_logger=progress_logger
+            ),
             FeaturesCarriersV1(parameters=parameters, progress_logger=progress_logger).transformers,
             FeaturesCarriersPythonV1(parameters=parameters, progress_logger=progress_logger).transformers
         ])
@@ -228,8 +222,7 @@ def test_carriers_v1(spark_session: SparkSession):
         path_to_csv=flights_path
     ).transform(dataset=df)
 
-    parameters = AttrDict({
-    })
+    parameters = {}
 
     FeaturesCarriersV1(parameters=parameters).transformers[0].transform(dataset=df)
 

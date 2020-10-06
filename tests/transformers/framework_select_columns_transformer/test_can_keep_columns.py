@@ -40,4 +40,3 @@ def test_can_keep_columns(spark_session: SparkSession):
     assert result.count() == 3
 
     assert result.collect()[1][0] == "bar"
-

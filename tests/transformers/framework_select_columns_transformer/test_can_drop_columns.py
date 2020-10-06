@@ -41,4 +41,3 @@ def test_can_drop_columns(spark_session: SparkSession):
 
     assert result.collect()[1][0] == "2"
     assert result.collect()[1][1] == "bar2"
-

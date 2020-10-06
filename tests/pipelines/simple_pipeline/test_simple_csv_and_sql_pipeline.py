@@ -8,7 +8,7 @@ from pyspark.sql.types import StructType
 from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
 from spark_pipeline_framework.utilities.attr_dict import AttrDict
-from spark_pipeline_framework.utilities.flattener import flatten
+from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
 def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
@@ -27,13 +27,11 @@ def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
     parameters = AttrDict({
     })
 
-    stages = flatten([
-        [
-            FrameworkCsvLoader(
-                view="flights",
-                path_to_csv=flights_path
-            )
-        ],
+    stages = create_steps([
+        FrameworkCsvLoader(
+            view="flights",
+            path_to_csv=flights_path
+        ),
         FeaturesCarriersV1(parameters=parameters).transformers,
     ])
 

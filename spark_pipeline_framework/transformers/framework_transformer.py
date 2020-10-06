@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from pyspark.ml.base import Transformer
 from pyspark.ml.param import Param
@@ -26,6 +26,9 @@ class FrameworkTransformer(Transformer, DefaultParamsReadable, DefaultParamsWrit
         self.progress_logger: Param = Param(self, "progress_logger", "")
         self._setDefault(progress_logger=None)  # type: ignore
 
+        self.parameters: Param = Param(self, "parameters", "")
+        self._setDefault(parameters=None)  # type: ignore
+
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
     def setParams(self,
                   name: str = None,
@@ -37,6 +40,10 @@ class FrameworkTransformer(Transformer, DefaultParamsReadable, DefaultParamsWrit
 
     def _transform(self, df: DataFrame) -> DataFrame:
         return df
+
+    @property
+    def transformers(self) -> List[Transformer]:
+        return [self]
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setName(self, value) -> 'FrameworkTransformer':
@@ -50,6 +57,15 @@ class FrameworkTransformer(Transformer, DefaultParamsReadable, DefaultParamsWrit
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setProgressLogger(self, value) -> 'FrameworkTransformer':
         self._paramMap[self.progress_logger] = value  # type: ignore
+        return self
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getParameters(self) -> ProgressLogger:
+        return self.getOrDefault(self.parameters)  # type: ignore
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setParameters(self, value) -> 'FrameworkTransformer':
+        self._paramMap[self.parameters] = value  # type: ignore
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

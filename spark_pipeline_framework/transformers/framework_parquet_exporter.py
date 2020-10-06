@@ -23,8 +23,7 @@ class FrameworkParquetExporter(FrameworkTransformer):
                  progress_logger: ProgressLogger = None,
                  limit: int = -1
                  ):
-        super(FrameworkParquetExporter, self).__init__(
-            name=name, parameters=parameters, progress_logger=progress_logger)
+        super().__init__(name=name, parameters=parameters, progress_logger=progress_logger)
 
         self.logger = get_logger(__name__)
 
