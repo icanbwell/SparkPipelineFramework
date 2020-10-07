@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Union, Dict, Any
 
 # noinspection PyProtectedMember
@@ -17,7 +18,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
     @keyword_only
     def __init__(self,
                  view: str,
-                 file_path: Union[str, List[str]],
+                 file_path: Union[str, List[str], Path],
                  name: str = None,
                  parameters: Dict[str, Any] = None,
                  progress_logger: ProgressLogger = None,
@@ -49,7 +50,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
     @keyword_only
     def setParams(self,
                   view: str,
-                  file_path: Union[str, List[str]],
+                  file_path: Union[str, List[str], Path],
                   name: str = None,
                   parameters: Dict[str, Any] = None,
                   progress_logger: ProgressLogger = None,
@@ -62,7 +63,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        path: Union[str, List[str]] = self.getFilePath()
+        path: Union[str, List[str], Path] = self.getFilePath()
         name: str = self.getName()
         progress_logger: ProgressLogger = self.getProgressLogger()
         merge_schema: bool = self.getMergeSchema()
@@ -71,9 +72,9 @@ class FrameworkParquetLoader(FrameworkTransformer):
         with ProgressLogMetric(name=f"{name or view}_table_loader", progress_logger=progress_logger):
             try:
                 if merge_schema is True:
-                    final_df = df.sql_ctx.read.option("mergeSchema", "true").format("parquet").load(path=path)
+                    final_df = df.sql_ctx.read.option("mergeSchema", "true").format("parquet").load(path=str(path))
                 else:
-                    final_df = df.sql_ctx.read.format("parquet").load(path=path)
+                    final_df = df.sql_ctx.read.format("parquet").load(path=str(path))
 
                 if limit and limit > 0:
                     final_df = final_df.limit(limit)
@@ -100,7 +101,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilePath(self) -> Union[str, List[str]]:
+    def getFilePath(self) -> Union[str, List[str], Path]:
         return self.getOrDefault(self.file_path)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

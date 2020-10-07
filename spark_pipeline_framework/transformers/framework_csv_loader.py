@@ -22,7 +22,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
     @keyword_only
     def __init__(self,
                  view: str,
-                 path_to_csv: Union[str, List[str]],
+                 path_to_csv: Union[str, List[str], Path],
                  delimiter: str = ",",
                  limit: int = -1,
                  has_header: bool = True,
@@ -76,7 +76,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
     @keyword_only
     def setParams(self,
                   view: str,
-                  path_to_csv: Union[str, List[str]],
+                  path_to_csv: Union[str, List[str], Path],
                   delimiter: str = ",",
                   limit: int = -1,
                   has_header: bool = True,
@@ -94,7 +94,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
-        path_to_csv = self.getPathToCsv()
+        path_to_csv: Union[str, List[str], Path] = self.getPathToCsv()
         schema = self.getSchema()
         cache_table = self.getCacheTable()
         has_header = self.getHasHeader()
@@ -116,6 +116,9 @@ class FrameworkCsvLoader(FrameworkTransformer):
                     absolute_paths_to_csv = [f"file://{data_dir.joinpath(path)}" for path in path_to_csv]
                 else:
                     absolute_paths_to_csv = [f"file://{data_dir.joinpath(path_to_csv)}"]
+        elif isinstance(path_to_csv, Path):
+            data_dir = Path(__file__).parent.parent.joinpath('./')
+            absolute_paths_to_csv = [f"file://{data_dir.joinpath(path_to_csv)}"]
         else:
             data_dir = Path(__file__).parent.parent.joinpath('./')
             absolute_paths_to_csv = [f"file://{data_dir.joinpath(path)}" for path in path_to_csv]
@@ -175,7 +178,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getPathToCsv(self) -> Union[str, List[str]]:
+    def getPathToCsv(self) -> Union[str, List[str], Path]:
         return self.getOrDefault(self.path_to_csv)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
