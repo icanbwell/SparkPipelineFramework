@@ -2,3 +2,7 @@ setuptools
 wheel
 twine
 pytest
+mypy
+flake8
+importlib-metadata<2.0
+pre-commit==2.1.1
