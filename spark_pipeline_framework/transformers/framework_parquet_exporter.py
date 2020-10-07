@@ -1,4 +1,5 @@
-from typing import Dict, Any
+from pathlib import Path
+from typing import Dict, Any, Union
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -16,7 +17,7 @@ class FrameworkParquetExporter(FrameworkTransformer):
     # noinspection PyUnusedLocal
     @keyword_only
     def __init__(self,
-                 file_path: str,
+                 file_path: Union[str, Path],
                  view: str = None,
                  name: str = None,
                  parameters: Dict[str, Any] = None,
@@ -24,6 +25,10 @@ class FrameworkParquetExporter(FrameworkTransformer):
                  limit: int = -1
                  ):
         super().__init__(name=name, parameters=parameters, progress_logger=progress_logger)
+
+        assert isinstance(file_path, Path) or isinstance(file_path, str)
+
+        assert file_path
 
         self.logger = get_logger(__name__)
 
@@ -42,7 +47,7 @@ class FrameworkParquetExporter(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
     @keyword_only
     def setParams(self,
-                  file_path: str,
+                  file_path: Union[str, Path],
                   view: str = None,
                   name: str = None,
                   parameters: Dict[str, Any] = None,
@@ -55,7 +60,7 @@ class FrameworkParquetExporter(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        path: str = self.getFilePath()
+        path: Union[str, Path] = self.getFilePath()
         name: str = self.getName()
         progress_logger: ProgressLogger = self.getProgressLogger()
         # limit: int = self.getLimit()
@@ -63,9 +68,9 @@ class FrameworkParquetExporter(FrameworkTransformer):
         with ProgressLogMetric(name=f"{name or view}_table_loader", progress_logger=progress_logger):
             try:
                 if view:
-                    df.sql_ctx.table(view).write.parquet(path=path)
+                    df.sql_ctx.table(view).write.parquet(path=str(path))
                 else:
-                    df.write.parquet(path=path)
+                    df.write.parquet(path=str(path))
 
             except AnalysisException as e:
                 self.logger.error(f"File write failed to {path}")
@@ -87,7 +92,7 @@ class FrameworkParquetExporter(FrameworkTransformer):
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilePath(self) -> str:
+    def getFilePath(self) -> Union[str, Path]:
         return self.getOrDefault(self.file_path)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
