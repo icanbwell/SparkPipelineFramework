@@ -1,12 +1,11 @@
-import re
-from importlib import import_module
-from inspect import signature
 from os import listdir, path
-from typing import Optional, List, Dict, Any
+from pathlib import Path
+from typing import Optional, List, Dict, Any, Union
 
 from pyspark.ml.base import Transformer
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.proxy_generator.python_transformer_helpers import get_python_transformer_from_location
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
 from spark_pipeline_framework.transformers.framework_sql_transformer import FrameworkSqlTransformer
 
@@ -15,18 +14,18 @@ class ProxyBase:
     loader: Optional[Transformer] = None
     converter: Optional[Transformer] = None
     feature: Optional[Transformer] = None
-    location: Optional[str] = None
+    location: str = ""
 
     def __init__(self,
                  parameters: Dict[str, Any],
-                 location: str,
+                 location: Union[str, Path],
                  progress_logger: Optional[ProgressLogger] = None,
                  verify_count_remains_same: bool = False
                  ) -> None:
         self.parameters: Dict[str, Any] = parameters
         self.progress_logger: Optional[ProgressLogger] = progress_logger
         self.verify_count_remains_same: bool = verify_count_remains_same
-        self.location: str = location
+        self.location: str = str(location)
 
         assert self.location
         # Iterate over files to create transformers
@@ -87,18 +86,9 @@ class ProxyBase:
         self.__init__(parameters, progress_logger)
 
     def get_python_transformer(self, import_module_name: str) -> Transformer:
-        assert self.location
-        search = re.search(r'/library/', self.location)
-        assert search
-        lib_path = self.location[search.start() +
-                                 1:].replace('/', '.').replace('', '')
-        module = import_module(import_module_name, lib_path)
-        md = module.__dict__
-        my_class = [md[c] for c in md if (isinstance(md[c], type) and md[c].__module__ == module.__name__)][0]
-        my_class_signature = signature(my_class.__init__)
-        my_class_args = [param.name for param in my_class_signature.parameters.values() if param.name != 'self']
-        if len(my_class_args) > 0 and len(self.parameters) > 0:
-            self.parameters['progress_logger'] = self.progress_logger
-            return my_class(**{k: v for k, v in self.parameters.items() if k in my_class_args})
-        else:
-            return my_class()
+        return get_python_transformer_from_location(
+            location=self.location,
+            import_module_name=import_module_name,
+            parameters=self.parameters,
+            progress_logger=self.progress_logger
+        )

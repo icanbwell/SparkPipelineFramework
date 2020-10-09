@@ -20,6 +20,8 @@ class FeatureTransformer(PythonProxyBase):
                                                  parameters=parameters,
                                                  progress_logger=progress_logger,
                                                  verify_count_remains_same=verify_count_remains_same)
+        assert parameters
+        assert progress_logger
 
     def _transform(self, df: DataFrame) -> DataFrame:
         pass
