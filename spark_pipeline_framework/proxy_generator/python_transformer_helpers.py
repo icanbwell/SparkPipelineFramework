@@ -7,7 +7,7 @@ from inspect import signature
 from typing import Dict, Any, Optional, Callable
 
 from pyspark.ml import Transformer
-from spark_auto_mapper.automapper_base import AutoMapperBase
+from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
