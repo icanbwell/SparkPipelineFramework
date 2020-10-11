@@ -60,8 +60,8 @@ class FrameworkTransformer(Transformer, DefaultParamsReadable, DefaultParamsWrit
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getParameters(self) -> ProgressLogger:
-        return self.getOrDefault(self.parameters)  # type: ignore
+    def getProgressLogger(self) -> ProgressLogger:
+        return self.getOrDefault(self.progress_logger)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setParameters(self, value) -> 'FrameworkTransformer':
@@ -69,5 +69,5 @@ class FrameworkTransformer(Transformer, DefaultParamsReadable, DefaultParamsWrit
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getProgressLogger(self) -> ProgressLogger:
-        return self.getOrDefault(self.progress_logger)  # type: ignore
+    def getParameters(self) -> Dict[str, Any]:
+        return self.getOrDefault(self.parameters)  # type: ignore
