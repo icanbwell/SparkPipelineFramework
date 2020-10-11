@@ -28,17 +28,16 @@ def mapping(parameters: Dict[str, Any]) -> AutoMapperBase:
         )
     )
 
-    # company_name: str = "Microsoft"
-    #
-    # if company_name == "Microsoft":
-    #     mapper = mapper.withColumn(
-    #         dst_column="dst4",
-    #         value=A.list(
-    #             value=A.complex(
-    #                 use="usual",
-    #                 family=A.column("last_name")
-    #             )
-    #         )
-    #     )
+    company_name: str = "Microsoft"
+
+    if company_name == "Microsoft":
+        mapper = mapper.withColumn(
+            dst4=A.list(
+                value=A.complex(
+                    use="usual",
+                    family=A.column("last_name")
+                )
+            )
+        )
 
     return mapper
