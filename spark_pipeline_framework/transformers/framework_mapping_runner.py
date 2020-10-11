@@ -5,7 +5,7 @@ from typing import Dict, Any, Callable
 from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
-from spark_auto_mapper.automapper_base import AutoMapperBase
+from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger

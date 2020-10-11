@@ -2,8 +2,7 @@ from pathlib import Path
 from typing import Callable, Dict, Any
 
 from pyspark.sql import SparkSession
-from spark_auto_mapper.automapper_base import AutoMapperBase
-from spark_auto_mapper.automapper_with_column import AutoMapperWithColumn
+from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import get_python_function_from_location
 
@@ -21,4 +20,4 @@ def test_can_find_python_function(spark_session: SparkSession):
     result: AutoMapperBase = result_function({"view": "bar"})
 
     # Assert
-    assert isinstance(result, AutoMapperWithColumn)
+    assert isinstance(result, AutoMapperBase)

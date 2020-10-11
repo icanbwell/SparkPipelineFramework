@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
-from spark_auto_mapper.automapper import AutoMapper
-from spark_auto_mapper.automapper_base import AutoMapperBase
-from spark_auto_mapper.automapper_helpers import AutoMapperHelpers as A
+from spark_auto_mapper.automappers.automapper import AutoMapper
+from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
+from spark_auto_mapper.helpers.automapper_helpers import AutoMapperHelpers as A
 
 
 def mapping(parameters: Dict[str, Any]) -> AutoMapperBase:
