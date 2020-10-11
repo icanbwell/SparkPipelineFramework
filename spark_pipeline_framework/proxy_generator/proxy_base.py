@@ -5,8 +5,10 @@ from typing import Optional, List, Dict, Any, Union
 from pyspark.ml.base import Transformer
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.proxy_generator.python_transformer_helpers import get_python_transformer_from_location
+from spark_pipeline_framework.proxy_generator.python_transformer_helpers import get_python_transformer_from_location, \
+    get_python_function_from_location
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
+from spark_pipeline_framework.transformers.framework_mapping_runner import FrameworkMappingLoader
 from spark_pipeline_framework.transformers.framework_sql_transformer import FrameworkSqlTransformer
 
 
@@ -67,6 +69,8 @@ class ProxyBase:
                 )
             elif file == 'calculate.py':
                 self.feature = self.get_python_transformer('.calculate')
+            elif file == 'mapping.py':
+                self.feature = self.get_python_mapping_transformer('.mapping')
 
     @staticmethod
     def read_file_as_string(file_path) -> str:
@@ -89,6 +93,16 @@ class ProxyBase:
         return get_python_transformer_from_location(
             location=self.location,
             import_module_name=import_module_name,
+            parameters=self.parameters,
+            progress_logger=self.progress_logger
+        )
+
+    def get_python_mapping_transformer(self, import_module_name: str):
+        return FrameworkMappingLoader(
+            view=self.parameters["view"],
+            mapping_function=get_python_function_from_location(
+                location=self.location,
+                import_module_name=import_module_name),
             parameters=self.parameters,
             progress_logger=self.progress_logger
         )
