@@ -18,7 +18,7 @@ def test_can_find_python_function(spark_session: SparkSession):
         import_module_name='.mapping'
     )
 
-    result: AutoMapperBase = result_function({"foo": "bar"})
+    result: AutoMapperBase = result_function({"view": "bar"})
 
     # Assert
     assert isinstance(result, AutoMapperWithColumn)

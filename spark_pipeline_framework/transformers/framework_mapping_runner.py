@@ -57,7 +57,10 @@ class FrameworkMappingLoader(FrameworkTransformer):
         mapping_function: Callable[[Dict[str, Any]], AutoMapperBase] = self.getMappingFunction()
 
         # run the mapping function to get an AutoMapper
-        auto_mapper: AutoMapperBase = mapping_function(self.getParameters())
+        parameters: Dict[str, Any] = self.getParameters().copy()
+        parameters["view"] = view
+
+        auto_mapper: AutoMapperBase = mapping_function(parameters)
 
         assert isinstance(auto_mapper, AutoMapperWithColumn)
 

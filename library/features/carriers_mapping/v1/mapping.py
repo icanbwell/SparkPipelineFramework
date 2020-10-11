@@ -5,12 +5,11 @@ from spark_auto_mapper.automapper_base import AutoMapperBase
 from spark_auto_mapper.automapper_helpers import AutoMapperHelpers as A
 
 
-# noinspection PyUnusedLocal
 def mapping(parameters: Dict[str, Any]) -> AutoMapperBase:
     # example of a variable
     client_address_variable: str = "address1"
     mapper = AutoMapper(
-        view="members",
+        view=parameters["view"],
         source_view="patients",
         keys=["member_id"]
     ).withColumn(
