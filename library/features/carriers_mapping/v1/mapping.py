@@ -31,7 +31,7 @@ def mapping(parameters: Dict[str, Any]) -> AutoMapperBase:
     company_name: str = "Microsoft"
 
     if company_name == "Microsoft":
-        mapper = mapper.withColumn(
+        mapper = mapper.columns(
             dst4=A.list(
                 value=A.complex(
                     use="usual",
