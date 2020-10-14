@@ -21,10 +21,6 @@ jobs:
       - name: prereqs
         run: pip install wheel
 
-      # setup and install everything
+      # setup and install everything and run tests
       - name: init
         run: make init
-
-      # run the tests
-      - name: test
-        run: make tests

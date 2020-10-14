@@ -68,7 +68,7 @@ tests:
 	pytest tests
 
 .PHONY:init
-init: installspark docker up devsetup proxies tests
+init: installspark up devsetup proxies tests
 
 .PHONY:proxies
 proxies:
