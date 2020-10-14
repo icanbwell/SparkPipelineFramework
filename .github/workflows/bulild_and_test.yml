@@ -21,7 +21,6 @@ jobs:
       - name: prereqs
         run: |
           pip install wheel
-          docker ps
 
       # setup and install everything and run tests
       - name: init
