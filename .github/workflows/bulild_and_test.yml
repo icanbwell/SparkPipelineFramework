@@ -19,7 +19,9 @@ jobs:
 
       # install required tools
       - name: prereqs
-        run: pip install wheel
+        run: |
+          pip install wheel
+          docker ps
 
       # setup and install everything and run tests
       - name: init
