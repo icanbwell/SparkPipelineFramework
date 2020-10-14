@@ -34,12 +34,12 @@ wget:
 
 .PHONY:download_spark
 download_spark:
-	wget -c http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -O ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
-	mkdir -p /usr/local/opt/spark && \
-	rm -r /usr/local/opt/spark/ && \
-	mkdir -p /usr/local/opt/spark && \
-	tar -zxvf ${TMPDIR}/spark-${SPARK_VER}-bin-hadoop${HADOOP_VER}.tgz -C /usr/local/opt/spark && \
-	cp -a /usr/local/opt/spark/spark-${SPARK_VER}-bin-hadoop${HADOOP_VER}/* /usr/local/opt/spark/
+	sudo wget -c http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -O ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
+	sudo mkdir -p /usr/local/opt/spark && \
+	sudo rm -r /usr/local/opt/spark/ && \
+	sudo mkdir -p /usr/local/opt/spark && \
+	sudo tar -zxvf ${TMPDIR}/spark-${SPARK_VER}-bin-hadoop${HADOOP_VER}.tgz -C /usr/local/opt/spark && \
+	sudo cp -a /usr/local/opt/spark/spark-${SPARK_VER}-bin-hadoop${HADOOP_VER}/* /usr/local/opt/spark/
 
 .PHONY:installspark
 installspark: spark
