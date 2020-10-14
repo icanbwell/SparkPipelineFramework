@@ -15,7 +15,7 @@ include spark_pipeline_framework/Makefile.python
 
 .PHONY:devsetup
 devsetup:venv
-	source $(VENV_NAME)/bin/activate && \
+	. $(VENV_NAME)/bin/activate && \
     pip install --upgrade pip && \
     pip install --upgrade -r requirements.txt && \
     pip install --upgrade -r requirements-test.txt && \
@@ -24,7 +24,7 @@ devsetup:venv
 
 .PHONY:checks
 checks:venv
-	source $(VENV_NAME)/bin/activate && \
+	. $(VENV_NAME)/bin/activate && \
     pip install --upgrade -r requirements.txt && \
     flake8 spark_pipeline_framework && \
     mypy spark_pipeline_framework && \
@@ -35,13 +35,13 @@ checks:venv
 
 .PHONY:update
 update:
-	source $(VENV_NAME)/bin/activate && \
+	. $(VENV_NAME)/bin/activate && \
 	pip install --upgrade -r requirements.txt && \
 	pip install --upgrade -r requirements-test.txt
 
 .PHONY:build
 build:venv
-	source $(VENV_NAME)/bin/activate && \
+	. $(VENV_NAME)/bin/activate && \
     pip install --upgrade pip && \
     pip install --upgrade -r requirements.txt && \
     python setup.py install && \
@@ -50,19 +50,19 @@ build:venv
 
 .PHONY:testpackage
 testpackage:venv build
-	source $(VENV_NAME)/bin/activate && \
+	. $(VENV_NAME)/bin/activate && \
 	python3 -m twine upload -u __token__ --repository testpypi dist/*
 # password can be set in TWINE_PASSWORD. https://twine.readthedocs.io/en/latest/
 
 .PHONY:package
 package:venv build
-	source $(VENV_NAME)/bin/activate && \
+	. $(VENV_NAME)/bin/activate && \
 	python3 -m twine upload -u __token__ --repository pypi dist/*
 # password can be set in TWINE_PASSWORD. https://twine.readthedocs.io/en/latest/
 
 .PHONY:tests
 tests:
-	source $(VENV_NAME)/bin/activate && \
+	. $(VENV_NAME)/bin/activate && \
     pip install --upgrade -r requirements.txt && \
 	pip install --upgrade -r requirements-test.txt && \
 	pytest tests
