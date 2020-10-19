@@ -13,19 +13,28 @@ from spark_pipeline_framework.transformers.framework_csv_loader import Framework
 
 
 class MyPipeline(FrameworkPipeline):
-    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
-        super(MyPipeline, self).__init__(parameters=parameters,
-                                         progress_logger=progress_logger)
-        self.transformers = self.create_steps([
-            FrameworkCsvLoader(
-                view="flights",
-                path_to_csv=parameters["flights_path"],
-                parameters=parameters,
-                progress_logger=progress_logger
-            ),
-            FeaturesCarriersV1(parameters=parameters, progress_logger=progress_logger).transformers,
-            FeaturesCarriersPythonV1(parameters=parameters, progress_logger=progress_logger).transformers
-        ])
+    def __init__(
+        self, parameters: Dict[str, Any], progress_logger: ProgressLogger
+    ):
+        super(MyPipeline, self).__init__(
+            parameters=parameters, progress_logger=progress_logger
+        )
+        self.transformers = self.create_steps(
+            [
+                FrameworkCsvLoader(
+                    view="flights",
+                    path_to_csv=parameters["flights_path"],
+                    parameters=parameters,
+                    progress_logger=progress_logger
+                ),
+                FeaturesCarriersV1(
+                    parameters=parameters, progress_logger=progress_logger
+                ).transformers,
+                FeaturesCarriersPythonV1(
+                    parameters=parameters, progress_logger=progress_logger
+                ).transformers
+            ]
+        )
 
 
 def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
@@ -36,17 +45,18 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     schema = StructType([])
 
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema)
+        spark_session.sparkContext.emptyRDD(), schema
+    )
 
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     # Act
-    parameters = {
-        "flights_path": flights_path
-    }
+    parameters = {"flights_path": flights_path}
 
     with ProgressLogger() as progress_logger:
-        pipeline: MyPipeline = MyPipeline(parameters=parameters, progress_logger=progress_logger)
+        pipeline: MyPipeline = MyPipeline(
+            parameters=parameters, progress_logger=progress_logger
+        )
         transformer = pipeline.fit(df)
         transformer.transform(df)
 

@@ -5,7 +5,6 @@ from shutil import rmtree
 from sys import exit
 from typing import Match, Optional, List
 
-
 # data_dir: Path = Path(__file__).parent.joinpath('./')
 #
 # PACKAGE_PARENT = '..'
@@ -23,7 +22,9 @@ class ProxyGenerator:
         def is_path_empty(directory: str):
             for dir_tuple in walk(directory):
                 if [
-                    file for file in dir_tuple[2] if not (file.startswith(('__', '.')) or file.endswith('.pyc'))
+                    file for file in dir_tuple[2] if not (
+                        file.startswith(('__', '.')) or file.endswith('.pyc')
+                    )
                 ]:
                     return False
             return True
@@ -46,26 +47,35 @@ class ProxyGenerator:
     def generate_proxies(folder: str) -> None:
         all_objects_in_path: List[str] = listdir(folder)
         non_special_objects: List[str] = [
-            file for file in all_objects_in_path if not file.startswith(('_', '.'))
+            file for file in all_objects_in_path
+            if not file.startswith(('_', '.'))
         ]
         # noinspection SpellCheckingInspection
         folders: List[str] = [
-            subfolder for subfolder in non_special_objects if
-            '.' not in subfolder and len(listdir(path.join(folder, subfolder))) != 0
+            subfolder for subfolder in non_special_objects
+            if '.' not in subfolder
+            and len(listdir(path.join(folder, subfolder))) != 0
         ]
         files: List[str] = [
-            file for file in all_objects_in_path if '.' in file and not file.startswith('_')
+            file for file in all_objects_in_path
+            if '.' in file and not file.startswith('_')
         ]
         transformer_file_indicators = ('.sql', '.csv', '.py')
         path_contains_transformer: bool = len(
-            [file for file in files if file.endswith(transformer_file_indicators)]) > 0
+            [
+                file for file in files
+                if file.endswith(transformer_file_indicators)
+            ]
+        ) > 0
 
         if path_contains_transformer:
             for file in files:
                 if file.endswith(transformer_file_indicators):
-                    search_result: Optional[Match[str]] = search(r'/library/', folder)
+                    search_result: Optional[Match[str]
+                                            ] = search(r'/library/', folder)
                     if search_result:
-                        transformer_reader_file_name = folder[search_result.end():].replace('/', '_')
+                        transformer_reader_file_name = folder[
+                            search_result.end():].replace('/', '_')
                         ProxyGenerator.write_transformer(
                             file_name=transformer_reader_file_name,
                             folder=folder
@@ -78,7 +88,9 @@ class ProxyGenerator:
 
     @staticmethod
     def write_transformer(file_name: str, folder: str) -> None:
-        transformer_reader_class_name = ''.join([s.title() for s in file_name.split('_')])
+        transformer_reader_class_name = ''.join(
+            [s.title() for s in file_name.split('_')]
+        )
         transformer_reader_string = f"""
 from typing import Optional, Dict, Any
 from spark_pipeline_framework.proxy_generator.proxy_base import ProxyBase

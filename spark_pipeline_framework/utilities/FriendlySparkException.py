@@ -10,7 +10,8 @@ class FriendlySparkException(Exception):
             # This way, we can avoid printing the summary all
             # the way along the exception "bubbling up"
             stage_name = kwargs['stage_name']
-            error_text = (stage_name or '') + ": " + FriendlySparkException.exception_summary()
+            error_text = (stage_name or ''
+                          ) + ": " + FriendlySparkException.exception_summary()
             Exception.__init__(self, error_text)
         except KeyError:
             pass
@@ -28,8 +29,15 @@ class FriendlySparkException(Exception):
         try:
             # Builds the "frame" around the text
             # Gets the information about the error and makes it BOLD and RED
-            info = list(filter(lambda t: len(t) and t[0] != '\t', msg.split('\n')[::-1]))
-            error = FriendlySparkException.errortext('Error\t: {}'.format(info[0]))
+            info = list(
+                filter(
+                    lambda t: len(t) and t[0] != '\t',
+                    msg.split('\n')[::-1]
+                )
+            )
+            error = FriendlySparkException.errortext(
+                'Error\t: {}'.format(info[0])
+            )
             # Figure out where the error happened - location (file/notebook), line and function
             idx = [t.strip()[:4] for t in info].index('File')
             where = [v.strip() for v in info[idx].strip().split(',')]
@@ -39,7 +47,9 @@ class FriendlySparkException(Exception):
                 new_msg = '\n{}'.format(error)
             # Otherwise, build the summary
             else:
-                new_msg = '\nLocation: {}\nLine\t: {}\nFunction: {}\n{}'.format(location, line, func, error)
+                new_msg = '\nLocation: {}\nLine\t: {}\nFunction: {}\n{}'.format(
+                    location, line, func, error
+                )
             return new_msg
         except Exception as e:
             # If we managed to raise an exception while trying to format the original exception...

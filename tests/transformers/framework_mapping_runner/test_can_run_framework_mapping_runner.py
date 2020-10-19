@@ -17,8 +17,7 @@ def test_can_run_framework_mapping_runner(spark_session: SparkSession) -> None:
         [
             (1, 'Qureshi', 'Imran'),
             (2, 'Vidal', 'Michael'),
-        ],
-        ['member_id', 'last_name', 'first_name']
+        ], ['member_id', 'last_name', 'first_name']
     ).createOrReplaceTempView("patients")
 
     source_df: DataFrame = spark_session.table("patients")
@@ -27,15 +26,21 @@ def test_can_run_framework_mapping_runner(spark_session: SparkSession) -> None:
     df.createOrReplaceTempView("members")
 
     # Act
-    mapping_function: Callable[[Dict[str, Any]], AutoMapperBase] = get_python_function_from_location(
-        location=str(data_dir.joinpath("library/features/carriers_mapping/v1")),
-        import_module_name='.mapping'
+    mapping_function: Callable[[Dict[str, Any]], AutoMapperBase] = (
+        get_python_function_from_location(
+            location=str(
+                data_dir.joinpath("library/features/carriers_mapping/v1")
+            ),
+            import_module_name='.mapping'
+        )
     )
     with ProgressLogger() as progress_logger:
         FrameworkMappingLoader(
             view="members",
             mapping_function=mapping_function,
-            parameters={"foo": "bar"},
+            parameters={
+                "foo": "bar"
+            },
             progress_logger=progress_logger
         ).transform(df)
 
@@ -46,11 +51,17 @@ def test_can_run_framework_mapping_runner(spark_session: SparkSession) -> None:
     result_df.show(truncate=False)
 
     assert len(result_df.columns) == 5
-    assert result_df.where("member_id == 1").select("dst1").collect()[0][0] == "src1"
-    assert result_df.where("member_id == 1").select("dst2").collect()[0][0][0] == "address1"
+    assert result_df.where("member_id == 1").select("dst1"
+                                                    ).collect()[0][0] == "src1"
+    assert result_df.where("member_id == 1"
+                           ).select("dst2").collect()[0][0][0] == "address1"
 
-    assert result_df.where("member_id == 1").select("dst3").collect()[0][0][0] == "address1"
-    assert result_df.where("member_id == 1").select("dst3").collect()[0][0][1] == "address2"
+    assert result_df.where("member_id == 1"
+                           ).select("dst3").collect()[0][0][0] == "address1"
+    assert result_df.where("member_id == 1"
+                           ).select("dst3").collect()[0][0][1] == "address2"
 
-    assert result_df.where("member_id == 1").select("dst4").collect()[0][0][0][0] == "usual"
-    assert result_df.where("member_id == 1").select("dst4").collect()[0][0][0][1] == "Qureshi"
+    assert result_df.where("member_id == 1"
+                           ).select("dst4").collect()[0][0][0][0] == "usual"
+    assert result_df.where("member_id == 1"
+                           ).select("dst4").collect()[0][0][0][1] == "Qureshi"

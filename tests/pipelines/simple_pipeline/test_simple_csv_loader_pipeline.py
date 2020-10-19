@@ -19,7 +19,8 @@ def test_simple_csv_loader_pipeline(spark_session: SparkSession) -> None:
     schema = StructType([])
 
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema)
+        spark_session.sparkContext.emptyRDD(), schema
+    )
 
     # noinspection SqlDialectInspection,SqlNoDataSourceInspection
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
@@ -29,10 +30,7 @@ def test_simple_csv_loader_pipeline(spark_session: SparkSession) -> None:
     # })
 
     stages: List[Union[Estimator, Transformer]] = [
-        FrameworkCsvLoader(
-            view="flights",
-            path_to_csv=flights_path
-        ),
+        FrameworkCsvLoader(view="flights", path_to_csv=flights_path),
         SQLTransformer(statement="SELECT * FROM flights"),
     ]
 

@@ -16,15 +16,18 @@ from spark_pipeline_framework.transformers.framework_transformer import Framewor
 class FrameworkParquetExporter(FrameworkTransformer):
     # noinspection PyUnusedLocal
     @keyword_only
-    def __init__(self,
-                 file_path: Union[str, Path],
-                 view: str = None,
-                 name: str = None,
-                 parameters: Dict[str, Any] = None,
-                 progress_logger: ProgressLogger = None,
-                 limit: int = -1
-                 ):
-        super().__init__(name=name, parameters=parameters, progress_logger=progress_logger)
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        view: str = None,
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: ProgressLogger = None,
+        limit: int = -1
+    ):
+        super().__init__(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
 
         assert isinstance(file_path, Path) or isinstance(file_path, str)
 
@@ -46,16 +49,19 @@ class FrameworkParquetExporter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
     @keyword_only
-    def setParams(self,
-                  file_path: Union[str, Path],
-                  view: str = None,
-                  name: str = None,
-                  parameters: Dict[str, Any] = None,
-                  progress_logger: ProgressLogger = None,
-                  limit: int = -1
-                  ):
+    def setParams(
+        self,
+        file_path: Union[str, Path],
+        view: str = None,
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: ProgressLogger = None,
+        limit: int = -1
+    ):
         kwargs = self._input_kwargs  # type: ignore
-        super().setParams(name=name, parameters=parameters, progress_logger=progress_logger)
+        super().setParams(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
@@ -65,7 +71,10 @@ class FrameworkParquetExporter(FrameworkTransformer):
         progress_logger: ProgressLogger = self.getProgressLogger()
         # limit: int = self.getLimit()
 
-        with ProgressLogMetric(name=f"{name or view}_table_loader", progress_logger=progress_logger):
+        with ProgressLogMetric(
+            name=f"{name or view}_table_loader",
+            progress_logger=progress_logger
+        ):
             try:
                 if view:
                     df.sql_ctx.table(view).write.parquet(path=str(path))

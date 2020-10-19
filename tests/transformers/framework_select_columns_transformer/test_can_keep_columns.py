@@ -21,13 +21,17 @@ def test_can_keep_columns(spark_session: SparkSession):
     schema = StructType([])
 
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema)
+        spark_session.sparkContext.emptyRDD(), schema
+    )
 
     # Act
     FrameworkCsvLoader(
-        view="my_view", path_to_csv=test_file_path, delimiter=",").transform(df)
+        view="my_view", path_to_csv=test_file_path, delimiter=","
+    ).transform(df)
 
-    FrameworkSelectColumnsTransformer(view="my_view", keep_columns=['Column2']).transform(df)
+    FrameworkSelectColumnsTransformer(
+        view="my_view", keep_columns=['Column2']
+    ).transform(df)
 
     # noinspection SqlDialectInspection
     result: DataFrame = spark_session.sql("SELECT * FROM my_view")

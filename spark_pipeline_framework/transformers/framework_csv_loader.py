@@ -20,21 +20,24 @@ class FrameworkCsvLoader(FrameworkTransformer):
     # keyword_only: A decorator that forces keyword arguments in the wrapped method
     #     and saves actual input keyword arguments in `_input_kwargs`.
     @keyword_only
-    def __init__(self,
-                 view: str,
-                 path_to_csv: Union[str, List[str], Path],
-                 delimiter: str = ",",
-                 limit: int = -1,
-                 has_header: bool = True,
-                 infer_schema: bool = False,
-                 cache_table: bool = True,
-                 schema: StructType = None,
-                 create_file_path: bool = False,
-                 name: str = None,
-                 parameters: Dict[str, Any] = None,
-                 progress_logger: Optional[ProgressLogger] = None
-                 ) -> None:
-        super().__init__(name=name, parameters=parameters, progress_logger=progress_logger)
+    def __init__(
+        self,
+        view: str,
+        path_to_csv: Union[str, List[str], Path],
+        delimiter: str = ",",
+        limit: int = -1,
+        has_header: bool = True,
+        infer_schema: bool = False,
+        cache_table: bool = True,
+        schema: StructType = None,
+        create_file_path: bool = False,
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: Optional[ProgressLogger] = None
+    ) -> None:
+        super().__init__(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
         self.logger: Logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
@@ -74,22 +77,25 @@ class FrameworkCsvLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyUnusedLocal
     @keyword_only
-    def setParams(self,
-                  view: str,
-                  path_to_csv: Union[str, List[str], Path],
-                  delimiter: str = ",",
-                  limit: int = -1,
-                  has_header: bool = True,
-                  infer_schema: bool = False,
-                  cache_table: bool = True,
-                  schema: StructType = None,
-                  create_file_path: bool = False,
-                  name: str = None,
-                  parameters: Dict[str, Any] = None,
-                  progress_logger: Optional[ProgressLogger] = None
-                  ):
+    def setParams(
+        self,
+        view: str,
+        path_to_csv: Union[str, List[str], Path],
+        delimiter: str = ",",
+        limit: int = -1,
+        has_header: bool = True,
+        infer_schema: bool = False,
+        cache_table: bool = True,
+        schema: StructType = None,
+        create_file_path: bool = False,
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: Optional[ProgressLogger] = None
+    ):
         kwargs = self._input_kwargs  # type: ignore
-        super().setParams(name=name, parameters=parameters, progress_logger=progress_logger)
+        super().setParams(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
@@ -113,18 +119,28 @@ class FrameworkCsvLoader(FrameworkTransformer):
             else:
                 data_dir = Path(__file__).parent.parent.joinpath('./')
                 if isinstance(path_to_csv, list):
-                    absolute_paths_to_csv = [f"file://{data_dir.joinpath(path)}" for path in path_to_csv]
+                    absolute_paths_to_csv = [
+                        f"file://{data_dir.joinpath(path)}"
+                        for path in path_to_csv
+                    ]
                 else:
-                    absolute_paths_to_csv = [f"file://{data_dir.joinpath(path_to_csv)}"]
+                    absolute_paths_to_csv = [
+                        f"file://{data_dir.joinpath(path_to_csv)}"
+                    ]
         elif isinstance(path_to_csv, Path):
             data_dir = Path(__file__).parent.parent.joinpath('./')
-            absolute_paths_to_csv = [f"file://{data_dir.joinpath(path_to_csv)}"]
+            absolute_paths_to_csv = [
+                f"file://{data_dir.joinpath(path_to_csv)}"
+            ]
         else:
             data_dir = Path(__file__).parent.parent.joinpath('./')
-            absolute_paths_to_csv = [f"file://{data_dir.joinpath(path)}" for path in path_to_csv]
+            absolute_paths_to_csv = [
+                f"file://{data_dir.joinpath(path)}" for path in path_to_csv
+            ]
 
         progress_logger and progress_logger.write_to_log(
-            f"Loading csv file for view {view}: {absolute_paths_to_csv}, infer_schema: {infer_schema}")
+            f"Loading csv file for view {view}: {absolute_paths_to_csv}, infer_schema: {infer_schema}"
+        )
 
         df_reader: DataFrameReader = df.sql_ctx.read
 
@@ -159,7 +175,8 @@ class FrameworkCsvLoader(FrameworkTransformer):
 
         progress_logger and progress_logger.write_to_log(
             f"Finished Loading csv file for View[{view}]: {absolute_paths_to_csv}, "
-            + f"infer_schema: {infer_schema}, delimiter: {delimiter}")
+            + f"infer_schema: {infer_schema}, delimiter: {delimiter}"
+        )
 
         return df
 

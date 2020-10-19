@@ -16,18 +16,19 @@ from spark_pipeline_framework.transformers.framework_transformer import Framewor
 class FrameworkParquetLoader(FrameworkTransformer):
     # noinspection PyUnusedLocal
     @keyword_only
-    def __init__(self,
-                 view: str,
-                 file_path: Union[str, List[str], Path],
-                 name: str = None,
-                 parameters: Dict[str, Any] = None,
-                 progress_logger: ProgressLogger = None,
-                 merge_schema: bool = False,
-                 limit: int = -1
-                 ):
-        super(FrameworkParquetLoader, self).__init__(name=name,
-                                                     parameters=parameters,
-                                                     progress_logger=progress_logger)
+    def __init__(
+        self,
+        view: str,
+        file_path: Union[str, List[str], Path],
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: ProgressLogger = None,
+        merge_schema: bool = False,
+        limit: int = -1
+    ):
+        super(FrameworkParquetLoader, self).__init__(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
 
         self.logger = get_logger(__name__)
 
@@ -48,17 +49,20 @@ class FrameworkParquetLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
     @keyword_only
-    def setParams(self,
-                  view: str,
-                  file_path: Union[str, List[str], Path],
-                  name: str = None,
-                  parameters: Dict[str, Any] = None,
-                  progress_logger: ProgressLogger = None,
-                  merge_schema: bool = False,
-                  limit: int = -1
-                  ):
+    def setParams(
+        self,
+        view: str,
+        file_path: Union[str, List[str], Path],
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: ProgressLogger = None,
+        merge_schema: bool = False,
+        limit: int = -1
+    ):
         kwargs = self._input_kwargs  # type: ignore
-        super().setParams(name=name, parameters=parameters, progress_logger=progress_logger)
+        super().setParams(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
@@ -69,12 +73,19 @@ class FrameworkParquetLoader(FrameworkTransformer):
         merge_schema: bool = self.getMergeSchema()
         limit: int = self.getLimit()
 
-        with ProgressLogMetric(name=f"{name or view}_table_loader", progress_logger=progress_logger):
+        with ProgressLogMetric(
+            name=f"{name or view}_table_loader",
+            progress_logger=progress_logger
+        ):
             try:
                 if merge_schema is True:
-                    final_df = df.sql_ctx.read.option("mergeSchema", "true").format("parquet").load(path=str(path))
+                    final_df = df.sql_ctx.read.option(
+                        "mergeSchema", "true"
+                    ).format("parquet").load(path=str(path))
                 else:
-                    final_df = df.sql_ctx.read.format("parquet").load(path=str(path))
+                    final_df = df.sql_ctx.read.format("parquet").load(
+                        path=str(path)
+                    )
 
                 if limit and limit > 0:
                     final_df = final_df.limit(limit)
@@ -82,7 +93,9 @@ class FrameworkParquetLoader(FrameworkTransformer):
                 # store new data frame in the view
                 final_df.createOrReplaceTempView(view)
             except AnalysisException as e:
-                self.logger.error(f"File load failed. Location: {path} may be empty")
+                self.logger.error(
+                    f"File load failed. Location: {path} may be empty"
+                )
                 raise e
         return df
 

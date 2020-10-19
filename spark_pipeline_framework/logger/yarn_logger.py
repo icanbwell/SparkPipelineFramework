@@ -14,7 +14,8 @@ def get_logger(name: str, level=INFO) -> Logger:
         stream_handler.setLevel(level=level)
         # noinspection SpellCheckingInspection
         formatter: Formatter = Formatter(
-            '%(asctime)s.%(msecs)03d %(levelname)s %(module)s %(lineno)d - %(funcName)s: %(message)s')
+            '%(asctime)s.%(msecs)03d %(levelname)s %(module)s %(lineno)d - %(funcName)s: %(message)s'
+        )
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
     return logger

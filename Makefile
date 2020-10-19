@@ -67,9 +67,30 @@ tests:
 	pip install --upgrade -r requirements-test.txt && \
 	pytest tests
 
+.PHONY:clean-pre-commit
+clean-pre-commit:
+	pre-commit clean
+
+.PHONY:setup-pre-commit
+setup-pre-commit:
+	pre-commit install
+
+.PHONY:run-pre-commit
+run-pre-commit:
+	pre-commit run --all-files
+
 .PHONY:init
 init: installspark up devsetup proxies tests
 
 .PHONY:proxies
 proxies:
 	python3 spark_pipeline_framework/proxy_generator/generate_proxies.py
+
+.PHONY:continuous_integration
+continuous_integration:
+	pip install --upgrade pip && \
+    pip install --upgrade -r requirements.txt && \
+    pip install --upgrade -r requirements-test.txt && \
+    python setup.py install && \
+    pre-commit run --all-files && \
+    pytest tests

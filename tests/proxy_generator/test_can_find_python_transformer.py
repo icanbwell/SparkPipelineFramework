@@ -18,7 +18,9 @@ def test_can_find_python_transformer(spark_session: SparkSession):
     # Act
     with ProgressLogger() as progress_logger:
         result: Transformer = get_python_transformer_from_location(
-            location=str(data_dir.joinpath("library/features/carriers_python/v1")),
+            location=str(
+                data_dir.joinpath("library/features/carriers_python/v1")
+            ),
             import_module_name='.calculate',
             parameters={"foo": "bar"},
             progress_logger=progress_logger

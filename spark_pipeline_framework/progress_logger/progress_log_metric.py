@@ -4,9 +4,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 
 
 class ProgressLogMetric:
-    def __init__(self,
-                 name: str,
-                 progress_logger: ProgressLogger):
+    def __init__(self, name: str, progress_logger: ProgressLogger):
         self.progress_logger: ProgressLogger = progress_logger
         self.name: str = name
         self.start_time: datetime = datetime.now()
@@ -31,5 +29,6 @@ class ProgressLogMetric:
         """
         if self.name and self.progress_logger:
             end_time: datetime = datetime.now()
-            time_diff_in_minutes: float = (end_time - self.start_time).total_seconds() // 60
+            time_diff_in_minutes: float = (end_time - self.start_time
+                                           ).total_seconds() // 60
             self.progress_logger.log_metric(self.name, time_diff_in_minutes)
