@@ -13,8 +13,9 @@ def test_can_run_python_transformer(spark_session: SparkSession):
     # Act
     with ProgressLogger() as progress_logger:
         result: Transformer = FeaturesCarriersPythonV1(
-            parameters={"foo": "bar"},
-            progress_logger=progress_logger
+            parameters={
+                "foo": "bar"
+            }, progress_logger=progress_logger
         ).transformers[0]
 
     # Assert

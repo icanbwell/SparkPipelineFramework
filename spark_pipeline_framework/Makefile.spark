@@ -31,10 +31,11 @@ brew:
 .PHONY:wget
 wget:
 	brew install wget
+	brew install curl
 
 .PHONY:download_spark
 download_spark:
-	sudo wget -c http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz -O ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
+	sudo curl -o ${TMPDIR}/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz http://archive.apache.org/dist/spark/spark-$(SPARK_VER)/spark-$(SPARK_VER)-bin-hadoop$(HADOOP_VER).tgz && \
 	sudo mkdir -p /usr/local/opt/spark && \
 	sudo rm -r /usr/local/opt/spark/ && \
 	sudo mkdir -p /usr/local/opt/spark && \

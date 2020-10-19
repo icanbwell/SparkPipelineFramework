@@ -17,7 +17,9 @@ class ProgressLogger:
     def log_metric(self, name: str, time_diff_in_minutes: float) -> None:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
 
-    def log_artifact(self, key: str, contents: str, folder_path: str = None) -> None:
+    def log_artifact(
+        self, key: str, contents: str, folder_path: str = None
+    ) -> None:
         try:
             with TemporaryDirectory() as temp_dir_name:
                 data_dir: Path = Path(temp_dir_name)
@@ -27,7 +29,9 @@ class ProgressLogger:
                     self.logger.info(f"Wrote sql to {file_path}")
 
         except Exception as e:
-            self.logger.warning(f"Error in log_artifact writing to mlflow: {str(e)}")
+            self.logger.warning(
+                f"Error in log_artifact writing to mlflow: {str(e)}"
+            )
 
     def write_to_log(self, name: str, message: str = "") -> bool:
         self.logger.info(name + ": " + str(message))

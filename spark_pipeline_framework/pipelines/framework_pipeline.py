@@ -11,10 +11,9 @@ from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
 class FrameworkPipeline(Transformer):
-    def __init__(self,
-                 parameters: Dict[str, Any],
-                 progress_logger: ProgressLogger
-                 ):
+    def __init__(
+        self, parameters: Dict[str, Any], progress_logger: ProgressLogger
+    ):
         super(FrameworkPipeline, self).__init__()
         self.transformers: List[Transformer] = []
         self.parameters: Dict[str, Any] = parameters
@@ -35,10 +34,15 @@ class FrameworkPipeline(Transformer):
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
                     stage_name = transformer.getName()
-                    logger.info(f"---- Running transformer {stage_name}  ({i} of {count_of_transformers}) ----")
+                    logger.info(
+                        f"---- Running transformer {stage_name}  ({i} of {count_of_transformers}) ----"
+                    )
                     # self.spark_session.sparkContext.setJobDescription(stage_name)
                     # print_memory_stats(sc(df))
-                with ProgressLogMetric(progress_logger=self.progress_logger, name=stage_name or "unknown"):
+                with ProgressLogMetric(
+                    progress_logger=self.progress_logger,
+                    name=stage_name or "unknown"
+                ):
                     df = transformer.transform(dataset=df)
             except Exception as e:
                 logger.warning("======== stage threw exception =======")
@@ -51,5 +55,7 @@ class FrameworkPipeline(Transformer):
         return df
 
     # noinspection PyMethodMayBeStatic
-    def create_steps(self, my_list: List[Union[Transformer, List[Transformer]]]) -> List[Transformer]:
+    def create_steps(
+        self, my_list: List[Union[Transformer, List[Transformer]]]
+    ) -> List[Transformer]:
         return create_steps(my_list)

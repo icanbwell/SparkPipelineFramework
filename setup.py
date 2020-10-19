@@ -1,4 +1,6 @@
 # noinspection Mypy
+from typing import List, Any
+
 from setuptools import setup, find_packages
 from os import path, getcwd
 
@@ -17,7 +19,7 @@ except IOError:
     raise
 
 
-def fix_setuptools():
+def fix_setuptools() -> None:
     """Work around bugs in setuptools.
 
     Some versions of setuptools are broken and raise SandboxViolation for normal
@@ -25,11 +27,11 @@ def fix_setuptools():
     issues.
     """
     try:
-        from setuptools.sandbox import DirectorySandbox  # type: ignore
+        from setuptools.sandbox import DirectorySandbox
 
         # noinspection PyUnusedLocal
-        def violation(operation, *args, **_):
-            print("SandboxViolation: %s" % (args,))
+        def violation(operation: Any, *args: Any, **_: Any) -> None:
+            print("SandboxViolation: %s" % (args, ))
 
         DirectorySandbox._violation = violation
     except ImportError:
@@ -40,14 +42,18 @@ def fix_setuptools():
 fix_setuptools()
 
 
-def parse_requirements(file):
+def parse_requirements(file: str) -> List[str]:
     with open(file, "r") as fs:
-        return [r for r in fs.read().splitlines() if
-                (len(r.strip()) > 0 and not r.strip().startswith("#") and not r.strip().startswith("--"))]
+        return [
+            r for r in fs.read().splitlines() if (
+                len(r.strip()) > 0 and not r.strip().startswith("#")
+                and not r.strip().startswith("--")
+            )
+        ]
 
 
-requirements = parse_requirements('requirements.txt')
-test_requirements = parse_requirements('requirements-test.txt')
+requirements: List[str] = parse_requirements('requirements.txt')
+test_requirements: List[str] = parse_requirements('requirements-test.txt')
 
 # classifiers list is here: https://pypi.org/classifiers/
 
@@ -70,7 +76,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6,<3.7',
+    python_requires='>=3.6',
     dependency_links=[],
     include_package_data=True,
     zip_safe=False,

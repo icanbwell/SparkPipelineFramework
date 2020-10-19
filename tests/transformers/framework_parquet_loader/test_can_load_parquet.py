@@ -24,18 +24,16 @@ def test_can_load_parquet(spark_session: SparkSession):
     schema = StructType([])
 
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema)
+        spark_session.sparkContext.emptyRDD(), schema
+    )
 
     parquet_file_path: str = ParquetHelper.create_parquet_from_csv(
-        spark_session=spark_session,
-        file_path=test_file_path
+        spark_session=spark_session, file_path=test_file_path
     )
 
     # Act
-    FrameworkParquetLoader(
-        view="my_view",
-        file_path=parquet_file_path
-    ).transform(df)
+    FrameworkParquetLoader(view="my_view",
+                           file_path=parquet_file_path).transform(df)
 
     # noinspection SqlDialectInspection
     result: DataFrame = spark_session.sql("SELECT * FROM my_view")

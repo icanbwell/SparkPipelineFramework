@@ -12,9 +12,13 @@ def test_can_find_python_function(spark_session: SparkSession):
     data_dir: Path = Path(__file__).parent.joinpath('./')
 
     # Act
-    result_function: Callable[[Dict[str, Any]], AutoMapperBase] = get_python_function_from_location(
-        location=str(data_dir.joinpath("library/features/carriers_mapping/v1")),
-        import_module_name='.mapping'
+    result_function: Callable[[Dict[str, Any]], AutoMapperBase] = (
+        get_python_function_from_location(
+            location=str(
+                data_dir.joinpath("library/features/carriers_mapping/v1")
+            ),
+            import_module_name='.mapping'
+        )
     )
 
     result: AutoMapperBase = result_function({"view": "bar"})

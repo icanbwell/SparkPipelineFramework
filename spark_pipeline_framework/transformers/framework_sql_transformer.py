@@ -14,16 +14,19 @@ from spark_pipeline_framework.transformers.framework_transformer import Framewor
 class FrameworkSqlTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
     @keyword_only
-    def __init__(self,
-                 sql: str = None,
-                 view: str = None,
-                 log_sql: bool = False,
-                 name: str = None,
-                 parameters: Dict[str, Any] = None,
-                 progress_logger: Optional[ProgressLogger] = None,
-                 verify_count_remains_same: bool = False
-                 ) -> None:
-        super().__init__(name=name, parameters=parameters, progress_logger=progress_logger)
+    def __init__(
+        self,
+        sql: str = None,
+        view: str = None,
+        log_sql: bool = False,
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: Optional[ProgressLogger] = None,
+        verify_count_remains_same: bool = False
+    ) -> None:
+        super().__init__(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
         self.logger = get_logger(__name__)
 
         if not sql:
@@ -41,7 +44,9 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         self.log_sql: Param = Param(self, "log_sql", "")
         self._setDefault(log_sql=False)  # type: ignore
 
-        self.verify_count_remains_same: Param = Param(self, "verify_count_remains_same", "")
+        self.verify_count_remains_same: Param = Param(
+            self, "verify_count_remains_same", ""
+        )
         self._setDefault(verify_count_remains_same=None)  # type: ignore
 
         kwargs = self._input_kwargs  # type: ignore
@@ -49,17 +54,20 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
     # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
     @keyword_only
-    def setParams(self,
-                  sql: str = None,
-                  view: str = None,
-                  log_sql: bool = False,
-                  name: str = None,
-                  parameters: Dict[str, Any] = None,
-                  progress_logger: Optional[ProgressLogger] = None,
-                  verify_count_remains_same: bool = False
-                  ):
+    def setParams(
+        self,
+        sql: str = None,
+        view: str = None,
+        log_sql: bool = False,
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: Optional[ProgressLogger] = None,
+        verify_count_remains_same: bool = False
+    ):
         kwargs = self._input_kwargs  # type: ignore
-        super().setParams(name=name, parameters=parameters, progress_logger=progress_logger)
+        super().setParams(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
@@ -71,7 +79,9 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         with ProgressLogMetric(name=name, progress_logger=progress_logger):
             if progress_logger and name:
                 # mlflow opens .txt files inline so we use that extension
-                progress_logger.log_artifact(key=f"{name}.sql.txt", contents=sql_text)
+                progress_logger.log_artifact(
+                    key=f"{name}.sql.txt", contents=sql_text
+                )
                 progress_logger.write_to_log(name=name, message=sql_text)
             try:
                 df = df.sql_ctx.sql(sql_text)
@@ -82,7 +92,8 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
             df.createOrReplaceTempView(view)
             self.logger.info(
-                f"GenericSqlTransformer [{name}] finished running SQL")
+                f"GenericSqlTransformer [{name}] finished running SQL"
+            )
 
         return df
 
@@ -120,4 +131,6 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
-        return self.getOrDefault(self.verify_count_remains_same)  # type: ignore
+        return self.getOrDefault(  # type: ignore
+            self.verify_count_remains_same
+        )

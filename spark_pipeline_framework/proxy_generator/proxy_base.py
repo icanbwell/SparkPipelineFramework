@@ -18,12 +18,13 @@ class ProxyBase:
     feature: Optional[Transformer] = None
     location: str = ""
 
-    def __init__(self,
-                 parameters: Dict[str, Any],
-                 location: Union[str, Path],
-                 progress_logger: Optional[ProgressLogger] = None,
-                 verify_count_remains_same: bool = False
-                 ) -> None:
+    def __init__(
+        self,
+        parameters: Dict[str, Any],
+        location: Union[str, Path],
+        progress_logger: Optional[ProgressLogger] = None,
+        verify_count_remains_same: bool = False
+    ) -> None:
         self.parameters: Dict[str, Any] = parameters
         self.progress_logger: Optional[ProgressLogger] = progress_logger
         self.verify_count_remains_same: bool = verify_count_remains_same
@@ -33,12 +34,14 @@ class ProxyBase:
         # Iterate over files to create transformers
         files: List[str] = listdir(self.location)
         index_of_module: int = self.location.rfind("/library/")
-        module_name: str = self.location[index_of_module + 1:].replace("/", ".")
+        module_name: str = self.location[index_of_module +
+                                         1:].replace("/", ".")
 
         for file in files:
             if file == 'my_view.sql':
-                load_sql: str = self.read_file_as_string(path.join(
-                    self.location, file)).format(parameters=parameters)
+                load_sql: str = self.read_file_as_string(
+                    path.join(self.location, file)
+                ).format(parameters=parameters)
                 self.loader = FrameworkSqlTransformer(
                     sql=load_sql,
                     name=module_name,
@@ -47,16 +50,21 @@ class ProxyBase:
                 )
             elif file.endswith('.csv') and self.loader is None:
                 file_name = file.replace('.csv', '')
-                self.loader = FrameworkCsvLoader(view=file_name, path_to_csv=path.join(self.location, file))
+                self.loader = FrameworkCsvLoader(
+                    view=file_name, path_to_csv=path.join(self.location, file)
+                )
             elif file == 'convert.sql':
                 convert_sql: str = self.read_file_as_string(path.join(self.location, file)) \
                     .format(parameters=parameters)
                 self.converter = FrameworkSqlTransformer(
-                    sql=convert_sql, name=module_name,
+                    sql=convert_sql,
+                    name=module_name,
                     progress_logger=progress_logger,
                     log_sql=parameters.get("debug_log_sql", False)
                 )
-            elif file.endswith('.sql') and self.loader is None and self.converter is None:
+            elif file.endswith(
+                '.sql'
+            ) and self.loader is None and self.converter is None:
                 feature_sql: str = self.read_file_as_string(path.join(self.location, file)) \
                     .format(parameters=parameters)
                 self.feature = FrameworkSqlTransformer(
@@ -80,7 +88,11 @@ class ProxyBase:
 
     @property
     def transformers(self) -> List[Transformer]:
-        return [transformer for transformer in [self.loader, self.converter, self.feature] if transformer is not None]
+        return [
+            transformer
+            for transformer in [self.loader, self.converter, self.feature]
+            if transformer is not None
+        ]
 
     @transformers.setter
     def transformers(self, value):
@@ -101,8 +113,8 @@ class ProxyBase:
         return FrameworkMappingLoader(
             view=self.parameters["view"],
             mapping_function=get_python_function_from_location(
-                location=self.location,
-                import_module_name=import_module_name),
+                location=self.location, import_module_name=import_module_name
+            ),
             parameters=self.parameters,
             progress_logger=self.progress_logger
         )

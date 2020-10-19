@@ -9,23 +9,12 @@ def mapping(parameters: Dict[str, Any]) -> AutoMapperBase:
     # example of a variable
     client_address_variable: str = "address1"
     mapper = AutoMapper(
-        view=parameters["view"],
-        source_view="patients",
-        keys=["member_id"]
+        view=parameters["view"], source_view="patients", keys=["member_id"]
     ).columns(
         dst1="src1",
-        dst2=A.list(
-            client_address_variable
-        ),
-        dst3=A.list(
-            [client_address_variable, "address2"]
-        ),
-        dst4=A.list(
-            A.complex(
-                use="usual",
-                family=A.column("last_name")
-            )
-        )
+        dst2=A.list(client_address_variable),
+        dst3=A.list([client_address_variable, "address2"]),
+        dst4=A.list(A.complex(use="usual", family=A.column("last_name")))
     )
 
     company_name: str = "Microsoft"
@@ -33,10 +22,7 @@ def mapping(parameters: Dict[str, Any]) -> AutoMapperBase:
     if company_name == "Microsoft":
         mapper = mapper.columns(
             dst4=A.list(
-                value=A.complex(
-                    use="usual",
-                    family=A.column("last_name")
-                )
+                value=A.complex(use="usual", family=A.column("last_name"))
             )
         )
 

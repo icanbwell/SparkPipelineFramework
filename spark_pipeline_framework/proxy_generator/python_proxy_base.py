@@ -9,15 +9,18 @@ from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
 
-class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable):
+class PythonProxyBase(
+    Transformer, DefaultParamsReadable, DefaultParamsWritable
+):
     # noinspection PyUnusedLocal
     @keyword_only
-    def __init__(self,
-                 name: str = None,
-                 parameters: Optional[Dict[str, Any]] = None,
-                 progress_logger: Optional[ProgressLogger] = None,
-                 verify_count_remains_same: bool = False
-                 ) -> None:
+    def __init__(
+        self,
+        name: str = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
+        verify_count_remains_same: bool = False
+    ) -> None:
         super(PythonProxyBase, self).__init__()
 
         self.name: Param = Param(self, "name", "")
@@ -29,7 +32,9 @@ class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable)
         self.progress_logger: Param = Param(self, "progress_logger", "")
         self._setDefault(progress_logger=None)  # type: ignore
 
-        self.verify_count_remains_same: Param = Param(self, "verify_count_remains_same", "")
+        self.verify_count_remains_same: Param = Param(
+            self, "verify_count_remains_same", ""
+        )
         self._setDefault(verify_count_remains_same=None)  # type: ignore
 
         kwargs = self._input_kwargs  # type: ignore
@@ -37,11 +42,13 @@ class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable)
 
     # noinspection PyPep8Naming,PyUnusedLocal
     @keyword_only
-    def setParams(self,
-                  name: str = None,
-                  parameters: Optional[Dict[str, Any]] = None,
-                  progress_logger: Optional[ProgressLogger] = None,
-                  verify_count_remains_same: bool = False):
+    def setParams(
+        self,
+        name: str = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
+        verify_count_remains_same: bool = False
+    ):
         kwargs = self._input_kwargs  # type: ignore
         return self._set(**kwargs)  # type: ignore
 
@@ -55,9 +62,12 @@ class PythonProxyBase(Transformer, DefaultParamsReadable, DefaultParamsWritable)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getOrDefault(self.name or self.__class__.__name__)  # type: ignore
+        return self.getOrDefault(  # type: ignore
+            self.name or self.__class__.__name__
+        )
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+        # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+
     def setProgressLogger(self, value) -> 'PythonProxyBase':
         self._paramMap[self.progress_logger] = value  # type: ignore
         return self

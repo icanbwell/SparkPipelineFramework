@@ -9,13 +9,16 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
 
-class FrameworkTransformer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
+class FrameworkTransformer(
+    Transformer, DefaultParamsReadable, DefaultParamsWritable
+):
     # noinspection PyUnusedLocal
-    def __init__(self,
-                 name: str = None,
-                 parameters: Dict[str, Any] = None,
-                 progress_logger: ProgressLogger = None
-                 ):
+    def __init__(
+        self,
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: ProgressLogger = None
+    ):
         super(FrameworkTransformer, self).__init__()
 
         self.logger = get_logger(__name__)
@@ -30,11 +33,12 @@ class FrameworkTransformer(Transformer, DefaultParamsReadable, DefaultParamsWrit
         self._setDefault(parameters=None)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    def setParams(self,
-                  name: str = None,
-                  parameters: Dict[str, Any] = None,
-                  progress_logger: ProgressLogger = None
-                  ):
+    def setParams(
+        self,
+        name: str = None,
+        parameters: Dict[str, Any] = None,
+        progress_logger: ProgressLogger = None
+    ):
         kwargs = self._input_kwargs  # type: ignore
         return self._set(**kwargs)  # type: ignore
 

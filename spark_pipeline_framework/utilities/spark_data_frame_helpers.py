@@ -5,11 +5,12 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
 
 
-def create_view_from_dictionary(view: str,
-                                data: List[Dict[str, Any]],
-                                spark_session: SparkSession,
-                                schema=None
-                                ) -> DataFrame:
+def create_view_from_dictionary(
+    view: str,
+    data: List[Dict[str, Any]],
+    spark_session: SparkSession,
+    schema=None
+) -> DataFrame:
     df = spark_session.createDataFrame(data=data, schema=schema)
     df.createOrReplaceTempView(name=view)
     return df
@@ -19,16 +20,18 @@ def create_empty_dataframe(spark_session: SparkSession) -> DataFrame:
     schema = StructType([])
 
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema)
+        spark_session.sparkContext.emptyRDD(), schema
+    )
 
     return df
 
 
 def create_dataframe_from_json(
-        spark_session: SparkSession,
-        schema: StructType,
-        json: str) -> DataFrame:
-    return spark_session.read.schema(schema).json(spark_session.sparkContext.parallelize([json]))
+    spark_session: SparkSession, schema: StructType, json: str
+) -> DataFrame:
+    return spark_session.read.schema(schema).json(
+        spark_session.sparkContext.parallelize([json])
+    )
 
 
 def spark_is_data_frame_empty(df: DataFrame) -> bool:
@@ -58,7 +61,9 @@ def sc(df: DataFrame) -> SparkContext:
     return df._sc
 
 
-def add_metadata_to_column(df: DataFrame, column: str, metadata: Any) -> DataFrame:
+def add_metadata_to_column(
+    df: DataFrame, column: str, metadata: Any
+) -> DataFrame:
     return df.withColumn(column, df[column].alias(column, metadata=metadata))
 
 

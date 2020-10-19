@@ -19,11 +19,13 @@ def test_can_load_simple_csv(spark_session: SparkSession):
     schema = StructType([])
 
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema)
+        spark_session.sparkContext.emptyRDD(), schema
+    )
 
     # Act
     FrameworkCsvLoader(
-        view="my_view", path_to_csv=test_file_path, delimiter=",").transform(df)
+        view="my_view", path_to_csv=test_file_path, delimiter=","
+    ).transform(df)
 
     # noinspection SqlDialectInspection
     result: DataFrame = spark_session.sql("SELECT * FROM my_view")

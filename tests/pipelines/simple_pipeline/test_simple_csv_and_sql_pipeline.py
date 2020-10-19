@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any, Dict
 
 from pyspark.ml.pipeline import Pipeline
 from pyspark.sql.dataframe import DataFrame
@@ -7,7 +8,6 @@ from pyspark.sql.types import StructType
 
 from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
-from spark_pipeline_framework.utilities.attr_dict import AttrDict
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
@@ -19,21 +19,20 @@ def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
     schema = StructType([])
 
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema)
+        spark_session.sparkContext.emptyRDD(), schema
+    )
 
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     # Act
-    parameters = AttrDict({
-    })
+    parameters: Dict[str, Any] = {}
 
-    stages = create_steps([
-        FrameworkCsvLoader(
-            view="flights",
-            path_to_csv=flights_path
-        ),
-        FeaturesCarriersV1(parameters=parameters).transformers,
-    ])
+    stages = create_steps(
+        [
+            FrameworkCsvLoader(view="flights", path_to_csv=flights_path),
+            FeaturesCarriersV1(parameters=parameters).transformers,
+        ]
+    )
 
     pipeline: Pipeline = Pipeline(stages=stages)
     transformer = pipeline.fit(df)

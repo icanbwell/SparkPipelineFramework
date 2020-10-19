@@ -25,24 +25,22 @@ def test_can_save_parquet(spark_session: SparkSession):
     schema = StructType([])
 
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema)
+        spark_session.sparkContext.emptyRDD(), schema
+    )
 
     FrameworkCsvLoader(
-        view="my_view", path_to_csv=test_file_path, delimiter=",").transform(df)
+        view="my_view", path_to_csv=test_file_path, delimiter=","
+    ).transform(df)
 
     parquet_file_path: str = f"file://{data_dir.joinpath('temp/').joinpath(f'test.parquet')}"
 
     # Act
-    FrameworkParquetExporter(
-        view="my_view",
-        file_path=parquet_file_path
-    ).transform(df)
+    FrameworkParquetExporter(view="my_view",
+                             file_path=parquet_file_path).transform(df)
 
     # Assert
-    FrameworkParquetLoader(
-        view="my_view2",
-        file_path=parquet_file_path
-    ).transform(df)
+    FrameworkParquetLoader(view="my_view2",
+                           file_path=parquet_file_path).transform(df)
 
     # noinspection SqlDialectInspection
     result: DataFrame = spark_session.sql("SELECT * FROM my_view2")
