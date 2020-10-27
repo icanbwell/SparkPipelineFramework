@@ -19,8 +19,10 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         **kwargs
     ):
         super().__init__(view=view, filepath=filepath, **kwargs)
+
         self.multiLine: Param = Param(self, "multiLine", "")
-        self._setDefault(multiLine=multiLine)  # type: ignore
+        self._setDefault(multiLine=False)
+        self._set(multiLine=multiLine)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setMultiLine(self, value):

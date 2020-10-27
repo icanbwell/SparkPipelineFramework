@@ -33,7 +33,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         create_file_path: bool = False,
         name: str = None,
         parameters: Dict[str, Any] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
+        **kwargs
     ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -67,28 +68,10 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.logger.info(f"Received filepath: {filepath}")
 
         kwargs = self._input_kwargs  # type: ignore
-        self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        view: str,
-        filepath: Union[str, List[str], Path],
-        limit: int = -1,
-        infer_schema: bool = False,
-        cache_table: bool = True,
-        schema: StructType = None,
-        create_file_path: bool = False,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ):
-        kwargs = self._input_kwargs  # type: ignore
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
-        return self._set(**kwargs)  # type: ignore
+        self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
