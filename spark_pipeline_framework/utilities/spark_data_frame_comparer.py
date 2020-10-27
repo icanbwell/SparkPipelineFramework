@@ -85,7 +85,12 @@ def assert_compare_data_frames(
             result_isnan = isinstance(result_value, float) and isinstance(
                 expected_value, float
             ) and (isnan(result_value) == isnan(expected_value))
-            if result_value != expected_value and not result_isnan:
+            # if result does not match
+            #   and result is not NaN
+            #   and both result and expected are not false
+            if result_value != expected_value and not result_isnan and not (
+                not result_value and not expected_value
+            ):
                 print(
                     f"row {row_num}: column {result_columns[column_num][0]} " +
                     f"expected: [{expected_value}] actual: [{result_value}]"
