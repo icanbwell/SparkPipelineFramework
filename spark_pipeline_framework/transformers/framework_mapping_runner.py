@@ -6,6 +6,7 @@ from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from spark_auto_mapper.automappers.automapper import AutoMapper
+from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -18,7 +19,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
     def __init__(
         self,
         view: str,
-        mapping_function: Callable[[Dict[str, Any]], AutoMapper],
+        mapping_function: Callable[[Dict[str, Any]], AutoMapperBase],
         name: str = None,
         parameters: Dict[str, Any] = None,
         progress_logger: ProgressLogger = None
@@ -33,7 +34,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
         self._setDefault(view=None)  # type: ignore
 
         self.mapping_function: Callable[[Dict[str, Any]],
-                                        AutoMapper] = mapping_function
+                                        AutoMapperBase] = mapping_function
 
         kwargs = self._input_kwargs  # type: ignore
         # remove mapping_function since that is not serializable
@@ -61,13 +62,13 @@ class FrameworkMappingLoader(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
         mapping_function: Callable[[Dict[str, Any]],
-                                   AutoMapper] = self.getMappingFunction()
+                                   AutoMapperBase] = self.getMappingFunction()
 
         # run the mapping function to get an AutoMapper
         parameters: Dict[str, Any] = self.getParameters().copy()
         parameters["view"] = view
 
-        auto_mapper: AutoMapper = mapping_function(parameters)
+        auto_mapper: AutoMapperBase = mapping_function(parameters)
 
         assert isinstance(auto_mapper, AutoMapper)
 
@@ -84,5 +85,5 @@ class FrameworkMappingLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getMappingFunction(self) -> Callable[[Dict[str, Any]], AutoMapper]:
+    def getMappingFunction(self) -> Callable[[Dict[str, Any]], AutoMapperBase]:
         return self.mapping_function
