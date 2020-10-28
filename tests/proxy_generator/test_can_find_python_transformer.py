@@ -9,7 +9,7 @@ from spark_pipeline_framework.proxy_generator.python_transformer_helpers import 
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import create_empty_dataframe
 
 
-def test_can_find_python_transformer(spark_session: SparkSession):
+def test_can_find_python_transformer(spark_session: SparkSession) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath('./')
 

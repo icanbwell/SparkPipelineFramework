@@ -1,5 +1,5 @@
 # noinspection PyProtectedMember
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -20,10 +20,10 @@ class FrameworkMappingLoader(FrameworkTransformer):
         self,
         view: str,
         mapping_function: Callable[[Dict[str, Any]], AutoMapperBase],
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None
-    ):
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None
+    ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -31,12 +31,12 @@ class FrameworkMappingLoader(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
-        self._setDefault(view=None)  # type: ignore
+        self._setDefault(view=None)
 
         self.mapping_function: Callable[[Dict[str, Any]],
                                         AutoMapperBase] = mapping_function
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         # remove mapping_function since that is not serializable
         kwargs = {
             key: value
@@ -49,15 +49,15 @@ class FrameworkMappingLoader(FrameworkTransformer):
     def setParams(
         self,
         view: str,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None
-    ):
-        kwargs = self._input_kwargs  # type: ignore
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None
+    ) -> Any:
+        kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
-        return self._set(**kwargs)  # type: ignore
+        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
@@ -65,7 +65,10 @@ class FrameworkMappingLoader(FrameworkTransformer):
                                    AutoMapperBase] = self.getMappingFunction()
 
         # run the mapping function to get an AutoMapper
-        parameters: Dict[str, Any] = self.getParameters().copy()
+        incoming_parameters: Optional[Dict[str, Any]] = self.getParameters()
+        parameters: Dict[
+            str,
+            Any] = incoming_parameters.copy() if incoming_parameters else {}
         parameters["view"] = view
 
         auto_mapper: AutoMapperBase = mapping_function(parameters)

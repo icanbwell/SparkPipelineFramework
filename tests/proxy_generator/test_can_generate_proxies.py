@@ -1,11 +1,12 @@
 from os import path, makedirs, listdir
 from pathlib import Path
 from shutil import rmtree, copyfile
+from typing import Callable, List, Optional, Set
 
 from spark_pipeline_framework.proxy_generator.proxy_generator import ProxyGenerator
 
 
-def test_can_generate_proxies():
+def test_can_generate_proxies() -> None:
     data_dir: Path = Path(__file__).parent.joinpath('./')
 
     temp_folder = data_dir.joinpath('temp')
@@ -47,7 +48,11 @@ def test_can_generate_proxies():
     )
 
 
-def recursive_overwrite(src, dst, ignore=None):
+def recursive_overwrite(
+    src: str,
+    dst: str,
+    ignore: Optional[Callable[[str, List[str]], Set[str]]] = None
+) -> None:
     if path.isdir(src):
         print(f"dir={src}")
         if not path.isdir(dst):

@@ -1,17 +1,18 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Union
 
+# noinspection PyProtectedMember
 from pyspark import SparkContext, SQLContext, Row
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StructType
+from pyspark.sql.types import StructType, DataType
 
 
 def create_view_from_dictionary(
     view: str,
     data: List[Dict[str, Any]],
     spark_session: SparkSession,
-    schema=None
+    schema: Optional[Union[DataType, str]] = None
 ) -> DataFrame:
-    df = spark_session.createDataFrame(data=data, schema=schema)
+    df: DataFrame = spark_session.createDataFrame(data=data, schema=schema)
     df.createOrReplaceTempView(name=view)
     return df
 
@@ -42,7 +43,7 @@ def spark_is_data_frame_empty(df: DataFrame) -> bool:
     return not bool(df.head(1))
 
 
-def spark_get_execution_plan(df: DataFrame, extended: bool = False):
+def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
     if extended:
         # noinspection PyProtectedMember
         return df._jdf.queryExecution().toString()

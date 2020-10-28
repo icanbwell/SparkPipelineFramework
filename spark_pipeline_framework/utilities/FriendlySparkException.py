@@ -1,9 +1,10 @@
 import traceback
+from typing import Any
 
 
 class FriendlySparkException(Exception):
     # noinspection PyUnusedLocal
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         try:
             # Summary is a boolean argument
             # If True, it prints the exception summary
@@ -18,7 +19,7 @@ class FriendlySparkException(Exception):
 
     # noinspection SpellCheckingInspection
     @staticmethod
-    def errortext(text):
+    def errortext(text: str) -> str:
         # Makes exception summary both BOLD and RED (FAIL)
         return text
 

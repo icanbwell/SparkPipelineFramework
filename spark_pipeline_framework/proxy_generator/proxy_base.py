@@ -81,7 +81,7 @@ class ProxyBase:
                 self.feature = self.get_python_mapping_transformer('.mapping')
 
     @staticmethod
-    def read_file_as_string(file_path) -> str:
+    def read_file_as_string(file_path: str) -> str:
         with open(file_path, 'r') as file:
             file_contents = file.read()
         return file_contents
@@ -95,11 +95,8 @@ class ProxyBase:
         ]
 
     @transformers.setter
-    def transformers(self, value):
+    def transformers(self, value: Any) -> None:
         raise AttributeError("transformers property is read only.")
-
-    def __call__(self, parameters, progress_logger, *args, **kwargs):
-        self.__init__(parameters, progress_logger)
 
     def get_python_transformer(self, import_module_name: str) -> Transformer:
         return get_python_transformer_from_location(
@@ -109,7 +106,7 @@ class ProxyBase:
             progress_logger=self.progress_logger
         )
 
-    def get_python_mapping_transformer(self, import_module_name: str):
+    def get_python_mapping_transformer(self, import_module_name: str) -> Any:
         return FrameworkMappingLoader(
             view=self.parameters["view"],
             mapping_function=get_python_function_from_location(
