@@ -108,7 +108,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
         limit = self.getLimit()
         create_file_path = self.getCreateFilePath()
         delimiter = self.getDelimiter()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         if not path_to_csv:
             raise ValueError(f"path_to_csv is empty: {path_to_csv}")

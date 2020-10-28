@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -68,8 +68,8 @@ class FrameworkParquetLoader(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
         path: Union[str, List[str], Path] = self.getFilePath()
-        name: str = self.getName()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        name: Optional[str] = self.getName()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         merge_schema: bool = self.getMergeSchema()
         limit: int = self.getLimit()
 

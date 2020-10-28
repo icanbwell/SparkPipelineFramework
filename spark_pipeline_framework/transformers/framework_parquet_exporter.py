@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -67,8 +67,8 @@ class FrameworkParquetExporter(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
         path: Union[str, Path] = self.getFilePath()
-        name: str = self.getName()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        name: Optional[str] = self.getName()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         # limit: int = self.getLimit()
 
         with ProgressLogMetric(

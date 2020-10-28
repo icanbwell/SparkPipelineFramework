@@ -27,7 +27,7 @@ checks:venv
 	. $(VENV_NAME)/bin/activate && \
     pip install --upgrade -r requirements.txt && \
     flake8 spark_pipeline_framework && \
-    mypy spark_pipeline_framework && \
+    mypy --strict spark_pipeline_framework && \
     flake8 library && \
     mypy library && \
     flake8 tests && \

@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Any
 
 
-def flatten(my_list: List) -> List:
+def flatten(my_list: List[Any]) -> List:
     """
 
     :param my_list:

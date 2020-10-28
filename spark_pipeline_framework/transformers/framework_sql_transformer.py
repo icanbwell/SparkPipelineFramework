@@ -72,11 +72,13 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         sql_text: str = self.getSql()
-        name = self.getName()
-        view = self.getView()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        name: Optional[str] = self.getName()
+        view: Optional[str] = self.getView()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
-        with ProgressLogMetric(name=name, progress_logger=progress_logger):
+        with ProgressLogMetric(
+            name=name or view or "", progress_logger=progress_logger
+        ):
             if progress_logger and name:
                 # mlflow opens .txt files inline so we use that extension
                 progress_logger.log_artifact(

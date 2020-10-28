@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from pyspark.ml.base import Transformer
 from pyspark.ml.param import Param
@@ -15,9 +15,9 @@ class FrameworkTransformer(
     # noinspection PyUnusedLocal
     def __init__(
         self,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None
     ):
         super(FrameworkTransformer, self).__init__()
 
@@ -35,9 +35,9 @@ class FrameworkTransformer(
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
     def setParams(
         self,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None
     ):
         kwargs = self._input_kwargs  # type: ignore
         return self._set(**kwargs)  # type: ignore
@@ -55,7 +55,7 @@ class FrameworkTransformer(
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getName(self) -> str:
+    def getName(self) -> Optional[str]:
         return self.getOrDefault(self.name)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -64,7 +64,7 @@ class FrameworkTransformer(
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getProgressLogger(self) -> ProgressLogger:
+    def getProgressLogger(self) -> Optional[ProgressLogger]:
         return self.getOrDefault(self.progress_logger)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -73,5 +73,5 @@ class FrameworkTransformer(
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getParameters(self) -> Dict[str, Any]:
+    def getParameters(self) -> Optional[Dict[str, Any]]:
         return self.getOrDefault(self.parameters)  # type: ignore
