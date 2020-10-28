@@ -69,14 +69,17 @@ tests:
 
 .PHONY:clean-pre-commit
 clean-pre-commit:
+	. $(VENV_NAME)/bin/activate && \
 	pre-commit clean
 
 .PHONY:setup-pre-commit
 setup-pre-commit:
+	. $(VENV_NAME)/bin/activate && \
 	pre-commit install
 
 .PHONY:run-pre-commit
 run-pre-commit:
+	. $(VENV_NAME)/bin/activate && \
 	pre-commit run --all-files
 
 .PHONY:init
