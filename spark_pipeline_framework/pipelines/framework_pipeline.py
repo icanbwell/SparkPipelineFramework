@@ -10,7 +10,7 @@ from spark_pipeline_framework.utilities.FriendlySparkException import FriendlySp
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
-class FrameworkPipeline(Transformer):
+class FrameworkPipeline(Transformer):  # type: ignore
     def __init__(
         self, parameters: Dict[str, Any], progress_logger: ProgressLogger
     ):

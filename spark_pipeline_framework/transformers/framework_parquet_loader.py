@@ -20,9 +20,9 @@ class FrameworkParquetLoader(FrameworkTransformer):
         self,
         view: str,
         file_path: Union[str, List[str], Path],
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         merge_schema: bool = False,
         limit: int = -1
     ):
@@ -33,18 +33,18 @@ class FrameworkParquetLoader(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
-        self._setDefault(view=view)  # type: ignore
+        self._setDefault(view=view)
 
         self.file_path: Param = Param(self, "file_path", "")
-        self._setDefault(file_path=None)  # type: ignore
+        self._setDefault(file_path=None)
 
         self.merge_schema: Param = Param(self, "merge_schema", "")
-        self._setDefault(merge_schema=None)  # type: ignore
+        self._setDefault(merge_schema=None)
 
         self.limit: Param = Param(self, "limit", "")
-        self._setDefault(limit=None)  # type: ignore
+        self._setDefault(limit=None)
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
@@ -53,13 +53,13 @@ class FrameworkParquetLoader(FrameworkTransformer):
         self,
         view: str,
         file_path: Union[str, List[str], Path],
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         merge_schema: bool = False,
         limit: int = -1
-    ):
-        kwargs = self._input_kwargs  # type: ignore
+    ) -> None:
+        kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -100,8 +100,8 @@ class FrameworkParquetLoader(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value) -> 'FrameworkParquetLoader':
-        self._paramMap[self.view] = value  # type: ignore
+    def setView(self, value: str) -> 'FrameworkParquetLoader':
+        self._paramMap[self.view] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -109,8 +109,10 @@ class FrameworkParquetLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilePath(self, value) -> 'FrameworkParquetLoader':
-        self._paramMap[self.file_path] = value  # type: ignore
+    def setFilePath(
+        self, value: Union[str, List[str], Path]
+    ) -> 'FrameworkParquetLoader':
+        self._paramMap[self.file_path] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -118,8 +120,8 @@ class FrameworkParquetLoader(FrameworkTransformer):
         return self.getOrDefault(self.file_path)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setMergeSchema(self, value) -> 'FrameworkParquetLoader':
-        self._paramMap[self.merge_schema] = value  # type: ignore
+    def setMergeSchema(self, value: bool) -> 'FrameworkParquetLoader':
+        self._paramMap[self.merge_schema] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -127,8 +129,8 @@ class FrameworkParquetLoader(FrameworkTransformer):
         return self.getOrDefault(self.merge_schema)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value) -> 'FrameworkParquetLoader':
-        self._paramMap[self.limit] = value  # type: ignore
+    def setLimit(self, value: int) -> 'FrameworkParquetLoader':
+        self._paramMap[self.limit] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

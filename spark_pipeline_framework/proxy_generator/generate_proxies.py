@@ -19,7 +19,7 @@ from typing import Match, Optional, List
 class ProxyGenerator:
     @staticmethod
     def remove_empty_dirs(folder: str) -> None:
-        def is_path_empty(directory: str):
+        def is_path_empty(directory: str) -> bool:
             for dir_tuple in walk(directory):
                 if [
                     file for file in dir_tuple[2] if not (
@@ -120,10 +120,11 @@ class {transformer_reader_class_name}(ProxyBase):
                 file.write(transformer_reader_string)
 
 
-def main():
+def main() -> bool:
     library_folder: str = path.join(getcwd(), 'library')
     ProxyGenerator.remove_empty_dirs(library_folder)
     ProxyGenerator.generate_proxies(library_folder)
+    return True
 
 
 if __name__ == "__main__":

@@ -10,7 +10,9 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 
 
 class FrameworkTransformer(
-    Transformer, DefaultParamsReadable, DefaultParamsWritable
+    Transformer,  # type: ignore
+    DefaultParamsReadable,  # type: ignore
+    DefaultParamsWritable  # type: ignore
 ):
     # noinspection PyUnusedLocal
     def __init__(
@@ -24,13 +26,13 @@ class FrameworkTransformer(
         self.logger = get_logger(__name__)
 
         self.name: Param = Param(self, "name", "")
-        self._setDefault(name=None)  # type: ignore
+        self._setDefault(name=None)
 
         self.progress_logger: Param = Param(self, "progress_logger", "")
-        self._setDefault(progress_logger=None)  # type: ignore
+        self._setDefault(progress_logger=None)
 
         self.parameters: Param = Param(self, "parameters", "")
-        self._setDefault(parameters=None)  # type: ignore
+        self._setDefault(parameters=None)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
     def setParams(
@@ -38,9 +40,9 @@ class FrameworkTransformer(
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
-    ):
-        kwargs = self._input_kwargs  # type: ignore
-        return self._set(**kwargs)  # type: ignore
+    ) -> Any:
+        kwargs = self._input_kwargs
+        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         return df
@@ -50,8 +52,8 @@ class FrameworkTransformer(
         return [self]
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setName(self, value) -> 'FrameworkTransformer':
-        self._paramMap[self.name] = value  # type: ignore
+    def setName(self, value: str) -> 'FrameworkTransformer':
+        self._paramMap[self.name] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -59,8 +61,10 @@ class FrameworkTransformer(
         return self.getOrDefault(self.name)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setProgressLogger(self, value) -> 'FrameworkTransformer':
-        self._paramMap[self.progress_logger] = value  # type: ignore
+    def setProgressLogger(
+        self, value: Optional[ProgressLogger]
+    ) -> 'FrameworkTransformer':
+        self._paramMap[self.progress_logger] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -68,8 +72,10 @@ class FrameworkTransformer(
         return self.getOrDefault(self.progress_logger)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setParameters(self, value) -> 'FrameworkTransformer':
-        self._paramMap[self.parameters] = value  # type: ignore
+    def setParameters(
+        self, value: Optional[Dict[str, Any]]
+    ) -> 'FrameworkTransformer':
+        self._paramMap[self.parameters] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

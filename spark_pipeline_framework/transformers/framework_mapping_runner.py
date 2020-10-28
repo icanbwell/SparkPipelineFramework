@@ -23,7 +23,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
-    ) -> None:  # type: ignore
+    ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )

@@ -1,4 +1,5 @@
 from datetime import datetime
+from types import TracebackType
 from typing import Optional
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -10,10 +11,13 @@ class ProgressLogMetric:
         self.name: str = name
         self.start_time: datetime = datetime.now()
 
-    def __enter__(self):
+    def __enter__(self) -> 'ProgressLogMetric':
         return self.start()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self, exc_type: Optional[BaseException],
+        exc_value: Optional[BaseException], traceback: Optional[TracebackType]
+    ) -> None:
         self.stop()
 
     def start(self) -> 'ProgressLogMetric':

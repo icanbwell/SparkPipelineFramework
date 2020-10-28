@@ -31,8 +31,8 @@ class FrameworkCsvLoader(FrameworkTransformer):
         cache_table: bool = True,
         schema: StructType = None,
         create_file_path: bool = False,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
     ) -> None:
         super().__init__(
@@ -41,38 +41,38 @@ class FrameworkCsvLoader(FrameworkTransformer):
         self.logger: Logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
-        self._setDefault(view=None)  # type: ignore
+        self._setDefault(view=None)
 
         self.path_to_csv: Param = Param(self, "path_to_csv", "")
-        self._setDefault(path_to_csv=None)  # type: ignore
+        self._setDefault(path_to_csv=None)
 
         self.delimiter: Param = Param(self, "delimiter", "")
-        self._setDefault(delimiter=",")  # type: ignore
+        self._setDefault(delimiter=",")
 
         self.schema: Param = Param(self, "schema", "")
-        self._setDefault(schema=None)  # type: ignore
+        self._setDefault(schema=None)
 
         self.cache_table: Param = Param(self, "cache_table", "")
-        self._setDefault(cache_table=True)  # type: ignore
+        self._setDefault(cache_table=True)
 
         self.has_header: Param = Param(self, "has_header", "")
-        self._setDefault(has_header=True)  # type: ignore
+        self._setDefault(has_header=True)
 
         self.limit: Param = Param(self, "limit", "")
-        self._setDefault(limit=-1)  # type: ignore
+        self._setDefault(limit=-1)
 
         self.infer_schema: Param = Param(self, "infer_schema", "")
-        self._setDefault(infer_schema=False)  # type: ignore
+        self._setDefault(infer_schema=False)
 
         self.create_file_path: Param = Param(self, "create_file_path", "")
-        self._setDefault(create_file_path=False)  # type: ignore
+        self._setDefault(create_file_path=False)
 
         if not path_to_csv:
             raise ValueError("path_to_csv is None or empty")
 
         self.logger.info(f"Received path_to_csv: {path_to_csv}")
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyUnusedLocal
@@ -88,11 +88,11 @@ class FrameworkCsvLoader(FrameworkTransformer):
         cache_table: bool = True,
         schema: StructType = None,
         create_file_path: bool = False,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
-    ):
-        kwargs = self._input_kwargs  # type: ignore
+    ) -> None:
+        kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -181,7 +181,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value):
+    def setView(self, value: str) -> 'FrameworkCsvLoader':
         self._paramMap[self.view] = value
         return self
 
@@ -190,7 +190,9 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setPathToCsv(self, value):
+    def setPathToCsv(
+        self, value: Union[str, List[str], Path]
+    ) -> 'FrameworkCsvLoader':
         self._paramMap[self.path_to_csv] = value
         return self
 
@@ -199,7 +201,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return self.getOrDefault(self.path_to_csv)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setDelimiter(self, value):
+    def setDelimiter(self, value: str) -> 'FrameworkCsvLoader':
         self._paramMap[self.delimiter] = value
         return self
 
@@ -208,16 +210,16 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return self.getOrDefault(self.delimiter)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSchema(self, value):
+    def setSchema(self, value: str) -> 'FrameworkCsvLoader':
         self._paramMap[self.schema] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
-        return self.getOrDefault(self.schema)  # type: ignore
+        return self.getOrDefault(self.schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCacheTable(self, value):
+    def setCacheTable(self, value: str) -> 'FrameworkCsvLoader':
         self._paramMap[self.cache_table] = value
         return self
 
@@ -226,7 +228,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return self.getOrDefault(self.cache_table)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setHasHeader(self, value):
+    def setHasHeader(self, value: bool) -> 'FrameworkCsvLoader':
         self._paramMap[self.has_header] = value
         return self
 
@@ -235,7 +237,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return self.getOrDefault(self.has_header)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setInferSchema(self, value):
+    def setInferSchema(self, value: bool) -> 'FrameworkCsvLoader':
         self._paramMap[self.infer_schema] = value
         return self
 
@@ -244,7 +246,7 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return self.getOrDefault(self.infer_schema)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value):
+    def setLimit(self, value: int) -> 'FrameworkCsvLoader':
         self._paramMap[self.limit] = value
         return self
 
@@ -253,8 +255,8 @@ class FrameworkCsvLoader(FrameworkTransformer):
         return self.getOrDefault(self.limit)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCreateFilePath(self, value: bool):
-        self._paramMap[self.create_file_path] = value  # type: ignore
+    def setCreateFilePath(self, value: bool) -> 'FrameworkCsvLoader':
+        self._paramMap[self.create_file_path] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

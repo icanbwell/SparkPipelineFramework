@@ -7,7 +7,7 @@ from typing import Match, Optional, List
 class ProxyGenerator:
     @staticmethod
     def remove_empty_dirs(folder: str) -> None:
-        def is_path_empty(directory: str):
+        def is_path_empty(directory: str) -> bool:
             for dir_tuple in walk(directory):
                 if [
                     file for file in dir_tuple[2] if not (
