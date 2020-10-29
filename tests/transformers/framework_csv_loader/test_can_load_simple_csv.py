@@ -8,7 +8,7 @@ from tests.conftest import clean_spark_session
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
 
 
-def assert_results(result):
+def assert_results(result: DataFrame) -> None:
     """
     Shared asserts for the different formats of CSV file, all of which contain the same data.
     """
@@ -49,7 +49,9 @@ def test_can_load_simple_csv(spark_session: SparkSession) -> None:
 
 
 # noinspection SqlNoDataSourceInspection
-def test_can_load_non_standard_delimited_csv(spark_session: SparkSession):
+def test_can_load_non_standard_delimited_csv(
+    spark_session: SparkSession
+) -> None:
     # Arrange
     clean_spark_session(spark_session)
 
@@ -79,7 +81,7 @@ def test_can_load_non_standard_delimited_csv(spark_session: SparkSession):
 
 
 # noinspection SqlNoDataSourceInspection
-def test_can_load_csv_without_header(spark_session: SparkSession):
+def test_can_load_csv_without_header(spark_session: SparkSession) -> None:
     # Arrange
     clean_spark_session(spark_session)
 

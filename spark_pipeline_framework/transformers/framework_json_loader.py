@@ -16,7 +16,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         view: str,
         filepath: Union[str, List[str], Path],
         multiLine: bool = False,
-        **kwargs
+        **kwargs: Dict[Any, Any]
     ):
         super().__init__(view=view, filepath=filepath, **kwargs)
 
@@ -25,7 +25,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         self._set(multiLine=multiLine)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setMultiLine(self, value):
+    def setMultiLine(self, value: Param) -> 'FrameworkJsonLoader':
         self._paramMap[self.multiLine] = value
         return self
 

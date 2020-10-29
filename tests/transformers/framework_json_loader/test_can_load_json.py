@@ -9,7 +9,7 @@ from spark_pipeline_framework.transformers.framework_json_loader import Framewor
 
 
 # noinspection SqlNoDataSourceInspection
-def test_can_load_simple_json(spark_session: SparkSession):
+def test_can_load_simple_json(spark_session: SparkSession) -> None:
     # Arrange
     clean_spark_session(spark_session)
 
@@ -42,7 +42,7 @@ def test_can_load_simple_json(spark_session: SparkSession):
 
 
 # noinspection SqlNoDataSourceInspection
-def test_can_load_newline_delimited_json(spark_session: SparkSession):
+def test_can_load_newline_delimited_json(spark_session: SparkSession) -> None:
     # Arrange
     clean_spark_session(spark_session)
 

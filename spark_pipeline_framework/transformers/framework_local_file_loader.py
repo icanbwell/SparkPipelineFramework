@@ -31,10 +31,10 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         cache_table: bool = True,
         schema: StructType = None,
         create_file_path: bool = False,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        **kwargs
+        **kwargs: Dict[Any, Any]
     ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -42,32 +42,32 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.logger: Logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
-        self._setDefault(view=None)  # type: ignore
+        self._setDefault(view=None)
 
         self.filepath: Param = Param(self, "filepath", "")
-        self._setDefault(filepath=None)  # type: ignore
+        self._setDefault(filepath=None)
 
         self.schema: Param = Param(self, "schema", "")
-        self._setDefault(schema=None)  # type: ignore
+        self._setDefault(schema=None)
 
         self.cache_table: Param = Param(self, "cache_table", "")
-        self._setDefault(cache_table=True)  # type: ignore
+        self._setDefault(cache_table=True)
 
         self.limit: Param = Param(self, "limit", "")
-        self._setDefault(limit=-1)  # type: ignore
+        self._setDefault(limit=-1)
 
         self.infer_schema: Param = Param(self, "infer_schema", "")
-        self._setDefault(infer_schema=False)  # type: ignore
+        self._setDefault(infer_schema=False)
 
         self.create_file_path: Param = Param(self, "create_file_path", "")
-        self._setDefault(create_file_path=False)  # type: ignore
+        self._setDefault(create_file_path=False)
 
         if not filepath:
             raise ValueError("filepath is None or empty")
 
         self.logger.info(f"Received filepath: {filepath}")
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -81,7 +81,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         infer_schema = self.getInferSchema()
         limit = self.getLimit()
         create_file_path = self.getCreateFilePath()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         if not filepath:
             raise ValueError(f"filepath is empty: {filepath}")
@@ -147,7 +147,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value):
+    def setView(self, value: Param) -> 'FrameworkLocalFileLoader':
         self._paramMap[self.view] = value
         return self
 
@@ -156,7 +156,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilepath(self, value):
+    def setFilepath(self, value: Param) -> 'FrameworkLocalFileLoader':
         self._paramMap[self.filepath] = value
         return self
 
@@ -165,16 +165,16 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.filepath)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSchema(self, value):
+    def setSchema(self, value: Param) -> 'FrameworkLocalFileLoader':
         self._paramMap[self.schema] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
-        return self.getOrDefault(self.schema)  # type: ignore
+        return self.getOrDefault(self.schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCacheTable(self, value):
+    def setCacheTable(self, value: Param) -> 'FrameworkLocalFileLoader':
         self._paramMap[self.cache_table] = value
         return self
 
@@ -183,7 +183,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.cache_table)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setInferSchema(self, value):
+    def setInferSchema(self, value: Param) -> 'FrameworkLocalFileLoader':
         self._paramMap[self.infer_schema] = value
         return self
 
@@ -192,7 +192,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.infer_schema)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value):
+    def setLimit(self, value: Param) -> 'FrameworkLocalFileLoader':
         self._paramMap[self.limit] = value
         return self
 
@@ -201,8 +201,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.limit)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCreateFilePath(self, value: bool):
-        self._paramMap[self.create_file_path] = value  # type: ignore
+    def setCreateFilePath(self, value: bool) -> 'FrameworkLocalFileLoader':
+        self._paramMap[self.create_file_path] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -218,5 +218,5 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         raise NotImplementedError("Must implement in baseclass")
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getReaderOptions(self):
+    def getReaderOptions(self) -> Dict[str, Any]:
         raise NotImplementedError("Must implement in baseclass")
