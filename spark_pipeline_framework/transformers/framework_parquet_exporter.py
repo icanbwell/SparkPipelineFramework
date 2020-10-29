@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any, Union
+from typing import Any, Dict, Union
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -13,7 +13,7 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
 
     # noinspection PyUnusedLocal
     @keyword_only
-    def __init__(self, file_path: Union[str, Path], **kwargs):
+    def __init__(self, file_path: Union[str, Path], **kwargs: Dict[Any, Any]):
         super().__init__(**kwargs)
 
         assert isinstance(file_path, Path) or isinstance(file_path, str)
@@ -22,13 +22,15 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
         self.logger = get_logger(__name__)
 
         self.file_path: Param = Param(self, "file_path", "")
-        self._setDefault(file_path=None)  # type: ignore
+        self._setDefault(file_path=None)
 
         self._set(file_path=file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilePath(self, value) -> 'FrameworkParquetExporter':
-        self._paramMap[self.file_path] = value  # type: ignore
+    def setFilePath(
+        self, value: Union[str, Path]
+    ) -> 'FrameworkParquetExporter':
+        self._paramMap[self.file_path] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

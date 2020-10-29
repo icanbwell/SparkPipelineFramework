@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -18,10 +18,10 @@ class FrameworkBaseExporter(FrameworkTransformer):
     @keyword_only
     def __init__(
         self,
-        view: str = None,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None,
+        view: Optional[str] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1
     ):
         super().__init__(
@@ -31,35 +31,35 @@ class FrameworkBaseExporter(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
-        self._setDefault(view=view)  # type: ignore
+        self._setDefault(view=view)
 
         self.limit: Param = Param(self, "limit", "")
-        self._setDefault(limit=None)  # type: ignore
+        self._setDefault(limit=None)
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
     @keyword_only
     def setParams(
         self,
-        view: str = None,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None,
+        view: Optional[str] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1
-    ):
-        kwargs = self._input_kwargs  # type: ignore
+    ) -> None:
+        kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        view: str = self.getView()
-        name: str = self.getName()
+        view: Optional[str] = self.getView()
+        name: Optional[str] = self.getName()
         format: str = self.getFormat()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         # limit: int = self.getLimit()
 
         with ProgressLogMetric(
@@ -84,8 +84,8 @@ class FrameworkBaseExporter(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value) -> 'FrameworkBaseExporter':
-        self._paramMap[self.view] = value  # type: ignore
+    def setView(self, value: Param) -> 'FrameworkBaseExporter':
+        self._paramMap[self.view] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -93,8 +93,8 @@ class FrameworkBaseExporter(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value) -> 'FrameworkBaseExporter':
-        self._paramMap[self.limit] = value  # type: ignore
+    def setLimit(self, value: Param) -> 'FrameworkBaseExporter':
+        self._paramMap[self.limit] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

@@ -7,7 +7,7 @@ from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import get_python_function_from_location
 
 
-def test_can_find_python_function(spark_session: SparkSession):
+def test_can_find_python_function(spark_session: SparkSession) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath('./')
 

@@ -7,7 +7,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import create_empty_dataframe
 
 
-def test_can_run_python_transformer(spark_session: SparkSession):
+def test_can_run_python_transformer(spark_session: SparkSession) -> None:
     # Arrange
 
     # Act
