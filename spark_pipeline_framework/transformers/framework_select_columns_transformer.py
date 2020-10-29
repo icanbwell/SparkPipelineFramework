@@ -15,12 +15,12 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
     @keyword_only
     def __init__(
         self,
-        view: str = None,
+        view: Optional[str] = None,
         drop_columns: Optional[List[str]] = None,
         keep_columns: Optional[List[str]] = None,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False
     ) -> None:
         super().__init__(
@@ -32,35 +32,35 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
             raise ValueError("view is None or empty")
 
         self.view: Param = Param(self, "view", "")
-        self._setDefault(view=None)  # type: ignore
+        self._setDefault(view=None)
 
         self.drop_columns: Param = Param(self, "drop_columns", "")
-        self._setDefault(drop_columns=None)  # type: ignore
+        self._setDefault(drop_columns=None)
 
         self.keep_columns: Param = Param(self, "keep_columns", "")
-        self._setDefault(keep_columns=None)  # type: ignore
+        self._setDefault(keep_columns=None)
 
         self.verify_count_remains_same: Param = Param(
             self, "verify_count_remains_same", ""
         )
-        self._setDefault(verify_count_remains_same=None)  # type: ignore
+        self._setDefault(verify_count_remains_same=None)
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
     @keyword_only
     def setParams(
         self,
-        view: str = None,
+        view: Optional[str] = None,
         drop_columns: Optional[List[str]] = None,
         keep_columns: Optional[List[str]] = None,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False
-    ):
-        kwargs = self._input_kwargs  # type: ignore
+    ) -> None:
+        kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -88,7 +88,7 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSql(self, value):
+    def setSql(self, value: str) -> 'FrameworkSelectColumnsTransformer':
         self._paramMap[self.sql] = value
         return self
 
@@ -97,16 +97,16 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         return self.getOrDefault(self.sql)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value):
+    def setView(self, value: str) -> 'FrameworkSelectColumnsTransformer':
         self._paramMap[self.view] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getView(self) -> str:
+    def getView(self) -> Optional[str]:
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLogSql(self, value):
+    def setLogSql(self, value: str) -> 'FrameworkSelectColumnsTransformer':
         self._paramMap[self.log_sql] = value
         return self
 
@@ -115,7 +115,9 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         return self.getOrDefault(self.log_sql)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setVerifyCountRemainsSame(self, value):
+    def setVerifyCountRemainsSame(
+        self, value: bool
+    ) -> 'FrameworkSelectColumnsTransformer':
         self._paramMap[self.verify_count_remains_same] = value
         return self
 

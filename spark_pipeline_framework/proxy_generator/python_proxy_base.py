@@ -10,13 +10,15 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 
 
 class PythonProxyBase(
-    Transformer, DefaultParamsReadable, DefaultParamsWritable
+    Transformer,  # type: ignore
+    DefaultParamsReadable,  # type: ignore
+    DefaultParamsWritable  # type: ignore
 ):
     # noinspection PyUnusedLocal
     @keyword_only
     def __init__(
         self,
-        name: str = None,
+        name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False
@@ -24,40 +26,40 @@ class PythonProxyBase(
         super(PythonProxyBase, self).__init__()
 
         self.name: Param = Param(self, "name", "")
-        self._setDefault(name=None)  # type: ignore
+        self._setDefault(name=None)
 
         self.parameters: Param = Param(self, "parameters", "")
-        self._setDefault(parameters=None)  # type: ignore
+        self._setDefault(parameters=None)
 
         self.progress_logger: Param = Param(self, "progress_logger", "")
-        self._setDefault(progress_logger=None)  # type: ignore
+        self._setDefault(progress_logger=None)
 
         self.verify_count_remains_same: Param = Param(
             self, "verify_count_remains_same", ""
         )
-        self._setDefault(verify_count_remains_same=None)  # type: ignore
+        self._setDefault(verify_count_remains_same=None)
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyUnusedLocal
     @keyword_only
     def setParams(
         self,
-        name: str = None,
+        name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False
-    ):
-        kwargs = self._input_kwargs  # type: ignore
-        return self._set(**kwargs)  # type: ignore
+    ) -> Any:
+        kwargs = self._input_kwargs
+        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        pass
+        return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setName(self, value) -> 'PythonProxyBase':
-        self._paramMap[self.name] = value  # type: ignore
+    def setName(self, value: str) -> 'PythonProxyBase':
+        self._paramMap[self.name] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -66,12 +68,11 @@ class PythonProxyBase(
             self.name or self.__class__.__name__
         )
 
-        # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-
-    def setProgressLogger(self, value) -> 'PythonProxyBase':
-        self._paramMap[self.progress_logger] = value  # type: ignore
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setProgressLogger(self, value: ProgressLogger) -> 'PythonProxyBase':
+        self._paramMap[self.progress_logger] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getProgressLogger(self) -> ProgressLogger:
+    def getProgressLogger(self) -> Optional[ProgressLogger]:
         return self.getOrDefault(self.progress_logger)  # type: ignore

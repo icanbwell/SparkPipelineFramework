@@ -1,5 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import TracebackType
+from typing import Optional
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
@@ -11,14 +13,21 @@ class ProgressLogger:
     def __enter__(self) -> 'ProgressLogger':
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self, exc_type: Optional[BaseException],
+        exc_value: Optional[BaseException], traceback: Optional[TracebackType]
+    ) -> None:
         pass
 
     def log_metric(self, name: str, time_diff_in_minutes: float) -> None:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
 
+    # noinspection PyUnusedLocal
     def log_artifact(
-        self, key: str, contents: str, folder_path: str = None
+        self,
+        key: str,
+        contents: str,
+        folder_path: Optional[str] = None
     ) -> None:
         try:
             with TemporaryDirectory() as temp_dir_name:

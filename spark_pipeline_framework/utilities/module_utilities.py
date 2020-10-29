@@ -1,4 +1,7 @@
-def get_first_class_in_module(module):
+from typing import Any
+
+
+def get_first_class_in_module(module: Any) -> Any:
     """
     Gets the first class in the specified module
     :param module:

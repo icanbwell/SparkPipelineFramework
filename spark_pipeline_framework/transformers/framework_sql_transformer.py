@@ -16,11 +16,11 @@ class FrameworkSqlTransformer(FrameworkTransformer):
     @keyword_only
     def __init__(
         self,
-        sql: str = None,
-        view: str = None,
+        sql: Optional[str] = None,
+        view: Optional[str] = None,
         log_sql: bool = False,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False
     ) -> None:
@@ -36,35 +36,35 @@ class FrameworkSqlTransformer(FrameworkTransformer):
             raise ValueError("view is None or empty")
 
         self.sql: Param = Param(self, "sql", "")
-        self._setDefault(sql=None)  # type: ignore
+        self._setDefault(sql=None)
 
         self.view: Param = Param(self, "view", "")
-        self._setDefault(view=None)  # type: ignore
+        self._setDefault(view=None)
 
         self.log_sql: Param = Param(self, "log_sql", "")
-        self._setDefault(log_sql=False)  # type: ignore
+        self._setDefault(log_sql=False)
 
         self.verify_count_remains_same: Param = Param(
             self, "verify_count_remains_same", ""
         )
-        self._setDefault(verify_count_remains_same=None)  # type: ignore
+        self._setDefault(verify_count_remains_same=None)
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
     @keyword_only
     def setParams(
         self,
-        sql: str = None,
-        view: str = None,
+        sql: Optional[str] = None,
+        view: Optional[str] = None,
         log_sql: bool = False,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False
-    ):
-        kwargs = self._input_kwargs  # type: ignore
+    ) -> None:
+        kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -72,11 +72,13 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         sql_text: str = self.getSql()
-        name = self.getName()
-        view = self.getView()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        name: Optional[str] = self.getName()
+        view: Optional[str] = self.getView()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
-        with ProgressLogMetric(name=name, progress_logger=progress_logger):
+        with ProgressLogMetric(
+            name=name or view or "", progress_logger=progress_logger
+        ):
             if progress_logger and name:
                 # mlflow opens .txt files inline so we use that extension
                 progress_logger.log_artifact(
@@ -98,7 +100,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSql(self, value):
+    def setSql(self, value: str) -> 'FrameworkSqlTransformer':
         self._paramMap[self.sql] = value
         return self
 
@@ -107,25 +109,27 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         return self.getOrDefault(self.sql)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value):
+    def setView(self, value: str) -> 'FrameworkSqlTransformer':
         self._paramMap[self.view] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getView(self) -> str:
+    def getView(self) -> Optional[str]:
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLogSql(self, value):
+    def setLogSql(self, value: bool) -> 'FrameworkSqlTransformer':
         self._paramMap[self.log_sql] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getLogSql(self) -> str:
+    def getLogSql(self) -> bool:
         return self.getOrDefault(self.log_sql)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setVerifyCountRemainsSame(self, value):
+    def setVerifyCountRemainsSame(
+        self, value: bool
+    ) -> 'FrameworkSqlTransformer':
         self._paramMap[self.verify_count_remains_same] = value
         return self
 

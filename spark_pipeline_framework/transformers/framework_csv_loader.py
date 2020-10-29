@@ -22,15 +22,15 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         super().__init__(view=view, filepath=path_to_csv, **kwargs)
 
         self.delimiter: Param = Param(self, "delimiter", "")
-        self._setDefault(delimiter=",")  # type: ignore
+        self._setDefault(delimiter=",")
 
         self.has_header: Param = Param(self, "has_header", "")
-        self._setDefault(has_header=True)  # type: ignore
+        self._setDefault(has_header=True)
 
         self._set(delimiter=delimiter, has_header=has_header)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setDelimiter(self, value):
+    def setDelimiter(self, value: str) -> 'FrameworkCsvLoader':
         self._paramMap[self.delimiter] = value
         return self
 

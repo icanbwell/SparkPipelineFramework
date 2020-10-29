@@ -4,6 +4,7 @@ import shutil
 
 # noinspection PyPackageRequirements
 from os import path
+from typing import Any
 
 import pytest
 from pyspark.sql import SparkSession
@@ -52,7 +53,7 @@ def clean_spark_session(session: SparkSession) -> None:
     session.catalog.clearCache()
 
 
-def clean_close(session) -> None:
+def clean_close(session: SparkSession) -> None:
     """
 
     :param session:
@@ -64,7 +65,7 @@ def clean_close(session) -> None:
 
 
 @pytest.fixture(scope="session")
-def spark_session(request) -> SparkSession:
+def spark_session(request: Any) -> SparkSession:
     # make sure env variables are set correctly
     if 'SPARK_HOME' not in os.environ:
         os.environ['SPARK_HOME'] = '/usr/local/opt/spark'

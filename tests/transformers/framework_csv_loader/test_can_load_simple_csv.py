@@ -21,7 +21,7 @@ def assert_results(result):
 
 
 # noinspection SqlNoDataSourceInspection
-def test_can_load_simple_csv(spark_session: SparkSession):
+def test_can_load_simple_csv(spark_session: SparkSession) -> None:
     # Arrange
     clean_spark_session(spark_session)
 

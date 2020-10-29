@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -19,10 +19,10 @@ class FrameworkParquetExporter(FrameworkTransformer):
     def __init__(
         self,
         file_path: Union[str, Path],
-        view: str = None,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None,
+        view: Optional[str] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1
     ):
         super().__init__(
@@ -36,15 +36,15 @@ class FrameworkParquetExporter(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
-        self._setDefault(view=view)  # type: ignore
+        self._setDefault(view=view)
 
         self.file_path: Param = Param(self, "file_path", "")
-        self._setDefault(file_path=None)  # type: ignore
+        self._setDefault(file_path=None)
 
         self.limit: Param = Param(self, "limit", "")
-        self._setDefault(limit=None)  # type: ignore
+        self._setDefault(limit=None)
 
-        kwargs = self._input_kwargs  # type: ignore
+        kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
@@ -52,23 +52,23 @@ class FrameworkParquetExporter(FrameworkTransformer):
     def setParams(
         self,
         file_path: Union[str, Path],
-        view: str = None,
-        name: str = None,
-        parameters: Dict[str, Any] = None,
-        progress_logger: ProgressLogger = None,
+        view: Optional[str] = None,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1
-    ):
-        kwargs = self._input_kwargs  # type: ignore
+    ) -> None:
+        kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        view: str = self.getView()
+        view: Optional[str] = self.getView()
         path: Union[str, Path] = self.getFilePath()
-        name: str = self.getName()
-        progress_logger: ProgressLogger = self.getProgressLogger()
+        name: Optional[str] = self.getName()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         # limit: int = self.getLimit()
 
         with ProgressLogMetric(
@@ -87,17 +87,19 @@ class FrameworkParquetExporter(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value) -> 'FrameworkParquetExporter':
-        self._paramMap[self.view] = value  # type: ignore
+    def setView(self, value: str) -> 'FrameworkParquetExporter':
+        self._paramMap[self.view] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getView(self) -> str:
+    def getView(self) -> Optional[str]:
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilePath(self, value) -> 'FrameworkParquetExporter':
-        self._paramMap[self.file_path] = value  # type: ignore
+    def setFilePath(
+        self, value: Union[str, Path]
+    ) -> 'FrameworkParquetExporter':
+        self._paramMap[self.file_path] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -105,8 +107,8 @@ class FrameworkParquetExporter(FrameworkTransformer):
         return self.getOrDefault(self.file_path)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value) -> 'FrameworkParquetExporter':
-        self._paramMap[self.limit] = value  # type: ignore
+    def setLimit(self, value: int) -> 'FrameworkParquetExporter':
+        self._paramMap[self.limit] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

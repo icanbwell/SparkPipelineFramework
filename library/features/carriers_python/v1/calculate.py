@@ -12,7 +12,7 @@ class FeatureCarrierPythonTransformer(PythonProxyBase):
     @keyword_only
     def __init__(
         self,
-        name: str = None,
+        name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False

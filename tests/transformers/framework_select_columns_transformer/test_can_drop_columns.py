@@ -11,7 +11,7 @@ from spark_pipeline_framework.transformers.framework_csv_loader import Framework
 
 
 # noinspection SqlNoDataSourceInspection
-def test_can_drop_columns(spark_session: SparkSession):
+def test_can_drop_columns(spark_session: SparkSession) -> None:
     # Arrange
     clean_spark_session(spark_session)
 

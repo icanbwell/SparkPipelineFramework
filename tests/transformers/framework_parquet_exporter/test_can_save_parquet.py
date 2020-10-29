@@ -12,7 +12,7 @@ from spark_pipeline_framework.transformers.framework_parquet_loader import Frame
 from tests.spark_test_helper import SparkTestHelper
 
 
-def test_can_save_parquet(spark_session: SparkSession):
+def test_can_save_parquet(spark_session: SparkSession) -> None:
     # Arrange
     SparkTestHelper.clear_tables(spark_session)
 

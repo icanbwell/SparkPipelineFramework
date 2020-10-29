@@ -3,7 +3,7 @@ from pyspark.sql.session import SparkSession
 
 class SparkTestHelper:
     @staticmethod
-    def clear_tables(spark_session: SparkSession):
+    def clear_tables(spark_session: SparkSession) -> None:
         """
         :param spark_session:
         """
