@@ -13,7 +13,9 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
 
     # noinspection PyUnusedLocal
     @keyword_only
-    def __init__(self, jdbc_url: str, table: str, driver: str, **kwargs):
+    def __init__(
+        self, jdbc_url: str, table: str, driver: str, **kwargs: Dict[Any, Any]
+    ):
         super().__init__(**kwargs)
         assert jdbc_url
         assert table
@@ -22,19 +24,19 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         self.logger = get_logger(__name__)
 
         self.jdbc_url: Param = Param(self, "jdbc_url", "")
-        self._setDefault(jdbc_url=jdbc_url)  # type: ignore
+        self._setDefault(jdbc_url=jdbc_url)
 
         self.table: Param = Param(self, "table", "")
-        self._setDefault(table=table)  # type: ignore
+        self._setDefault(table=table)
 
         self.driver: Param = Param(self, "driver", "")
-        self._setDefault(driver=driver)  # type: ignore
+        self._setDefault(driver=driver)
 
         self._set(jdbc_url=jdbc_url, table=table, driver=driver)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setJdbcUrl(self, value) -> 'FrameworkJdbcExporter':
-        self._paramMap[self.jdbc_url] = value  # type: ignore
+    def setJdbcUrl(self, value: Param) -> 'FrameworkJdbcExporter':
+        self._paramMap[self.jdbc_url] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -42,8 +44,8 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         return self.getOrDefault(self.jdbc_url)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setTable(self, value) -> 'FrameworkJdbcExporter':
-        self._paramMap[self.table] = value  # type: ignore
+    def setTable(self, value: Param) -> 'FrameworkJdbcExporter':
+        self._paramMap[self.table] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -51,8 +53,8 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         return self.getOrDefault(self.table)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setDriver(self, value) -> 'FrameworkJdbcExporter':
-        self._paramMap[self.driver] = value  # type: ignore
+    def setDriver(self, value: Param) -> 'FrameworkJdbcExporter':
+        self._paramMap[self.driver] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

@@ -3,7 +3,7 @@ from pyspark.sql.session import SparkSession
 from spark_pipeline_framework.transformers.framework_jdbc_exporter import FrameworkJdbcExporter
 
 
-def test_can_save_via_jdbc(spark_session: SparkSession):
+def test_can_save_via_jdbc(spark_session: SparkSession) -> None:
     """
     Because testing against a database is a pain and most of the core transformation logic is in the base exporter,
     we're only testing that the options and format are correctly being exposed.
