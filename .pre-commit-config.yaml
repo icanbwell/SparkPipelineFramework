@@ -22,9 +22,10 @@ repos:
     rev: v0.790
     hooks:
     -   id: mypy
-        args: [--strict, --ignore-missing-imports, --python-version=3.6, --show-error-codes, --allow-untyped-decorators]
+        args: [--strict, --python-version=3.6, --show-error-codes, --allow-untyped-decorators]
         additional_dependencies:
             - numpy>=1.19.2
             - pyspark>=2.4.0
             - logger
             - sparkautomapper>=0.1.32
+            - pytest
