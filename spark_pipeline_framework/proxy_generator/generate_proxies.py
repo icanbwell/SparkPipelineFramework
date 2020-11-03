@@ -120,11 +120,11 @@ class {transformer_reader_class_name}(ProxyBase):
                 file.write(transformer_reader_string)
 
 
-def main() -> bool:
+def main() -> int:
     library_folder: str = path.join(getcwd(), 'library')
     ProxyGenerator.remove_empty_dirs(library_folder)
     ProxyGenerator.generate_proxies(library_folder)
-    return True
+    return 0
 
 
 if __name__ == "__main__":
