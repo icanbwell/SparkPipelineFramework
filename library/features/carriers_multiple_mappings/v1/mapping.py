@@ -24,9 +24,16 @@ def mapping(parameters: Dict[str, Any]) -> List[AutoMapperBase]:
 
     if company_name == "Microsoft":
         mapper = mapper.columns(
-            dst4=AutoMapperList(
+            dst5=AutoMapperList(
                 [A.complex(use="usual", family=A.column("last_name"))]
             )
         )
 
-    return [mapper]
+    mapper2 = AutoMapper(
+        view=parameters["view2"], source_view="patients", keys=["member_id"]
+    ).columns(
+        dst1="src2",
+        dst22=AutoMapperList([client_address_variable]),
+    )
+
+    return [mapper, mapper2]
