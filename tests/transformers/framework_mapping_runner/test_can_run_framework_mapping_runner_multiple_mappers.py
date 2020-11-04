@@ -56,19 +56,19 @@ def test_can_run_framework_mapping_runner_multiple_mappings(
     result_df.show(truncate=False)
 
     assert len(result_df.columns) == 6
-    assert result_df.where("member_id == 1").select("dst1"
-                                                    ).collect()[0][0] == "src1"
-    assert result_df.where("member_id == 1"
+    assert result_df.where("patient_id == 1"
+                           ).select("dst1").collect()[0][0] == "src1"
+    assert result_df.where("patient_id == 1"
                            ).select("dst2").collect()[0][0][0] == "address1"
 
-    assert result_df.where("member_id == 1"
+    assert result_df.where("patient_id == 1"
                            ).select("dst3").collect()[0][0][0] == "address1"
-    assert result_df.where("member_id == 1"
+    assert result_df.where("patient_id == 1"
                            ).select("dst3").collect()[0][0][1] == "address2"
 
-    assert result_df.where("member_id == 1"
+    assert result_df.where("patient_id == 1"
                            ).select("dst4").collect()[0][0][0][0] == "usual"
-    assert result_df.where("member_id == 1"
+    assert result_df.where("patient_id == 1"
                            ).select("dst4").collect()[0][0][0][1] == "Qureshi"
 
     result_df2: DataFrame = spark_session.table("my_view_2")
@@ -77,5 +77,5 @@ def test_can_run_framework_mapping_runner_multiple_mappings(
     result_df2.show(truncate=False)
 
     assert len(result_df2.columns) == 3
-    assert result_df2.where("member_id == 1"
+    assert result_df2.where("patient_id == 1"
                             ).select("dst1").collect()[0][0] == "src2"

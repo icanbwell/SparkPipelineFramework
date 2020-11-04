@@ -12,6 +12,7 @@ def mapping(parameters: Dict[str, Any]) -> List[AutoMapperBase]:
     mapper = AutoMapper(
         view=parameters["view"], source_view="patients", keys=["member_id"]
     ).columns(
+        patient_id=A.column("member_id"),
         dst1="src1",
         dst2=AutoMapperList([client_address_variable]),
         dst3=AutoMapperList([client_address_variable, "address2"]),
@@ -32,6 +33,7 @@ def mapping(parameters: Dict[str, Any]) -> List[AutoMapperBase]:
     mapper2 = AutoMapper(
         view=parameters["view2"], source_view="patients", keys=["member_id"]
     ).columns(
+        patient_id=A.column("member_id"),
         dst1="src2",
         dst22=AutoMapperList([client_address_variable]),
     )
