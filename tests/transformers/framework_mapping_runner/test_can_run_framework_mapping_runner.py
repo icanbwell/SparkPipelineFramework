@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Dict, Any
+from typing import Callable, Dict, Any, Union, List
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
@@ -26,14 +26,15 @@ def test_can_run_framework_mapping_runner(spark_session: SparkSession) -> None:
     df.createOrReplaceTempView("members")
 
     # Act
-    mapping_function: Callable[[Dict[str, Any]], AutoMapperBase] = (
-        get_python_function_from_location(
-            location=str(
-                data_dir.joinpath("library/features/carriers_mapping/v1")
-            ),
-            import_module_name='.mapping'
+    mapping_function: Callable[[Dict[str, Any]], Union[
+        AutoMapperBase, List[AutoMapperBase]]] = (
+            get_python_function_from_location(
+                location=str(
+                    data_dir.joinpath("library/features/carriers_mapping/v1")
+                ),
+                import_module_name='.mapping'
+            )
         )
-    )
     with ProgressLogger() as progress_logger:
         FrameworkMappingLoader(
             view="members",

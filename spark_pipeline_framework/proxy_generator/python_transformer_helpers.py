@@ -4,7 +4,7 @@ import sys
 import types
 from importlib import import_module
 from inspect import signature
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Optional, Callable, Union, List, cast
 
 from pyspark.ml import Transformer
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
@@ -39,18 +39,22 @@ def get_python_transformer_from_location(
     class_parameters["parameters"] = parameters
     class_parameters['progress_logger'] = progress_logger
     if len(my_class_args) > 0 and len(class_parameters) > 0:
-        return my_class(
-            **
-            {k: v
-             for k, v in class_parameters.items() if k in my_class_args}
+        return cast(
+            Transformer,
+            my_class(
+                **{
+                    k: v
+                    for k, v in class_parameters.items() if k in my_class_args
+                }
+            )
         )
     else:
-        return my_class()
+        return cast(Transformer, my_class())
 
 
 def get_python_function_from_location(
     location: str, import_module_name: str
-) -> Callable[[Dict[str, Any]], AutoMapperBase]:
+) -> Callable[[Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]]:
     assert location
     search = re.search(r'/library/', location)
     assert search
@@ -59,9 +63,11 @@ def get_python_function_from_location(
     module = import_module(import_module_name, lib_path)
     md = module.__dict__
     # noinspection PyTypeChecker
-    my_function: Callable[[Dict[str, Any]], AutoMapperBase] = [
-        md[c] for c in md if isinstance(md[c], types.FunctionType)
-    ][0]
+    my_function: Callable[[Dict[str, Any]],
+                          Union[AutoMapperBase, List[AutoMapperBase]]] = [
+                              md[c] for c in md
+                              if isinstance(md[c], types.FunctionType)
+                          ][0]
     my_function_signature = signature(my_function)
     my_function_args = [
         param for param in my_function_signature.parameters.values()

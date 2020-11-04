@@ -1,5 +1,4 @@
-# noinspection PyProtectedMember
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Callable, Optional, Union, List
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -19,7 +18,9 @@ class FrameworkMappingLoader(FrameworkTransformer):
     def __init__(
         self,
         view: str,
-        mapping_function: Callable[[Dict[str, Any]], AutoMapperBase],
+        mapping_function: Callable[[Dict[str, Any]],
+                                   Union[AutoMapperBase,
+                                         List[AutoMapperBase]]],
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
@@ -31,11 +32,13 @@ class FrameworkMappingLoader(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
+        # noinspection Mypy
         self._setDefault(view=None)
 
-        self.mapping_function: Callable[[Dict[str, Any]],
-                                        AutoMapperBase] = mapping_function
+        self.mapping_function: Callable[[Dict[str, Any]], Union[
+            AutoMapperBase, List[AutoMapperBase]]] = mapping_function
 
+        # noinspection Mypy
         kwargs = self._input_kwargs
         # remove mapping_function since that is not serializable
         kwargs = {
@@ -44,7 +47,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
         }
         self.setParams(**kwargs)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal,Mypy
     @keyword_only
     def setParams(
         self,
@@ -53,16 +56,18 @@ class FrameworkMappingLoader(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
     ) -> Any:
+        # noinspection Mypy
         kwargs = self._input_kwargs
         super().setParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
+        # noinspection Mypy
         return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        mapping_function: Callable[[Dict[str, Any]],
-                                   AutoMapperBase] = self.getMappingFunction()
+        mapping_function: Callable[[Dict[str, Any]], Union[
+            AutoMapperBase, List[AutoMapperBase]]] = self.getMappingFunction()
 
         # run the mapping function to get an AutoMapper
         incoming_parameters: Optional[Dict[str, Any]] = self.getParameters()
@@ -71,15 +76,22 @@ class FrameworkMappingLoader(FrameworkTransformer):
             Any] = incoming_parameters.copy() if incoming_parameters else {}
         parameters["view"] = view
 
-        auto_mapper: AutoMapperBase = mapping_function(parameters)
+        auto_mapper: Union[
+            AutoMapperBase,
+            List[AutoMapperBase]] = mapping_function(parameters)
 
-        assert isinstance(auto_mapper, AutoMapper)
+        assert isinstance(auto_mapper, AutoMapper) or (auto_mapper, list)
 
-        # then call transform() on the AutoMapper
-        df = auto_mapper.transform(df=df)
-
-        # create the view
-        df.createOrReplaceTempView(view)
+        if isinstance(auto_mapper, AutoMapper):
+            # then call transform() on the AutoMapper
+            df = auto_mapper.transform(df=df)
+            # create the view
+            df.createOrReplaceTempView(view)
+        elif isinstance(auto_mapper, list):
+            auto_mappers: List[AutoMapperBase] = auto_mapper
+            for a in auto_mappers:
+                assert isinstance(a, AutoMapper)
+                a.transform(df=df)
 
         return df
 
@@ -88,5 +100,8 @@ class FrameworkMappingLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getMappingFunction(self) -> Callable[[Dict[str, Any]], AutoMapperBase]:
+    def getMappingFunction(
+        self
+    ) -> Callable[[Dict[str, Any]], Union[AutoMapperBase,
+                                          List[AutoMapperBase]]]:
         return self.mapping_function
