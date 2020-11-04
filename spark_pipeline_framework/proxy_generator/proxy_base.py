@@ -106,7 +106,9 @@ class ProxyBase:
             progress_logger=self.progress_logger
         )
 
-    def get_python_mapping_transformer(self, import_module_name: str) -> Any:
+    def get_python_mapping_transformer(
+        self, import_module_name: str
+    ) -> Transformer:
         return FrameworkMappingLoader(
             view=self.parameters["view"],
             mapping_function=get_python_function_from_location(
