@@ -13,14 +13,15 @@ def test_can_save_via_jdbc(spark_session: SparkSession) -> None:
     jdbc_url = "jdbc:mysql:user@password:host/db:port"
     table = "my_view_table"
     driver = "org.driver.FakeDriver"
-
+    mode = 'append'
     # Act
     exporter = FrameworkJdbcExporter(
-        view=view, jdbc_url=jdbc_url, table=table, driver=driver
+        view=view, jdbc_url=jdbc_url, table=table, driver=driver, mode=mode
     )
 
     # Assert
     options = exporter.getOptions()
+    assert exporter.getMode() == mode
     assert options["url"] == jdbc_url
     assert options["driver"] == driver
     assert exporter.getFormat() == "jdbc"

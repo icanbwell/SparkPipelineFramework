@@ -18,6 +18,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
     @keyword_only
     def __init__(
         self,
+        mode: Optional[str] = None,
         view: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -36,6 +37,9 @@ class FrameworkBaseExporter(FrameworkTransformer):
         self.limit: Param = Param(self, "limit", "")
         self._setDefault(limit=None)
 
+        self.mode: Param = Param(self, "mode", "")
+        self._setDefault(mode='overwrite')
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -43,6 +47,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
     @keyword_only
     def setParams(
         self,
+        mode: Optional[str] = None,
         view: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -76,7 +81,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
                 for k, v in self.getOptions().items():
                     writer.option(k, v)
 
-                writer.save()
+                writer.mode(self.getMode()).save()
 
             except AnalysisException as e:
                 self.logger.error(f"Failed to write to {format}")
@@ -100,6 +105,13 @@ class FrameworkBaseExporter(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
         return self.getOrDefault(self.limit)  # type: ignore
+
+    def getMode(self) -> str:
+        return self.getOrDefault(self.mode)
+
+    def setMode(self, value: Param) -> 'FrameworkBaseExporter':
+        self._paramMap[self.mode] = value
+        return self
 
     def getFormat(self) -> str:
         raise NotImplementedError
