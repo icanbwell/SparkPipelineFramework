@@ -51,7 +51,8 @@ class ProxyBase:
             elif file.endswith('.csv') and self.loader is None:
                 file_name = file.replace('.csv', '')
                 self.loader = FrameworkCsvLoader(
-                    view=file_name, path_to_csv=path.join(self.location, file)
+                    view=file_name, path_to_csv=path.join(self.location, file),
+                    delimiter=parameters.get('delimiter', ',')
                 )
             elif file == 'convert.sql':
                 convert_sql: str = self.read_file_as_string(path.join(self.location, file)) \
