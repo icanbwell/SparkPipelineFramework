@@ -117,6 +117,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             df_reader = df_reader.schema(schema)
         elif infer_schema:
             df_reader = df_reader.option("inferSchema", "true")
+        else:
+            df_reader = df_reader.option("inferSchema", "false")
 
         df2: DataFrame
         df_reader = df_reader.format(self.getReaderFormat())
