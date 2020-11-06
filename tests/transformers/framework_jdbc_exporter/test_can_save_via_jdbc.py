@@ -16,11 +16,16 @@ def test_can_save_via_jdbc(spark_session: SparkSession) -> None:
 
     # Act
     exporter = FrameworkJdbcExporter(
-        view=view, jdbc_url=jdbc_url, table=table, driver=driver
+        view=view,
+        jdbc_url=jdbc_url,
+        table=table,
+        driver=driver,
+        mode=FrameworkJdbcExporter.MODE_OVERWRITE,
     )
 
     # Assert
     options = exporter.getOptions()
+    assert options["mode"] == "overwrite"
     assert options["url"] == jdbc_url
     assert options["driver"] == driver
     assert exporter.getFormat() == "jdbc"
