@@ -25,7 +25,7 @@ def test_can_save_via_jdbc(spark_session: SparkSession) -> None:
 
     # Assert
     options = exporter.getOptions()
-    assert options["mode"] == "overwrite"
     assert options["url"] == jdbc_url
     assert options["driver"] == driver
     assert exporter.getFormat() == "jdbc"
+    assert exporter.getMode() == "overwrite"

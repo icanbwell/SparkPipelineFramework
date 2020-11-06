@@ -9,32 +9,15 @@ from spark_pipeline_framework.transformers.framework_base_exporter import Framew
 
 
 class FrameworkJdbcExporter(FrameworkBaseExporter):
-    MODE_APPEND = "append"
-    MODE_OVERWRITE = "overwrite"
-    MODE_IGNORE = "ignore"
-    MODE_ERROR = "error"
-    MODE_CHOICES = (
-        MODE_APPEND,
-        MODE_OVERWRITE,
-        MODE_IGNORE,
-        MODE_ERROR,
-    )
-
     # noinspection PyUnusedLocal
     @keyword_only
     def __init__(
-        self,
-        jdbc_url: str,
-        table: str,
-        driver: str,
-        mode: str = MODE_ERROR,
-        **kwargs: Dict[Any, Any]
+        self, jdbc_url: str, table: str, driver: str, **kwargs: Dict[Any, Any]
     ):
         super().__init__(**kwargs)
         assert jdbc_url
         assert table
         assert driver
-        assert mode in FrameworkJdbcExporter.MODE_CHOICES
 
         self.logger = get_logger(__name__)
 
@@ -47,10 +30,7 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         self.driver: Param = Param(self, "driver", "")
         self._setDefault(driver=driver)
 
-        self.mode: Param = Param(self, "mode", "")
-        self._setDefault(mode=mode)
-
-        self._set(jdbc_url=jdbc_url, table=table, driver=driver, mode=mode)
+        self._set(jdbc_url=jdbc_url, table=table, driver=driver)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setJdbcUrl(self, value: Param) -> 'FrameworkJdbcExporter':
@@ -79,15 +59,6 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
     def getDriver(self) -> str:
         return self.getOrDefault(self.driver)  # type: ignore
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setMode(self, value: Param) -> 'FrameworkJdbcExporter':
-        self._paramMap[self.mode] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getMode(self) -> str:
-        return self.getOrDefault(self.mode)  # type: ignore
-
     def getFormat(self) -> str:
         return "jdbc"
 
@@ -96,5 +67,4 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
             "url": self.getJdbcUrl(),
             "dbtable": self.getTable(),
             "driver": self.getDriver(),
-            "mode": self.getMode(),
         }
