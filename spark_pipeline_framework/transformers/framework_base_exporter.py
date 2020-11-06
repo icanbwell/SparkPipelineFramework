@@ -14,16 +14,30 @@ from spark_pipeline_framework.transformers.framework_transformer import Framewor
 
 
 class FrameworkBaseExporter(FrameworkTransformer):
+    MODE_APPEND = "append"
+    MODE_OVERWRITE = "overwrite"
+    MODE_IGNORE = "ignore"
+    MODE_ERROR = "error"
+    MODE_CHOICES = (
+        MODE_APPEND,
+        MODE_OVERWRITE,
+        MODE_IGNORE,
+        MODE_ERROR,
+    )
+
     # noinspection PyUnusedLocal
     @keyword_only
     def __init__(
         self,
         view: Optional[str] = None,
         name: Optional[str] = None,
+        mode: str = MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1
     ):
+        assert mode in FrameworkBaseExporter.MODE_CHOICES
+
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -32,6 +46,9 @@ class FrameworkBaseExporter(FrameworkTransformer):
 
         self.view: Param = Param(self, "view", "")
         self._setDefault(view=view)
+
+        self.mode: Param = Param(self, "mode", "")
+        self._setDefault(mode=mode)
 
         self.limit: Param = Param(self, "limit", "")
         self._setDefault(limit=None)
@@ -45,6 +62,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
         self,
         view: Optional[str] = None,
         name: Optional[str] = None,
+        mode: str = MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1
@@ -73,6 +91,8 @@ class FrameworkBaseExporter(FrameworkTransformer):
                 else:
                     writer = df.write.format(format)
 
+                writer = writer.mode(self.getMode())
+
                 for k, v in self.getOptions().items():
                     writer.option(k, v)
 
@@ -91,6 +111,15 @@ class FrameworkBaseExporter(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
         return self.getOrDefault(self.view)  # type: ignore
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setMode(self, value: Param) -> 'FrameworkBaseExporter':
+        self._paramMap[self.mode] = value
+        return self
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getMode(self) -> str:
+        return self.getOrDefault(self.mode)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setLimit(self, value: Param) -> 'FrameworkBaseExporter':
