@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 
 from pyspark.ml.base import Transformer
+from pyspark.sql import DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import get_python_transformer_from_location, \
@@ -10,9 +11,10 @@ from spark_pipeline_framework.proxy_generator.python_transformer_helpers import 
 from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
 from spark_pipeline_framework.transformers.framework_mapping_runner import FrameworkMappingLoader
 from spark_pipeline_framework.transformers.framework_sql_transformer import FrameworkSqlTransformer
+from spark_pipeline_framework.transformers.framework_transformer import FrameworkTransformer
 
 
-class ProxyBase:
+class ProxyBase(FrameworkTransformer):
     loader: Optional[Transformer] = None
     converter: Optional[Transformer] = None
     feature: Optional[Transformer] = None
@@ -25,8 +27,11 @@ class ProxyBase:
         progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False
     ) -> None:
-        self.parameters: Dict[str, Any] = parameters
-        self.progress_logger: Optional[ProgressLogger] = progress_logger
+        super().__init__(
+            name=self.__class__.__name__,
+            parameters=parameters,
+            progress_logger=progress_logger
+        )
         self.verify_count_remains_same: bool = verify_count_remains_same
         self.location: str = str(location)
 
@@ -36,6 +41,13 @@ class ProxyBase:
         index_of_module: int = self.location.rfind("/library/")
         module_name: str = self.location[index_of_module +
                                          1:].replace("/", ".")
+
+        # noinspection Mypy
+        self._set(
+            name=self.__class__.__name__,
+            parameters=parameters,
+            progress_logger=progress_logger
+        )
 
         for file in files:
             if file == 'my_view.sql':
@@ -100,22 +112,33 @@ class ProxyBase:
     def transformers(self, value: Any) -> None:
         raise AttributeError("transformers property is read only.")
 
+    def _transform(self, df: DataFrame) -> DataFrame:
+        # iterate through my transformers
+        transformer: Transformer
+        for transformer in self.transformers:
+            df = transformer.transform(df)
+        return df
+
     def get_python_transformer(self, import_module_name: str) -> Transformer:
+        progress_logger = self.getProgressLogger()
+        assert progress_logger
         return get_python_transformer_from_location(
             location=self.location,
             import_module_name=import_module_name,
-            parameters=self.parameters,
-            progress_logger=self.progress_logger
+            parameters=self.getParameters() or {},
+            progress_logger=progress_logger
         )
 
     def get_python_mapping_transformer(
         self, import_module_name: str
     ) -> Transformer:
+        parameters: Optional[Dict[str, Any]] = self.getParameters()
         return FrameworkMappingLoader(
-            view=self.parameters["view"],
+            view=parameters["view"]
+            if parameters and "view" in parameters else "",
             mapping_function=get_python_function_from_location(
                 location=self.location, import_module_name=import_module_name
             ),
-            parameters=self.parameters,
-            progress_logger=self.progress_logger
+            parameters=parameters,
+            progress_logger=self.getProgressLogger()
         )
