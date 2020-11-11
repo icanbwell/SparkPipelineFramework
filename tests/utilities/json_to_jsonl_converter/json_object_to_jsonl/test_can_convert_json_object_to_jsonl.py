@@ -6,7 +6,7 @@ from typing import List
 from spark_pipeline_framework.utilities.json_to_jsonl_converter import convert_json_to_jsonl
 
 
-def test_can_convert_json_to_jsonl() -> None:
+def test_can_convert_json_object_to_jsonl() -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath('./')
 
@@ -24,6 +24,5 @@ def test_can_convert_json_to_jsonl() -> None:
     # Assert
     with open(output_file, "r+") as file:
         lines: List[str] = file.readlines()
-        assert len(lines) == 2
-        assert lines[0] == '{"foo":"bar"}\n'
-        assert lines[1] == '{"foo2":"bar2"}\n'
+        assert len(lines) == 1
+        assert lines[0] == '{"foo":"bar","foo2":"bar2"}\n'

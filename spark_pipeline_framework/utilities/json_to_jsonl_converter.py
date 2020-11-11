@@ -40,4 +40,6 @@ def convert_json_to_jsonl(src_file: Path, dst_file: Path) -> Path:
         else:
             json_text: str = dumps(obj=json_object, separators=(',', ':'))
             file.write(json_text)
+            file.write("\n")
+
     return dst_file
