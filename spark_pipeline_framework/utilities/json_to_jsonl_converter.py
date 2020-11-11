@@ -1,7 +1,7 @@
 import os
 from json import loads, dumps
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
 
 # noinspection SpellCheckingInspection
@@ -16,8 +16,10 @@ def convert_json_to_jsonl(src_file: Path, dst_file: Path) -> Path:
 
     # first detect if the src_file is already in jsonl format
     with open(src_file, "r") as file:
-        beginning_contents: str = file.read(n=100)
-        if beginning_contents.lstrip() == "{":  # already in jsonl format
+        beginning_lines: List[str] = file.readlines()
+        # if each line begins with { then this is a jsonl file
+        is_jsonl_file = all([line.lstrip() == "{" for line in beginning_lines])
+        if is_jsonl_file:  # already in jsonl format
             # just copy the file over and be done
             contents: str = file.read()
             with open(dst_file, "w+") as file2:
@@ -27,7 +29,15 @@ def convert_json_to_jsonl(src_file: Path, dst_file: Path) -> Path:
     # file is a json file so need to convert to jsonl
     with open(src_file, "r") as file:
         json_object: Any = loads(file.read())
-    json_text: str = dumps(obj=json_object, separators=(',', ':'))
     with open(dst_file, "w+") as file:
-        file.write(json_text)
+        if isinstance(json_object, list):
+            for json_object_inner in json_object:
+                json_text_inner: str = dumps(
+                    obj=json_object_inner, separators=(',', ':')
+                )
+                file.write(json_text_inner)
+                file.write("\n")
+        else:
+            json_text: str = dumps(obj=json_object, separators=(',', ':'))
+            file.write(json_text)
     return dst_file

@@ -10,11 +10,10 @@ from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.utilities.json_to_jsonl_converter import convert_json_to_jsonl
+
 
 # noinspection SpellCheckingInspection
-from spark_pipeline_framework.utilities.json_to_jsonl import convert_json_to_jsonl
-
-
 class FrameworkJsonToJsonlConverter(FrameworkTransformer):
     # noinspection PyUnusedLocal
     @keyword_only
