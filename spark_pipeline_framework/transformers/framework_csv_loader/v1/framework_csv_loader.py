@@ -1,10 +1,11 @@
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
 from pyspark.ml.param.shared import Param
 
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import \
     FrameworkLocalFileLoader
 
@@ -18,9 +19,19 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         path_to_csv: Union[str, List[str], Path],
         delimiter: str = ",",
         has_header: bool = True,
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
         **kwargs: Dict[Any, Any]
     ) -> None:
-        super().__init__(view=view, filepath=path_to_csv, **kwargs)
+        super().__init__(
+            view=view,
+            filepath=path_to_csv,
+            name=name,
+            parameters=parameters,
+            progress_logger=progress_logger,
+            **kwargs
+        )
 
         self.delimiter: Param = Param(self, "delimiter", "")
         self._setDefault(delimiter=",")
