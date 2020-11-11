@@ -7,7 +7,8 @@ from typing import List
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_json_splitter import FrameworkJsonSplitter
+from spark_pipeline_framework.transformers.framework_json_splitter.v1.framework_json_splitter import \
+    FrameworkJsonSplitter
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import create_empty_dataframe
 
 

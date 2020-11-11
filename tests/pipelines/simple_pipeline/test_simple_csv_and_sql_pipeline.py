@@ -7,7 +7,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
 from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
-from spark_pipeline_framework.transformers.framework_csv_loader import FrameworkCsvLoader
+from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import FrameworkCsvLoader
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
