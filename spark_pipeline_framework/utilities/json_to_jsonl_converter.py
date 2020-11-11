@@ -18,8 +18,12 @@ def convert_json_to_jsonl(src_file: Path, dst_file: Path) -> Path:
     with open(src_file, "r") as file:
         beginning_lines: List[str] = file.readlines()
         # if each line begins with { then this is a jsonl file
-        is_jsonl_file = all([line.lstrip() == "{" for line in beginning_lines])
-        if is_jsonl_file:  # already in jsonl format
+        is_jsonl_file: bool = all(
+            [line.lstrip().startswith("{") for line in beginning_lines]
+        )
+
+    if is_jsonl_file:  # already in jsonl format
+        with open(src_file, "r") as file:
             # just copy the file over and be done
             contents: str = file.read()
             with open(dst_file, "w+") as file2:
