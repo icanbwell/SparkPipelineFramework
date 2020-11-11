@@ -3,7 +3,6 @@ import os
 import shutil
 
 # noinspection PyPackageRequirements
-from os import path
 from typing import Any
 
 import pytest
@@ -72,12 +71,7 @@ def spark_session(request: Any) -> SparkSession:
 
     clean_spark_dir()
 
-    master: str = "spark://localhost:7077"
-    if not path.exists("/Applications/Docker.app"):
-        master = "local[2]"
-        print(f"++++++ Running on local spark: {master} ++++")
-    else:
-        print(f"++++++ Running on docker spark: {master} ++++")
+    master = "local[2]"
 
     session = SparkSession.builder.appName("pytest-pyspark-local-testing"). \
         master(master). \
