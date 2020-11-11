@@ -62,7 +62,6 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
         self,
         file_path: Union[Path, str],
         output_folder: Union[Path, str],
-        max_size_per_file_in_mb: float,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
