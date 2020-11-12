@@ -25,7 +25,8 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         query: str,
         db_name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
+
     ):
 
         super().__init__(
@@ -58,14 +59,12 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         self.db_name: Param = Param(self, "db_name", "")
         self._setDefault(db_name=None)
 
-        self._set(username=username,
-                  password=password,
-                  host=host,
-                  port=port,
-                  query=query)
+        self._set(** self._input_kwargs)
 
-        kwargs = self._input_kwargs
-        self.setParams(**kwargs)
+        super().setParams(
+             parameters=parameters, progress_logger=progress_logger
+        )
+
 
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
