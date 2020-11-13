@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional
 
 # noinspection PyProtectedMember
 import pymysql
+from pymysql import OperationalError
 from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -26,7 +27,6 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         db_name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-
     ):
 
         super().__init__(
@@ -59,31 +59,30 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         self.db_name: Param = Param(self, "db_name", "")
         self._setDefault(db_name=None)
 
-        self._set(** self._input_kwargs)
+        self._set(**self._input_kwargs)
 
         super().setParams(
-             parameters=parameters, progress_logger=progress_logger
+            parameters=parameters, progress_logger=progress_logger
         )
-
 
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         with ProgressLogMetric(
-            name=f"db_query_runner",
-            progress_logger=progress_logger
+            name="db_query_runner", progress_logger=progress_logger
         ):
-            connection = pymysql.connect(username=self.username,
-                                         password=self.password,
-                                         host=self.host,
-                                         port=self.port,
-                                         db=self.db_name)
+            connection = pymysql.connect(
+                username=self.username,
+                password=self.password,
+                host=self.host,
+                port=self.port,
+                db=self.db_name
+            )
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(self.query)
-                connection.commit()
 
-            except Exception as e:
+            except OperationalError as e:
                 self.logger.error(f"Failed to run query {self.getQuery()}")
                 raise e
 
@@ -122,7 +121,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getPort(self) -> str:
+    def getPort(self) -> int:
         return self.getOrDefault(self.port)  # type: ignore
 
     def setQuery(self, value: Param) -> 'FrameworkDBQueryRunner':
