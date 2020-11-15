@@ -13,6 +13,10 @@ def convert_json_to_jsonl(src_file: Path, dst_file: Path) -> Path:
     :return: path to jsonl file
     """
     assert os.path.isfile(src_file)
+    # create the dst_file if it does not exist
+    dst_folder: Path = dst_file.parents[0]
+    if not os.path.exists(dst_folder):
+        os.mkdir(dst_folder)
 
     # first detect if the src_file is already in jsonl format
     with open(src_file, "r") as file:

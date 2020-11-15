@@ -45,13 +45,24 @@ class FrameworkPipeline(Transformer):  # type: ignore
                 ):
                     df = transformer.transform(dataset=df)
             except Exception as e:
-                logger.warning("======== stage threw exception =======")
+                if hasattr(transformer, "getName"):
+                    # noinspection Mypy
+                    stage_name = transformer.getName()
+                logger.error(
+                    f"!!!!!!!!!!!!! stage {stage_name} threw exception !!!!!!!!!!!!!"
+                )
+                # use exception chaining to add stage name but keep original exception
+                friendly_spark_exception: FriendlySparkException = FriendlySparkException(
+                    exception=e, stage_name=stage_name
+                )
+                logger.error(msg=friendly_spark_exception.message)
                 if hasattr(transformer, "getSql"):
                     # noinspection Mypy
-                    logger.info(transformer.getSql())
-                logger.warning("======== stage threw exception =======")
-                # use exception chaining to add stage name but keep original exception
-                raise FriendlySparkException(str(e), stage_name=stage_name)
+                    logger.error(transformer.getSql())
+                logger.error(
+                    "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                )
+                raise friendly_spark_exception from e
         return df
 
     # noinspection PyMethodMayBeStatic
