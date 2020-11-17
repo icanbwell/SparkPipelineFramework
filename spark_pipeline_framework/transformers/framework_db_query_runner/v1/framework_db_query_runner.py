@@ -72,7 +72,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
             name="db_query_runner", progress_logger=progress_logger
         ):
             connection = pymysql.connect(
-                username=self.username,
+                user=self.username,
                 password=self.password,
                 host=self.host,
                 port=self.port,
