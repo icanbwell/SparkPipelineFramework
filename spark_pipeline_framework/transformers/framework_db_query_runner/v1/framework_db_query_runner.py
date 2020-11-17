@@ -72,15 +72,15 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
             name="db_query_runner", progress_logger=progress_logger
         ):
             connection = pymysql.connect(
-                user=self.username,
-                password=self.password,
-                host=self.host,
-                port=self.port,
-                db=self.db_name
+                user=self.getUsername(),
+                password=self.getPassword(),
+                host=self.getHost(),
+                port=self.getPort(),
+                db=self.getDb()
             )
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute(self.query)
+                    cursor.execute(self.getQuery())
 
             except OperationalError as e:
                 self.logger.error(f"Failed to run query {self.getQuery()}")
