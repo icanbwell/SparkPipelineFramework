@@ -1,25 +1,33 @@
 import traceback
-from typing import Any
+from typing import Any, Optional
+
+from pyspark.sql.utils import AnalysisException
 
 
 class FriendlySparkException(Exception):
     # noinspection PyUnusedLocal
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, exception: Exception, stage_name: Optional[str], *args: Any,
+        **kwargs: Any
+    ) -> None:
         try:
             # Summary is a boolean argument
             # If True, it prints the exception summary
             # This way, we can avoid printing the summary all
             # the way along the exception "bubbling up"
-            stage_name = kwargs['stage_name']
-            error_text = (stage_name or ''
-                          ) + ": " + FriendlySparkException.exception_summary()
-            Exception.__init__(self, error_text)
+            error_text: str = (
+                stage_name or ''
+            ) + ": " + FriendlySparkException.exception_summary()
+            self.message: str = error_text
+            if isinstance(exception, AnalysisException):
+                self.message = str(exception)
+            super().__init__(error_text)
         except KeyError:
             pass
 
     # noinspection SpellCheckingInspection
     @staticmethod
-    def errortext(text: str) -> str:
+    def get_errortext(text: str) -> str:
         # Makes exception summary both BOLD and RED (FAIL)
         return text
 
@@ -36,7 +44,7 @@ class FriendlySparkException(Exception):
                     msg.split('\n')[::-1]
                 )
             )
-            error = FriendlySparkException.errortext(
+            error = FriendlySparkException.get_errortext(
                 'Error\t: {}'.format(info[0])
             )
             # Figure out where the error happened - location (file/notebook), line and function
