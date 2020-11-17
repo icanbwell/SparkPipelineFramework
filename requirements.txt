@@ -1,5 +1,5 @@
 numpy>=1.19.2
 pyspark>2.4.0
 logger
-sparkautomapper>=0.1.42
+sparkautomapper>=0.1.49
 pymysql
