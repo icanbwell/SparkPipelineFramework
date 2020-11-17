@@ -65,7 +65,8 @@ class ProxyBase(FrameworkTransformer):
                 self.loader = FrameworkCsvLoader(
                     view=file_name,
                     path_to_csv=path.join(self.location, file),
-                    delimiter=parameters.get("delimiter", ",")
+                    delimiter=parameters.get("delimiter", ","),
+                    has_header=parameters.get("has_header", True)
                 )
             elif file == 'convert.sql':
                 convert_sql: str = self.read_file_as_string(path.join(self.location, file)) \
