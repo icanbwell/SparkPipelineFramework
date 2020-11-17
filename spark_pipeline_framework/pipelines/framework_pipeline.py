@@ -37,6 +37,8 @@ class FrameworkPipeline(Transformer):  # type: ignore
                     logger.info(
                         f"---- Running transformer {stage_name}  ({i} of {count_of_transformers}) ----"
                     )
+                else:
+                    stage_name = transformer.__class__.__name__
                     # self.spark_session.sparkContext.setJobDescription(stage_name)
                     # print_memory_stats(sc(df))
                 with ProgressLogMetric(
@@ -48,6 +50,8 @@ class FrameworkPipeline(Transformer):  # type: ignore
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
                     stage_name = transformer.getName()
+                else:
+                    stage_name = transformer.__class__.__name__
                 logger.error(
                     f"!!!!!!!!!!!!! stage {stage_name} threw exception !!!!!!!!!!!!!"
                 )
