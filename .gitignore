@@ -127,7 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-.idea/
+
+# Explicitly include certain directories from .idea
+!.idea/
+.idea/*
+!.idea/fileTemplates/
 
 # virtual environment
 venv_sparkpipelineframework/
