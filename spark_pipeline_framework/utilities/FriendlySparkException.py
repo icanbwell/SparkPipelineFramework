@@ -1,3 +1,5 @@
+import os
+import sys
 import traceback
 from typing import Any, Optional
 
@@ -59,6 +61,32 @@ class FriendlySparkException(Exception):
                 new_msg = '\nLocation: {}\nLine\t: {}\nFunction: {}\n{}'.format(
                     location, line, func, error
                 )
+            # now loop  through __cause__ to build up message including all the error messages
+            type_, exc, tr = sys.exc_info()
+            if exc:
+                current_exception: BaseException = exc
+                i: int = 0
+                while hasattr(
+                    current_exception, "__cause__"
+                ) and current_exception.__cause__:
+                    current_exception = current_exception.__cause__
+                    file_name: str = ""
+                    line_number: Optional[int] = None
+                    if hasattr(
+                        current_exception, "__traceback__"
+                    ) and current_exception.__traceback__:
+                        file_name = os.path.basename(
+                            current_exception.__traceback__.tb_frame.f_code.
+                            co_filename
+                        )
+                        line_number = current_exception.__traceback__.tb_frame.f_code.co_firstlineno
+                    i += 1
+                    new_msg += "\n" + (
+                        "<" * i
+                    ) + " " + str(current_exception) + " [" + file_name + (
+                        f" ({line_number})" if line_number else ""
+                    ) + "]"
+
             return new_msg
         except Exception as e:
             # If we managed to raise an exception while trying to format the original exception...
