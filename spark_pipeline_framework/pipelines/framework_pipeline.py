@@ -59,7 +59,13 @@ class FrameworkPipeline(Transformer):  # type: ignore
                 friendly_spark_exception: FriendlySparkException = FriendlySparkException(
                     exception=e, stage_name=stage_name
                 )
-                logger.error(msg=friendly_spark_exception.message)
+                error_messages: List[
+                    str] = friendly_spark_exception.message.split(
+                        "\n"
+                    ) if friendly_spark_exception.message else []
+                for error_message in error_messages:
+                    logger.error(msg=error_message)
+
                 if hasattr(transformer, "getSql"):
                     # noinspection Mypy
                     logger.error(transformer.getSql())
