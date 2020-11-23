@@ -1,9 +1,11 @@
 import os
 import sys
 import traceback
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 from pyspark.sql.utils import AnalysisException
+
+from spark_pipeline_framework.utilities.cannot_cast_exception_parser import parse_cannot_cast_exception
 
 
 class FriendlySparkException(Exception):
@@ -81,9 +83,20 @@ class FriendlySparkException(Exception):
                         )
                         line_number = current_exception.__traceback__.tb_frame.f_code.co_firstlineno
                     i += 1
+                    exception_message: str = str(current_exception)
+                    if "cannot cast " in exception_message:
+                        result: List[str] = parse_cannot_cast_exception(
+                            exception_message
+                        )
+                        for item in result:
+                            new_msg += "\n" + (
+                                "<" * i
+                            ) + " " + item + " [" + file_name + (
+                                f" ({line_number})" if line_number else ""
+                            ) + "]"
                     new_msg += "\n" + (
                         "<" * i
-                    ) + " " + str(current_exception) + " [" + file_name + (
+                    ) + " " + exception_message + " [" + file_name + (
                         f" ({line_number})" if line_number else ""
                     ) + "]"
 

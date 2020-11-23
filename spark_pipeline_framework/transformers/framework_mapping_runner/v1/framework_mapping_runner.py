@@ -91,7 +91,12 @@ class FrameworkMappingLoader(FrameworkTransformer):
             auto_mappers: List[AutoMapperBase] = auto_mapper
             for a in auto_mappers:
                 assert isinstance(a, AutoMapper)
-                a.transform(df=df)
+                try:
+                    a.transform(df=df)
+                except Exception as e:
+                    raise Exception(
+                        f"Error running automapper {a.view}"
+                    ) from e
 
         return df
 
