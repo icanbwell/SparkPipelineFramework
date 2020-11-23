@@ -6,4 +6,4 @@ from os import path
 class TranslatorsMyTranslator(TranslatorProxyBase):
     def __init__(self) -> None:
         location: str = path.dirname(path.abspath(__file__))
-        super().__init__(location=location)
+        super().__init__(location=location, csv_file="provider_types.csv")
