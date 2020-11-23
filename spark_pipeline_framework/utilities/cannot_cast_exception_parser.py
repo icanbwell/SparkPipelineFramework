@@ -34,11 +34,12 @@ def parse_struct(struct1: str) -> str:
             remaining_text = remaining_text[1:]
             if last_item_was_letter:
                 formatted_struct1 += '"'
-            pop = stack.pop()
-            if pop == "[":
-                formatted_struct1 += "]"
-            else:
-                formatted_struct1 += "}"
+            if len(stack) > 0:
+                pop = stack.pop()
+                if pop == "[":
+                    formatted_struct1 += "]"
+                else:
+                    formatted_struct1 += "}"
             last_item_was_letter = False
         else:
             item = remaining_text[0]
