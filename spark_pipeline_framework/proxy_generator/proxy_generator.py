@@ -68,7 +68,8 @@ class ProxyGenerator:
                             search_result.end():].replace('/', '_')
                         ProxyGenerator.write_translator(
                             file_name=transformer_reader_file_name,
-                            folder=folder
+                            folder=folder,
+                            csv_file=path.basename(file)
                         )
                 elif file.endswith(transformer_file_indicators):
                     search_result = search(r'/library/', folder)
@@ -119,7 +120,7 @@ class {transformer_reader_class_name}(ProxyBase):
                 file.write(transformer_reader_string)
 
     @staticmethod
-    def write_translator(file_name: str, folder: str) -> None:
+    def write_translator(file_name: str, folder: str, csv_file: str) -> None:
         translator_reader_class_name = ''.join(
             [s.title() for s in file_name.split('_')]
         )
@@ -133,7 +134,8 @@ class {translator_reader_class_name}(TranslatorProxyBase):
                  ) -> None:
         location: str = path.dirname(path.abspath(__file__))
         super().__init__(
-            location=location
+            location=location,
+            csv_file="{csv_file}"
         )
 """
         translator_proxy_file_name: str = path.join(folder, file_name + '.py')

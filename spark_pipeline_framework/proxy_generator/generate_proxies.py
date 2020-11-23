@@ -1,5 +1,4 @@
-from os import getcwd
-from os import walk, path, listdir
+from os import getcwd, walk, path, listdir
 from re import search
 from shutil import rmtree
 from sys import exit
@@ -73,7 +72,6 @@ class ProxyGenerator:
                 translator_search_result: Optional[
                     Match[str]] = search(r'/library/translators/', folder)
                 if translator_search_result:
-                    print(f"Found translator in {folder}")
                     search_result: Optional[Match[str]
                                             ] = search(r'/library/', folder)
                     if search_result:
@@ -81,7 +79,8 @@ class ProxyGenerator:
                             search_result.end():].replace('/', '_')
                         ProxyGenerator.write_translator(
                             file_name=transformer_reader_file_name,
-                            folder=folder
+                            folder=folder,
+                            csv_file=path.basename(file)
                         )
                 elif file.endswith(transformer_file_indicators):
                     search_result = search(r'/library/', folder)
@@ -132,12 +131,11 @@ class {transformer_reader_class_name}(ProxyBase):
                 file.write(transformer_reader_string)
 
     @staticmethod
-    def write_translator(file_name: str, folder: str) -> None:
+    def write_translator(file_name: str, folder: str, csv_file: str) -> None:
         translator_reader_class_name = ''.join(
             [s.title() for s in file_name.split('_')]
         )
-        transformer_reader_string = f"""
-from spark_pipeline_framework.proxy_generator.translator_proxy_base import TranslatorProxyBase
+        transformer_reader_string = f"""from spark_pipeline_framework.proxy_generator.translator_proxy_base import TranslatorProxyBase
 from os import path
 
 
@@ -147,13 +145,14 @@ class {translator_reader_class_name}(TranslatorProxyBase):
                  ) -> None:
         location: str = path.dirname(path.abspath(__file__))
         super().__init__(
-            location=location
+            location=location,
+            csv_file="{csv_file}"
         )
 """
         translator_proxy_file_name: str = path.join(folder, file_name + '.py')
         if not path.exists(translator_proxy_file_name):
             with open(translator_proxy_file_name, 'w+') as file:
-                print(f"Creating {translator_proxy_file_name}")
+                print(f"Creating translator {translator_proxy_file_name}")
                 file.write(transformer_reader_string)
 
 
