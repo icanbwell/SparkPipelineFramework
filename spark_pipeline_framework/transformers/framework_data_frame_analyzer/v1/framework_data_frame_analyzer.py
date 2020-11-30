@@ -21,6 +21,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         analysis_views_prefix: Optional[str] = None,
         output_folder: Optional[Union[Path, str]] = None,
         columns_to_analyze: Optional[List[str]] = None,
+        columns_to_skip: Optional[List[str]] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
@@ -33,6 +34,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         :param analysis_views_prefix: (Optional) prefix to use when creating the analysis views
         :param output_folder: (Optional) folder in which to create the csvs
         :param columns_to_analyze: (Optional) limit analysis to these columns
+        :param columns_to_skip: (Optional) don't include these columns in analysis
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -57,6 +59,9 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         self.columns_to_analyze: Param = Param(self, "columns_to_analyze", "")
         self._setDefault(columns_to_analyze=columns_to_analyze)
 
+        self.columns_to_skip: Param = Param(self, "columns_to_skip", "")
+        self._setDefault(columns_to_skip=columns_to_skip)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -68,6 +73,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         analysis_views_prefix: Optional[str] = None,
         output_folder: Optional[Union[Path, str]] = None,
         columns_to_analyze: Optional[List[str]] = None,
+        columns_to_skip: Optional[List[str]] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
@@ -83,6 +89,8 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         analysis_views_prefix: Optional[str] = self.getAnalysisViewsPrefix()
         output_folder: Optional[Union[Path, str]] = self.getOutputFolder()
         columns_to_analyze: Optional[List[str]] = self.getColumnsToAnalyze()
+        columns_to_skip: Optional[List[str]] = self.getColumnsToSkip()
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         # get columns in data frame
         df = df.sql_ctx.table(view)
@@ -96,15 +104,26 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
 
         assert columns_to_analyze
 
+        if columns_to_skip:
+            columns_to_analyze = [
+                c for c in columns_to_analyze if c not in columns_to_skip
+            ]
+
         column_name: str
         for column_name in columns_to_analyze:
             result_df: DataFrame = df.select(column_name).groupBy(
                 column_name
             ).count().orderBy(col("count").desc())
             if output_folder:
+                target_path: str = str(
+                    Path(output_folder).joinpath(column_name)
+                )
+                if progress_logger:
+                    progress_logger.write_to_log(
+                        f"Writing analysis for column {column_name} to {target_path}"
+                    )
                 result_df.coalesce(1).write.csv(
-                    str(Path(output_folder).joinpath(column_name)),
-                    header=True
+                    target_path, header=True, mode="overwrite"
                 )
             if analysis_views_prefix:
                 result_df.createOrReplaceTempView(
@@ -130,3 +149,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnsToAnalyze(self) -> Optional[List[str]]:
         return self.getOrDefault(self.columns_to_analyze)  # type: ignore
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getColumnsToSkip(self) -> Optional[List[str]]:
+        return self.getOrDefault(self.columns_to_skip)  # type: ignore
