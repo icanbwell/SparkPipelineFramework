@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
 
@@ -116,7 +117,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
             ).count().orderBy(col("count").desc())
             if output_folder:
                 target_path: str = str(
-                    Path(output_folder).joinpath(column_name)
+                    os.path.join(str(output_folder), column_name)
                 )
                 if progress_logger:
                     progress_logger.write_to_log(
