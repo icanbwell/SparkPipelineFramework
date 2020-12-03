@@ -92,7 +92,7 @@ class ProxyBase(FrameworkTransformer):
                 )
             elif file == 'calculate.py':
                 self.feature = self.get_python_transformer('.calculate')
-            elif file == 'mapping.py':
+            elif file.endswith('mapping.py'):
                 self.feature = self.get_python_mapping_transformer('.mapping')
 
     @staticmethod
