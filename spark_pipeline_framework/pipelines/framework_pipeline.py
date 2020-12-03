@@ -27,6 +27,7 @@ class FrameworkPipeline(Transformer):  # type: ignore
         logger = get_logger(__name__)
         count_of_transformers: int = len(self.transformers)
         i: int = 0
+        pipeline_name: str = self.__class__.__name__
         for transformer in self.transformers:
             stage_name: Optional[str] = None
             try:
@@ -35,7 +36,8 @@ class FrameworkPipeline(Transformer):  # type: ignore
                     # noinspection Mypy
                     stage_name = transformer.getName()
                     logger.info(
-                        f"---- Running transformer {stage_name}  ({i} of {count_of_transformers}) ----"
+                        f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
+                        f"({i} of {count_of_transformers}) ----"
                     )
                 else:
                     stage_name = transformer.__class__.__name__
@@ -53,7 +55,7 @@ class FrameworkPipeline(Transformer):  # type: ignore
                 else:
                     stage_name = transformer.__class__.__name__
                 logger.error(
-                    f"!!!!!!!!!!!!! stage {stage_name} threw exception !!!!!!!!!!!!!"
+                    f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
                 )
                 # use exception chaining to add stage name but keep original exception
                 friendly_spark_exception: FriendlySparkException = FriendlySparkException(
