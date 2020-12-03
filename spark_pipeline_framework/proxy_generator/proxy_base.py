@@ -1,3 +1,4 @@
+import os
 from os import listdir, path
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
@@ -9,17 +10,14 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import get_python_transformer_from_location, \
     get_python_function_from_location
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import FrameworkCsvLoader
-from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import FrameworkMappingLoader
-from spark_pipeline_framework.transformers.framework_sql_transformer.v1.framework_sql_transformer import FrameworkSqlTransformer
+from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import \
+    FrameworkMappingLoader
+from spark_pipeline_framework.transformers.framework_sql_transformer.v1.framework_sql_transformer import \
+    FrameworkSqlTransformer
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
 
 
 class ProxyBase(FrameworkTransformer):
-    loader: Optional[Transformer] = None
-    converter: Optional[Transformer] = None
-    feature: Optional[Transformer] = None
-    location: str = ""
-
     def __init__(
         self,
         parameters: Dict[str, Any],
@@ -34,6 +32,7 @@ class ProxyBase(FrameworkTransformer):
         )
         self.verify_count_remains_same: bool = verify_count_remains_same
         self.location: str = str(location)
+        self.my_transformers: List[Transformer] = []
 
         assert self.location
         # Iterate over files to create transformers
@@ -50,50 +49,41 @@ class ProxyBase(FrameworkTransformer):
         )
 
         for file in files:
-            if file == 'my_view.sql':
-                load_sql: str = self.read_file_as_string(
-                    path.join(self.location, file)
-                ).format(parameters=parameters)
-                self.loader = FrameworkSqlTransformer(
-                    sql=load_sql,
-                    name=module_name,
-                    progress_logger=progress_logger,
-                    log_sql=parameters.get("debug_log_sql", False)
-                )
-            elif file.endswith('.csv') and self.loader is None:
+            if file.endswith('.csv'):
                 file_name = file.replace('.csv', '')
-                self.loader = FrameworkCsvLoader(
-                    view=file_name,
-                    path_to_csv=path.join(self.location, file),
-                    delimiter=parameters.get("delimiter", ","),
-                    has_header=parameters.get("has_header", True)
+                self.my_transformers.append(
+                    FrameworkCsvLoader(
+                        view=file_name,
+                        path_to_csv=path.join(self.location, file),
+                        delimiter=parameters.get("delimiter", ","),
+                        has_header=parameters.get("has_header", True)
+                    )
                 )
-            elif file == 'convert.sql':
-                convert_sql: str = self.read_file_as_string(path.join(self.location, file)) \
-                    .format(parameters=parameters)
-                self.converter = FrameworkSqlTransformer(
-                    sql=convert_sql,
-                    name=module_name,
-                    progress_logger=progress_logger,
-                    log_sql=parameters.get("debug_log_sql", False)
-                )
-            elif file.endswith(
-                '.sql'
-            ) and self.loader is None and self.converter is None:
+            elif file.endswith('.sql'):
                 feature_sql: str = self.read_file_as_string(path.join(self.location, file)) \
                     .format(parameters=parameters)
-                self.feature = FrameworkSqlTransformer(
-                    sql=feature_sql,
-                    name=module_name,
-                    progress_logger=progress_logger,
-                    log_sql=parameters.get("debug_log_sql", False),
-                    view=file.replace('.sql', ''),
-                    verify_count_remains_same=verify_count_remains_same
+                self.my_transformers.append(
+                    FrameworkSqlTransformer(
+                        sql=feature_sql,
+                        name=module_name,
+                        progress_logger=progress_logger,
+                        log_sql=parameters.get("debug_log_sql", False),
+                        view=file.replace('.sql', ''),
+                        verify_count_remains_same=verify_count_remains_same
+                    )
                 )
             elif file == 'calculate.py':
-                self.feature = self.get_python_transformer('.calculate')
+                self.my_transformers.append(
+                    self.get_python_transformer('.calculate')
+                )
             elif file.endswith('mapping.py'):
-                self.feature = self.get_python_mapping_transformer('.mapping')
+                file_name_only: str = os.path.basename(file)
+                # strip off .py to get the module name
+                import_module_name: str = file_name_only.replace(".py", "")
+                self.my_transformers.append(
+                    self.
+                    get_python_mapping_transformer('.' + import_module_name)
+                )
 
     @staticmethod
     def read_file_as_string(file_path: str) -> str:
@@ -104,8 +94,7 @@ class ProxyBase(FrameworkTransformer):
     @property
     def transformers(self) -> List[Transformer]:
         return [
-            transformer
-            for transformer in [self.loader, self.converter, self.feature]
+            transformer for transformer in self.my_transformers
             if transformer is not None
         ]
 
@@ -116,7 +105,7 @@ class ProxyBase(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         # iterate through my transformers
         transformer: Transformer
-        for transformer in self.transformers:
+        for transformer in self.my_transformers:
             df = transformer.transform(df)
         return df
 
