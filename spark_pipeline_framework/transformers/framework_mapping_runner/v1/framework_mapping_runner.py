@@ -14,7 +14,6 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 # define type for AutoMapperFunction
 AutoMapperTypeOrList = Union[AutoMapperBase, List[AutoMapperBase]]
 AutoMapperFunction = Callable[[Dict[str, Any]], AutoMapperTypeOrList]
-AutoMapperFunctionOrList = Union[AutoMapperFunction, List[AutoMapperFunction]]
 
 
 class FrameworkMappingLoader(FrameworkTransformer):
@@ -23,7 +22,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
     def __init__(
         self,
         view: str,
-        mapping_function: AutoMapperFunctionOrList,
+        mapping_function: AutoMapperFunction,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
@@ -38,7 +37,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
         # noinspection Mypy
         self._setDefault(view=None)
 
-        self.mapping_function: AutoMapperFunctionOrList = mapping_function
+        self.mapping_function: AutoMapperFunction = mapping_function
 
         # noinspection Mypy
         kwargs = self._input_kwargs
@@ -68,7 +67,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        mapping_function: AutoMapperFunctionOrList = self.getMappingFunction()
+        mapping_function: AutoMapperFunction = self.getMappingFunction()
 
         # run the mapping function to get an AutoMapper
         incoming_parameters: Optional[Dict[str, Any]] = self.getParameters()
@@ -78,19 +77,11 @@ class FrameworkMappingLoader(FrameworkTransformer):
         parameters["view"] = view
 
         auto_mappers: List[AutoMapperBase] = []
-        if isinstance(mapping_function, list):
-            for func in mapping_function:
-                auto_mapper: AutoMapperTypeOrList = func(parameters)
-                if isinstance(auto_mapper, list):
-                    auto_mappers = auto_mappers + auto_mapper
-                else:
-                    auto_mappers.append(auto_mapper)
+        auto_mapper = mapping_function(parameters)
+        if isinstance(auto_mapper, list):
+            auto_mappers = auto_mappers + auto_mapper
         else:
-            auto_mapper = mapping_function(parameters)
-            if isinstance(auto_mapper, list):
-                auto_mappers = auto_mappers + auto_mapper
-            else:
-                auto_mappers.append(auto_mapper)
+            auto_mappers.append(auto_mapper)
 
         assert isinstance(auto_mappers, list)
 
@@ -108,5 +99,5 @@ class FrameworkMappingLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getMappingFunction(self) -> AutoMapperFunctionOrList:
+    def getMappingFunction(self) -> AutoMapperFunction:
         return self.mapping_function
