@@ -14,7 +14,17 @@ class FriendlySparkException(Exception):
         self, exception: Exception, stage_name: Optional[str], *args: Any,
         **kwargs: Any
     ) -> None:
+        """
+        This exception wraps Spark Exceptions to extract out all the messages and show them
+
+        :param exception:
+        :param stage_name:
+        :param args:
+        :param kwargs:
+        """
         try:
+            self.exception: Exception = exception
+            self.stage_name: Optional[str] = stage_name
             # Summary is a boolean argument
             # If True, it prints the exception summary
             # This way, we can avoid printing the summary all
