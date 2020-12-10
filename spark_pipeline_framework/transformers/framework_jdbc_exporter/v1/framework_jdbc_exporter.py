@@ -15,12 +15,21 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
     def __init__(
         self, jdbc_url: str, table: str, driver: str, **kwargs: Dict[Any, Any]
     ):
+        options: Dict[str, Any]
+        if "options" in kwargs:
+            options = kwargs.pop("options")
+        else:
+            options = {}
+
         super().__init__(**kwargs)
         assert jdbc_url
         assert table
         assert driver
 
         self.logger = get_logger(__name__)
+
+        self.options: Param = Param(self, "options", "")
+        self._setDefault(options=options)
 
         self.jdbc_url: Param = Param(self, "jdbc_url", "")
         self._setDefault(jdbc_url=jdbc_url)
@@ -31,7 +40,9 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         self.driver: Param = Param(self, "driver", "")
         self._setDefault(driver=driver)
 
-        self._set(jdbc_url=jdbc_url, table=table, driver=driver)
+        self._set(
+            jdbc_url=jdbc_url, table=table, driver=driver, options=options
+        )
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setJdbcUrl(self, value: Param) -> 'FrameworkJdbcExporter':
@@ -63,9 +74,16 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
     def getFormat(self) -> str:
         return "jdbc"
 
+    def setOptions(self, value: Param) -> 'FrameworkJdbcExporter':
+        self._paramMap[self.options] = value
+        return self
+
     def getOptions(self) -> Dict[str, Any]:
-        return {
+        options: Dict[str, Any] = self.getOrDefault(self.options).copy()
+        parameter_options: Dict[str, Any] = {
             "url": self.getJdbcUrl(),
             "dbtable": self.getTable(),
             "driver": self.getDriver(),
         }
+        options.update(parameter_options)
+        return options
