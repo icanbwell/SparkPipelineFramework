@@ -7,8 +7,9 @@ from pyspark.ml import Transformer
 def run_if_else(
     enable: bool,
     stages: Union[List[Transformer], Callable[[], List[Transformer]]],
-    else_stages: Optional[Union[List[Transformer],
-                                Callable[[], List[Transformer]]]] = None
+    else_stages: Optional[
+        Union[List[Transformer], Callable[[], List[Transformer]]]
+    ] = None,
 ) -> List[Transformer]:
     """
     If enable is true then it returns stages otherwise it returns else_stages

@@ -6,8 +6,9 @@ from pyspark.ml.param import Param
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
-from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import \
-    FrameworkBaseExporter
+from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import (
+    FrameworkBaseExporter,
+)
 
 
 class FrameworkCsvExporter(FrameworkBaseExporter):
@@ -39,7 +40,7 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
         self._set(file_path=file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilePath(self, value: Union[str, Path]) -> 'FrameworkCsvExporter':
+    def setFilePath(self, value: Union[str, Path]) -> "FrameworkCsvExporter":
         self._paramMap[self.file_path] = value
         return self
 
@@ -62,5 +63,5 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
         return {
             "path": self.getFilePath(),
             "header": self.getHeader(),
-            "delimiter": self.getDelimiter()
+            "delimiter": self.getDelimiter(),
         }

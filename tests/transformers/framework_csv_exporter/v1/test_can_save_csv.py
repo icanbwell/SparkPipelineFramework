@@ -6,8 +6,12 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
-from spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter import FrameworkCsvExporter
-from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import FrameworkCsvLoader
+from spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter import (
+    FrameworkCsvExporter,
+)
+from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
+    FrameworkCsvLoader,
+)
 from tests.spark_test_helper import SparkTestHelper
 
 
@@ -15,11 +19,11 @@ def test_can_save_csv(spark_session: SparkSession) -> None:
     # Arrange
     SparkTestHelper.clear_tables(spark_session)
 
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
     test_file_path: str = f"{data_dir.joinpath('test.csv')}"
 
-    if path.isdir(data_dir.joinpath('temp')):
-        shutil.rmtree(data_dir.joinpath('temp'))
+    if path.isdir(data_dir.joinpath("temp")):
+        shutil.rmtree(data_dir.joinpath("temp"))
 
     schema = StructType([])
 

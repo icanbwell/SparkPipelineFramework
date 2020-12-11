@@ -3,3 +3,4 @@ pyspark>2.4.0
 logger
 sparkautomapper>=0.1.77
 pymysql
+furl

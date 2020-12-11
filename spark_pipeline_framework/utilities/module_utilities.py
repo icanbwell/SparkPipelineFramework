@@ -9,6 +9,7 @@ def get_first_class_in_module(module: Any) -> Any:
     """
     md = module.__dict__
     return [
-        md[c] for c in md
+        md[c]
+        for c in md
         if (isinstance(md[c], type) and md[c].__module__ == module.__name__)
     ][0]

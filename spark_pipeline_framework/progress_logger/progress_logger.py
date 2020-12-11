@@ -10,12 +10,14 @@ class ProgressLogger:
     def __init__(self) -> None:
         self.logger = get_logger(__name__)
 
-    def __enter__(self) -> 'ProgressLogger':
+    def __enter__(self) -> "ProgressLogger":
         return self
 
     def __exit__(
-        self, exc_type: Optional[BaseException],
-        exc_value: Optional[BaseException], traceback: Optional[TracebackType]
+        self,
+        exc_type: Optional[BaseException],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
     ) -> None:
         pass
 
@@ -24,23 +26,18 @@ class ProgressLogger:
 
     # noinspection PyUnusedLocal
     def log_artifact(
-        self,
-        key: str,
-        contents: str,
-        folder_path: Optional[str] = None
+        self, key: str, contents: str, folder_path: Optional[str] = None
     ) -> None:
         try:
             with TemporaryDirectory() as temp_dir_name:
                 data_dir: Path = Path(temp_dir_name)
                 file_path: Path = data_dir.joinpath(key)
-                with open(file_path, 'w') as file:
+                with open(file_path, "w") as file:
                     file.write(contents)
                     self.logger.info(f"Wrote sql to {file_path}")
 
         except Exception as e:
-            self.logger.warning(
-                f"Error in log_artifact writing to mlflow: {str(e)}"
-            )
+            self.logger.warning(f"Error in log_artifact writing to mlflow: {str(e)}")
 
     def write_to_log(self, name: str, message: str = "") -> bool:
         self.logger.info(name + ": " + str(message))

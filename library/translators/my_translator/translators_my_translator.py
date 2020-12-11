@@ -1,4 +1,6 @@
-from spark_pipeline_framework.proxy_generator.translator_proxy_base import TranslatorProxyBase
+from spark_pipeline_framework.proxy_generator.translator_proxy_base import (
+    TranslatorProxyBase,
+)
 from os import path
 
 

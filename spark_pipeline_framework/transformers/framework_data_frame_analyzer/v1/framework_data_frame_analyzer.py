@@ -10,7 +10,9 @@ from pyspark.sql.functions import col
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class FrameworkDataFrameAnalyzer(FrameworkTransformer):
@@ -25,7 +27,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         columns_to_skip: Optional[List[str]] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ):
         """
         For each column in the view, this transformer can either:
@@ -49,9 +51,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         self.view: Param = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.analysis_views_prefix: Param = Param(
-            self, "analysis_views_prefix", ""
-        )
+        self.analysis_views_prefix: Param = Param(self, "analysis_views_prefix", "")
         self._setDefault(analysis_views_prefix=analysis_views_prefix)
 
         self.output_folder: Param = Param(self, "output_folder", "")
@@ -77,7 +77,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         columns_to_skip: Optional[List[str]] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
         kwargs = self._input_kwargs
         super().setParams(
@@ -97,9 +97,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         df = df.sql_ctx.table(view)
 
         if columns_to_analyze:
-            columns_to_analyze = [
-                c for c in df.columns if c in columns_to_analyze
-            ]
+            columns_to_analyze = [c for c in df.columns if c in columns_to_analyze]
         else:
             columns_to_analyze = df.columns
 
@@ -112,13 +110,14 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
 
         column_name: str
         for column_name in columns_to_analyze:
-            result_df: DataFrame = df.select(column_name).groupBy(
-                column_name
-            ).count().orderBy(col("count").desc())
+            result_df: DataFrame = (
+                df.select(column_name)
+                .groupBy(column_name)
+                .count()
+                .orderBy(col("count").desc())
+            )
             if output_folder:
-                target_path: str = str(
-                    os.path.join(str(output_folder), column_name)
-                )
+                target_path: str = str(os.path.join(str(output_folder), column_name))
                 if progress_logger:
                     progress_logger.write_to_log(
                         f"Writing analysis for column {column_name} to {target_path}"
@@ -129,8 +128,8 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
             if analysis_views_prefix:
                 result_df.createOrReplaceTempView(
                     f"{analysis_views_prefix}{column_name}"
-                    if analysis_views_prefix.
-                    endswith("_") else f"{analysis_views_prefix}_{column_name}"
+                    if analysis_views_prefix.endswith("_")
+                    else f"{analysis_views_prefix}_{column_name}"
                 )
 
         return df

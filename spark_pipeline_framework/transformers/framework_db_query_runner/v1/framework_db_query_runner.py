@@ -8,9 +8,13 @@ from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_log_metric import ProgressLogMetric
+from spark_pipeline_framework.progress_logger.progress_log_metric import (
+    ProgressLogMetric,
+)
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class FrameworkDBQueryRunner(FrameworkTransformer):
@@ -29,9 +33,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
     ):
 
-        super().__init__(
-            parameters=parameters, progress_logger=progress_logger
-        )
+        super().__init__(parameters=parameters, progress_logger=progress_logger)
 
         assert username
         assert password
@@ -61,22 +63,18 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
 
         self._set(**self._input_kwargs)
 
-        super().setParams(
-            parameters=parameters, progress_logger=progress_logger
-        )
+        super().setParams(parameters=parameters, progress_logger=progress_logger)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
-        with ProgressLogMetric(
-            name="db_query_runner", progress_logger=progress_logger
-        ):
+        with ProgressLogMetric(name="db_query_runner", progress_logger=progress_logger):
             connection = pymysql.connect(
                 user=self.getUsername(),
                 password=self.getPassword(),
                 host=self.getHost(),
                 port=self.getPort(),
-                db=self.getDb()
+                db=self.getDb(),
             )
             try:
                 with connection.cursor() as cursor:
@@ -92,7 +90,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setUsername(self, value: Param) -> 'FrameworkDBQueryRunner':
+    def setUsername(self, value: Param) -> "FrameworkDBQueryRunner":
         self._paramMap[self.username] = value
         return self
 
@@ -100,7 +98,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
     def getUsername(self) -> str:
         return self.getOrDefault(self.username)  # type: ignore
 
-    def setPassword(self, value: Param) -> 'FrameworkDBQueryRunner':
+    def setPassword(self, value: Param) -> "FrameworkDBQueryRunner":
         self._paramMap[self.password] = value
         return self
 
@@ -108,7 +106,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
     def getPassword(self) -> str:
         return self.getOrDefault(self.password)  # type: ignore
 
-    def setHost(self, value: Param) -> 'FrameworkDBQueryRunner':
+    def setHost(self, value: Param) -> "FrameworkDBQueryRunner":
         self._paramMap[self.host] = value
         return self
 
@@ -116,7 +114,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
     def getHost(self) -> str:
         return self.getOrDefault(self.host)  # type: ignore
 
-    def setPort(self, value: Param) -> 'FrameworkDBQueryRunner':
+    def setPort(self, value: Param) -> "FrameworkDBQueryRunner":
         self._paramMap[self.port] = value
         return self
 
@@ -124,7 +122,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
     def getPort(self) -> int:
         return self.getOrDefault(self.port)  # type: ignore
 
-    def setQuery(self, value: Param) -> 'FrameworkDBQueryRunner':
+    def setQuery(self, value: Param) -> "FrameworkDBQueryRunner":
         self._paramMap[self.query] = value
         return self
 
@@ -132,7 +130,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
     def getQuery(self) -> str:
         return self.getOrDefault(self.query)  # type: ignore
 
-    def setDb(self, value: Param) -> 'FrameworkDBQueryRunner':
+    def setDb(self, value: Param) -> "FrameworkDBQueryRunner":
         self._paramMap[self.db_name] = value
         return self
 

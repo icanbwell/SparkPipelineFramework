@@ -8,9 +8,13 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.utils import AnalysisException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_log_metric import ProgressLogMetric
+from spark_pipeline_framework.progress_logger.progress_log_metric import (
+    ProgressLogMetric,
+)
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class FrameworkBaseExporter(FrameworkTransformer):
@@ -34,7 +38,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
         mode: str = MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1
+        limit: int = -1,
     ):
         assert mode in FrameworkBaseExporter.MODE_CHOICES
 
@@ -65,7 +69,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
         mode: str = MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1
+        limit: int = -1,
     ) -> None:
         kwargs = self._input_kwargs
         super().setParams(
@@ -81,8 +85,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
         # limit: int = self.getLimit()
 
         with ProgressLogMetric(
-            name=f"{name or view}_{format}_exporter",
-            progress_logger=progress_logger
+            name=f"{name or view}_{format}_exporter", progress_logger=progress_logger
         ):
             try:
                 writer: DataFrameWriter
@@ -104,7 +107,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: Param) -> 'FrameworkBaseExporter':
+    def setView(self, value: Param) -> "FrameworkBaseExporter":
         self._paramMap[self.view] = value
         return self
 
@@ -113,7 +116,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setMode(self, value: Param) -> 'FrameworkBaseExporter':
+    def setMode(self, value: Param) -> "FrameworkBaseExporter":
         self._paramMap[self.mode] = value
         return self
 
@@ -122,7 +125,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
         return self.getOrDefault(self.mode)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value: Param) -> 'FrameworkBaseExporter':
+    def setLimit(self, value: Param) -> "FrameworkBaseExporter":
         self._paramMap[self.limit] = value
         return self
 

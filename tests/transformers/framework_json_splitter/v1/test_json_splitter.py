@@ -7,16 +7,19 @@ from typing import List
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_json_splitter.v1.framework_json_splitter import \
-    FrameworkJsonSplitter
-from spark_pipeline_framework.utilities.spark_data_frame_helpers import create_empty_dataframe
+from spark_pipeline_framework.transformers.framework_json_splitter.v1.framework_json_splitter import (
+    FrameworkJsonSplitter,
+)
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    create_empty_dataframe,
+)
 
 
 def test_json_splitter(spark_session: SparkSession) -> None:
     # Arrange
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath('./temp')
+    temp_folder = data_dir.joinpath("./temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -31,7 +34,7 @@ def test_json_splitter(spark_session: SparkSession) -> None:
             file_path=insurance_feed_path,
             output_folder=temp_folder,
             max_size_per_file_in_mb=0.1,
-            progress_logger=progress_logger
+            progress_logger=progress_logger,
         ).transform(df)
 
     # Assert

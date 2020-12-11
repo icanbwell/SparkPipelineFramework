@@ -12,14 +12,14 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 class FrameworkTransformer(
     Transformer,  # type: ignore
     DefaultParamsReadable,  # type: ignore
-    DefaultParamsWritable  # type: ignore
+    DefaultParamsWritable,  # type: ignore
 ):
     # noinspection PyUnusedLocal
     def __init__(
         self,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ):
         super(FrameworkTransformer, self).__init__()
 
@@ -39,7 +39,7 @@ class FrameworkTransformer(
         self,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
         kwargs = self._input_kwargs
         return self._set(**kwargs)
@@ -52,7 +52,7 @@ class FrameworkTransformer(
         return [self]
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setName(self, value: str) -> 'FrameworkTransformer':
+    def setName(self, value: str) -> "FrameworkTransformer":
         self._paramMap[self.name] = value
         return self
 
@@ -63,7 +63,7 @@ class FrameworkTransformer(
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setProgressLogger(
         self, value: Optional[ProgressLogger]
-    ) -> 'FrameworkTransformer':
+    ) -> "FrameworkTransformer":
         self._paramMap[self.progress_logger] = value
         return self
 
@@ -72,9 +72,7 @@ class FrameworkTransformer(
         return self.getOrDefault(self.progress_logger)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setParameters(
-        self, value: Optional[Dict[str, Any]]
-    ) -> 'FrameworkTransformer':
+    def setParameters(self, value: Optional[Dict[str, Any]]) -> "FrameworkTransformer":
         self._paramMap[self.parameters] = value
         return self
 

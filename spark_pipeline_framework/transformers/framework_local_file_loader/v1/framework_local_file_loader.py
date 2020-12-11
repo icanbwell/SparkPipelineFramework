@@ -12,7 +12,9 @@ from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class FrameworkLocalFileLoader(FrameworkTransformer):
@@ -34,7 +36,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        **kwargs: Dict[Any, Any]
+        **kwargs: Dict[Any, Any],
     ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -90,22 +92,19 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             if filepath.__contains__(":"):
                 absolute_paths: List[str] = [filepath]
             else:
-                data_dir = Path(__file__).parent.parent.joinpath('./')
+                data_dir = Path(__file__).parent.parent.joinpath("./")
                 if isinstance(filepath, list):
                     absolute_paths = [
-                        f"file://{data_dir.joinpath(path)}"
-                        for path in filepath
+                        f"file://{data_dir.joinpath(path)}" for path in filepath
                     ]
                 else:
                     absolute_paths = [f"file://{data_dir.joinpath(filepath)}"]
         elif isinstance(filepath, Path):
-            data_dir = Path(__file__).parent.parent.joinpath('./')
+            data_dir = Path(__file__).parent.parent.joinpath("./")
             absolute_paths = [f"file://{data_dir.joinpath(filepath)}"]
         else:
-            data_dir = Path(__file__).parent.parent.joinpath('./')
-            absolute_paths = [
-                f"file://{data_dir.joinpath(path)}" for path in filepath
-            ]
+            data_dir = Path(__file__).parent.parent.joinpath("./")
+            absolute_paths = [f"file://{data_dir.joinpath(path)}" for path in filepath]
 
         progress_logger and progress_logger.write_to_log(
             f"Loading {self.getReaderFormat()} file for view {view}: {absolute_paths}, infer_schema: {infer_schema}"
@@ -126,8 +125,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             df_reader = df_reader.option(k, v)
 
         if create_file_path:
-            df2 = df_reader.load(absolute_paths
-                                 ).withColumn("file_path", input_file_name())
+            df2 = df_reader.load(absolute_paths).withColumn(
+                "file_path", input_file_name()
+            )
         else:
             df2 = df_reader.load(absolute_paths)
 
@@ -149,7 +149,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: Param) -> 'FrameworkLocalFileLoader':
+    def setView(self, value: Param) -> "FrameworkLocalFileLoader":
         self._paramMap[self.view] = value
         return self
 
@@ -158,7 +158,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilepath(self, value: Param) -> 'FrameworkLocalFileLoader':
+    def setFilepath(self, value: Param) -> "FrameworkLocalFileLoader":
         self._paramMap[self.filepath] = value
         return self
 
@@ -167,7 +167,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.filepath)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSchema(self, value: Param) -> 'FrameworkLocalFileLoader':
+    def setSchema(self, value: Param) -> "FrameworkLocalFileLoader":
         self._paramMap[self.schema] = value
         return self
 
@@ -176,7 +176,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCacheTable(self, value: Param) -> 'FrameworkLocalFileLoader':
+    def setCacheTable(self, value: Param) -> "FrameworkLocalFileLoader":
         self._paramMap[self.cache_table] = value
         return self
 
@@ -185,7 +185,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.cache_table)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setInferSchema(self, value: Param) -> 'FrameworkLocalFileLoader':
+    def setInferSchema(self, value: Param) -> "FrameworkLocalFileLoader":
         self._paramMap[self.infer_schema] = value
         return self
 
@@ -194,7 +194,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.infer_schema)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value: Param) -> 'FrameworkLocalFileLoader':
+    def setLimit(self, value: Param) -> "FrameworkLocalFileLoader":
         self._paramMap[self.limit] = value
         return self
 
@@ -203,7 +203,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.limit)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCreateFilePath(self, value: bool) -> 'FrameworkLocalFileLoader':
+    def setCreateFilePath(self, value: bool) -> "FrameworkLocalFileLoader":
         self._paramMap[self.create_file_path] = value
         return self
 

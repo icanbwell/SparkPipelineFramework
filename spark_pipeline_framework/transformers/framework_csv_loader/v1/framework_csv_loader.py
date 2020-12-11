@@ -6,8 +6,9 @@ from pyspark import keyword_only
 from pyspark.ml.param.shared import Param
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import \
-    FrameworkLocalFileLoader
+from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import (
+    FrameworkLocalFileLoader,
+)
 
 
 class FrameworkCsvLoader(FrameworkLocalFileLoader):
@@ -42,7 +43,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         self._set(delimiter=delimiter, has_header=has_header)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setDelimiter(self, value: Param) -> 'FrameworkCsvLoader':
+    def setDelimiter(self, value: Param) -> "FrameworkCsvLoader":
         self._paramMap[self.delimiter] = value
         return self
 
@@ -51,7 +52,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         return self.getOrDefault(self.delimiter)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setHasHeader(self, value: Param) -> 'FrameworkCsvLoader':
+    def setHasHeader(self, value: Param) -> "FrameworkCsvLoader":
         self._paramMap[self.has_header] = value
         return self
 
@@ -65,6 +66,6 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
     def getReaderOptions(self) -> Dict[str, Any]:
         options: Dict[str, Any] = {
             "header": "true" if self.getHasHeader() else "false",
-            "delimiter": self.getDelimiter()
+            "delimiter": self.getDelimiter(),
         }
         return options

@@ -10,12 +10,12 @@ class FeaturesCarriersV1(ProxyBase):
         self,
         parameters: Dict[str, Any],
         progress_logger: Optional[ProgressLogger] = None,
-        verify_count_remains_same: bool = False
+        verify_count_remains_same: bool = False,
     ) -> None:
         location: str = path.dirname(path.abspath(__file__))
         super().__init__(
             parameters=parameters,
             location=location,
             progress_logger=progress_logger,
-            verify_count_remains_same=verify_count_remains_same
+            verify_count_remains_same=verify_count_remains_same,
         )

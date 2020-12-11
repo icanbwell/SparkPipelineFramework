@@ -7,16 +7,16 @@ from spark_pipeline_framework.proxy_generator.proxy_generator import ProxyGenera
 
 
 def test_can_generate_proxies() -> None:
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath('temp')
+    temp_folder = data_dir.joinpath("temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
 
     makedirs(temp_folder)
 
-    src_library_folder: str = path.join(data_dir, 'library')
-    temp_library_folder: str = path.join(data_dir, 'temp', 'library')
+    src_library_folder: str = path.join(data_dir, "library")
+    temp_library_folder: str = path.join(data_dir, "temp", "library")
 
     if not path.exists(temp_library_folder):
         makedirs(temp_library_folder)
@@ -29,29 +29,32 @@ def test_can_generate_proxies() -> None:
 
     # Assert
     data_source_path = path.join(
-        temp_library_folder, "data_sources", "my_data_source", "v1",
-        "data_sources_my_data_source_v1.py"
+        temp_library_folder,
+        "data_sources",
+        "my_data_source",
+        "v1",
+        "data_sources_my_data_source_v1.py",
     )
-    assert (path.exists(data_source_path))
+    assert path.exists(data_source_path)
 
-    assert (
-        path.join(
-            temp_library_folder, "features", "my_sql_feature", "v1",
-            "features_my_sql_feature_v1.py"
-        )
+    assert path.join(
+        temp_library_folder,
+        "features",
+        "my_sql_feature",
+        "v1",
+        "features_my_sql_feature_v1.py",
     )
-    assert (
-        path.join(
-            temp_library_folder, "features", "my_python_feature", "v1",
-            "features_my_python_feature_v1.py"
-        )
+    assert path.join(
+        temp_library_folder,
+        "features",
+        "my_python_feature",
+        "v1",
+        "features_my_python_feature_v1.py",
     )
 
 
 def recursive_overwrite(
-    src: str,
-    dst: str,
-    ignore: Optional[Callable[[str, List[str]], Set[str]]] = None
+    src: str, dst: str, ignore: Optional[Callable[[str, List[str]], Set[str]]] = None
 ) -> None:
     if path.isdir(src):
         print(f"dir={src}")
@@ -65,9 +68,7 @@ def recursive_overwrite(
         for f in files:
             print(f"file={f}")
             if f not in ignored:
-                recursive_overwrite(
-                    path.join(src, f), path.join(dst, f), ignore
-                )
+                recursive_overwrite(path.join(src, f), path.join(dst, f), ignore)
     else:
         print(f"src={src}, dst={dst}")
         copyfile(src, dst)

@@ -7,14 +7,22 @@ from pyspark.ml.base import Transformer
 from pyspark.sql import DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.proxy_generator.python_transformer_helpers import get_python_transformer_from_location, \
-    get_python_function_from_location
-from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import FrameworkCsvLoader
-from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import \
-    FrameworkMappingLoader
-from spark_pipeline_framework.transformers.framework_sql_transformer.v1.framework_sql_transformer import \
-    FrameworkSqlTransformer
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
+    get_python_transformer_from_location,
+    get_python_function_from_location,
+)
+from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
+    FrameworkCsvLoader,
+)
+from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
+    FrameworkMappingLoader,
+)
+from spark_pipeline_framework.transformers.framework_sql_transformer.v1.framework_sql_transformer import (
+    FrameworkSqlTransformer,
+)
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class ProxyBase(FrameworkTransformer):
@@ -23,12 +31,12 @@ class ProxyBase(FrameworkTransformer):
         parameters: Dict[str, Any],
         location: Union[str, Path],
         progress_logger: Optional[ProgressLogger] = None,
-        verify_count_remains_same: bool = False
+        verify_count_remains_same: bool = False,
     ) -> None:
         super().__init__(
             name=self.__class__.__name__,
             parameters=parameters,
-            progress_logger=progress_logger
+            progress_logger=progress_logger,
         )
         self.verify_count_remains_same: bool = verify_count_remains_same
         self.location: str = str(location)
@@ -38,63 +46,62 @@ class ProxyBase(FrameworkTransformer):
         # Iterate over files to create transformers
         files: List[str] = listdir(self.location)
         index_of_module: int = self.location.rfind("/library/")
-        module_name: str = self.location[index_of_module +
-                                         1:].replace("/", ".")
+        module_ = index_of_module + 1
+        module_name: str = self.location[module_:].replace("/", ".")
 
         # noinspection Mypy
         self._set(
             name=self.__class__.__name__,
             parameters=parameters,
-            progress_logger=progress_logger
+            progress_logger=progress_logger,
         )
 
         for file in files:
-            if file.endswith('.csv'):
-                file_name = file.replace('.csv', '')
+            if file.endswith(".csv"):
+                file_name = file.replace(".csv", "")
                 self.my_transformers.append(
                     FrameworkCsvLoader(
                         view=file_name,
                         path_to_csv=path.join(self.location, file),
                         delimiter=parameters.get("delimiter", ","),
-                        has_header=parameters.get("has_header", True)
+                        has_header=parameters.get("has_header", True),
                     )
                 )
-            elif file.endswith('.sql'):
-                feature_sql: str = self.read_file_as_string(path.join(self.location, file)) \
-                    .format(parameters=parameters)
+            elif file.endswith(".sql"):
+                feature_sql: str = self.read_file_as_string(
+                    path.join(self.location, file)
+                ).format(parameters=parameters)
                 self.my_transformers.append(
                     FrameworkSqlTransformer(
                         sql=feature_sql,
                         name=module_name,
                         progress_logger=progress_logger,
                         log_sql=parameters.get("debug_log_sql", False),
-                        view=file.replace('.sql', ''),
-                        verify_count_remains_same=verify_count_remains_same
+                        view=file.replace(".sql", ""),
+                        verify_count_remains_same=verify_count_remains_same,
                     )
                 )
-            elif file == 'calculate.py':
-                self.my_transformers.append(
-                    self.get_python_transformer('.calculate')
-                )
-            elif file.endswith('mapping.py'):
+            elif file == "calculate.py":
+                self.my_transformers.append(self.get_python_transformer(".calculate"))
+            elif file.endswith("mapping.py"):
                 file_name_only: str = os.path.basename(file)
                 # strip off .py to get the module name
                 import_module_name: str = file_name_only.replace(".py", "")
                 self.my_transformers.append(
-                    self.
-                    get_python_mapping_transformer('.' + import_module_name)
+                    self.get_python_mapping_transformer("." + import_module_name)
                 )
 
     @staticmethod
     def read_file_as_string(file_path: str) -> str:
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             file_contents = file.read()
         return file_contents
 
     @property
     def transformers(self) -> List[Transformer]:
         return [
-            transformer for transformer in self.my_transformers
+            transformer
+            for transformer in self.my_transformers
             if transformer is not None
         ]
 
@@ -116,19 +123,16 @@ class ProxyBase(FrameworkTransformer):
             location=self.location,
             import_module_name=import_module_name,
             parameters=self.getParameters() or {},
-            progress_logger=progress_logger
+            progress_logger=progress_logger,
         )
 
-    def get_python_mapping_transformer(
-        self, import_module_name: str
-    ) -> Transformer:
+    def get_python_mapping_transformer(self, import_module_name: str) -> Transformer:
         parameters: Optional[Dict[str, Any]] = self.getParameters()
         return FrameworkMappingLoader(
-            view=parameters["view"]
-            if parameters and "view" in parameters else "",
+            view=parameters["view"] if parameters and "view" in parameters else "",
             mapping_function=get_python_function_from_location(
                 location=self.location, import_module_name=import_module_name
             ),
             parameters=parameters,
-            progress_logger=self.getProgressLogger()
+            progress_logger=self.getProgressLogger(),
         )

@@ -6,7 +6,9 @@ from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class FrameworkPartitioner(FrameworkTransformer):
@@ -19,7 +21,7 @@ class FrameworkPartitioner(FrameworkTransformer):
         partition_by: Optional[List[str]] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ):
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -49,7 +51,7 @@ class FrameworkPartitioner(FrameworkTransformer):
         partition_by: Optional[List[str]] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
         kwargs = self._input_kwargs
         super().setParams(

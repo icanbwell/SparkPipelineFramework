@@ -16,13 +16,13 @@ class FeatureTransformer(PythonProxyBase):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        verify_count_remains_same: bool = False
+        verify_count_remains_same: bool = False,
     ) -> None:
         super(FeatureTransformer, self).__init__(
             name=name,
             parameters=parameters,
             progress_logger=progress_logger,
-            verify_count_remains_same=verify_count_remains_same
+            verify_count_remains_same=verify_count_remains_same,
         )
 
     def _transform(self, df: DataFrame) -> DataFrame:

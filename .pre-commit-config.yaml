@@ -9,11 +9,11 @@ repos:
     rev: v3.2.0
     hooks:
     -   id: end-of-file-fixer
--   repo: https://github.com/pre-commit/mirrors-yapf
-    rev: v0.30.0
+-   repo: https://github.com/ambv/black
+    rev: stable
     hooks:
-    -   id: yapf
-        args: ['--style=.style.yapf', '--parallel', '--in-place']
+    - id: black
+      language_version: python3.6
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:
@@ -29,3 +29,4 @@ repos:
             - logger
             - sparkautomapper>=0.1.32
             - pytest
+            - furl

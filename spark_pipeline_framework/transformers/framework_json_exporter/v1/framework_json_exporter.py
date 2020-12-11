@@ -7,10 +7,16 @@ from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.utils import AnalysisException
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_log_metric import ProgressLogMetric
+from spark_pipeline_framework.progress_logger.progress_log_metric import (
+    ProgressLogMetric,
+)
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
-from spark_pipeline_framework.utilities.spark_data_frame_helpers import spark_is_data_frame_empty
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    spark_is_data_frame_empty,
+)
 
 
 class FrameworkJsonExporter(FrameworkTransformer):
@@ -23,7 +29,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1
+        limit: int = -1,
     ):
         super().__init__()
 
@@ -54,7 +60,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1
+        limit: int = -1,
     ) -> Any:
         kwargs = self._input_kwargs
         super().setParams(
@@ -70,8 +76,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
         # limit: int = self.getLimit()
 
         with ProgressLogMetric(
-            name=f"{name or view}_fhir_exporter",
-            progress_logger=progress_logger
+            name=f"{name or view}_fhir_exporter", progress_logger=progress_logger
         ):
             try:
                 if view:
@@ -83,14 +88,12 @@ class FrameworkJsonExporter(FrameworkTransformer):
                     df.write.mode("overwrite").json(path=str(path))
 
             except AnalysisException as e:
-                self.logger.error(
-                    f"[{name or view}]File write failed to {path}"
-                )
+                self.logger.error(f"[{name or view}]File write failed to {path}")
                 raise e
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: str) -> 'FrameworkJsonExporter':
+    def setView(self, value: str) -> "FrameworkJsonExporter":
         self._paramMap[self.view] = value
         return self
 
@@ -99,7 +102,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilePath(self, value: Union[Path, str]) -> 'FrameworkJsonExporter':
+    def setFilePath(self, value: Union[Path, str]) -> "FrameworkJsonExporter":
         self._paramMap[self.file_path] = value
         return self
 
@@ -108,7 +111,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
         return self.getOrDefault(self.file_path)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value: int) -> 'FrameworkJsonExporter':
+    def setLimit(self, value: int) -> "FrameworkJsonExporter":
         self._paramMap[self.limit] = value
         return self
 
@@ -118,6 +121,6 @@ class FrameworkJsonExporter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
-        return self.getOrDefault(  # type: ignore
-            self.name
-        ) or self.getOrDefault(self.view)
+        return self.getOrDefault(self.name) or self.getOrDefault(  # type: ignore
+            self.view
+        )

@@ -5,7 +5,9 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 from tests.conftest import clean_spark_session
 
-from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import FrameworkCsvLoader
+from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
+    FrameworkCsvLoader,
+)
 
 
 def assert_results(result: DataFrame) -> None:
@@ -25,7 +27,7 @@ def test_can_load_simple_csv(spark_session: SparkSession) -> None:
     # Arrange
     clean_spark_session(spark_session)
 
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
     test_file_path: str = f"{data_dir.joinpath('test.csv')}"
 
     schema = StructType([])
@@ -49,13 +51,11 @@ def test_can_load_simple_csv(spark_session: SparkSession) -> None:
 
 
 # noinspection SqlNoDataSourceInspection
-def test_can_load_non_standard_delimited_csv(
-    spark_session: SparkSession
-) -> None:
+def test_can_load_non_standard_delimited_csv(spark_session: SparkSession) -> None:
     # Arrange
     clean_spark_session(spark_session)
 
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
     test_file_path: str = f"{data_dir.joinpath('test.psv')}"
 
     schema = StructType([])
@@ -85,7 +85,7 @@ def test_can_load_csv_without_header(spark_session: SparkSession) -> None:
     # Arrange
     clean_spark_session(spark_session)
 
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
     test_file_path: str = f"{data_dir.joinpath('no_header.csv')}"
 
     schema = StructType([])
@@ -96,10 +96,7 @@ def test_can_load_csv_without_header(spark_session: SparkSession) -> None:
 
     # Act
     FrameworkCsvLoader(
-        view="another_view",
-        path_to_csv=test_file_path,
-        delimiter=",",
-        has_header=False
+        view="another_view", path_to_csv=test_file_path, delimiter=",", has_header=False
     ).transform(df)
 
     # noinspection SqlDialectInspection

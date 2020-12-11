@@ -41,12 +41,12 @@ def convert_json_to_jsonl(src_file: Path, dst_file: Path) -> Path:
         if isinstance(json_object, list):
             for json_object_inner in json_object:
                 json_text_inner: str = dumps(
-                    obj=json_object_inner, separators=(',', ':')
+                    obj=json_object_inner, separators=(",", ":")
                 )
                 file.write(json_text_inner)
                 file.write("\n")
         else:
-            json_text: str = dumps(obj=json_object, separators=(',', ':'))
+            json_text: str = dumps(obj=json_object, separators=(",", ":"))
             file.write(json_text)
             file.write("\n")
 

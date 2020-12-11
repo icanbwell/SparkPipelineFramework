@@ -6,7 +6,9 @@ from pyspark import keyword_only
 from pyspark.ml.param import Param
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import FrameworkBaseExporter
+from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import (
+    FrameworkBaseExporter,
+)
 
 
 class FrameworkParquetExporter(FrameworkBaseExporter):
@@ -27,9 +29,7 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
         self._set(file_path=file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilePath(
-        self, value: Union[str, Path]
-    ) -> 'FrameworkParquetExporter':
+    def setFilePath(self, value: Union[str, Path]) -> "FrameworkParquetExporter":
         self._paramMap[self.file_path] = value
         return self
 
