@@ -10,7 +10,7 @@ def create_view_from_dictionary(
     view: str,
     data: List[Dict[str, Any]],
     spark_session: SparkSession,
-    schema: Optional[Union[DataType, str]] = None
+    schema: Optional[Union[DataType, str]] = None,
 ) -> DataFrame:
     df: DataFrame = spark_session.createDataFrame(data=data, schema=schema)
     df.createOrReplaceTempView(name=view)
@@ -62,9 +62,7 @@ def sc(df: DataFrame) -> SparkContext:
     return df._sc
 
 
-def add_metadata_to_column(
-    df: DataFrame, column: str, metadata: Any
-) -> DataFrame:
+def add_metadata_to_column(df: DataFrame, column: str, metadata: Any) -> DataFrame:
     return df.withColumn(column, df[column].alias(column, metadata=metadata))
 
 

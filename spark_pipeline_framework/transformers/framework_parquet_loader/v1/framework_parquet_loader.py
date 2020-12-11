@@ -8,9 +8,13 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.utils import AnalysisException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_log_metric import ProgressLogMetric
+from spark_pipeline_framework.progress_logger.progress_log_metric import (
+    ProgressLogMetric,
+)
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class FrameworkParquetLoader(FrameworkTransformer):
@@ -24,7 +28,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         merge_schema: bool = False,
-        limit: int = -1
+        limit: int = -1,
     ):
         super(FrameworkParquetLoader, self).__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -57,7 +61,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         merge_schema: bool = False,
-        limit: int = -1
+        limit: int = -1,
     ) -> None:
         kwargs = self._input_kwargs
         super().setParams(
@@ -74,18 +78,17 @@ class FrameworkParquetLoader(FrameworkTransformer):
         limit: int = self.getLimit()
 
         with ProgressLogMetric(
-            name=f"{name or view}_table_loader",
-            progress_logger=progress_logger
+            name=f"{name or view}_table_loader", progress_logger=progress_logger
         ):
             try:
                 if merge_schema is True:
-                    final_df = df.sql_ctx.read.option(
-                        "mergeSchema", "true"
-                    ).format("parquet").load(path=str(path))
-                else:
-                    final_df = df.sql_ctx.read.format("parquet").load(
-                        path=str(path)
+                    final_df = (
+                        df.sql_ctx.read.option("mergeSchema", "true")
+                        .format("parquet")
+                        .load(path=str(path))
                     )
+                else:
+                    final_df = df.sql_ctx.read.format("parquet").load(path=str(path))
 
                 if limit and limit > 0:
                     final_df = final_df.limit(limit)
@@ -93,14 +96,12 @@ class FrameworkParquetLoader(FrameworkTransformer):
                 # store new data frame in the view
                 final_df.createOrReplaceTempView(view)
             except AnalysisException as e:
-                self.logger.error(
-                    f"File load failed. Location: {path} may be empty"
-                )
+                self.logger.error(f"File load failed. Location: {path} may be empty")
                 raise e
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: str) -> 'FrameworkParquetLoader':
+    def setView(self, value: str) -> "FrameworkParquetLoader":
         self._paramMap[self.view] = value
         return self
 
@@ -111,7 +112,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setFilePath(
         self, value: Union[str, List[str], Path]
-    ) -> 'FrameworkParquetLoader':
+    ) -> "FrameworkParquetLoader":
         self._paramMap[self.file_path] = value
         return self
 
@@ -120,7 +121,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
         return self.getOrDefault(self.file_path)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setMergeSchema(self, value: bool) -> 'FrameworkParquetLoader':
+    def setMergeSchema(self, value: bool) -> "FrameworkParquetLoader":
         self._paramMap[self.merge_schema] = value
         return self
 
@@ -129,7 +130,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
         return self.getOrDefault(self.merge_schema)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value: int) -> 'FrameworkParquetLoader':
+    def setLimit(self, value: int) -> "FrameworkParquetLoader":
         self._paramMap[self.limit] = value
         return self
 

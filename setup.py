@@ -7,13 +7,13 @@ from os import path, getcwd
 # from https://packaging.python.org/tutorials/packaging-projects/
 
 # noinspection SpellCheckingInspection
-package_name = 'sparkpipelineframework'
+package_name = "sparkpipelineframework"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 try:
-    with open(path.join(getcwd(), 'VERSION')) as version_file:
+    with open(path.join(getcwd(), "VERSION")) as version_file:
         version = version_file.read().strip()
 except IOError:
     raise
@@ -31,7 +31,7 @@ def fix_setuptools() -> None:
 
         # noinspection PyUnusedLocal
         def violation(operation: Any, *args: Any, **_: Any) -> None:
-            print("SandboxViolation: %s" % (args, ))
+            print("SandboxViolation: %s" % (args,))
 
         DirectorySandbox._violation = violation
     except ImportError:
@@ -45,15 +45,18 @@ fix_setuptools()
 def parse_requirements(file: str) -> List[str]:
     with open(file, "r") as fs:
         return [
-            r for r in fs.read().splitlines() if (
-                len(r.strip()) > 0 and not r.strip().startswith("#")
+            r
+            for r in fs.read().splitlines()
+            if (
+                len(r.strip()) > 0
+                and not r.strip().startswith("#")
                 and not r.strip().startswith("--")
             )
         ]
 
 
-requirements: List[str] = parse_requirements('requirements.txt')
-test_requirements: List[str] = parse_requirements('requirements-test.txt')
+requirements: List[str] = parse_requirements("requirements.txt")
+test_requirements: List[str] = parse_requirements("requirements-test.txt")
 
 # classifiers list is here: https://pypi.org/classifiers/
 
@@ -76,13 +79,13 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires=">=3.6",
     dependency_links=[],
     include_package_data=True,
     zip_safe=False,
     package_data={"spark_pipeline_framework": ["py.typed"]},
     data_files=[
-        'spark_pipeline_framework/Makefile.spark',
-        'spark_pipeline_framework/Makefile.docker'
-    ]
+        "spark_pipeline_framework/Makefile.spark",
+        "spark_pipeline_framework/Makefile.docker",
+    ],
 )

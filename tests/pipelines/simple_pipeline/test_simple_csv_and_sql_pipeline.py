@@ -7,13 +7,15 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
 from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
-from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import FrameworkCsvLoader
+from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
+    FrameworkCsvLoader,
+)
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
 def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
     # Arrange
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
 
     schema = StructType([])

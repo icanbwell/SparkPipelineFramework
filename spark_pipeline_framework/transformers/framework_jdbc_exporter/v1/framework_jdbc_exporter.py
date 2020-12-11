@@ -5,8 +5,9 @@ from pyspark import keyword_only
 from pyspark.ml.param import Param
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import \
-    FrameworkBaseExporter
+from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import (
+    FrameworkBaseExporter,
+)
 
 
 class FrameworkJdbcExporter(FrameworkBaseExporter):
@@ -40,12 +41,10 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         self.driver: Param = Param(self, "driver", "")
         self._setDefault(driver=driver)
 
-        self._set(
-            jdbc_url=jdbc_url, table=table, driver=driver, options=options
-        )
+        self._set(jdbc_url=jdbc_url, table=table, driver=driver, options=options)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setJdbcUrl(self, value: Param) -> 'FrameworkJdbcExporter':
+    def setJdbcUrl(self, value: Param) -> "FrameworkJdbcExporter":
         self._paramMap[self.jdbc_url] = value
         return self
 
@@ -54,7 +53,7 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         return self.getOrDefault(self.jdbc_url)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setTable(self, value: Param) -> 'FrameworkJdbcExporter':
+    def setTable(self, value: Param) -> "FrameworkJdbcExporter":
         self._paramMap[self.table] = value
         return self
 
@@ -63,7 +62,7 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         return self.getOrDefault(self.table)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setDriver(self, value: Param) -> 'FrameworkJdbcExporter':
+    def setDriver(self, value: Param) -> "FrameworkJdbcExporter":
         self._paramMap[self.driver] = value
         return self
 
@@ -74,7 +73,7 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
     def getFormat(self) -> str:
         return "jdbc"
 
-    def setOptions(self, value: Param) -> 'FrameworkJdbcExporter':
+    def setOptions(self, value: Param) -> "FrameworkJdbcExporter":
         self._paramMap[self.options] = value
         return self
 

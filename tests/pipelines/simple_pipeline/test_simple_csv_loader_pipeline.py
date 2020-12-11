@@ -8,12 +8,14 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
-from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import FrameworkCsvLoader
+from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
+    FrameworkCsvLoader,
+)
 
 
 def test_simple_csv_loader_pipeline(spark_session: SparkSession) -> None:
     # Arrange
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
 
     schema = StructType([])

@@ -21,16 +21,16 @@ class ProxyGenerator:
         def is_path_empty(directory: str) -> bool:
             for dir_tuple in walk(directory):
                 if [
-                    file for file in dir_tuple[2] if not (
-                        file.startswith(('__', '.')) or file.endswith('.pyc')
-                    )
+                    file
+                    for file in dir_tuple[2]
+                    if not (file.startswith(("__", ".")) or file.endswith(".pyc"))
                 ]:
                     return False
             return True
 
         for path_tuple in walk(folder):
             # noinspection SpellCheckingInspection
-            if path_tuple[0].endswith('__pycache__'):
+            if path_tuple[0].endswith("__pycache__"):
                 pass
             else:
                 current_path: str = path.join(folder, path_tuple[0])
@@ -40,56 +40,57 @@ class ProxyGenerator:
                     except FileNotFoundError:
                         pass
                     else:
-                        print(f'Removed {current_path}')
+                        print(f"Removed {current_path}")
 
     @staticmethod
     def generate_proxies(folder: str) -> None:
         all_objects_in_path: List[str] = listdir(folder)
         non_special_objects: List[str] = [
-            file for file in all_objects_in_path
-            if not file.startswith(('_', '.'))
+            file for file in all_objects_in_path if not file.startswith(("_", "."))
         ]
         # noinspection SpellCheckingInspection
         folders: List[str] = [
-            subfolder for subfolder in non_special_objects
-            if '.' not in subfolder
-            and len(listdir(path.join(folder, subfolder))) != 0
+            subfolder
+            for subfolder in non_special_objects
+            if "." not in subfolder and len(listdir(path.join(folder, subfolder))) != 0
         ]
         files: List[str] = [
-            file for file in all_objects_in_path
-            if '.' in file and not file.startswith('_')
+            file
+            for file in all_objects_in_path
+            if "." in file and not file.startswith("_")
         ]
-        transformer_file_indicators = ('.sql', '.csv', '.py')
-        path_contains_transformer: bool = len(
-            [
-                file for file in files
-                if file.endswith(transformer_file_indicators)
-            ]
-        ) > 0
+        transformer_file_indicators = (".sql", ".csv", ".py")
+        path_contains_transformer: bool = (
+            len([file for file in files if file.endswith(transformer_file_indicators)])
+            > 0
+        )
 
         if path_contains_transformer:
             for file in files:
-                translator_search_result: Optional[
-                    Match[str]] = search(r'/library/translators/', folder)
+                translator_search_result: Optional[Match[str]] = search(
+                    r"/library/translators/", folder
+                )
                 if translator_search_result:
-                    search_result: Optional[Match[str]
-                                            ] = search(r'/library/', folder)
+                    search_result: Optional[Match[str]] = search(r"/library/", folder)
                     if search_result:
+                        search_result_end = search_result.end()
                         transformer_reader_file_name = folder[
-                            search_result.end():].replace('/', '_')
+                            search_result_end:
+                        ].replace("/", "_")
                         ProxyGenerator.write_translator(
                             file_name=transformer_reader_file_name,
                             folder=folder,
-                            csv_file=path.basename(file)
+                            csv_file=path.basename(file),
                         )
                 elif file.endswith(transformer_file_indicators):
-                    search_result = search(r'/library/', folder)
+                    search_result = search(r"/library/", folder)
                     if search_result:
-                        transformer_reader_file_name = folder[
-                            search_result.end():].replace('/', '_')
+                        result_end = search_result.end()
+                        transformer_reader_file_name = folder[result_end:].replace(
+                            "/", "_"
+                        )
                         ProxyGenerator.write_transformer(
-                            file_name=transformer_reader_file_name,
-                            folder=folder
+                            file_name=transformer_reader_file_name, folder=folder
                         )
 
         # now recursively generate proxies
@@ -99,8 +100,8 @@ class ProxyGenerator:
 
     @staticmethod
     def write_transformer(file_name: str, folder: str) -> None:
-        transformer_reader_class_name = ''.join(
-            [s.title() for s in file_name.split('_')]
+        transformer_reader_class_name = "".join(
+            [s.title() for s in file_name.split("_")]
         )
         transformer_reader_string = f"""
 from typing import Optional, Dict, Any
@@ -124,16 +125,16 @@ class {transformer_reader_class_name}(ProxyBase):
             verify_count_remains_same=verify_count_remains_same
         )
 """
-        transformer_proxy_file_name: str = path.join(folder, file_name + '.py')
+        transformer_proxy_file_name: str = path.join(folder, file_name + ".py")
         if not path.exists(transformer_proxy_file_name):
-            with open(transformer_proxy_file_name, 'w+') as file:
+            with open(transformer_proxy_file_name, "w+") as file:
                 print(f"Creating {transformer_proxy_file_name}")
                 file.write(transformer_reader_string)
 
     @staticmethod
     def write_translator(file_name: str, folder: str, csv_file: str) -> None:
-        translator_reader_class_name = ''.join(
-            [s.title() for s in file_name.split('_')]
+        translator_reader_class_name = "".join(
+            [s.title() for s in file_name.split("_")]
         )
         transformer_reader_string = f"""from spark_pipeline_framework.proxy_generator.translator_proxy_base import TranslatorProxyBase
 from os import path
@@ -149,15 +150,15 @@ class {translator_reader_class_name}(TranslatorProxyBase):
             csv_file="{csv_file}"
         )
 """
-        translator_proxy_file_name: str = path.join(folder, file_name + '.py')
+        translator_proxy_file_name: str = path.join(folder, file_name + ".py")
         if not path.exists(translator_proxy_file_name):
-            with open(translator_proxy_file_name, 'w+') as file:
+            with open(translator_proxy_file_name, "w+") as file:
                 print(f"Creating translator {translator_proxy_file_name}")
                 file.write(transformer_reader_string)
 
 
 def main() -> int:
-    library_folder: str = path.join(getcwd(), 'library')
+    library_folder: str = path.join(getcwd(), "library")
     ProxyGenerator.remove_empty_dirs(library_folder)
     ProxyGenerator.generate_proxies(library_folder)
     return 0

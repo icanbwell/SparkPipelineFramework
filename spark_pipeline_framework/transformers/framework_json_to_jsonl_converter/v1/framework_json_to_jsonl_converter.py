@@ -9,8 +9,12 @@ from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
-from spark_pipeline_framework.utilities.json_to_jsonl_converter import convert_json_to_jsonl
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
+from spark_pipeline_framework.utilities.json_to_jsonl_converter import (
+    convert_json_to_jsonl,
+)
 
 
 # noinspection SpellCheckingInspection
@@ -23,7 +27,7 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
         output_folder: Union[Path, str],
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ):
         """
         Convert json formats to jsonl since Sparks wants jsonl
@@ -64,7 +68,7 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
         output_folder: Union[Path, str],
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
         # noinspection Mypy
         kwargs = self._input_kwargs
@@ -87,15 +91,13 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
                         src_file=Path(file_name),
                         dst_file=Path(output_folder).joinpath(
                             os.path.basename(file_name)
-                        )
+                        ),
                     )
             elif os.path.isfile(file_path):
                 # read this file and convert it
                 convert_json_to_jsonl(
                     src_file=Path(file_path),
-                    dst_file=Path(output_folder).joinpath(
-                        os.path.basename(file_path)
-                    )
+                    dst_file=Path(output_folder).joinpath(os.path.basename(file_path)),
                 )
             else:
                 raise NotImplementedError(

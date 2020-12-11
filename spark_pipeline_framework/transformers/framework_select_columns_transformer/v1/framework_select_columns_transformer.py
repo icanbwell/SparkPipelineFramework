@@ -7,7 +7,9 @@ from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class FrameworkSelectColumnsTransformer(FrameworkTransformer):
@@ -21,7 +23,7 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        verify_count_remains_same: bool = False
+        verify_count_remains_same: bool = False,
     ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -58,7 +60,7 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        verify_count_remains_same: bool = False
+        verify_count_remains_same: bool = False,
     ) -> None:
         kwargs = self._input_kwargs
         super().setParams(
@@ -88,7 +90,7 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSql(self, value: str) -> 'FrameworkSelectColumnsTransformer':
+    def setSql(self, value: str) -> "FrameworkSelectColumnsTransformer":
         self._paramMap[self.sql] = value
         return self
 
@@ -97,7 +99,7 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         return self.getOrDefault(self.sql)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: str) -> 'FrameworkSelectColumnsTransformer':
+    def setView(self, value: str) -> "FrameworkSelectColumnsTransformer":
         self._paramMap[self.view] = value
         return self
 
@@ -106,7 +108,7 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLogSql(self, value: str) -> 'FrameworkSelectColumnsTransformer':
+    def setLogSql(self, value: str) -> "FrameworkSelectColumnsTransformer":
         self._paramMap[self.log_sql] = value
         return self
 
@@ -117,12 +119,10 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setVerifyCountRemainsSame(
         self, value: bool
-    ) -> 'FrameworkSelectColumnsTransformer':
+    ) -> "FrameworkSelectColumnsTransformer":
         self._paramMap[self.verify_count_remains_same] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
-        return self.getOrDefault(  # type: ignore
-            self.verify_count_remains_same
-        )
+        return self.getOrDefault(self.verify_count_remains_same)  # type: ignore

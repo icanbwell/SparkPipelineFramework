@@ -11,7 +11,9 @@ from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import FrameworkTransformer
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 
 class FrameworkJsonSplitter(FrameworkTransformer):
@@ -24,7 +26,7 @@ class FrameworkJsonSplitter(FrameworkTransformer):
         max_size_per_file_in_mb: float,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ):
         """
         Splits a large json file into multiple files where the maximum size < max_size_per_file_in_mb
@@ -48,9 +50,7 @@ class FrameworkJsonSplitter(FrameworkTransformer):
         self.output_folder: Param = Param(self, "output_folder", "")
         self._setDefault(output_folder=output_folder)
 
-        self.max_size_per_file_in_mb: Param = Param(
-            self, "max_size_per_file_in_mb", ""
-        )
+        self.max_size_per_file_in_mb: Param = Param(self, "max_size_per_file_in_mb", "")
         self._setDefault(max_size_per_file_in_mb=max_size_per_file_in_mb)
 
         kwargs = self._input_kwargs
@@ -65,7 +65,7 @@ class FrameworkJsonSplitter(FrameworkTransformer):
         max_size_per_file_in_mb: float,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
+        progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
         kwargs = self._input_kwargs
         super().setParams(
@@ -87,7 +87,7 @@ class FrameworkJsonSplitter(FrameworkTransformer):
                 data_len = len(data)
                 # check that file is larger than max size
                 if file_size < max_size_per_file_in_mb * 1000000:
-                    print('File smaller than split size, exiting')
+                    print("File smaller than split size, exiting")
                     # just write the whole file
                     shutil.copyfile(str(file_path), str(output_folder))
                 else:
@@ -95,12 +95,9 @@ class FrameworkJsonSplitter(FrameworkTransformer):
                     num_files = math.ceil(
                         file_size / (max_size_per_file_in_mb * 1000000)
                     )
-                    self.logger.info(
-                        f'File will be split into {num_files} equal parts'
-                    )
+                    self.logger.info(f"File will be split into {num_files} equal parts")
                     # initialize 2D array
-                    split_data: List[List[Any]
-                                     ] = [[] for i in range(0, num_files)]
+                    split_data: List[List[Any]] = [[] for i in range(0, num_files)]
                     # determine indices of cutoffs in array
                     starts = [
                         math.floor(i * data_len / num_files)
@@ -114,15 +111,18 @@ class FrameworkJsonSplitter(FrameworkTransformer):
                             split_data[i].append(data[n])
 
                         # create file when section is complete
-                        file_name: str = os.path.basename(file_path).split(
-                            '.'
-                        )[0] + '_' + str(i + 1) + '.json'
+                        file_name: str = (
+                            os.path.basename(file_path).split(".")[0]
+                            + "_"
+                            + str(i + 1)
+                            + ".json"
+                        )
                         with open(
-                            Path(output_folder).joinpath(file_name), 'w+'
+                            Path(output_folder).joinpath(file_name), "w+"
                         ) as outfile:
                             json.dump(split_data[i], outfile)
                         self.logger.info(
-                            f'Part{i + 1}... completed: {Path(output_folder).joinpath(file_name)}'
+                            f"Part{i + 1}... completed: {Path(output_folder).joinpath(file_name)}"
                         )
             else:
                 raise Exception("Not valid JSON")

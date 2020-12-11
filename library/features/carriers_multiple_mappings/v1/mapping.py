@@ -16,18 +16,14 @@ def mapping(parameters: Dict[str, Any]) -> List[AutoMapperBase]:
         dst1="src1",
         dst2=AutoMapperList([client_address_variable]),
         dst3=AutoMapperList([client_address_variable, "address2"]),
-        dst4=AutoMapperList(
-            [A.complex(use="usual", family=A.column("last_name"))]
-        )
+        dst4=AutoMapperList([A.complex(use="usual", family=A.column("last_name"))]),
     )
 
     company_name: str = "Microsoft"
 
     if company_name == "Microsoft":
         mapper = mapper.columns(
-            dst5=AutoMapperList(
-                [A.complex(use="usual", family=A.column("last_name"))]
-            )
+            dst5=AutoMapperList([A.complex(use="usual", family=A.column("last_name"))])
         )
 
     mapper2 = AutoMapper(

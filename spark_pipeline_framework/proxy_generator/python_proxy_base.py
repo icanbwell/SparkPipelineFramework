@@ -12,7 +12,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 class PythonProxyBase(
     Transformer,  # type: ignore
     DefaultParamsReadable,  # type: ignore
-    DefaultParamsWritable  # type: ignore
+    DefaultParamsWritable,  # type: ignore
 ):
     # noinspection PyUnusedLocal
     @keyword_only
@@ -21,7 +21,7 @@ class PythonProxyBase(
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        verify_count_remains_same: bool = False
+        verify_count_remains_same: bool = False,
     ) -> None:
         super(PythonProxyBase, self).__init__()
 
@@ -49,7 +49,7 @@ class PythonProxyBase(
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        verify_count_remains_same: bool = False
+        verify_count_remains_same: bool = False,
     ) -> Any:
         kwargs = self._input_kwargs
         return self._set(**kwargs)
@@ -58,18 +58,16 @@ class PythonProxyBase(
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setName(self, value: str) -> 'PythonProxyBase':
+    def setName(self, value: str) -> "PythonProxyBase":
         self._paramMap[self.name] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getOrDefault(  # type: ignore
-            self.name or self.__class__.__name__
-        )
+        return self.getOrDefault(self.name or self.__class__.__name__)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setProgressLogger(self, value: ProgressLogger) -> 'PythonProxyBase':
+    def setProgressLogger(self, value: ProgressLogger) -> "PythonProxyBase":
         self._paramMap[self.progress_logger] = value
         return self
 

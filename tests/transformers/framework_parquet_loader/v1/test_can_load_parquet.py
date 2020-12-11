@@ -6,7 +6,9 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
-from spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader import FrameworkParquetLoader
+from spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader import (
+    FrameworkParquetLoader,
+)
 from tests.parquet_helper import ParquetHelper
 from tests.spark_test_helper import SparkTestHelper
 
@@ -15,11 +17,11 @@ def test_can_load_parquet(spark_session: SparkSession) -> None:
     # Arrange
     SparkTestHelper.clear_tables(spark_session)
 
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
     test_file_path: str = f"{data_dir.joinpath('test.csv')}"
 
-    if path.isdir(data_dir.joinpath('temp')):
-        shutil.rmtree(data_dir.joinpath('temp'))
+    if path.isdir(data_dir.joinpath("temp")):
+        shutil.rmtree(data_dir.joinpath("temp"))
 
     schema = StructType([])
 
@@ -32,8 +34,7 @@ def test_can_load_parquet(spark_session: SparkSession) -> None:
     )
 
     # Act
-    FrameworkParquetLoader(view="my_view",
-                           file_path=parquet_file_path).transform(df)
+    FrameworkParquetLoader(view="my_view", file_path=parquet_file_path).transform(df)
 
     # noinspection SqlDialectInspection
     result: DataFrame = spark_session.sql("SELECT * FROM my_view")

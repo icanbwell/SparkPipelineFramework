@@ -1,7 +1,8 @@
 from pyspark.sql.session import SparkSession
 
-from spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner import \
-    FrameworkDBQueryRunner
+from spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner import (
+    FrameworkDBQueryRunner,
+)
 
 
 def test_db_query_runner(spark_session: SparkSession) -> None:
@@ -23,7 +24,7 @@ def test_db_query_runner(spark_session: SparkSession) -> None:
         host=host,
         port=port,
         db_name=db,
-        query=query
+        query=query,
     )
 
     # Assert

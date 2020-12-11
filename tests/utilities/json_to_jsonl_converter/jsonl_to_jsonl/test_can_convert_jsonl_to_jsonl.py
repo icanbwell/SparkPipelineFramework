@@ -3,14 +3,16 @@ from pathlib import Path
 from shutil import rmtree
 from typing import List
 
-from spark_pipeline_framework.utilities.json_to_jsonl_converter import convert_json_to_jsonl
+from spark_pipeline_framework.utilities.json_to_jsonl_converter import (
+    convert_json_to_jsonl,
+)
 
 
 def test_can_convert_jsonl_to_jsonl() -> None:
     # Arrange
-    data_dir: Path = Path(__file__).parent.joinpath('./')
+    data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath('./temp')
+    temp_folder = data_dir.joinpath("./temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -18,7 +20,7 @@ def test_can_convert_jsonl_to_jsonl() -> None:
     # Act
     output_file = convert_json_to_jsonl(
         src_file=data_dir.joinpath("json_file.json"),
-        dst_file=temp_folder.joinpath("json_file.json")
+        dst_file=temp_folder.joinpath("json_file.json"),
     )
 
     # Assert

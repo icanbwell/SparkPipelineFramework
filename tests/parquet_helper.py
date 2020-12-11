@@ -11,7 +11,7 @@ class ParquetHelper:
         file_path: str,
         delimiter: str = ",",
         has_header: bool = True,
-        infer_schema: bool = True
+        infer_schema: bool = True,
     ) -> str:
         data_dir: Path = Path(file_path).parent
         csv_path: str = f"file://{file_path}"
@@ -19,8 +19,12 @@ class ParquetHelper:
         parquet_full_path: str = f"file://{data_dir.joinpath('temp/').joinpath(f'{parquet_file_name}.parquet')}"
 
         ParquetHelper.save_csv_as_parquet(
-            spark_session, csv_path, parquet_full_path, delimiter, has_header,
-            infer_schema
+            spark_session,
+            csv_path,
+            parquet_full_path,
+            delimiter,
+            has_header,
+            infer_schema,
         )
 
         return parquet_full_path
@@ -32,16 +36,15 @@ class ParquetHelper:
         destination_path: str,
         delimiter: str = ",",
         has_header: bool = True,
-        infer_schema: bool = False
+        infer_schema: bool = False,
     ) -> None:
         # noinspection SpellCheckingInspection
-        spark_session.read \
-            .option("delimiter", delimiter) \
-            .option("header", str(has_header)) \
-            .option("inferschema", infer_schema) \
-            .csv(source_path) \
-            .coalesce(1) \
-            .write \
-            .format("parquet") \
-            .mode("overwrite") \
-            .save(destination_path)
+        spark_session.read.option("delimiter", delimiter).option(
+            "header", str(has_header)
+        ).option("inferschema", infer_schema).csv(source_path).coalesce(1).write.format(
+            "parquet"
+        ).mode(
+            "overwrite"
+        ).save(
+            destination_path
+        )

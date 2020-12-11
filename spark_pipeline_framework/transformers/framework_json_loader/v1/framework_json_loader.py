@@ -4,8 +4,9 @@ from typing import Union, List, Dict, Any
 from pyspark import keyword_only
 from pyspark.ml.param.shared import Param
 
-from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import \
-    FrameworkLocalFileLoader
+from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import (
+    FrameworkLocalFileLoader,
+)
 
 
 class FrameworkJsonLoader(FrameworkLocalFileLoader):
@@ -26,7 +27,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         self._set(multiLine=multiLine)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setMultiLine(self, value: Param) -> 'FrameworkJsonLoader':
+    def setMultiLine(self, value: Param) -> "FrameworkJsonLoader":
         self._paramMap[self.multiLine] = value
         return self
 
