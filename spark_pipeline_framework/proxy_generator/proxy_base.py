@@ -81,14 +81,17 @@ class ProxyBase(FrameworkTransformer):
                         verify_count_remains_same=verify_count_remains_same,
                     )
                 )
-            elif file == "calculate.py":
-                self.my_transformers.append(self.get_python_transformer(".calculate"))
             elif file.endswith("mapping.py"):
                 file_name_only: str = os.path.basename(file)
                 # strip off .py to get the module name
                 import_module_name: str = file_name_only.replace(".py", "")
                 self.my_transformers.append(
                     self.get_python_mapping_transformer("." + import_module_name)
+                )
+            elif file.endswith("calculate.py") or file.endswith("pipeline.py"):
+                file_name_only = file.replace(".py", "")
+                self.my_transformers.append(
+                    self.get_python_transformer(f".{file_name_only}")
                 )
 
     @staticmethod
@@ -115,6 +118,9 @@ class ProxyBase(FrameworkTransformer):
         for transformer in self.my_transformers:
             df = transformer.transform(df)
         return df
+
+    def fit(self, df: DataFrame) -> Transformer:
+        return self
 
     def get_python_transformer(self, import_module_name: str) -> Transformer:
         progress_logger = self.getProgressLogger()
