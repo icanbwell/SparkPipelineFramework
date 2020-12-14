@@ -19,7 +19,7 @@ def get_python_transformer_from_location(
     progress_logger: Optional[ProgressLogger],
 ) -> Transformer:
     assert location
-    assert isinstance(parameters, dict)
+    # assert isinstance(parameters, dict)
     assert progress_logger
     search = re.search(r"/library/", location)
     assert search
