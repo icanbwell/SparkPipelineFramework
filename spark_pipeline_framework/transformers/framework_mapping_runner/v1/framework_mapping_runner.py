@@ -29,6 +29,15 @@ class FrameworkMappingLoader(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
     ) -> None:
+        """
+        This class loads AutoMappers and runs them
+
+        :param view:
+        :param mapping_function:
+        :param name:
+        :param parameters:
+        :param progress_logger:
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -36,6 +45,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         self.view: Param = Param(self, "view", "")
+        self.views: List[str] = []
         # noinspection Mypy
         self._setDefault(view=None)
 
@@ -88,6 +98,8 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
         for a in auto_mappers:
             assert isinstance(a, AutoMapper)
+            if a.view:
+                self.views.append(a.view)
             try:
                 a.transform(df=df)
             except Exception as e:
@@ -98,6 +110,10 @@ class FrameworkMappingLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
         return self.getOrDefault(self.view)  # type: ignore
+
+    # noinspection PyPep8Naming
+    def getViews(self) -> List[str]:
+        return self.views
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMappingFunction(self) -> AutoMapperFunction:
