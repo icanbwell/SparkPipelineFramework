@@ -20,7 +20,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         path_to_csv: Union[str, List[str], Path],
         delimiter: str = ",",
         has_header: bool = True,
-        clean_column_names: bool = True,
+        clean_column_names: bool = False,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,

@@ -33,7 +33,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         infer_schema: bool = False,
         cache_table: bool = True,
         schema: StructType = None,
-        clean_column_names: bool = True,
+        clean_column_names: bool = False,
         create_file_path: bool = False,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
