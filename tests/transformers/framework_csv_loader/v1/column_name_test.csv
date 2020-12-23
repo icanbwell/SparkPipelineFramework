@@ -1,0 +1,4 @@
+PrettyColumn,AnotherPrettyColumn,"Ugly column,with;chars{that}parquet(does)not	like=much_-"
+1,foo,foo1
+2,bar,bar2
+3,monkey,monkey3

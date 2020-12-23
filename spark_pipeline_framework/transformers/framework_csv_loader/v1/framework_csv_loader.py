@@ -20,6 +20,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         path_to_csv: Union[str, List[str], Path],
         delimiter: str = ",",
         has_header: bool = True,
+        clean_column_names: bool = False,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -28,6 +29,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         super().__init__(
             view=view,
             filepath=path_to_csv,
+            clean_column_names=clean_column_names,
             name=name,
             parameters=parameters,
             progress_logger=progress_logger,
@@ -40,7 +42,11 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         self.has_header: Param = Param(self, "has_header", "")
         self._setDefault(has_header=True)
 
-        self._set(delimiter=delimiter, has_header=has_header)
+        self._set(
+            delimiter=delimiter,
+            has_header=has_header,
+            clean_column_names=clean_column_names,
+        )
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setDelimiter(self, value: Param) -> "FrameworkCsvLoader":

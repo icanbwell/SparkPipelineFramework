@@ -1,0 +1,12 @@
+[
+  {
+    "title": "A Philosophy of Software Design",
+    "authors": [{"given":  ["John"], "surname":  "Ousterhout"}],
+    "Ugly column,with;chars{that}parquet(does)not\tlike=much_-": null
+  },
+  {
+    "title":  "Essentials of Programming Languages",
+    "authors": [{"given":  ["Dan", "P."], "surname":  "Friedman"}, {"given":  ["Mitchell"], "surname":  "Wand"}],
+    "Ugly column,with;chars{that}parquet(does)not\tlike=much_-": 3
+  }
+]

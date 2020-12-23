@@ -18,9 +18,15 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         view: str,
         filepath: Union[str, List[str], Path],
         multiLine: bool = False,
+        clean_column_names: bool = False,
         **kwargs: Dict[Any, Any]
     ):
-        super().__init__(view=view, filepath=filepath, **kwargs)
+        super().__init__(
+            view=view,
+            filepath=filepath,
+            clean_column_names=clean_column_names,
+            **kwargs
+        )
 
         self.multiLine: Param = Param(self, "multiLine", "")
         self._setDefault(multiLine=False)
