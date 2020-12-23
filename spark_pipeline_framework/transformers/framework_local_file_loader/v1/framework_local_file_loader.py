@@ -1,3 +1,4 @@
+import re
 from logging import Logger
 from pathlib import Path
 from typing import Union, List, Optional, Dict, Any
@@ -32,6 +33,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         infer_schema: bool = False,
         cache_table: bool = True,
         schema: StructType = None,
+        clean_column_names: bool = True,
         create_file_path: bool = False,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -51,6 +53,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
         self.schema: Param = Param(self, "schema", "")
         self._setDefault(schema=None)
+
+        self.clean_column_names: Param = Param(self, "clean_column_names", "")
+        self._setDefault(clean_column_names=False)
 
         self.cache_table: Param = Param(self, "cache_table", "")
         self._setDefault(cache_table=True)
@@ -79,6 +84,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         view = self.getView()
         filepath: Union[str, List[str], Path] = self.getFilepath()
         schema = self.getSchema()
+        clean_column_names = self.getCleanColumnNames()
         cache_table = self.getCacheTable()
         infer_schema = self.getInferSchema()
         limit = self.getLimit()
@@ -131,6 +137,10 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         else:
             df2 = df_reader.load(absolute_paths)
 
+        if clean_column_names:
+            for c in df2.columns:
+                df2 = df2.withColumnRenamed(c, re.sub(r"[ ,;{}()\n\t=]", "_", c))
+
         if limit and limit > -1:
             df2 = df2.limit(limit)
 
@@ -174,6 +184,15 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
         return self.getOrDefault(self.schema)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setCleanColumnNames(self, value: Param) -> "FrameworkLocalFileLoader":
+        self._paramMap[self.clean_column_names] = value
+        return self
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getCleanColumnNames(self) -> bool:
+        return self.getOrDefault(self.clean_column_names)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setCacheTable(self, value: Param) -> "FrameworkLocalFileLoader":

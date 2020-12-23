@@ -104,3 +104,69 @@ def test_can_load_csv_without_header(spark_session: SparkSession) -> None:
 
     # Assert
     assert_results(result)
+
+
+# noinspection SqlNoDataSourceInspection
+def test_correctly_loads_csv_with_clean_flag_off(spark_session: SparkSession) -> None:
+    # Arrange
+    clean_spark_session(spark_session)
+
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    test_file_path: str = f"{data_dir.joinpath('column_name_test.csv')}"
+
+    schema = StructType([])
+
+    df: DataFrame = spark_session.createDataFrame(
+        spark_session.sparkContext.emptyRDD(), schema
+    )
+
+    # Act
+    FrameworkCsvLoader(
+        view="my_view",
+        path_to_csv=test_file_path,
+        delimiter=",",
+        clean_column_names=False,
+    ).transform(df)
+
+    # noinspection SqlDialectInspection
+    result: DataFrame = spark_session.sql("SELECT * FROM my_view")
+
+    # Assert
+    assert_results(result)
+    assert result.collect()[1][0] == "2"
+    assert (
+        result.columns[2] == "Ugly column,with;chars{that}parquet(does)not	like=much_-"
+    )
+
+
+# noinspection SqlNoDataSourceInspection
+def test_correctly_loads_csv_with_clean_flag_on(spark_session: SparkSession) -> None:
+    # Arrange
+    clean_spark_session(spark_session)
+
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    test_file_path: str = f"{data_dir.joinpath('column_name_test.csv')}"
+
+    schema = StructType([])
+
+    df: DataFrame = spark_session.createDataFrame(
+        spark_session.sparkContext.emptyRDD(), schema
+    )
+
+    # Act
+    FrameworkCsvLoader(
+        view="my_view",
+        path_to_csv=test_file_path,
+        delimiter=",",
+        clean_column_names=True,
+    ).transform(df)
+
+    # noinspection SqlDialectInspection
+    result: DataFrame = spark_session.sql("SELECT * FROM my_view")
+
+    # Assert
+    assert_results(result)
+    assert result.collect()[1][0] == "2"
+    assert (
+        result.columns[2] == "Ugly_column_with_chars_that_parquet_does_not_like_much_-"
+    )
