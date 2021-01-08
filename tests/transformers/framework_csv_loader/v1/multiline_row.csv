@@ -1,0 +1,10 @@
+alias,scheduling_location_name,scheduling_location_address1,scheduling_location_address2,scheduling_location_city,scheduling_location_state,scheduling_location_zip,scheduling_location_mnem,scheduling_location_number,scheduling_department_name,scheduling_department_mnem,scheduling_department_number,practice_name,customer_friendly_practice_name,address1,address2,city,state,zip,office_phone,office_fax,emergency_room,practice_speciality,practice_type,demographic,organization,practice_affiliation,labcorp_id,quest_id,facility_status,central_scheduling,central_scheduling_phone,monday_opening_time,monday_closing_time,tuesday_opening_time,tuesday_closing_time,wednesday_opening_time,wednesday_closing_time,thursday_opening_time,thursday_closing_time,friday_opening_time,friday_closing_time,saturday_opening_time,saturday_closing_time,web_site,Parking Information,Services Offered,Image Link
+ED,,"110 IRVING STREET,NW",1ST FL.,WASHINGTON,DC,20010,ED,1110,,FALSE,27718,MedStar Good Samaritan Hospital,,5601 LOCH RAVEN BLVD,,BALTIMORE,MD,21239-2945,(443) 444-4040,,Yes,,PRE-OP COVID TESTING CTR-MWHC,Baltimore Region,,,,,Active,,,,,,,,,,,,,,,https://www.medstargoodsam.org/contact-us/,,"At MedStar Good Samaritan Hospital, we feel good about the emergency care we provide to our friends right in our neighborhood—and we can say our patients do too. In fact, our patients rate us as “A+” in patient satisfaction. Why the high ratings?
+
+Comprehensive Emergency Care
+Maybe it's because our experienced ER staff can handle emergency situations, no matter how large or small. You benefit from the technology and the technique that brings you:
+
+- Latest protocols for emergency heart and stroke care 24 hours a day
+- One of the region's most advanced monitoring systems connecting critical care areas
+- Special procedure rooms for bone and joint injuries
+- The latest diagnostic imaging tools on-site",https://ct1.medstarhealth.org/content/uploads/sites/144/2016/01/mgsh.jpg
