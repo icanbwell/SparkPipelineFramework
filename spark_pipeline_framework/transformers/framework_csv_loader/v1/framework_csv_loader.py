@@ -21,6 +21,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         delimiter: str = ",",
         has_header: bool = True,
         clean_column_names: bool = False,
+        multiline: bool = False,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -41,6 +42,9 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
 
         self.has_header: Param = Param(self, "has_header", "")
         self._setDefault(has_header=True)
+
+        self.multiline: Param = Param(self, "multiline", "")
+        self._setDefault(multiline=multiline)
 
         self._set(
             delimiter=delimiter,
@@ -66,6 +70,15 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
     def getHasHeader(self) -> bool:
         return self.getOrDefault(self.has_header)  # type: ignore
 
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def setMultiline(self, value: Param) -> "FrameworkCsvLoader":
+        self._paramMap[self.multiline] = value
+        return self
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getMultiline(self) -> bool:
+        return self.getOrDefault(self.multiline)  # type: ignore
+
     def getReaderFormat(self) -> str:
         return "csv"
 
@@ -73,5 +86,6 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         options: Dict[str, Any] = {
             "header": "true" if self.getHasHeader() else "false",
             "delimiter": self.getDelimiter(),
+            "multiline": self.getMultiline(),
         }
         return options
