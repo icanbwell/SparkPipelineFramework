@@ -122,7 +122,7 @@ class {transformer_reader_class_name}(ProxyBase):
             parameters=parameters,
             location=location,
             progress_logger=progress_logger,
-            verify_count_remains_same=verify_count_remains_same
+            verify_count_remains_same=verify_count_remains_same,
         )
 """
         transformer_proxy_file_name: str = path.join(folder, file_name + ".py")
