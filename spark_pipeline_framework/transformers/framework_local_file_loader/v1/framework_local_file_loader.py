@@ -141,6 +141,11 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             for c in df2.columns:
                 df2 = df2.withColumnRenamed(c, re.sub(r"[ ,;{}()\n\t=]", "_", c))
 
+        assert "_corrupt_record" not in df2.columns, (
+            f"Error in reading the file:{absolute_paths}. "
+            + df2.select("_corrupt_record").limit(1).collect()[0][0]
+        )
+
         if limit and limit > -1:
             df2 = df2.limit(limit)
 
