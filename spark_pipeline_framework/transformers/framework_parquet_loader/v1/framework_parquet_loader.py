@@ -90,10 +90,9 @@ class FrameworkParquetLoader(FrameworkTransformer):
                 else:
                     final_df = df.sql_ctx.read.format("parquet").load(path=str(path))
 
-                assert "_corrupt_record" not in final_df.columns, (
-                    f"Error in reading the file:{path}. "
-                    + final_df.select("_corrupt_record").limit(1).collect()[0][0]
-                )
+                assert (
+                    "_corrupt_record" not in final_df.columns
+                ), f"Found _corrupt_record after reading the file: {path}. "
                 if limit and limit > 0:
                     final_df = final_df.limit(limit)
 

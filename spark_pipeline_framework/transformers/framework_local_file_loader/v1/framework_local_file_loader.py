@@ -116,6 +116,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             f"Loading {self.getReaderFormat()} file for view {view}: {absolute_paths}, infer_schema: {infer_schema}"
         )
 
+        self.preprocess(df=df, absolute_paths=absolute_paths)
+
         df_reader: DataFrameReader = df.sql_ctx.read
 
         if schema:
@@ -141,10 +143,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             for c in df2.columns:
                 df2 = df2.withColumnRenamed(c, re.sub(r"[ ,;{}()\n\t=]", "_", c))
 
-        assert "_corrupt_record" not in df2.columns, (
-            f"Error in reading the file:{absolute_paths}. "
-            + df2.select("_corrupt_record").limit(1).collect()[0][0]
-        )
+        assert (
+            "_corrupt_record" not in df2.columns
+        ), f"Found _corrupt_record after reading the file: {','.join(absolute_paths)}. "
 
         if limit and limit > -1:
             df2 = df2.limit(limit)
@@ -162,6 +163,14 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         )
 
         return df
+
+    def preprocess(self, df: DataFrame, absolute_paths: List[str]) -> None:
+        """
+        Sub-classes can over-ride to do any pre-processing behavior
+
+        :param df: Data Frame
+        :param absolute_paths: list of paths to read from
+        """
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setView(self, value: Param) -> "FrameworkLocalFileLoader":
