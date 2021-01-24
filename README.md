@@ -1,3 +1,5 @@
+![Build and Test](https://github.com/imranq2/SparkPipelineFramework/workflows/Build%20and%20Test/badge.svg)
+
 # SparkPipelineFramework
 SparkPipelineFramework implements a few design patterns to make it easier to create Spark applications that:
 1. Separate data transformation logic from the pipeline execution code so you can compose pipelines by just stringing together transformers.  (Based on the SparkML Pipeline class but enhanced to work for both ML and non-ML transformations)
