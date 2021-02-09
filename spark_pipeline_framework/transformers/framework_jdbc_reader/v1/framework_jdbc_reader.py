@@ -76,11 +76,10 @@ class FrameworkJdbcReader(FrameworkTransformer):
         driver: str = self.getDriver()
         view: Optional[str] = self.getView()
         df = (
+            # this execution requires an Option either 'dbtable' or 'query' parameter
             df.sql_ctx.read.format("jdbc")
             .option("url", jdbc_url)
-            .option(
-                "table", query
-            )  # passing "(sql query) table_alias" into "table" parameter.
+            .option("dbtable", query)
             .option("driver", driver)
             .load()
         )
