@@ -28,6 +28,9 @@ class FrameworkJdbcReader(FrameworkTransformer):
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
+        assert jdbc_url
+        assert query
+        assert driver
 
         self.logger = get_logger(__name__)
 
@@ -75,7 +78,7 @@ class FrameworkJdbcReader(FrameworkTransformer):
         df = (
             df.sql_ctx.read.format("jdbc")
             .option("url", jdbc_url)
-            .option("dbtable", query)
+            .option("table", query)
             .option("driver", driver)
             .load()
         )
