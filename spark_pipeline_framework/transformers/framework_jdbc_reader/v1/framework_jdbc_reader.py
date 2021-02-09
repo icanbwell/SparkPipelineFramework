@@ -78,7 +78,9 @@ class FrameworkJdbcReader(FrameworkTransformer):
         df = (
             df.sql_ctx.read.format("jdbc")
             .option("url", jdbc_url)
-            .option("table", query)
+            .option(
+                "table", query
+            )  # passing "(sql query) table_alias" into "table" parameter.
             .option("driver", driver)
             .load()
         )
@@ -95,6 +97,9 @@ class FrameworkJdbcReader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDriver(self) -> str:
         return self.getOrDefault(self.driver)  # type: ignore
+
+    def getFormat(self) -> str:
+        return "jdbc"
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getQuery(self) -> str:

@@ -23,9 +23,8 @@ def test_can_read_via_jdbc(spark_session: SparkSession) -> None:
     )
 
     # Assert
-    options = reader.getOptions()
-    assert options["url"] == jdbc_url
-    assert options["driver"] == driver
+    assert reader.getJdbcUrl() == jdbc_url
+    assert reader.getDriver() == driver
     assert reader.getFormat() == "jdbc"
     assert reader.getQuery() == query
     assert reader.getView() == view
