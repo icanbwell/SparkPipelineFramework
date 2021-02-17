@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 import pymysql
 from pymysql import OperationalError
 from pymysql.connections import Connection
+from pymysql.constants import CLIENT
 from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -81,6 +82,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
                 host=self.getHost(),
                 port=self.getPort(),
                 db=self.getDb(),
+                client_flag=CLIENT.MULTI_STATEMENTS,
             )
             try:
                 with connection.cursor() as cursor:
