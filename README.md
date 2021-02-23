@@ -2,6 +2,8 @@
 
 ![Upload Python Package](https://github.com/imranq2/SparkPipelineFramework/workflows/Upload%20Python%20Package/badge.svg)
 
+[![Known Vulnerabilities](https://snyk.io/test/github/imranq2/SparkPipelineFramework/badge.svg?targetFile=requirements.txt)](https://snyk.io/test/github/imranq2/SparkPipelineFramework?targetFile=requirements.txt)
+
 # SparkPipelineFramework
 SparkPipelineFramework implements a few design patterns to make it easier to create Spark applications that:
 1. Separate data transformation logic from the pipeline execution code so you can compose pipelines by just stringing together transformers.  (Based on the SparkML Pipeline class but enhanced to work for both ML and non-ML transformations)
