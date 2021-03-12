@@ -5,7 +5,7 @@ from spark_pipeline_framework.utilities.slack_client import SlackClient
 
 @pytest.mark.skip("Actually sends a message to slack")
 def test_slack_client() -> None:
-    slack_token = "xoxb-384015802947-1848036786117-ofvJL3oeyxxpr1Jc3WqpzrAN"
+    slack_token = "put in token here to test"
     channel: str = "#helix_pipeline_notifications"
     bot_user_name = "Helix Pipeline Monitor"
     client = SlackClient(
