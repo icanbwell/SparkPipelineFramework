@@ -49,7 +49,7 @@ class ProgressLogger:
     def log_progress_event(
         self, event_name: str, current: int, total: int, event_format_string: str
     ) -> None:
-        pass
+        self.logger.info(event_format_string.format(event_name, current, total))
 
     def log_event(self, event_name: str, event_text: str) -> None:
-        pass
+        self.logger.info(event_text)
