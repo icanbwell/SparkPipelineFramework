@@ -94,6 +94,11 @@ class ProxyBase(FrameworkTransformer):
                     self.get_python_transformer(f".{file_name_only}")
                 )
 
+        assert len(self.my_transformers) > 0, (
+            f"No transformer files found in {self.location}."
+            "  There should be one or more .sql, .csv, *mapping.py, *calculate.py or *pipeline.py files"
+        )
+
     @staticmethod
     def read_file_as_string(file_path: str) -> str:
         with open(file_path, "r") as file:
