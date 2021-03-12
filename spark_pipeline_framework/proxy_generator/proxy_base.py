@@ -119,6 +119,7 @@ class ProxyBase(FrameworkTransformer):
             df = transformer.transform(df)
         return df
 
+    # noinspection PyUnusedLocal
     def fit(self, df: DataFrame) -> Transformer:
         return self
 
