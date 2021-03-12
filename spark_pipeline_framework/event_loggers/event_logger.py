@@ -6,3 +6,6 @@ class EventLogger:
 
     def log_event(self, event_name: str, event_text: str) -> None:
         pass
+
+    def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
+        pass
