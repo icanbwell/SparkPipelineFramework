@@ -1,14 +1,16 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Optional
+from typing import Optional, List
 
+from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
 
 class ProgressLogger:
-    def __init__(self) -> None:
+    def __init__(self, event_loggers: Optional[List[EventLogger]] = None) -> None:
         self.logger = get_logger(__name__)
+        self.event_loggers: Optional[List[EventLogger]] = event_loggers
 
     def __enter__(self) -> "ProgressLogger":
         return self
@@ -50,6 +52,17 @@ class ProgressLogger:
         self, event_name: str, current: int, total: int, event_format_string: str
     ) -> None:
         self.logger.info(event_format_string.format(event_name, current, total))
+        if self.event_loggers:
+            for event_logger in self.event_loggers:
+                event_logger.log_progress_event(
+                    event_name=event_name,
+                    current=current,
+                    total=total,
+                    event_format_string=event_format_string,
+                )
 
     def log_event(self, event_name: str, event_text: str) -> None:
         self.logger.info(event_text)
+        if self.event_loggers:
+            for event_logger in self.event_loggers:
+                event_logger.log_event(event_name=event_name, event_text=event_text)

@@ -1,9 +1,9 @@
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 
 from spark_pipeline_framework.utilities.slack_client import SlackClient
 
 
-class SlackProgressLogger(ProgressLogger):
+class SlackEventLogger(EventLogger):
     def __init__(
         self, slack_token: str, slack_channel: str, bot_user_name: str
     ) -> None:
