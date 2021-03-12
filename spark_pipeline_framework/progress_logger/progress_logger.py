@@ -45,8 +45,13 @@ class ProgressLogger:
         self.logger.info(name + ": " + str(message))
         return True
 
-    def log_exception(self, e: Exception) -> None:
-        self.log_artifact("_exception.txt", str(e))
+    def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
+        self.log_artifact("_exception.txt", str(ex))
+        if self.event_loggers:
+            for event_logger in self.event_loggers:
+                event_logger.log_exception(
+                    event_name=event_name, event_text=event_text, ex=ex
+                )
 
     def log_progress_event(
         self, event_name: str, current: int, total: int, event_format_string: str
