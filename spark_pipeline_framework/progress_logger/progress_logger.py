@@ -45,3 +45,11 @@ class ProgressLogger:
 
     def log_exception(self, e: Exception) -> None:
         self.log_artifact("_exception.txt", str(e))
+
+    def log_progress_event(
+        self, event_name: str, current: int, total: int, event_format_string: str
+    ) -> None:
+        pass
+
+    def log_event(self, event_name: str, event_text: str) -> None:
+        pass

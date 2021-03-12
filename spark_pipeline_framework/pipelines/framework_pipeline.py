@@ -30,6 +30,9 @@ class FrameworkPipeline(Transformer):  # type: ignore
         count_of_transformers: int = len(self.transformers)
         i: int = 0
         pipeline_name: str = self.__class__.__name__
+        self.progress_logger.log_event(
+            event_name=pipeline_name, event_text=f"Starting Pipeline {pipeline_name}"
+        )
         for transformer in self.transformers:
             stage_name: Optional[str] = None
             try:
@@ -76,7 +79,14 @@ class FrameworkPipeline(Transformer):  # type: ignore
                 logger.error(
                     "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 )
+                self.progress_logger.log_event(
+                    event_name=pipeline_name,
+                    event_text=f"Error in Pipeline {pipeline_name}: {friendly_spark_exception.message}",
+                )
                 raise friendly_spark_exception from e
+        self.progress_logger.log_event(
+            event_name=pipeline_name, event_text=f"Finished Pipeline {pipeline_name}"
+        )
         return df
 
     # noinspection PyMethodMayBeStatic
