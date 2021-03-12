@@ -81,7 +81,7 @@ class FrameworkPipeline(Transformer):  # type: ignore
                 )
                 self.progress_logger.log_event(
                     event_name=pipeline_name,
-                    event_text=f"Error in Pipeline {pipeline_name}: {friendly_spark_exception.message}",
+                    event_text=f"Error in Pipeline {pipeline_name}: Stage={stage_name}, exception type={type(e)}",
                 )
                 raise friendly_spark_exception from e
         self.progress_logger.log_event(
