@@ -23,3 +23,5 @@ def test_slack_client() -> None:
 
     response = client.post_message_to_slack(slack_info, blocks=None)
     print(response)
+    response = client.post_message_to_slack("reply", blocks=None)
+    print(response)

@@ -51,6 +51,9 @@ class FrameworkPipeline(Transformer):  # type: ignore
                 with ProgressLogMetric(
                     progress_logger=self.progress_logger, name=stage_name or "unknown"
                 ):
+                    self.progress_logger.log_event(
+                        pipeline_name, event_text=f"Running pipeline step {stage_name}"
+                    )
                     df = transformer.transform(dataset=df)
             except Exception as e:
                 if hasattr(transformer, "getName"):
