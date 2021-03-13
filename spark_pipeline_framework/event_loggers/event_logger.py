@@ -1,6 +1,11 @@
 class EventLogger:
     def log_progress_event(
-        self, event_name: str, current: int, total: int, event_format_string: str
+        self,
+        event_name: str,
+        current: int,
+        total: int,
+        event_format_string: str,
+        backoff: bool = True,
     ) -> None:
         """
         Logs a progress event
@@ -8,6 +13,7 @@ class EventLogger:
         :param current:
         :param total:
         :param event_format_string:
+        :param backoff:
         """
 
     def log_event(self, event_name: str, event_text: str) -> None:
