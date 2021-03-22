@@ -103,7 +103,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         elif isinstance(filepath, Path):
             data_dir = Path(__file__).parent.parent.joinpath("./")
             absolute_paths = [f"file://{data_dir.joinpath(filepath)}"]
-        else:
+        elif isinstance(filepath, (list, tuple)):
             data_dir = Path(__file__).parent.parent.joinpath("./")
             absolute_paths = []
             for path in filepath:
@@ -111,6 +111,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
                     absolute_paths.append(path)
                 else:
                     absolute_paths.append(f"file://{data_dir.joinpath(path)}")
+        else:
+            raise ValueError("Unknown type '{type(filepath)}' for filepath {filepath}")
 
         progress_logger and progress_logger.write_to_log(
             f"Loading {self.getReaderFormat()} file for view {view}: {absolute_paths}, infer_schema: {infer_schema}"
