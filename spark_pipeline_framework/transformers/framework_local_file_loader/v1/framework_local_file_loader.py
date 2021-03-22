@@ -99,18 +99,18 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
                 absolute_paths: List[str] = [filepath]
             else:
                 data_dir = Path(__file__).parent.parent.joinpath("./")
-                if isinstance(filepath, list):
-                    absolute_paths = [
-                        f"file://{data_dir.joinpath(path)}" for path in filepath
-                    ]
-                else:
-                    absolute_paths = [f"file://{data_dir.joinpath(filepath)}"]
+                absolute_paths = [f"file://{data_dir.joinpath(filepath)}"]
         elif isinstance(filepath, Path):
             data_dir = Path(__file__).parent.parent.joinpath("./")
             absolute_paths = [f"file://{data_dir.joinpath(filepath)}"]
         else:
             data_dir = Path(__file__).parent.parent.joinpath("./")
-            absolute_paths = [f"file://{data_dir.joinpath(path)}" for path in filepath]
+            absolute_paths = []
+            for path in filepath:
+                if ":" in path:
+                    absolute_paths.append(path)
+                else:
+                    absolute_paths.append(f"file://{data_dir.joinpath(path)}")
 
         progress_logger and progress_logger.write_to_log(
             f"Loading {self.getReaderFormat()} file for view {view}: {absolute_paths}, infer_schema: {infer_schema}"
