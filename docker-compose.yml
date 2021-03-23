@@ -7,7 +7,7 @@ services:
       context: .
     volumes:
       - ./:/SparkpipelineFramework/
-    container_name: helix_client
+    container_name: spf_dev
     working_dir: /SparkpipelineFramework
 
   spark:
