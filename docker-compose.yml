@@ -33,23 +33,23 @@ services:
         retries: 5
         start_period: 60s
 
-  spark-worker:
-    user: root
-    image: sparkpipelineframework_dev:latest
-    depends_on:
-      - spark
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_HOST=spark
-      - SPARK_PUBLIC_DNS=localhost
-      - SPARK_LOCAL_IP=spark-worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-    restart: always
-    healthcheck:
-        test: ["CMD-SHELL", "/opt/bitnami/spark/bin/spark-submit --master spark://spark:7077 /opt/bitnami/spark/examples/src/main/python/pi.py 10"]
-        interval: 300s
-        timeout: 300s
+#  spark-worker:
+#    user: root
+#    image: sparkpipelineframework_dev:latest
+#    depends_on:
+#      - spark
+#    environment:
+#      - SPARK_MODE=worker
+#      - SPARK_MASTER_HOST=spark
+#      - SPARK_PUBLIC_DNS=localhost
+#      - SPARK_LOCAL_IP=spark-worker
+#      - SPARK_MASTER_URL=spark://spark:7077
+#      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+#      - SPARK_RPC_ENCRYPTION_ENABLED=no
+#      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+#      - SPARK_SSL_ENABLED=no
+#    restart: always
+#    healthcheck:
+#        test: ["CMD-SHELL", "/opt/bitnami/spark/bin/spark-submit --master spark://spark:7077 /opt/bitnami/spark/examples/src/main/python/pi.py 10"]
+#        interval: 300s
+#        timeout: 300s
