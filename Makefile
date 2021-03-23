@@ -13,6 +13,37 @@ include spark_pipeline_framework/Makefile.spark
 include spark_pipeline_framework/Makefile.docker
 include spark_pipeline_framework/Makefile.python
 
+Pipfile.lock: Pipfile
+	docker-compose run --rm --name spark_pipeline_framework dev pipenv lock --dev
+
+.PHONY:devdocker
+devdocker: ## Builds the docker for dev
+	docker-compose build --parallel
+
+.PHONY:init
+init: devdocker up setup-pre-commit  ## Initializes the local developer environment
+
+.PHONY: up
+up: Pipfile.lock
+	docker-compose up --build -d
+
+.PHONY: down
+down:
+	docker-compose down
+
+.PHONY:clean-pre-commit
+clean-pre-commit: ## removes pre-commit hook
+	rm -f .git/hooks/pre-commit
+
+.PHONY:setup-pre-commit
+setup-pre-commit: Pipfile.lock
+	cp ./pre-commit-hook ./.git/hooks/pre-commit
+
+.PHONY:run-pre-commit
+run-pre-commit: setup-pre-commit
+	./.git/hooks/pre-commit
+
+
 .PHONY:devsetup
 devsetup:venv
 	. $(VENV_NAME)/bin/activate && \
@@ -62,28 +93,7 @@ package:venv build
 
 .PHONY:tests
 tests:
-	. $(VENV_NAME)/bin/activate && \
-    pip install --upgrade -r requirements.txt && \
-	pip install --upgrade -r requirements-test.txt && \
-	pytest tests
-
-.PHONY:clean-pre-commit
-clean-pre-commit:
-	. $(VENV_NAME)/bin/activate && \
-	pre-commit clean
-
-.PHONY:setup-pre-commit
-setup-pre-commit:
-	. $(VENV_NAME)/bin/activate && \
-	pre-commit install
-
-.PHONY:run-pre-commit
-run-pre-commit:
-	. $(VENV_NAME)/bin/activate && \
-	pre-commit run --all-files
-
-.PHONY:init
-init: installspark up devsetup proxies tests
+	docker-compose run --rm --name spf_tests dev pytest tests
 
 .PHONY:proxies
 proxies:
