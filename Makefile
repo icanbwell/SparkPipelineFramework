@@ -2,13 +2,6 @@ LANG=en_US.utf-8
 
 export LANG
 
-BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
-VERSION=$(shell cat VERSION)
-VENV_NAME=venv
-GIT_HASH=${CIRCLE_SHA1}
-SPARK_VER=3.0.1
-HADOOP_VER=3.2
-
 Pipfile.lock: Pipfile
 	docker-compose run --rm --name spark_pipeline_framework dev pipenv lock --dev
 
@@ -39,20 +32,10 @@ setup-pre-commit: Pipfile.lock
 run-pre-commit: setup-pre-commit
 	./.git/hooks/pre-commit
 
-
 .PHONY:update
-update: Pipfile.lock setup-pre-commit  ## Updates all the packages using Pipfile
+update: down Pipfile.lock setup-pre-commit  ## Updates all the packages using Pipfile
 	docker-compose run --rm --name spf_pipenv dev pipenv sync && \
 	make devdocker
-
-.PHONY:build
-build:venv
-	. $(VENV_NAME)/bin/activate && \
-    pip install --upgrade pip && \
-    pip install --upgrade -r requirements.txt && \
-    python setup.py install && \
-    rm -r dist/ && \
-    python3 setup.py sdist bdist_wheel
 
 .PHONY:tests
 tests:
