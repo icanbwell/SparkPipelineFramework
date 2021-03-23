@@ -21,14 +21,21 @@ https://pypi.org/project/sparkpipelineframework/
 
 # Using it in your project
 (For an example project that uses SparkPipelineFramework, see https://github.com/imranq2/TestSparkPipelineFramework)
-1. Add sparkpipelineframework package to your project requirements.txt
-2. pip install -r requirements.txt
-3. make init. (this will setup Spark, Docker (to run Spark) )
-4. Create a folder called library in your project
+1. Add sparkpipelineframework package to your project requirements.txt/Pipefile
+2. make init. (this will setup Spark, Docker (to run Spark) )
+3. Create a folder called library in your project
+
+## using Pycharm
+You can run SparkPipelineFrame project from Pycharm
+1. Add a new Docker Compose interpreter 
+2. Choose `docker-compose.yml` for the configuration file
+3. Choose `dev` for the Service 
+4. Click OK and give Pycharm a couple of minutes to index the content of the docker container
+5. Right click on the Test folder and click "Run 'pytest in tests'"
 
 ## To create a new pipeline
 1. Create a class derived from ```FrameworkPipeline```
-2. In your __init__ funtion set self.transformers to the list of transformers to run for this pipeline.
+2. In your __init__ function set self.transformers to the list of transformers to run for this pipeline.
 For example:
 ```
 class MyPipeline(FrameworkPipeline):
