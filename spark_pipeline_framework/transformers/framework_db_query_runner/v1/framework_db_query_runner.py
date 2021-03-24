@@ -88,7 +88,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
                 with connection.cursor() as cursor:
                     rows_affected: int = cursor.execute(self.getQuery())
                     self.logger.info(f"Rows Affected= {rows_affected}")
-                connection.commit()  # type: ignore
+                connection.commit()
 
             except OperationalError as e:
                 self.logger.error(f"Failed to run query {self.getQuery()}")
