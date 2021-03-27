@@ -66,18 +66,16 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
         view: str = self.getView()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
-        with ProgressLogMetric(
-            name=f"{view}_drop_row", progress_logger=progress_logger
-        ):
+        with ProgressLogMetric(name=f"{view}_fill_na", progress_logger=progress_logger):
             self.logger.info(
-                f"dropping rows if any null values found for columns: {columns_to_drop}"
+                f"filling rows if any null values with replacement_value found for columns: {columns_to_drop}"
             )
             df_with_na: DataFrame = df.sql_ctx.table(view)
             df_with_filled_na = df_with_na.na.fill(
                 value=replacement_value, subset=columns_to_drop
             )
             df_with_filled_na.createOrReplaceTempView(view)
-        return df
+        return df_with_filled_na
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:

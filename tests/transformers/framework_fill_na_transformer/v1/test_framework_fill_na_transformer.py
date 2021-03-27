@@ -27,19 +27,20 @@ def test_framework_fill_na_transformer(spark_session: SparkSession) -> None:
 
     # ensure we have all the rows even the ones we want to drop
     result_df: DataFrame = spark_session.table(view)
+    result_df = result_df.withColumn(
+        "Minimum Age", result_df["Minimum Age"].cast("float")
+    )
+    result_df.createOrReplaceTempView(view)
     assert 7 == result_df.count()
 
     # drop the rows with null NPI or null Last Name
+
     FrameworkFillNaTransformer(
-        replacement_value=0, columns_to_check=["NPI", "Last Name"], view=view
+        replacement_value=1.0, columns_to_check=["Minimum Age"], view=view
     ).transform(df)
 
     # assert we get only the rows with a populated NPI
     result_df = spark_session.table(view)
+    print(result_df.agg({"Minimum Age": "sum"}).collect()[0][0])
     assert 7 == result_df.count()
-
-    # ensure that no rows are dropped when there are no null values
-    FrameworkFillNaTransformer(
-        columns_to_check=["NPI", "Last Name"], view=view
-    ).transform(result_df)
-    assert 1111111111 == result_df.select("NPI").sum()
+    assert 24.0 == result_df.agg({"Minimum Age": "sum"}).collect()[0][0]
