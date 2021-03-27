@@ -13,6 +13,10 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 
 
+def get_dtype(df: DataFrame, colnames: List[str]) -> Dict[str, str]:
+    return dict(df.select(colnames).dtypes)
+
+
 class FrameworkFillNaTransformer(FrameworkTransformer):
     """
     Replace NA/Null values with a specified replacement_value for specified columns_to_check for null values
@@ -61,20 +65,27 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
         return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        columns_to_drop: List[str] = self.getColumnsToCheck()
+        columns_to_fill: List[str] = self.getColumnsToCheck()
         replacement_value: Any = self.getReplacementValue()
         view: str = self.getView()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         with ProgressLogMetric(name=f"{view}_fill_na", progress_logger=progress_logger):
             self.logger.info(
-                f"filling rows if any null values with replacement_value found for columns: {columns_to_drop}"
+                f"filling rows if any null values with replacement_value found for columns: {columns_to_fill}"
             )
             df_with_na: DataFrame = df.sql_ctx.table(view)
-            df_with_filled_na = df_with_na.na.fill(
-                value=replacement_value, subset=columns_to_drop
-            )
-            df_with_filled_na.createOrReplaceTempView(view)
+            data_types = get_dtype(df_with_na, columns_to_fill)
+            for col in columns_to_fill:
+                if data_types[col] == "string":
+                    df_with_filled_na = df_with_na.na.replace(
+                        "", value=replacement_value, subset=col
+                    )
+                else:
+                    df_with_filled_na = df_with_na.na.fill(
+                        value=replacement_value, subset=col
+                    )
+                df_with_filled_na.createOrReplaceTempView(view)
         return df_with_filled_na
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
