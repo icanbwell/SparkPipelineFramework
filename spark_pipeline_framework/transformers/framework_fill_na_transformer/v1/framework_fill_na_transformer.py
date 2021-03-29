@@ -76,15 +76,30 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
             )
             df_with_na: DataFrame = df.sql_ctx.table(view)
             data_types = get_dtype(df_with_na, columns_to_fill)
-            for col in columns_to_fill:
-                if data_types[col] == "string":
-                    df_with_filled_na = df_with_na.na.replace(
-                        "", value=replacement_value, subset=col
-                    )
+
+            if type(replacement_value) in (list, dict):
+                assert len(replacement_value) == len(columns_to_fill), f"If replacement_value is a list or dictionary, the values must be equal to the number of columns in columns to fill. {len(replacement_value)} != {len(columns_to_fill)}"
+
+            for col_idx, col in enumerate(columns_to_fill):
+
+                if type(replacement_value) == dict:
+                    value = replacement_value.get(col, None)
+                elif type(replacement_value) == list:
+                    value = replacement_value[col_idx]
                 else:
-                    df_with_filled_na = df_with_na.na.fill(
-                        value=replacement_value, subset=col
-                    )
+                    value = replacement_value
+
+                if data_types[col] != "string":
+                    try:
+                        value = float(value)
+                    except Exception as e:
+                        print(str(e))
+                        print(f"The data type of column: {col} is {data_types[col]}. Either cast the column as a StringType or change the type of the value you are feeding as the replacement value to a string type.")
+
+                df_with_filled_na = df_with_na.na.fill(
+                    value=value, subset=col
+                )
+
                 df_with_filled_na.createOrReplaceTempView(view)
         return df_with_filled_na
 
