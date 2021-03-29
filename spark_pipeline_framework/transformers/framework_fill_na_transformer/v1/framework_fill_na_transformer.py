@@ -78,7 +78,9 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
             data_types = get_dtype(df_with_na, columns_to_fill)
 
             if type(replacement_value) in (list, dict):
-                assert len(replacement_value) == len(columns_to_fill), f"If replacement_value is a list or dictionary, the values must be equal to the number of columns in columns to fill. {len(replacement_value)} != {len(columns_to_fill)}"
+                assert len(replacement_value) == len(
+                    columns_to_fill
+                ), f"If replacement_value is a list or dictionary, the values must be equal to the number of columns in columns to fill. {len(replacement_value)} != {len(columns_to_fill)}"
 
             for col_idx, col in enumerate(columns_to_fill):
 
@@ -94,11 +96,11 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
                         value = float(value)
                     except Exception as e:
                         print(str(e))
-                        print(f"The data type of column: {col} is {data_types[col]}. Either cast the column as a StringType or change the type of the value you are feeding as the replacement value to a string type.")
+                        print(
+                            f"The data type of column: {col} is {data_types[col]}. Either cast the column as a StringType or change the type of the value you are feeding as the replacement value to a string type."
+                        )
 
-                df_with_filled_na = df_with_na.na.fill(
-                    value=value, subset=col
-                )
+                df_with_filled_na = df_with_na.na.fill(value=value, subset=col)
 
                 df_with_filled_na.createOrReplaceTempView(view)
         return df_with_filled_na
