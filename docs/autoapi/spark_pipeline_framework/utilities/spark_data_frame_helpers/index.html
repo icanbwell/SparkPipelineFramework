@@ -1,0 +1,303 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>spark_pipeline_framework.utilities.spark_data_frame_helpers &mdash; SparkPipelineFramework  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> SparkPipelineFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">SparkPipelineFramework</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../../_sources/autoapi/spark_pipeline_framework/utilities/spark_data_frame_helpers/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-spark_pipeline_framework.utilities.spark_data_frame_helpers">
+<span id="spark-pipeline-framework-utilities-spark-data-frame-helpers"></span><h1><a class="reference internal" href="#module-spark_pipeline_framework.utilities.spark_data_frame_helpers" title="spark_pipeline_framework.utilities.spark_data_frame_helpers"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers</span></code></a><a class="headerlink" href="#module-spark_pipeline_framework.utilities.spark_data_frame_helpers" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.create_view_from_dictionary" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.create_view_from_dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_view_from_dictionary</span></code></a>(view: str, data: List[Dict[str, Any]], spark_session: pyspark.sql.SparkSession, schema: Optional[Union[DataType, str]] = None) → pyspark.sql.DataFrame</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.create_empty_dataframe" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.create_empty_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_empty_dataframe</span></code></a>(spark_session: pyspark.sql.SparkSession) → pyspark.sql.DataFrame</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.create_dataframe_from_json" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.create_dataframe_from_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_dataframe_from_json</span></code></a>(spark_session: pyspark.sql.SparkSession, schema: pyspark.sql.types.StructType, json: str) → pyspark.sql.DataFrame</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_is_data_frame_empty" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_is_data_frame_empty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spark_is_data_frame_empty</span></code></a>(df: pyspark.sql.DataFrame) → bool</p></td>
+<td><p>Efficient way to check if the data frame is empty without getting the count of the whole data frame</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_get_execution_plan" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_get_execution_plan"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spark_get_execution_plan</span></code></a>(df: pyspark.sql.DataFrame, extended: bool = False) → Any</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_table_exists" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_table_exists"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spark_table_exists</span></code></a>(sql_ctx: pyspark.SQLContext, view: str) → bool</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.sc" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.sc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sc</span></code></a>(df: pyspark.sql.DataFrame) → pyspark.SparkContext</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.add_metadata_to_column" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.add_metadata_to_column"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_metadata_to_column</span></code></a>(df: pyspark.sql.DataFrame, column: str, metadata: Any) → pyspark.sql.DataFrame</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.get_metadata_of_column" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.get_metadata_of_column"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_metadata_of_column</span></code></a>(df: pyspark.sql.DataFrame, column: str) → Any</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.to_dicts" title="spark_pipeline_framework.utilities.spark_data_frame_helpers.to_dicts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_dicts</span></code></a>(df: pyspark.sql.DataFrame, limit: int) → List[Dict[str, Any]]</p></td>
+<td><p>converts a data frame into a list of dictionaries</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.create_view_from_dictionary">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">create_view_from_dictionary</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spark_session</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.SparkSession</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DataType</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pyspark.sql.DataFrame</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.create_view_from_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.create_empty_dataframe">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">create_empty_dataframe</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_session</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.SparkSession</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pyspark.sql.DataFrame</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.create_empty_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.create_dataframe_from_json">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">create_dataframe_from_json</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_session</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.SparkSession</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.types.StructType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pyspark.sql.DataFrame</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.create_dataframe_from_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_is_data_frame_empty">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">spark_is_data_frame_empty</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.DataFrame</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">bool</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_is_data_frame_empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Efficient way to check if the data frame is empty without getting the count of the whole data frame</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_get_execution_plan">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">spark_get_execution_plan</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extended</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Any</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_get_execution_plan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_table_exists">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">spark_table_exists</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sql_ctx</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.SQLContext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">bool</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_table_exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.sc">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">sc</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.DataFrame</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pyspark.SparkContext</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.sc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.add_metadata_to_column">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">add_metadata_to_column</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pyspark.sql.DataFrame</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.add_metadata_to_column" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.get_metadata_of_column">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">get_metadata_of_column</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Any</span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.get_metadata_of_column" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spark_pipeline_framework.utilities.spark_data_frame_helpers.to_dicts">
+<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers.</span></code><code class="sig-name descname"><span class="pre">to_dicts</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.spark_data_frame_helpers.to_dicts" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts a data frame into a list of dictionaries
+:param df:
+:param limit:
+:return:</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Bwell Team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

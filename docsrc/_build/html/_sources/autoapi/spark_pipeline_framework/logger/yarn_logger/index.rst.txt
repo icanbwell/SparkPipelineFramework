@@ -1,0 +1,21 @@
+:mod:`spark_pipeline_framework.logger.yarn_logger`
+==================================================
+
+.. py:module:: spark_pipeline_framework.logger.yarn_logger
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.logger.yarn_logger.get_logger
+
+
+.. function:: get_logger(name: str, level: int = INFO) -> logging.Logger
+
+

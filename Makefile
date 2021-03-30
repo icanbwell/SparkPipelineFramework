@@ -34,7 +34,7 @@ run-pre-commit: setup-pre-commit
 
 .PHONY:update
 update: down Pipfile.lock setup-pre-commit  ## Updates all the packages using Pipfile
-	docker-compose run --rm --name spf_pipenv dev pipenv sync && \
+	docker-compose run --rm --name spf_pipenv dev pipenv sync --dev && \
 	make devdocker
 
 .PHONY:tests
@@ -45,3 +45,10 @@ tests:
 proxies:
 	docker-compose run --rm --name spf_proxies dev python /SparkpipelineFramework/spark_pipeline_framework/proxy_generator/generate_proxies.py
 
+.PHONY: sphinx-html
+sphinx-html:
+	docker-compose run --rm --name spark_pipeline_framework dev make -C docsrc html
+	@echo "copy html to docs... why? https://github.com/sphinx-doc/sphinx/issues/3382#issuecomment-470772316"
+	@rm -rf docs/*
+	@touch docs/.nojekyll
+	cp -a docsrc/_build/html/. docs

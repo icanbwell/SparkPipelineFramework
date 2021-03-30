@@ -1,0 +1,42 @@
+:mod:`spark_pipeline_framework.pipelines.framework_pipeline`
+============================================================
+
+.. py:module:: spark_pipeline_framework.pipelines.framework_pipeline
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.pipelines.framework_pipeline.FrameworkPipeline
+
+
+
+.. class:: FrameworkPipeline(parameters: Dict[(str, Any)], progress_logger: spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger)
+
+
+   Bases: :class:`pyspark.ml.base.Transformer`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. method:: fit(self, df: pyspark.sql.dataframe.DataFrame) -> spark_pipeline_framework.pipelines.framework_pipeline.FrameworkPipeline
+
+
+   .. method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+
+      Transforms the input dataset.
+
+      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
+      :returns: transformed dataset
+
+
+   .. method:: create_steps(self, my_list: List[Union[Transformer, List[Transformer]]]) -> List[Transformer]
+
+
+

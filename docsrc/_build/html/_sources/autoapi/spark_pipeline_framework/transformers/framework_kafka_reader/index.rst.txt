@@ -1,0 +1,15 @@
+:mod:`spark_pipeline_framework.transformers.framework_kafka_reader`
+===================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_kafka_reader
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   v1/index.rst
+
+
