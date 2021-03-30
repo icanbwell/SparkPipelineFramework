@@ -1,0 +1,63 @@
+:mod:`spark_pipeline_framework.transformers.framework_select_columns_transformer.v1.framework_select_columns_transformer`
+=========================================================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_select_columns_transformer.v1.framework_select_columns_transformer
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_select_columns_transformer.v1.framework_select_columns_transformer.FrameworkSelectColumnsTransformer
+
+
+
+.. class:: FrameworkSelectColumnsTransformer(view: Optional[str] = None, drop_columns: Optional[List[str]] = None, keep_columns: Optional[List[str]] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None, verify_count_remains_same: bool = False)
+
+
+   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. method:: setParams(self, view: Optional[str] = None, drop_columns: Optional[List[str]] = None, keep_columns: Optional[List[str]] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None, verify_count_remains_same: bool = False) -> None
+
+
+   .. method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+
+      Transforms the input dataset.
+
+      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
+      :returns: transformed dataset
+
+
+   .. method:: setSql(self, value: str) -> spark_pipeline_framework.transformers.framework_select_columns_transformer.v1.framework_select_columns_transformer.FrameworkSelectColumnsTransformer
+
+
+   .. method:: getSql(self) -> str
+
+
+   .. method:: setView(self, value: str) -> spark_pipeline_framework.transformers.framework_select_columns_transformer.v1.framework_select_columns_transformer.FrameworkSelectColumnsTransformer
+
+
+   .. method:: getView(self) -> Optional[str]
+
+
+   .. method:: setLogSql(self, value: str) -> spark_pipeline_framework.transformers.framework_select_columns_transformer.v1.framework_select_columns_transformer.FrameworkSelectColumnsTransformer
+
+
+   .. method:: getLogSql(self) -> str
+
+
+   .. method:: setVerifyCountRemainsSame(self, value: bool) -> spark_pipeline_framework.transformers.framework_select_columns_transformer.v1.framework_select_columns_transformer.FrameworkSelectColumnsTransformer
+
+
+   .. method:: getVerifyCountRemainsSame(self) -> bool
+
+
+

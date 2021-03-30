@@ -1,0 +1,23 @@
+:mod:`spark_pipeline_framework.utilities.save_csv_to_parquet`
+=============================================================
+
+.. py:module:: spark_pipeline_framework.utilities.save_csv_to_parquet
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.save_csv_to_parquet.save_csv_as_parquet
+
+
+.. function:: save_csv_as_parquet(spark_session: pyspark.sql.SparkSession, source_path: str, destination_path: str, delimiter: str = ',', has_header: bool = True, infer_schema: bool = True, num_partitions: Optional[int] = None) -> None
+
+   Saves csv as parquet
+
+
