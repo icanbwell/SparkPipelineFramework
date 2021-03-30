@@ -1,0 +1,26 @@
+:mod:`spark_pipeline_framework.utilities.json_to_jsonl_converter`
+=================================================================
+
+.. py:module:: spark_pipeline_framework.utilities.json_to_jsonl_converter
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.json_to_jsonl_converter.convert_json_to_jsonl
+
+
+.. function:: convert_json_to_jsonl(src_file: pathlib.Path, dst_file: pathlib.Path) -> pathlib.Path
+
+   Converts json files to jsonl file
+   :param src_file: json file
+   :param dst_file:
+   :return: path to jsonl file
+
+

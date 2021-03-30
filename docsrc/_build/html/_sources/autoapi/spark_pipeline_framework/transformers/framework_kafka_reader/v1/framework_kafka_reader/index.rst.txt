@@ -1,0 +1,60 @@
+:mod:`spark_pipeline_framework.transformers.framework_kafka_reader.v1.framework_kafka_reader`
+=============================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_kafka_reader.v1.framework_kafka_reader
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_kafka_reader.v1.framework_kafka_reader.FrameworkKafkaReader
+
+
+
+.. class:: FrameworkKafkaReader(kafka_brokers: str, topic: str, schema: Any, starting_offset: int = -2, use_ssl: bool = True, previous_checkpoint_view: Optional[str] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None)
+
+
+   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. method:: setParams(self, kafka_brokers: str, topic: str, schema: Any, starting_offset: int = -2, use_ssl: bool = True, previous_checkpoint_view: Optional[str] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None) -> Any
+
+
+   .. method:: _transform(self, df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame
+
+      Transforms the input dataset.
+
+      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
+      :returns: transformed dataset
+
+
+   .. method:: getKafkaBrokers(self) -> str
+
+
+   .. method:: getTopic(self) -> str
+
+
+   .. method:: getStartingOffset(self) -> int
+
+
+   .. method:: getUseSsl(self) -> bool
+
+
+   .. method:: getSchema(self) -> int
+
+
+   .. method:: getPreviousCheckpointView(self) -> Optional[str]
+
+
+   .. method:: getName(self) -> Optional[str]
+
+
+

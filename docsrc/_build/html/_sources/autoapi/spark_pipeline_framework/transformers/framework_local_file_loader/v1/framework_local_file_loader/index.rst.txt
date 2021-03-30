@@ -1,0 +1,103 @@
+:mod:`spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader`
+=======================================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+
+.. class:: FrameworkLocalFileLoader(view: str, filepath: Union[(str, List[str], Path)], delimiter: str = ',', limit: int = -1, has_header: bool = True, infer_schema: bool = False, cache_table: bool = True, schema: pyspark.sql.types.StructType = None, clean_column_names: bool = False, create_file_path: bool = False, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None, **kwargs: Dict[(Any, Any)])
+
+
+   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. method:: _transform(self, df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame
+
+      Transforms the input dataset.
+
+      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
+      :returns: transformed dataset
+
+
+   .. method:: preprocess(self, df: pyspark.sql.DataFrame, absolute_paths: List[str]) -> None
+
+      Sub-classes can over-ride to do any pre-processing behavior
+
+      :param df: Data Frame
+      :param absolute_paths: list of paths to read from
+
+
+   .. method:: setView(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+   .. method:: getView(self) -> str
+
+
+   .. method:: setFilepath(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+   .. method:: getFilepath(self) -> Union[(str, List[str], Path)]
+
+
+   .. method:: setSchema(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+   .. method:: getSchema(self) -> pyspark.sql.types.StructType
+
+
+   .. method:: setCleanColumnNames(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+   .. method:: getCleanColumnNames(self) -> bool
+
+
+   .. method:: setCacheTable(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+   .. method:: getCacheTable(self) -> bool
+
+
+   .. method:: setInferSchema(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+   .. method:: getInferSchema(self) -> bool
+
+
+   .. method:: setLimit(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+   .. method:: getLimit(self) -> int
+
+
+   .. method:: setCreateFilePath(self, value: bool) -> spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader
+
+
+   .. method:: getCreateFilePath(self) -> bool
+
+
+   .. method:: getName(self) -> str
+
+
+   .. method:: getReaderFormat(self) -> str
+      :abstractmethod:
+
+
+   .. method:: getReaderOptions(self) -> Dict[(str, Any)]
+      :abstractmethod:
+
+
+

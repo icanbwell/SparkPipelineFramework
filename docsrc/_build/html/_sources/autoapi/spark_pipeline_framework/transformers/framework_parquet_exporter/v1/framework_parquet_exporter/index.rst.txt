@@ -1,0 +1,40 @@
+:mod:`spark_pipeline_framework.transformers.framework_parquet_exporter.v1.framework_parquet_exporter`
+=====================================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_parquet_exporter.v1.framework_parquet_exporter
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_parquet_exporter.v1.framework_parquet_exporter.FrameworkParquetExporter
+
+
+
+.. class:: FrameworkParquetExporter(file_path: Union[(str, Path)], **kwargs: Dict[(Any, Any)])
+
+
+   Bases: :class:`spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter.FrameworkBaseExporter`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. method:: setFilePath(self, value: Union[(str, Path)]) -> spark_pipeline_framework.transformers.framework_parquet_exporter.v1.framework_parquet_exporter.FrameworkParquetExporter
+
+
+   .. method:: getFilePath(self) -> Union[(str, Path)]
+
+
+   .. method:: getFormat(self) -> str
+
+
+   .. method:: getOptions(self) -> Dict[(str, Any)]
+
+
+

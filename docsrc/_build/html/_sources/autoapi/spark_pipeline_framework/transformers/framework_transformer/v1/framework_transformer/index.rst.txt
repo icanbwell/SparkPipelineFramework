@@ -1,0 +1,61 @@
+:mod:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer`
+===========================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer
+
+
+
+.. class:: FrameworkTransformer(name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None)
+
+
+   Bases: :class:`pyspark.ml.base.Transformer`, :class:`pyspark.ml.util.DefaultParamsReadable`, :class:`pyspark.ml.util.DefaultParamsWritable`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. method:: setParams(self, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None) -> Any
+
+
+   .. method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+
+      Transforms the input dataset.
+
+      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
+      :returns: transformed dataset
+
+
+   .. method:: transformers(self) -> List[Transformer]
+      :property:
+
+
+   .. method:: setName(self, value: str) -> spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer
+
+
+   .. method:: getName(self) -> Optional[str]
+
+
+   .. method:: setProgressLogger(self, value: Optional[ProgressLogger]) -> spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer
+
+
+   .. method:: getProgressLogger(self) -> Optional[ProgressLogger]
+
+
+   .. method:: setParameters(self, value: Optional[Dict[str, Any]]) -> spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer
+
+
+   .. method:: getParameters(self) -> Optional[Dict[str, Any]]
+
+
+

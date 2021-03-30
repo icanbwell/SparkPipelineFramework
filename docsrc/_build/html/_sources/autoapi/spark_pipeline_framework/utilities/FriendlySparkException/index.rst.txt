@@ -1,0 +1,25 @@
+:mod:`spark_pipeline_framework.utilities.FriendlySparkException`
+================================================================
+
+.. py:module:: spark_pipeline_framework.utilities.FriendlySparkException
+
+
+Module Contents
+---------------
+
+.. exception:: FriendlySparkException(exception: Exception, stage_name: Optional[str], *args: Any, **kwargs: Any)
+
+
+   Bases: :class:`Exception`
+
+   Common base class for all non-exit exceptions.
+
+   .. method:: get_errortext(text: str) -> str
+      :staticmethod:
+
+
+   .. method:: exception_summary() -> str
+      :staticmethod:
+
+
+

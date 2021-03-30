@@ -1,0 +1,43 @@
+:mod:`spark_pipeline_framework.transformers.framework_drop_rows_with_null_transformer.v1.framework_drop_rows_with_null_transformer`
+===================================================================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_drop_rows_with_null_transformer.v1.framework_drop_rows_with_null_transformer
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_drop_rows_with_null_transformer.v1.framework_drop_rows_with_null_transformer.FrameworkDropRowsWithNullTransformer
+
+
+
+.. class:: FrameworkDropRowsWithNullTransformer(view: str, columns_to_check: List[str], name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None)
+
+
+   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+
+   Drop rows where the column or columns specified in columns_to_check have a null value
+
+   .. method:: setParams(self, view: str, columns_to_check: List[str], name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None) -> Any
+
+
+   .. method:: _transform(self, df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame
+
+      Transforms the input dataset.
+
+      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
+      :returns: transformed dataset
+
+
+   .. method:: getView(self) -> str
+
+
+   .. method:: getColumnsToCheck(self) -> List[str]
+
+
+

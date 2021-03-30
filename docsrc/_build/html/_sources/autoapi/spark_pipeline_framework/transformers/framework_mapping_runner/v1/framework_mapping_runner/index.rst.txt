@@ -1,0 +1,58 @@
+:mod:`spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner`
+=================================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner.FrameworkMappingLoader
+
+
+
+.. data:: AutoMapperTypeOrList
+   
+
+   
+
+.. data:: AutoMapperFunction
+   
+
+   
+
+.. class:: FrameworkMappingLoader(view: str, mapping_function: AutoMapperFunction, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None)
+
+
+   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. method:: setParams(self, view: str, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None) -> Any
+
+
+   .. method:: _transform(self, df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame
+
+      Transforms the input dataset.
+
+      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
+      :returns: transformed dataset
+
+
+   .. method:: getView(self) -> str
+
+
+   .. method:: getViews(self) -> List[str]
+
+
+   .. method:: getMappingFunction(self) -> AutoMapperFunction
+
+
+
