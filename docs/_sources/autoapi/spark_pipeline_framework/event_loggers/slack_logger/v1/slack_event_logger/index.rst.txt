@@ -1,0 +1,51 @@
+:mod:`spark_pipeline_framework.event_loggers.slack_logger.v1.slack_event_logger`
+================================================================================
+
+.. py:module:: spark_pipeline_framework.event_loggers.slack_logger.v1.slack_event_logger
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.event_loggers.slack_logger.v1.slack_event_logger.SlackEventLogger
+
+
+
+.. class:: SlackEventLogger(id_: str, slack_token: str, slack_channel: str, bot_user_name: str, backoff: bool = True)
+
+
+   Bases: :class:`spark_pipeline_framework.event_loggers.event_logger.EventLogger`
+
+   .. method:: log_progress_event(self, event_name: str, current: int, total: int, event_format_string: str, backoff: bool = True) -> None
+
+      Logs a progress event
+      :param event_name:
+      :param current:
+      :param total:
+      :param event_format_string:
+      :param backoff:
+
+
+   .. method:: log_event(self, event_name: str, event_text: str) -> None
+
+      Logs a normal event
+
+      :param event_name:
+      :param event_text:
+
+
+   .. method:: log_exception(self, event_name: str, event_text: str, ex: Exception) -> None
+
+      Logs an exception
+
+      :param event_name:
+      :param event_text:
+      :param ex:
+
+
+

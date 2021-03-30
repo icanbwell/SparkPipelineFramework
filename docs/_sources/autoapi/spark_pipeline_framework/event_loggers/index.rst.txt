@@ -1,0 +1,24 @@
+:mod:`spark_pipeline_framework.event_loggers`
+=============================================
+
+.. py:module:: spark_pipeline_framework.event_loggers
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   slack_logger/index.rst
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   event_logger/index.rst
+
+
