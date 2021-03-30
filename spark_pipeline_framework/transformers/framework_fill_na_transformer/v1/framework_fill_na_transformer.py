@@ -19,7 +19,7 @@ def get_dtype(df: DataFrame, colnames: List[str]) -> Dict[str, str]:
 
 class FrameworkFillNaTransformer(FrameworkTransformer):
     """
-    Replace NA/Null values with a specified replacement_value for specified columns_to_check for null values
+    Replace NA/Null values with a specified value for each column in the dictionary
     """
 
     # noinspection PyUnusedLocal
@@ -27,8 +27,7 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
     def __init__(
         self,
         view: str,
-        replacement_value: Any,
-        columns_to_check: List[str],
+        column_mapping: Dict[str, Any],
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -39,11 +38,8 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
         self.view: Param = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.replacement_value: Param = Param(self, "replacement_value", "")
-        self._setDefault(replacement_value=replacement_value)
-
-        self.columns_to_check: Param = Param(self, "columns_to_check", "")
-        self._setDefault(columns_to_check=columns_to_check)
+        self.column_mapping: Param = Param(self, "column_mapping", "")
+        self._setDefault(column_mapping=column_mapping)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -52,8 +48,7 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
     def setParams(
         self,
         view: str,
-        replacement_value: Any,
-        columns_to_check: List[str],
+        column_mapping: Dict[str, Any],
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -65,31 +60,19 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
         return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        columns_to_fill: List[str] = self.getColumnsToCheck()
-        replacement_value: Any = self.getReplacementValue()
+        column_mapping: Dict[str, Any] = self.getColumnMapping()
         view: str = self.getView()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         with ProgressLogMetric(name=f"{view}_fill_na", progress_logger=progress_logger):
             self.logger.info(
-                f"filling rows if any null values with replacement_value found for columns: {columns_to_fill}"
+                f"filling rows if any null values with replacement_value found for columns: {list(column_mapping.keys())}"
             )
             df_with_na: DataFrame = df.sql_ctx.table(view)
             df_with_filled_na = df_with_na
-            data_types = get_dtype(df_with_na, columns_to_fill)
+            data_types = get_dtype(df_with_na, list(column_mapping.keys()))
 
-            if type(replacement_value) in (list, dict):
-                assert len(replacement_value) == len(
-                    columns_to_fill
-                ), f"If replacement_value is a list or dictionary, the values must be equal to the number of columns in columns to fill. {len(replacement_value)} != {len(columns_to_fill)}"
-
-            for col_idx, col in enumerate(columns_to_fill):
-                if type(replacement_value) == dict:
-                    value = replacement_value.get(col, None)
-                elif type(replacement_value) == list:
-                    value = replacement_value[col_idx]
-                else:
-                    value = replacement_value
+            for col, value in column_mapping.items():
 
                 if data_types[col] != "string":
                     try:
@@ -110,9 +93,5 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
         return self.getOrDefault(self.view)  # type: ignore
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getColumnsToCheck(self) -> List[str]:
-        return self.getOrDefault(self.columns_to_check)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getReplacementValue(self) -> Any:
-        return self.getOrDefault(self.replacement_value)
+    def getColumnMapping(self) -> Dict[str, Any]:
+        return self.getOrDefault(self.column_mapping)  # type: ignore

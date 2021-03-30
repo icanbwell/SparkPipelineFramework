@@ -34,11 +34,8 @@ def test_framework_fill_na_transformer(spark_session: SparkSession) -> None:
     assert 7 == result_df.count()
 
     # drop the rows with null NPI or null Last Name
-
     FrameworkFillNaTransformer(
-        replacement_value={"Minimum Age": 1.0, "Maximum Age": "No Limit"},
-        columns_to_check=["Minimum Age", "Maximum Age"],
-        view=view,
+        view=view, column_mapping={"Minimum Age": 1.0, "Maximum Age": "No Limit"}
     ).transform(df)
 
     # assert we get only the rows with a populated NPI
