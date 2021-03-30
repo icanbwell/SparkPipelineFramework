@@ -30,18 +30,21 @@ def test_framework_fill_na_transformer(spark_session: SparkSession) -> None:
     result_df = result_df.withColumn(
         "Minimum Age", result_df["Minimum Age"].cast("float")
     )
-    print(result_df.dtypes)
     result_df.createOrReplaceTempView(view)
     assert 7 == result_df.count()
 
     # drop the rows with null NPI or null Last Name
 
     FrameworkFillNaTransformer(
-        replacement_value=1.0, columns_to_check=["Minimum Age"], view=view
+        replacement_value={"Minimum Age": 1.0, "Maximum Age": "No Limit"},
+        columns_to_check=["Minimum Age", "Maximum Age"],
+        view=view,
     ).transform(df)
 
     # assert we get only the rows with a populated NPI
     result_df = spark_session.table(view)
-    print(result_df.agg({"Minimum Age": "sum"}).collect()[0][0])
     assert 7 == result_df.count()
+    assert "No Limit" == result_df.select("Maximum Age").collect()[1].__getitem__(
+        "Maximum Age"
+    )
     assert 24.0 == result_df.agg({"Minimum Age": "sum"}).collect()[0][0]

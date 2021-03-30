@@ -75,6 +75,7 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
                 f"filling rows if any null values with replacement_value found for columns: {columns_to_fill}"
             )
             df_with_na: DataFrame = df.sql_ctx.table(view)
+            df_with_filled_na = df_with_na
             data_types = get_dtype(df_with_na, columns_to_fill)
 
             if type(replacement_value) in (list, dict):
@@ -83,7 +84,6 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
                 ), f"If replacement_value is a list or dictionary, the values must be equal to the number of columns in columns to fill. {len(replacement_value)} != {len(columns_to_fill)}"
 
             for col_idx, col in enumerate(columns_to_fill):
-
                 if type(replacement_value) == dict:
                     value = replacement_value.get(col, None)
                 elif type(replacement_value) == list:
@@ -100,9 +100,9 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
                             f"The data type of column: {col} is {data_types[col]}. Either cast the column as a StringType or change the type of the value you are feeding as the replacement value to a string type."
                         )
 
-                df_with_filled_na = df_with_na.na.fill(value=value, subset=col)
+                df_with_filled_na = df_with_filled_na.na.fill(value=value, subset=col)
 
-                df_with_filled_na.createOrReplaceTempView(view)
+            df_with_filled_na.createOrReplaceTempView(view)
         return df_with_filled_na
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
