@@ -1,0 +1,15 @@
+:mod:`spark_pipeline_framework.transformers.framework_drop_duplicates_transformer`
+==================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_drop_duplicates_transformer
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   v1/index.rst
+
+

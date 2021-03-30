@@ -1,0 +1,25 @@
+:mod:`spark_pipeline_framework.utilities.cannot_cast_exception_parser`
+======================================================================
+
+.. py:module:: spark_pipeline_framework.utilities.cannot_cast_exception_parser
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.cannot_cast_exception_parser.parse_cannot_cast_exception
+   spark_pipeline_framework.utilities.cannot_cast_exception_parser.parse_struct
+
+
+.. function:: parse_cannot_cast_exception(text: str) -> List[str]
+
+
+.. function:: parse_struct(struct1: str) -> str
+
+

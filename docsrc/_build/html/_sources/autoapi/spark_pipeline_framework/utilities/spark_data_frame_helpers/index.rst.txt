@@ -1,0 +1,64 @@
+:mod:`spark_pipeline_framework.utilities.spark_data_frame_helpers`
+==================================================================
+
+.. py:module:: spark_pipeline_framework.utilities.spark_data_frame_helpers
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.create_view_from_dictionary
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.create_empty_dataframe
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.create_dataframe_from_json
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_is_data_frame_empty
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_get_execution_plan
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.spark_table_exists
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.sc
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.add_metadata_to_column
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.get_metadata_of_column
+   spark_pipeline_framework.utilities.spark_data_frame_helpers.to_dicts
+
+
+.. function:: create_view_from_dictionary(view: str, data: List[Dict[str, Any]], spark_session: pyspark.sql.SparkSession, schema: Optional[Union[DataType, str]] = None) -> pyspark.sql.DataFrame
+
+
+.. function:: create_empty_dataframe(spark_session: pyspark.sql.SparkSession) -> pyspark.sql.DataFrame
+
+
+.. function:: create_dataframe_from_json(spark_session: pyspark.sql.SparkSession, schema: pyspark.sql.types.StructType, json: str) -> pyspark.sql.DataFrame
+
+
+.. function:: spark_is_data_frame_empty(df: pyspark.sql.DataFrame) -> bool
+
+   Efficient way to check if the data frame is empty without getting the count of the whole data frame
+
+
+.. function:: spark_get_execution_plan(df: pyspark.sql.DataFrame, extended: bool = False) -> Any
+
+
+.. function:: spark_table_exists(sql_ctx: pyspark.SQLContext, view: str) -> bool
+
+
+.. function:: sc(df: pyspark.sql.DataFrame) -> pyspark.SparkContext
+
+
+.. function:: add_metadata_to_column(df: pyspark.sql.DataFrame, column: str, metadata: Any) -> pyspark.sql.DataFrame
+
+
+.. function:: get_metadata_of_column(df: pyspark.sql.DataFrame, column: str) -> Any
+
+
+.. function:: to_dicts(df: pyspark.sql.DataFrame, limit: int) -> List[Dict[str, Any]]
+
+   converts a data frame into a list of dictionaries
+   :param df:
+   :param limit:
+   :return:
+
+

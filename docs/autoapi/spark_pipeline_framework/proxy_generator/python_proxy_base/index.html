@@ -1,0 +1,270 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>spark_pipeline_framework.proxy_generator.python_proxy_base &mdash; SparkPipelineFramework  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> SparkPipelineFramework
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">SparkPipelineFramework</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.proxy_generator.python_proxy_base</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../../_sources/autoapi/spark_pipeline_framework/proxy_generator/python_proxy_base/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-spark_pipeline_framework.proxy_generator.python_proxy_base">
+<span id="spark-pipeline-framework-proxy-generator-python-proxy-base"></span><h1><a class="reference internal" href="#module-spark_pipeline_framework.proxy_generator.python_proxy_base" title="spark_pipeline_framework.proxy_generator.python_proxy_base"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.proxy_generator.python_proxy_base</span></code></a><a class="headerlink" href="#module-spark_pipeline_framework.proxy_generator.python_proxy_base" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase" title="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PythonProxyBase</span></code></a></p></td>
+<td><p>Abstract class for transformers that transform one dataset into another.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt id="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.proxy_generator.python_proxy_base.</span></code><code class="sig-name descname"><span class="pre">PythonProxyBase</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_logger</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ProgressLogger</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify_count_remains_same</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.base.Transformer</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.util.DefaultParamsReadable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.ml.util.DefaultParamsWritable</span></code></p>
+<p>Abstract class for transformers that transform one dataset into another.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 1.3.0.</span></p>
+</div>
+<dl class="py method">
+<dt id="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.setParams">
+<code class="sig-name descname"><span class="pre">setParams</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_logger</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ProgressLogger</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify_count_remains_same</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Any</span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.setParams" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase._transform">
+<code class="sig-name descname"><span class="pre">_transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyspark.sql.dataframe.DataFrame</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pyspark.sql.dataframe.DataFrame</span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase._transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms the input dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataset</strong> – input dataset, which is an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>transformed dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.setName">
+<code class="sig-name descname"><span class="pre">setName</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase" title="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase"><span class="pre">spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase</span></a><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.setName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.getName">
+<code class="sig-name descname"><span class="pre">getName</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">str</span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.getName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.setProgressLogger">
+<code class="sig-name descname"><span class="pre">setProgressLogger</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="../../progress_logger/progress_logger/index.html#spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger" title="spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger"><span class="pre">spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase" title="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase"><span class="pre">spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase</span></a><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.setProgressLogger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.getProgressLogger">
+<code class="sig-name descname"><span class="pre">getProgressLogger</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ProgressLogger</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.python_proxy_base.PythonProxyBase.getProgressLogger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Bwell Team.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

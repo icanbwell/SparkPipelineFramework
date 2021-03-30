@@ -1,0 +1,29 @@
+:mod:`spark_pipeline_framework.utilities.class_helpers`
+=======================================================
+
+.. py:module:: spark_pipeline_framework.utilities.class_helpers
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.class_helpers.ClassHelpers
+
+
+
+.. class:: ClassHelpers
+
+   .. method:: get_first_class_in_file(full_reference: str) -> Type[Transformer]
+      :staticmethod:
+
+
+   .. method:: instantiate_class_with_parameters(class_parameters: Dict[(str, Any)], my_class: Type[Any]) -> Any
+      :staticmethod:
+
+
+

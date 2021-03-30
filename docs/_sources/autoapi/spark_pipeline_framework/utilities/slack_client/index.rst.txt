@@ -1,0 +1,34 @@
+:mod:`spark_pipeline_framework.utilities.slack_client`
+======================================================
+
+.. py:module:: spark_pipeline_framework.utilities.slack_client
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.slack_client.SlackClient
+
+
+
+.. class:: SlackClient(slack_token: str, channel: str, bot_user_name: str)
+
+
+   Implements a basic Slack client in http to post messages to a channel
+   Inspired by https://keestalkstech.com/2019/10/simple-python-code-to-send-message-to-slack-channel-without-packages/
+
+   .. method:: post_message_to_slack(self, text: str, blocks: Any = None, use_conversation_threads: bool = True) -> Any
+
+      Posts a message to Slack
+      :param text: message to post.  Can be markdown.
+      :param blocks: (Optional) blocks to post
+      :param use_conversation_threads: whether to send messages as reply to first message
+      :return: response from Slack
+
+
+

@@ -9,7 +9,7 @@ COPY Pipfile* /spf/
 WORKDIR /spf
 
 RUN df -h # for space monitoring
-# RUN pipenv sync --dev --system
+RUN pipenv sync --dev --system
 
 # COPY ./jars/* /opt/bitnami/spark/jars/
 # COPY ./conf/* /opt/bitnami/spark/conf/
