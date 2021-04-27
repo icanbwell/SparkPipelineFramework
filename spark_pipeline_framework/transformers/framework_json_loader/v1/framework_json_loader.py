@@ -1,9 +1,17 @@
 from pathlib import Path
 from typing import Union, List, Dict, Any, Optional
 
+# noinspection PyPackageRequirements
 from pyspark import keyword_only
+
+# noinspection PyPackageRequirements
 from pyspark.ml.param.shared import Param
+
+# noinspection PyPackageRequirements
 from pyspark.sql.dataframe import DataFrame
+
+# noinspection PyPackageRequirements
+from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
@@ -13,7 +21,6 @@ from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framew
 
 
 class FrameworkJsonLoader(FrameworkLocalFileLoader):
-
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     @keyword_only
     def __init__(
@@ -24,19 +31,31 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         name: Optional[str] = None,
         progress_logger: Optional[ProgressLogger] = None,
         parameters: Optional[Dict[str, Any]] = None,
-        **kwargs: Dict[Any, Any]
-    ):
+        limit: int = -1,
+        delimiter: str = ",",
+        has_header: bool = True,
+        infer_schema: bool = False,
+        cache_table: bool = True,
+        schema: Optional[StructType] = None,
+        create_file_path: bool = False,
+    ) -> None:
         super().__init__(
-            name=name,
             view=view,
             filepath=filepath,
-            progress_logger=progress_logger,
-            parameters=parameters,
             clean_column_names=clean_column_names,
-            **kwargs
+            name=name,
+            parameters=parameters,
+            progress_logger=progress_logger,
+            delimiter=delimiter,
+            limit=limit,
+            has_header=has_header,
+            infer_schema=infer_schema,
+            cache_table=cache_table,
+            schema=schema,
+            create_file_path=create_file_path,
         )
 
-        self.multiLine: Param = Param(self, "multiLine", "")
+        self.multiLine: Param[bool] = Param(self, "multiLine", "")
         self._setDefault(multiLine=False)
         self._set(multiLine=False)
 

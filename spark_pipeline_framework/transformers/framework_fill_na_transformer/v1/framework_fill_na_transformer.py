@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, Union
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -35,10 +35,10 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
         super().__init__()
         self.logger = get_logger(__name__)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.column_mapping: Param = Param(self, "column_mapping", "")
+        self.column_mapping: Param[Dict[str, Any]] = Param(self, "column_mapping", "")
         self._setDefault(column_mapping=column_mapping)
 
         kwargs = self._input_kwargs
@@ -54,7 +54,7 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
         kwargs = self._input_kwargs
-        super().setParams(
+        super().setStandardParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         return self._set(**kwargs)
@@ -72,6 +72,7 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
             df_with_filled_na = df_with_na
             data_types = get_dtype(df_with_na, list(column_mapping.keys()))
 
+            value: Union[bool, int, float, str]
             for col, value in column_mapping.items():
 
                 if data_types[col] != "string":
@@ -83,15 +84,15 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
                             f"The data type of column: {col} is {data_types[col]}. Either cast the column as a StringType or change the type of the value you are feeding as the replacement value to a string type."
                         )
 
-                df_with_filled_na = df_with_filled_na.na.fill(value=value, subset=col)
+                df_with_filled_na = df_with_filled_na.na.fill(value=value, subset=[col])
 
             df_with_filled_na.createOrReplaceTempView(view)
         return df_with_filled_na
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnMapping(self) -> Dict[str, Any]:
-        return self.getOrDefault(self.column_mapping)  # type: ignore
+        return self.getOrDefault(self.column_mapping)

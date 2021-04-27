@@ -48,8 +48,8 @@ def test_can_specify_additional_writer_options(spark_session: SparkSession) -> N
 
     # Act
     exporter = FrameworkJdbcExporter(
-        view=view,
         jdbc_url=jdbc_url,
+        view=view,
         table=table,
         driver=driver,
         mode=FrameworkJdbcExporter.MODE_OVERWRITE,

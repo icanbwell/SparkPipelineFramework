@@ -48,11 +48,11 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.file_path: Param = Param(self, "file_path", "")
+        self.file_path: Param[str] = Param(self, "file_path", "")
         # noinspection Mypy
         self._setDefault(file_path=file_path)
 
-        self.output_folder: Param = Param(self, "output_folder", "")
+        self.output_folder: Param[str] = Param(self, "output_folder", "")
         # noinspection Mypy
         self._setDefault(output_folder=output_folder)
 
@@ -72,7 +72,7 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
     ) -> Any:
         # noinspection Mypy
         kwargs = self._input_kwargs
-        super().setParams(
+        super().setStandardParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         # noinspection Mypy
@@ -110,8 +110,8 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[Path, str]:
-        return self.getOrDefault(self.file_path)  # type: ignore
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getOutputFolder(self) -> Union[Path, str]:
-        return self.getOrDefault(self.output_folder)  # type: ignore
+        return self.getOrDefault(self.output_folder)

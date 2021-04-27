@@ -39,13 +39,13 @@ class FrameworkJsonExporter(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.file_path: Param = Param(self, "file_path", "")
+        self.file_path: Param[Union[Path, str]] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
-        self.limit: Param = Param(self, "limit", "")
+        self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=None)
 
         kwargs = self._input_kwargs
@@ -63,7 +63,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
         limit: int = -1,
     ) -> Any:
         kwargs = self._input_kwargs
-        super().setParams(
+        super().setStandardParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         return self._set(**kwargs)
@@ -93,34 +93,17 @@ class FrameworkJsonExporter(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: str) -> "FrameworkJsonExporter":
-        self._paramMap[self.view] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> Optional[str]:
-        return self.getOrDefault(self.view)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilePath(self, value: Union[Path, str]) -> "FrameworkJsonExporter":
-        self._paramMap[self.file_path] = value
-        return self
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[Path, str]:
-        return self.getOrDefault(self.file_path)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value: int) -> "FrameworkJsonExporter":
-        self._paramMap[self.limit] = value
-        return self
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)  # type: ignore
+        return self.getOrDefault(self.limit)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
-        return self.getOrDefault(self.name) or self.getOrDefault(  # type: ignore
-            self.view
-        )
+        return self.getOrDefault(self.name) or self.getOrDefault(self.view)

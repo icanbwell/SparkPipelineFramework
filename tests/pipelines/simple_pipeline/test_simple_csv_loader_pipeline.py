@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Any
 
 from pyspark.ml.base import Transformer, Estimator
 from pyspark.ml.feature import SQLTransformer
@@ -31,7 +31,7 @@ def test_simple_csv_loader_pipeline(spark_session: SparkSession) -> None:
     # parameters = Dict[str, Any]({
     # })
 
-    stages: List[Union[Estimator, Transformer]] = [
+    stages: List[Union[Estimator[Any], Transformer]] = [
         FrameworkCsvLoader(view="flights", path_to_csv=flights_path),
         SQLTransformer(statement="SELECT * FROM flights"),
     ]

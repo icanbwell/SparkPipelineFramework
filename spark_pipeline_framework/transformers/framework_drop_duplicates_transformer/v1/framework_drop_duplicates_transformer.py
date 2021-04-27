@@ -34,10 +34,10 @@ class FrameworkDropDuplicatesTransformer(FrameworkTransformer):
         assert isinstance(columns, list)
 
         # add a param
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.columns: Param = Param(self, "columns", "")
+        self.columns: Param[List[str]] = Param(self, "columns", "")
         self._setDefault(columns=columns)
 
         kwargs = self._input_kwargs
@@ -55,7 +55,7 @@ class FrameworkDropDuplicatesTransformer(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
         kwargs = self._input_kwargs
-        super().setParams(
+        super().setStandardParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         return self._set(**kwargs)
@@ -72,8 +72,8 @@ class FrameworkDropDuplicatesTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumns(self) -> List[str]:
-        return self.getOrDefault(self.columns)  # type: ignore
+        return self.getOrDefault(self.columns)

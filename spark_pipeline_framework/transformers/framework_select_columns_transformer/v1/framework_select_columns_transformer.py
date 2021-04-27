@@ -33,16 +33,16 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         if not view:
             raise ValueError("view is None or empty")
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.drop_columns: Param = Param(self, "drop_columns", "")
+        self.drop_columns: Param[Optional[List[str]]] = Param(self, "drop_columns", "")
         self._setDefault(drop_columns=None)
 
-        self.keep_columns: Param = Param(self, "keep_columns", "")
+        self.keep_columns: Param[Optional[List[str]]] = Param(self, "keep_columns", "")
         self._setDefault(keep_columns=None)
 
-        self.verify_count_remains_same: Param = Param(
+        self.verify_count_remains_same: Param[bool] = Param(
             self, "verify_count_remains_same", ""
         )
         self._setDefault(verify_count_remains_same=None)
@@ -63,10 +63,10 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         verify_count_remains_same: bool = False,
     ) -> None:
         kwargs = self._input_kwargs
-        super().setParams(
+        super().setStandardParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
-        return self._set(**kwargs)  # type: ignore
+        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         # name = self.getName()
@@ -75,6 +75,7 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         drop_columns: Optional[List[str]] = self.getOrDefault("drop_columns")
         keep_columns: Optional[List[str]] = self.getOrDefault("keep_columns")
 
+        assert view
         result_df: DataFrame = df.sql_ctx.table(view)
 
         if keep_columns and len(keep_columns) > 0:
@@ -90,39 +91,9 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSql(self, value: str) -> "FrameworkSelectColumnsTransformer":
-        self._paramMap[self.sql] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getSql(self) -> str:
-        return self.getOrDefault(self.sql)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: str) -> "FrameworkSelectColumnsTransformer":
-        self._paramMap[self.view] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> Optional[str]:
-        return self.getOrDefault(self.view)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLogSql(self, value: str) -> "FrameworkSelectColumnsTransformer":
-        self._paramMap[self.log_sql] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getLogSql(self) -> str:
-        return self.getOrDefault(self.log_sql)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setVerifyCountRemainsSame(
-        self, value: bool
-    ) -> "FrameworkSelectColumnsTransformer":
-        self._paramMap[self.verify_count_remains_same] = value
-        return self
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
-        return self.getOrDefault(self.verify_count_remains_same)  # type: ignore
+        return self.getOrDefault(self.verify_count_remains_same)

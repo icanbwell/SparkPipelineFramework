@@ -44,34 +44,36 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        self.username: Param = Param(self, "username", "")
+        self.username: Param[str] = Param(self, "username", "")
         # noinspection Mypy
         self._setDefault(username=username)
 
-        self.password: Param = Param(self, "password", "")
+        self.password: Param[str] = Param(self, "password", "")
         # noinspection Mypy
         self._setDefault(password=password)
 
-        self.host: Param = Param(self, "host", "")
+        self.host: Param[str] = Param(self, "host", "")
         # noinspection Mypy
         self._setDefault(host=host)
 
-        self.port: Param = Param(self, "port", "")
+        self.port: Param[int] = Param(self, "port", "")
         # noinspection Mypy
         self._setDefault(port=port)
 
-        self.query: Param = Param(self, "query", "")
+        self.query: Param[str] = Param(self, "query", "")
         # noinspection Mypy
         self._setDefault(query=query)
 
-        self.db_name: Param = Param(self, "db_name", "")
+        self.db_name: Param[Optional[str]] = Param(self, "db_name", "")
         # noinspection Mypy
         self._setDefault(db_name=None)
 
         # noinspection Mypy
         self._set(**self._input_kwargs)
 
-        super().setParams(parameters=parameters, progress_logger=progress_logger)
+        super().setStandardParams(
+            parameters=parameters, progress_logger=progress_logger
+        )
 
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
@@ -99,61 +101,25 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setUsername(self, value: Param) -> "FrameworkDBQueryRunner":
-        # noinspection Mypy
-        self._paramMap[self.username] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getUsername(self) -> str:
-        return self.getOrDefault(self.username)  # type: ignore
-
-    # noinspection PyPep8Naming
-    def setPassword(self, value: Param) -> "FrameworkDBQueryRunner":
-        # noinspection Mypy
-        self._paramMap[self.password] = value
-        return self
+        return self.getOrDefault(self.username)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPassword(self) -> str:
-        return self.getOrDefault(self.password)  # type: ignore
-
-    # noinspection PyPep8Naming
-    def setHost(self, value: Param) -> "FrameworkDBQueryRunner":
-        # noinspection Mypy
-        self._paramMap[self.host] = value
-        return self
+        return self.getOrDefault(self.password)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getHost(self) -> str:
-        return self.getOrDefault(self.host)  # type: ignore
-
-    # noinspection PyPep8Naming
-    def setPort(self, value: Param) -> "FrameworkDBQueryRunner":
-        # noinspection Mypy
-        self._paramMap[self.port] = value
-        return self
+        return self.getOrDefault(self.host)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPort(self) -> int:
-        return self.getOrDefault(self.port)  # type: ignore
-
-    # noinspection PyPep8Naming
-    def setQuery(self, value: Param) -> "FrameworkDBQueryRunner":
-        # noinspection Mypy
-        self._paramMap[self.query] = value
-        return self
+        return self.getOrDefault(self.port)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getQuery(self) -> str:
-        return self.getOrDefault(self.query)  # type: ignore
-
-    # noinspection PyPep8Naming
-    def setDb(self, value: Param) -> "FrameworkDBQueryRunner":
-        # noinspection Mypy
-        self._paramMap[self.db_name] = value
-        return self
+        return self.getOrDefault(self.query)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getDb(self) -> str:
-        return self.getOrDefault(self.db_name)  # type: ignore
+    def getDb(self) -> Optional[str]:
+        return self.getOrDefault(self.db_name)

@@ -31,10 +31,10 @@ class FrameworkDropRowsWithNullTransformer(FrameworkTransformer):
         super().__init__()
         self.logger = get_logger(__name__)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.columns_to_check: Param = Param(self, "columns_to_check", "")
+        self.columns_to_check: Param[List[str]] = Param(self, "columns_to_check", "")
         self._setDefault(columns_to_check=columns_to_check)
 
         kwargs = self._input_kwargs
@@ -50,7 +50,7 @@ class FrameworkDropRowsWithNullTransformer(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
         kwargs = self._input_kwargs
-        super().setParams(
+        super().setStandardParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         return self._set(**kwargs)
@@ -73,8 +73,8 @@ class FrameworkDropRowsWithNullTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnsToCheck(self) -> List[str]:
-        return self.getOrDefault(self.columns_to_check)  # type: ignore
+        return self.getOrDefault(self.columns_to_check)

@@ -39,16 +39,16 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         if not view:
             raise ValueError("view is None or empty")
 
-        self.sql: Param = Param(self, "sql", "")
+        self.sql: Param[Optional[str]] = Param(self, "sql", "")
         self._setDefault(sql=None)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.log_sql: Param = Param(self, "log_sql", "")
+        self.log_sql: Param[bool] = Param(self, "log_sql", "")
         self._setDefault(log_sql=False)
 
-        self.verify_count_remains_same: Param = Param(
+        self.verify_count_remains_same: Param[bool] = Param(
             self, "verify_count_remains_same", ""
         )
         self._setDefault(verify_count_remains_same=None)
@@ -69,17 +69,18 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         verify_count_remains_same: bool = False,
     ) -> None:
         kwargs = self._input_kwargs
-        super().setParams(
+        super().setStandardParams(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
-        return self._set(**kwargs)  # type: ignore
+        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        sql_text: str = self.getSql()
+        sql_text: Optional[str] = self.getSql()
         name: Optional[str] = self.getName()
         view: Optional[str] = self.getView()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
+        assert sql_text
         with ProgressLogMetric(
             name=name or view or "", progress_logger=progress_logger
         ):
@@ -94,43 +95,24 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                 self.logger.info(sql_text)
                 raise
 
-            df.createOrReplaceTempView(view)
+            if view:
+                df.createOrReplaceTempView(view)
             self.logger.info(f"GenericSqlTransformer [{name}] finished running SQL")
 
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSql(self, value: str) -> "FrameworkSqlTransformer":
-        self._paramMap[self.sql] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getSql(self) -> str:
-        return self.getOrDefault(self.sql)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: str) -> "FrameworkSqlTransformer":
-        self._paramMap[self.view] = value
-        return self
+    def getSql(self) -> Optional[str]:
+        return self.getOrDefault(self.sql)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> Optional[str]:
-        return self.getOrDefault(self.view)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLogSql(self, value: bool) -> "FrameworkSqlTransformer":
-        self._paramMap[self.log_sql] = value
-        return self
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLogSql(self) -> bool:
-        return self.getOrDefault(self.log_sql)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setVerifyCountRemainsSame(self, value: bool) -> "FrameworkSqlTransformer":
-        self._paramMap[self.verify_count_remains_same] = value
-        return self
+        return self.getOrDefault(self.log_sql)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
-        return self.getOrDefault(self.verify_count_remains_same)  # type: ignore
+        return self.getOrDefault(self.verify_count_remains_same)

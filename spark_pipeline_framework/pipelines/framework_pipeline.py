@@ -8,13 +8,16 @@ from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
-class FrameworkPipeline(Transformer):  # type: ignore
+class FrameworkPipeline(Transformer):
     def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
         super(FrameworkPipeline, self).__init__()
         self.transformers: List[Transformer] = []
@@ -34,6 +37,7 @@ class FrameworkPipeline(Transformer):  # type: ignore
             event_name=pipeline_name, event_text=f"Starting Pipeline {pipeline_name}"
         )
         for transformer in self.transformers:
+            assert isinstance(transformer, FrameworkTransformer)
             stage_name: Optional[str] = None
             try:
                 i += 1

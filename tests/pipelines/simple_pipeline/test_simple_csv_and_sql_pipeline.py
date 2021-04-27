@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Union, Optional, cast
 
+from pyspark.ml.base import Transformer, Estimator
 from pyspark.ml.pipeline import Pipeline
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
@@ -29,14 +30,16 @@ def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
     # Act
     parameters: Dict[str, Any] = {}
 
-    stages = create_steps(
+    stages: List[Transformer] = create_steps(
         [
             FrameworkCsvLoader(view="flights", path_to_csv=flights_path),
             FeaturesCarriersV1(parameters=parameters).transformers,
         ]
     )
 
-    pipeline: Pipeline = Pipeline(stages=stages)
+    pipeline: Pipeline = Pipeline(
+        stages=cast(Optional[List[Union[Estimator[Any], Transformer]]], stages)
+    )
     transformer = pipeline.fit(df)
     transformer.transform(df)
 
