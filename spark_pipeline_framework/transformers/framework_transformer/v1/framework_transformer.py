@@ -1,8 +1,15 @@
 from typing import Dict, Any, List, Optional
 
+# noinspection PyPackageRequirements
 from pyspark.ml.base import Transformer
-from pyspark.ml.param import Param, TypeConverters, Params
+
+# noinspection PyPackageRequirements
+from pyspark.ml.param import Param
+
+# noinspection PyPackageRequirements
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
+
+# noinspection PyPackageRequirements
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -14,11 +21,6 @@ class FrameworkTransformer(
     DefaultParamsReadable,  # type: ignore
     DefaultParamsWritable,
 ):
-    # noinspection PyProtectedMember
-    name: Param[str] = Param(
-        Params._dummy(), "name", "name", typeConverter=TypeConverters.toString  # type: ignore
-    )
-
     # noinspection PyUnusedLocal
     def __init__(
         self,
@@ -86,23 +88,47 @@ class FrameworkTransformer(
     def getSql(self) -> Optional[str]:
         return None
 
+    # # This is here to avoid mypy from complaining since this is a protected member
+    # # noinspection PyPep8Naming
+    # def _setDefault(self, **kwargs: Any) -> None:
+    #     # noinspection PyUnresolvedReferences,PyProtectedMember
+    #     super()._setDefault(**kwargs)  # type: ignore
+    #
+    # # This is here to avoid mypy from complaining since this is a protected member
+    # # @property
+    # # def _input_kwargs(self) -> Dict[str, Any]:
+    # #     return self._input_kwargs
+    #
+    # def _set(self, **kwargs: Any) -> None:
+    #     # noinspection PyUnresolvedReferences,PyProtectedMember
+    #     super()._set(**kwargs)  # type: ignore
+    #
+    # # noinspection PyPep8Naming
+    # @property
+    # def _paramMap(self):
+    #     # noinspection PyUnresolvedReferences,PyProtectedMember
+    #     return super()._paramMap  # type: ignore
+    #
+    # # noinspection PyPep8Naming
+    # @_paramMap.setter
+    # def _paramMap(self, p):
+    #     # noinspection PyUnresolvedReferences,PyProtectedMember
+    #     super()._paramMap = p  # type: ignore
+
     # This is here to avoid mypy from complaining since this is a protected member
     # noinspection PyPep8Naming
     def _setDefault(self, **kwargs: Any) -> None:
-        # noinspection PyUnresolvedReferences,PyProtectedMember
-        super()._setDefault(**kwargs)  # type: ignore
+        ...
 
     # This is here to avoid mypy from complaining since this is a protected member
     @property
     def _input_kwargs(self) -> Dict[str, Any]:
-        return self._input_kwargs
+        ...
 
     def _set(self, **kwargs: Any) -> None:
-        # noinspection PyUnresolvedReferences,PyProtectedMember
-        super()._set(**kwargs)  # type: ignore
+        ...
 
     # noinspection PyPep8Naming
     @property
     def _paramMap(self) -> Dict[Param[Any], Any]:
-        # noinspection PyUnresolvedReferences,PyProtectedMember
-        return super()._paramMap()  # type: ignore
+        ...

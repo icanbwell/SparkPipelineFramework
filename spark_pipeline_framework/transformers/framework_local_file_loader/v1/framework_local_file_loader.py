@@ -68,6 +68,12 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.create_file_path: Param[bool] = Param(self, "create_file_path", "")
         self._setDefault(create_file_path=False)
 
+        self.delimiter: Param[str] = Param(self, "delimiter", "")
+        self._setDefault(delimiter=",")
+
+        self.has_header: Param[bool] = Param(self, "has_header", "")
+        self._setDefault(has_header=True)
+
         if not filepath:
             raise ValueError("filepath is None or empty")
 

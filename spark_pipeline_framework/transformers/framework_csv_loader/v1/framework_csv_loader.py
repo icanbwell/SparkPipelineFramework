@@ -48,12 +48,6 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
             create_file_path=create_file_path,
         )
 
-        self.delimiter: Param[str] = Param(self, "delimiter", "")
-        self._setDefault(delimiter=",")
-
-        self.has_header: Param[bool] = Param(self, "has_header", "")
-        self._setDefault(has_header=True)
-
         self.multiline: Param[bool] = Param(self, "multiline", "")
         self._setDefault(multiline=multiline)
 
