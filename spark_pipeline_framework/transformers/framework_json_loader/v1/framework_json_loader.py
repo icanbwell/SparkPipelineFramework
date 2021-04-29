@@ -76,7 +76,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setMultiLine(self, value: bool) -> "FrameworkJsonLoader":
-        self._paramMap[self.multiLine] = value
+        self._paramMap[self.multiLine] = value  # type: ignore
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

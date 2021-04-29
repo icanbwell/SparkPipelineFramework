@@ -55,31 +55,31 @@ class FrameworkTransformer(
     def transformers(self) -> List[Transformer]:
         return [self]
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setName(self, value: str) -> "FrameworkTransformer":
-        self._paramMap[self.name] = value
-        return self
+    # # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    # def setName(self, value: str) -> "FrameworkTransformer":
+    #     self._paramMap[self.name] = value
+    #     return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
         return self.getOrDefault(self.name)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setProgressLogger(
-        self, value: Optional[ProgressLogger]
-    ) -> "FrameworkTransformer":
-        self._paramMap[self.progress_logger] = value
-        return self
+    # # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    # def setProgressLogger(
+    #     self, value: Optional[ProgressLogger]
+    # ) -> "FrameworkTransformer":
+    #     self._paramMap[self.progress_logger] = value
+    #     return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getProgressLogger(self) -> Optional[ProgressLogger]:
         return self.getOrDefault(self.progress_logger)  # type: ignore
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setParameters(self, value: Optional[Dict[str, Any]]) -> "FrameworkTransformer":
-        self._paramMap[self.parameters] = value
-        return self
-
+    # # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    # def setParameters(self, value: Optional[Dict[str, Any]]) -> "FrameworkTransformer":
+    #     self._paramMap[self.parameters] = value
+    #     return self
+    #
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getParameters(self) -> Optional[Dict[str, Any]]:
         return self.getOrDefault(self.parameters)  # type: ignore
@@ -121,14 +121,9 @@ class FrameworkTransformer(
         ...
 
     # This is here to avoid mypy from complaining since this is a protected member
-    @property
-    def _input_kwargs(self) -> Dict[str, Any]:
-        ...
+    _input_kwargs: Dict[str, Any]
 
     def _set(self, **kwargs: Any) -> None:
         ...
 
-    # noinspection PyPep8Naming
-    @property
-    def _paramMap(self) -> Dict[Param[Any], Any]:
-        ...
+    # _paramMap: Dict[Param[Any], Any]
