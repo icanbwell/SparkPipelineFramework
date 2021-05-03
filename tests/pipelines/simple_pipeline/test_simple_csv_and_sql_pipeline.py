@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional, cast
+from typing import Any, Dict, List
 
-from pyspark.ml.base import Transformer, Estimator
+from pyspark.ml.base import Transformer
 from pyspark.ml.pipeline import Pipeline
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
@@ -37,9 +37,7 @@ def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
         ]
     )
 
-    pipeline: Pipeline = Pipeline(
-        stages=cast(Optional[List[Union[Estimator[Any], Transformer]]], stages)
-    )
+    pipeline: Pipeline = Pipeline(stages=stages)  # type: ignore
     transformer = pipeline.fit(df)
     transformer.transform(df)
 
