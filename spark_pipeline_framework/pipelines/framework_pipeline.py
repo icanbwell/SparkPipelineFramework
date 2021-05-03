@@ -37,7 +37,7 @@ class FrameworkPipeline(Transformer):
             event_name=pipeline_name, event_text=f"Starting Pipeline {pipeline_name}"
         )
         for transformer in self.transformers:
-            assert isinstance(transformer, FrameworkTransformer)
+            assert isinstance(transformer, FrameworkTransformer), type(transformer)
             stage_name: Optional[str] = None
             try:
                 i += 1

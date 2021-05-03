@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 # noinspection PyPackageRequirements
 from pyspark.ml.base import Transformer
@@ -30,7 +30,8 @@ class FrameworkTransformer(
     ):
         super(FrameworkTransformer, self).__init__()
 
-        self._input_kwargs: Dict[str, Any] = {}
+        if TYPE_CHECKING:
+            self._input_kwargs: Dict[str, Any] = {}
         self.logger = get_logger(__name__)
 
         self.name: Param[str] = Param(self, "name", "")
