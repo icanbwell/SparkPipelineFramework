@@ -101,20 +101,20 @@ class FrameworkTransformer(
         return None
 
     # # This is here to avoid mypy from complaining since this is a protected member
-    # # noinspection PyPep8Naming
-    # def _setDefault(self, **kwargs: Any) -> None:
-    #     # noinspection PyUnresolvedReferences,PyProtectedMember
-    #     super()._setDefault(**kwargs)  # type: ignore
-    #
+    # noinspection PyPep8Naming
+    def _setDefault(self, **kwargs: Any) -> None:
+        # noinspection PyUnresolvedReferences,PyProtectedMember
+        super()._setDefault(**kwargs)  # type: ignore
+
     # # This is here to avoid mypy from complaining since this is a protected member
     # # @property
     # # def _input_kwargs(self) -> Dict[str, Any]:
     # #     return self._input_kwargs
     #
-    # def _set(self, **kwargs: Any) -> None:
-    #     # noinspection PyUnresolvedReferences,PyProtectedMember
-    #     super()._set(**kwargs)  # type: ignore
-    #
+    def _set(self, **kwargs: Any) -> None:
+        # noinspection PyUnresolvedReferences,PyProtectedMember
+        super()._set(**kwargs)  # type: ignore
+
     # # noinspection PyPep8Naming
     # @property
     # def _paramMap(self):
@@ -129,13 +129,13 @@ class FrameworkTransformer(
 
     # This is here to avoid mypy from complaining since this is a protected member
     # noinspection PyPep8Naming
-    def _setDefault(self, **kwargs: Any) -> None:
-        ...
+    # def _setDefault(self, **kwargs: Any) -> None:
+    #     ...
 
     # This is here to avoid mypy from complaining since this is a protected member
     # _input_kwargs: Dict[str, Any]
 
-    def _set(self, **kwargs: Any) -> None:
-        ...
+    # def _set(self, **kwargs: Any) -> None:
+    #     ...
 
     # _paramMap: Dict[Param[Any], Any]
