@@ -22,6 +22,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
+    - name: Sync Pipfile with setup.py
+      run: |
+        python -m pip install --no-cache-dir pipenv
+        pipenv sync --dev --system
+        pipenv-setup sync --pipfile
     - name: Get Previous tag
       id: previoustag
       uses: WyriHaximus/github-action-get-previous-tag@master
@@ -31,7 +36,7 @@ jobs:
         path: VERSION
         contents: |
           ${{ steps.previoustag.outputs.tag }}
-        write-mode: overwrite 
+        write-mode: overwrite
     - name: Build and publish
       env:
         TWINE_USERNAME: __token__

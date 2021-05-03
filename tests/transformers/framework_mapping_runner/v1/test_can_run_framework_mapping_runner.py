@@ -18,10 +18,7 @@ def test_can_run_framework_mapping_runner(spark_session: SparkSession) -> None:
     data_dir: Path = Path(__file__).parent.parent.joinpath("./")
 
     spark_session.createDataFrame(
-        [
-            (1, "Qureshi", "Imran"),
-            (2, "Vidal", "Michael"),
-        ],
+        [(1, "Qureshi", "Imran"), (2, "Vidal", "Michael")],
         ["member_id", "last_name", "first_name"],
     ).createOrReplaceTempView("patients")
 
