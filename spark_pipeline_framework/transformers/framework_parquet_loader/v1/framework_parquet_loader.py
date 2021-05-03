@@ -30,7 +30,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
         merge_schema: bool = False,
         limit: int = -1,
     ):
-        super(FrameworkParquetLoader, self).__init__(
+        super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
 

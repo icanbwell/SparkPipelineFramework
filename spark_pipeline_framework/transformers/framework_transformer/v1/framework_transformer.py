@@ -35,6 +35,7 @@ class FrameworkTransformer(
         self.logger = get_logger(__name__)
 
         self.name: Param[str] = Param(self, "name", "")
+        self._setDefault(name=name)
 
         self.progress_logger: Optional[ProgressLogger] = progress_logger
 
@@ -126,7 +127,7 @@ class FrameworkTransformer(
     # @_paramMap.setter
     # def _paramMap(self, p):
     #     # noinspection PyUnresolvedReferences,PyProtectedMember
-    #     super()._paramMap = p  # type: ignore
+    #     super()._paramMap = p  # type: ignorer
 
     # This is here to avoid mypy from complaining since this is a protected member
     # noinspection PyPep8Naming
