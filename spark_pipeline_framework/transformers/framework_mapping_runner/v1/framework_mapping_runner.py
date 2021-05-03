@@ -59,23 +59,6 @@ class FrameworkMappingLoader(FrameworkTransformer):
         }
         self.setParams(**kwargs)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal,Mypy
-    @keyword_only
-    def setParams(
-        self,
-        view: str,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        # noinspection Mypy
-        kwargs = self._input_kwargs
-        super().setStandardParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        # noinspection Mypy
-        return self._set(**kwargs)
-
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
         mapping_function: AutoMapperFunction = self.getMappingFunction()

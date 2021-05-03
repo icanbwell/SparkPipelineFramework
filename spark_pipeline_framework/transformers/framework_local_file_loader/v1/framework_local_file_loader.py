@@ -80,10 +80,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.logger.info(f"Received filepath: {filepath}")
 
         kwargs = self._input_kwargs
-        super().setStandardParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        self._set(**kwargs)
+        self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()

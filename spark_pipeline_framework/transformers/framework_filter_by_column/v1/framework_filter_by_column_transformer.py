@@ -50,24 +50,6 @@ class FrameworkFilterByColumnTransformer(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        # add your parameters here
-        column: str,
-        include_only: List[Union[str, int, float]],
-        view: str,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setStandardParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
-
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
         column: str = self.getColumn()

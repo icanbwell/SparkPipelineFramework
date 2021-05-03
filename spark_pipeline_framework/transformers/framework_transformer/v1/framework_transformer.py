@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 # noinspection PyPackageRequirements
 from pyspark.ml.base import Transformer
@@ -30,13 +30,14 @@ class FrameworkTransformer(
     ):
         super(FrameworkTransformer, self).__init__()
 
+        self._input_kwargs: Dict[str, Any] = {}
         self.logger = get_logger(__name__)
 
         self.name: Param[str] = Param(self, "name", "")
 
-        self.progress_logger: Param[float] = Param(self, "progress_logger", "")
+        self.progress_logger: Optional[ProgressLogger] = progress_logger
 
-        self.parameters: Param[List[str]] = Param(self, "parameters", "")
+        self.parameters: Optional[Dict[str, Any]] = parameters
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
     def setStandardParams(
@@ -45,7 +46,18 @@ class FrameworkTransformer(
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
     ) -> Any:
-        kwargs = self._input_kwargs
+        kwargs: Dict[str, Any] = self._input_kwargs
+        return self._set(**kwargs)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal,Mypy
+    def setParams(self, **kwargs: Any) -> Any:
+        # ignore any parameters
+        kwargs = {
+            key: value
+            for key, value in kwargs.items()
+            if key not in ["progress_logger", "parameters"]
+            and not isinstance(value, dict)
+        }
         return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
@@ -73,7 +85,7 @@ class FrameworkTransformer(
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getProgressLogger(self) -> Optional[ProgressLogger]:
-        return self.getOrDefault(self.progress_logger)  # type: ignore
+        return self.progress_logger
 
     # # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     # def setParameters(self, value: Optional[Dict[str, Any]]) -> "FrameworkTransformer":
@@ -82,7 +94,7 @@ class FrameworkTransformer(
     #
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getParameters(self) -> Optional[Dict[str, Any]]:
-        return self.getOrDefault(self.parameters)  # type: ignore
+        return self.parameters
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSql(self) -> Optional[str]:
@@ -121,7 +133,7 @@ class FrameworkTransformer(
         ...
 
     # This is here to avoid mypy from complaining since this is a protected member
-    _input_kwargs: Dict[str, Any]
+    # _input_kwargs: Dict[str, Any]
 
     def _set(self, **kwargs: Any) -> None:
         ...

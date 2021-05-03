@@ -50,7 +50,7 @@ class ProxyBase(FrameworkTransformer):
         module_name: str = self.location[module_:].replace("/", ".")
 
         # noinspection Mypy
-        self._set(
+        self.setParams(
             name=self.__class__.__name__,
             parameters=parameters,
             progress_logger=progress_logger,

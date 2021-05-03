@@ -56,24 +56,6 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
-    @keyword_only
-    def setParams(
-        self,
-        sql: Optional[str] = None,
-        view: Optional[str] = None,
-        log_sql: bool = False,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-        verify_count_remains_same: bool = False,
-    ) -> None:
-        kwargs = self._input_kwargs
-        super().setStandardParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
-
     def _transform(self, df: DataFrame) -> DataFrame:
         sql_text: Optional[str] = self.getSql()
         name: Optional[str] = self.getName()

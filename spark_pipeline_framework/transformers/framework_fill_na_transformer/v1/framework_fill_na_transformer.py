@@ -44,21 +44,6 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    @keyword_only
-    def setParams(
-        self,
-        view: str,
-        column_mapping: Dict[str, Any],
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setStandardParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
-
     def _transform(self, df: DataFrame) -> DataFrame:
         column_mapping: Dict[str, Any] = self.getColumnMapping()
         view: str = self.getView()

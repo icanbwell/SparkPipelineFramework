@@ -60,26 +60,6 @@ class FrameworkKafkaReader(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        kafka_brokers: str,
-        topic: str,
-        schema: StructType,
-        starting_offset: int = -2,
-        use_ssl: bool = True,
-        previous_checkpoint_view: Optional[str] = None,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setStandardParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
-
     def _transform(self, df: DataFrame) -> DataFrame:
         kafka_brokers: str = self.getKafkaBrokers()
         topic: str = self.getTopic()

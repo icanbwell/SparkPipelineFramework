@@ -60,20 +60,6 @@ class FrameworkBaseExporter(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        view: Optional[str] = None,
-        name: Optional[str] = None,
-        mode: str = MODE_ERROR,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1,
-    ) -> None:
-        kwargs = self._input_kwargs
-        return self._set(**kwargs)
-
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
         name: Optional[str] = self.getName()
