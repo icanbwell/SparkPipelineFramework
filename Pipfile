@@ -22,12 +22,12 @@ autoflake=">=1.4"
 flake8 = ">=3.8.4"
 mypy = "==0.812"
 pytest = ">=6.2.2"
-black = ">=20.8b1"
 Sphinx="==3.5.3"
 sphinx-autoapi="==1.7.0"
 sphinx-rtd-theme="==0.5.1"
 recommonmark="==0.7.1"
 pyspark="==3.1.1"  # should match the version of spark we use for testing
+pipenv-setup = ">=3.1.1"
 
 [requires]
 python_version = "3.7"
