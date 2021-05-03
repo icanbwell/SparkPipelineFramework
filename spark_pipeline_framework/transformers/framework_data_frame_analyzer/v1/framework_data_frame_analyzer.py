@@ -48,42 +48,31 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         assert view
         assert output_folder
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.analysis_views_prefix: Param = Param(self, "analysis_views_prefix", "")
+        self.analysis_views_prefix: Param[Optional[str]] = Param(
+            self, "analysis_views_prefix", ""
+        )
         self._setDefault(analysis_views_prefix=analysis_views_prefix)
 
-        self.output_folder: Param = Param(self, "output_folder", "")
+        self.output_folder: Param[Optional[Union[Path, str]]] = Param(
+            self, "output_folder", ""
+        )
         self._setDefault(output_folder=output_folder)
 
-        self.columns_to_analyze: Param = Param(self, "columns_to_analyze", "")
+        self.columns_to_analyze: Param[Optional[List[str]]] = Param(
+            self, "columns_to_analyze", ""
+        )
         self._setDefault(columns_to_analyze=columns_to_analyze)
 
-        self.columns_to_skip: Param = Param(self, "columns_to_skip", "")
+        self.columns_to_skip: Param[Optional[List[str]]] = Param(
+            self, "columns_to_skip", ""
+        )
         self._setDefault(columns_to_skip=columns_to_skip)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        view: str,
-        analysis_views_prefix: Optional[str] = None,
-        output_folder: Optional[Union[Path, str]] = None,
-        columns_to_analyze: Optional[List[str]] = None,
-        columns_to_skip: Optional[List[str]] = None,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
@@ -136,20 +125,20 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getAnalysisViewsPrefix(self) -> str:
-        return self.getOrDefault(self.analysis_views_prefix)  # type: ignore
+    def getAnalysisViewsPrefix(self) -> Optional[str]:
+        return self.getOrDefault(self.analysis_views_prefix)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getOutputFolder(self) -> Optional[Union[Path, str]]:
-        return self.getOrDefault(self.output_folder)  # type: ignore
+        return self.getOrDefault(self.output_folder)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnsToAnalyze(self) -> Optional[List[str]]:
-        return self.getOrDefault(self.columns_to_analyze)  # type: ignore
+        return self.getOrDefault(self.columns_to_analyze)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnsToSkip(self) -> Optional[List[str]]:
-        return self.getOrDefault(self.columns_to_skip)  # type: ignore
+        return self.getOrDefault(self.columns_to_skip)

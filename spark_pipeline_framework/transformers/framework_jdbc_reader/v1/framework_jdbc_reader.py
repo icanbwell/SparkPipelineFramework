@@ -35,39 +35,20 @@ class FrameworkJdbcReader(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.jdbc_url: Param = Param(self, "jdbc_url", "")
+        self.jdbc_url: Param[str] = Param(self, "jdbc_url", "")
         self._setDefault(jdbc_url=jdbc_url)
 
-        self.query: Param = Param(self, "query", "")
+        self.query: Param[str] = Param(self, "query", "")
         self._setDefault(query=query)
 
-        self.driver: Param = Param(self, "driver", "")
+        self.driver: Param[str] = Param(self, "driver", "")
         self._setDefault(driver=driver)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        # add your parameters here
-        jdbc_url: str,
-        query: str,
-        driver: str,
-        view: Optional[str] = None,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         # pushdown_query = "(select * from employees where emp_no < 10008) emp_alias"
@@ -91,19 +72,22 @@ class FrameworkJdbcReader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getJdbcUrl(self) -> str:
-        return self.getOrDefault(self.jdbc_url)  # type: ignore
+        return self.getOrDefault(self.jdbc_url)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDriver(self) -> str:
-        return self.getOrDefault(self.driver)  # type: ignore
+        return self.getOrDefault(self.driver)
 
+    # noinspection PyPep8Naming
     def getFormat(self) -> str:
         return "jdbc"
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getQuery(self) -> str:
-        return self.getOrDefault(self.query)  # type: ignore
+        return self.getOrDefault(self.query)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+
+    # noinspection PyPep8Naming
     def getView(self) -> Optional[str]:
-        return self.getOrDefault(self.view)  # type: ignore
+        return self.getOrDefault(self.view)

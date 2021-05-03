@@ -30,44 +30,26 @@ class FrameworkParquetLoader(FrameworkTransformer):
         merge_schema: bool = False,
         limit: int = -1,
     ):
-        super(FrameworkParquetLoader, self).__init__(
+        super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
 
         self.logger = get_logger(__name__)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.file_path: Param = Param(self, "file_path", "")
+        self.file_path: Param[str] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
-        self.merge_schema: Param = Param(self, "merge_schema", "")
+        self.merge_schema: Param[bool] = Param(self, "merge_schema", "")
         self._setDefault(merge_schema=None)
 
-        self.limit: Param = Param(self, "limit", "")
+        self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=None)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        view: str,
-        file_path: Union[str, List[str], Path],
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-        merge_schema: bool = False,
-        limit: int = -1,
-    ) -> None:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)  # type: ignore
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
@@ -104,39 +86,17 @@ class FrameworkParquetLoader(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: str) -> "FrameworkParquetLoader":
-        self._paramMap[self.view] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilePath(
-        self, value: Union[str, List[str], Path]
-    ) -> "FrameworkParquetLoader":
-        self._paramMap[self.file_path] = value
-        return self
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[str, List[str], Path]:
-        return self.getOrDefault(self.file_path)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setMergeSchema(self, value: bool) -> "FrameworkParquetLoader":
-        self._paramMap[self.merge_schema] = value
-        return self
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMergeSchema(self) -> bool:
-        return self.getOrDefault(self.merge_schema)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value: int) -> "FrameworkParquetLoader":
-        self._paramMap[self.limit] = value
-        return self
+        return self.getOrDefault(self.merge_schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)  # type: ignore
+        return self.getOrDefault(self.limit)

@@ -34,37 +34,21 @@ class FrameworkFilterByColumnTransformer(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         assert column
-        self.column: Param = Param(self, "column", "")
+        self.column: Param[str] = Param(self, "column", "")
         self._setDefault(column=column)
 
         assert view
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
         assert include_only and isinstance(include_only, list)
-        self.include_only: Param = Param(self, "include_only", "")
+        self.include_only: Param[List[Union[str, int, float]]] = Param(
+            self, "include_only", ""
+        )
         self._setDefault(include_only=include_only)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        # add your parameters here
-        column: str,
-        include_only: List[Union[str, int, float]],
-        view: str,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
@@ -79,12 +63,12 @@ class FrameworkFilterByColumnTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumn(self) -> str:
-        return self.getOrDefault(self.column)  # type: ignore
+        return self.getOrDefault(self.column)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getIncludeOnly(self) -> List[Union[str, int, float]]:
-        return self.getOrDefault(self.include_only)  # type: ignore
+        return self.getOrDefault(self.include_only)

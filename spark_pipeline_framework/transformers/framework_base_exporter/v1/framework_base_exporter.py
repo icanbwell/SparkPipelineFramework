@@ -48,51 +48,34 @@ class FrameworkBaseExporter(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.mode: Param = Param(self, "mode", "")
+        self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
-        self.limit: Param = Param(self, "limit", "")
+        self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=None)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        view: Optional[str] = None,
-        name: Optional[str] = None,
-        mode: str = MODE_ERROR,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1,
-    ) -> None:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)  # type: ignore
-
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
         name: Optional[str] = self.getName()
-        format: str = self.getFormat()
+        format_: str = self.getFormat()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         # limit: int = self.getLimit()
 
         with ProgressLogMetric(
-            name=f"{name or view}_{format}_exporter", progress_logger=progress_logger
+            name=f"{name or view}_{format_}_exporter", progress_logger=progress_logger
         ):
             try:
                 writer: DataFrameWriter
                 if view:
-                    writer = df.sql_ctx.table(view).write.format(format)
+                    writer = df.sql_ctx.table(view).write.format(format_)
                 else:
-                    writer = df.write.format(format)
+                    writer = df.write.format(format_)
 
                 writer = writer.mode(self.getMode())
 
@@ -102,39 +85,26 @@ class FrameworkBaseExporter(FrameworkTransformer):
                 writer.save()
 
             except AnalysisException as e:
-                self.logger.error(f"Failed to write to {format}")
+                self.logger.error(f"Failed to write to {format_}")
                 raise e
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: Param) -> "FrameworkBaseExporter":
-        self._paramMap[self.view] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setMode(self, value: Param) -> "FrameworkBaseExporter":
-        self._paramMap[self.mode] = value
-        return self
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
-        return self.getOrDefault(self.mode)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value: Param) -> "FrameworkBaseExporter":
-        self._paramMap[self.limit] = value
-        return self
+        return self.getOrDefault(self.mode)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)  # type: ignore
+        return self.getOrDefault(self.limit)
 
+    # noinspection PyPep8Naming
     def getFormat(self) -> str:
         raise NotImplementedError
 
+    # noinspection PyPep8Naming
     def getOptions(self) -> Dict[str, Any]:
         raise NotImplementedError

@@ -37,34 +37,17 @@ class FrameworkUrlLoader(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.server_url: Param = Param(self, "server_url", "")
+        self.server_url: Param[str] = Param(self, "server_url", "")
         self._setDefault(server_url=server_url)
 
-        self.relative_url: Param = Param(self, "relative_url", "")
+        self.relative_url: Param[str] = Param(self, "relative_url", "")
         self._setDefault(relative_url=relative_url)
 
-        self.method: Param = Param(self, "method", "")
+        self.method: Param[str] = Param(self, "method", "")
         self._setDefault(method=method)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        server_url: str,
-        relative_url: str,
-        method: str,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         server_url: str = self.getServerUrl()
@@ -103,12 +86,12 @@ class FrameworkUrlLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getServerUrl(self) -> str:
-        return self.getOrDefault(self.server_url)  # type: ignore
+        return self.getOrDefault(self.server_url)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getRelativeUrl(self) -> str:
-        return self.getOrDefault(self.relative_url)  # type: ignore
+        return self.getOrDefault(self.relative_url)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMethod(self) -> str:
-        return self.getOrDefault(self.method)  # type: ignore
+        return self.getOrDefault(self.method)

@@ -1,9 +1,10 @@
-from typing import Optional, Any, Dict, cast
+from typing import Any, Dict, Optional
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import from_json
+from pyspark.sql.types import StructType
 from pyspark.sql.utils import AnalysisException
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
@@ -24,7 +25,7 @@ class FrameworkKafkaReader(FrameworkTransformer):
         self,
         kafka_brokers: str,
         topic: str,
-        schema: Any,
+        schema: StructType,
         starting_offset: int = -2,
         use_ssl: bool = True,
         previous_checkpoint_view: Optional[str] = None,
@@ -36,22 +37,22 @@ class FrameworkKafkaReader(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        self.kafka_brokers: Param = Param(self, "kafka_brokers", "")
+        self.kafka_brokers: Param[str] = Param(self, "kafka_brokers", "")
         self._setDefault(kafka_brokers=kafka_brokers)
 
-        self.topic: Param = Param(self, "topic", "")
+        self.topic: Param[str] = Param(self, "topic", "")
         self._setDefault(topic=topic)
 
-        self.schema: Param = Param(self, "schema", "")
+        self.schema: Param[StructType] = Param(self, "schema", "")
         self._setDefault(schema=schema)
 
-        self.starting_offset: Param = Param(self, "starting_offset", "")
+        self.starting_offset: Param[int] = Param(self, "starting_offset", "")
         self._setDefault(starting_offset=starting_offset)
 
-        self.use_ssl: Param = Param(self, "use_ssl", "")
+        self.use_ssl: Param[bool] = Param(self, "use_ssl", "")
         self._setDefault(use_ssl=use_ssl)
 
-        self.previous_checkpoint_view: Param = Param(
+        self.previous_checkpoint_view: Param[Optional[str]] = Param(
             self, "previous_checkpoint_view", ""
         )
         self._setDefault(previous_checkpoint_view=previous_checkpoint_view)
@@ -59,32 +60,12 @@ class FrameworkKafkaReader(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        kafka_brokers: str,
-        topic: str,
-        schema: Any,
-        starting_offset: int = -2,
-        use_ssl: bool = True,
-        previous_checkpoint_view: Optional[str] = None,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
-
     def _transform(self, df: DataFrame) -> DataFrame:
         kafka_brokers: str = self.getKafkaBrokers()
         topic: str = self.getTopic()
         starting_offset: int = self.getStartingOffset()
         use_ssl: bool = self.getUseSsl()
-        schema: Any = self.getSchema()
+        schema: StructType = self.getSchema()
         name: Optional[str] = self.getName()
         previous_checkpoint_view: Optional[str] = self.getPreviousCheckpointView()
 
@@ -121,7 +102,7 @@ class FrameworkKafkaReader(FrameworkTransformer):
                 df = df.selectExpr("*", "CAST(value AS STRING) as event")
                 df = df.withColumn("event", from_json(df.event, schema))
                 df.createOrReplaceTempView(topic)
-                if len(df.head(1)) == 0:
+                if len(df.head(1)) == 0 and previous_checkpoint_view:
                     df.sql_ctx.table(previous_checkpoint_view).createOrReplaceTempView(
                         f"{topic}_watermark"
                     )
@@ -136,30 +117,28 @@ class FrameworkKafkaReader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getKafkaBrokers(self) -> str:
-        return self.getOrDefault(self.kafka_brokers)  # type: ignore
+        return self.getOrDefault(self.kafka_brokers)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getTopic(self) -> str:
-        return self.getOrDefault(self.topic)  # type: ignore
+        return self.getOrDefault(self.topic)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getStartingOffset(self) -> int:
-        return self.getOrDefault(self.starting_offset)  # type: ignore
+        return self.getOrDefault(self.starting_offset)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getUseSsl(self) -> bool:
-        return self.getOrDefault(self.use_ssl)  # type: ignore
+        return self.getOrDefault(self.use_ssl)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getSchema(self) -> int:
-        return self.getOrDefault(self.schema)  # type: ignore
+    def getSchema(self) -> StructType:
+        return self.getOrDefault(self.schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPreviousCheckpointView(self) -> Optional[str]:
-        return self.getOrDefault(self.previous_checkpoint_view)  # type: ignore
+        return self.getOrDefault(self.previous_checkpoint_view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
-        return cast(str, self.getOrDefault(self.name)) or cast(
-            str, self.getOrDefault(self.topic)
-        )
+        return self.getOrDefault(self.name) or self.getOrDefault(self.topic)

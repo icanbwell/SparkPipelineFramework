@@ -44,7 +44,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self.views: List[str] = []
         # noinspection Mypy
         self._setDefault(view=None)
@@ -58,23 +58,6 @@ class FrameworkMappingLoader(FrameworkTransformer):
             key: value for key, value in kwargs.items() if key != "mapping_function"
         }
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal,Mypy
-    @keyword_only
-    def setParams(
-        self,
-        view: str,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        # noinspection Mypy
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        # noinspection Mypy
-        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
@@ -109,7 +92,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming
     def getViews(self) -> List[str]:

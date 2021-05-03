@@ -48,35 +48,17 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.file_path: Param = Param(self, "file_path", "")
+        self.file_path: Param[str] = Param(self, "file_path", "")
         # noinspection Mypy
         self._setDefault(file_path=file_path)
 
-        self.output_folder: Param = Param(self, "output_folder", "")
+        self.output_folder: Param[str] = Param(self, "output_folder", "")
         # noinspection Mypy
         self._setDefault(output_folder=output_folder)
 
         # noinspection Mypy
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal,Mypy
-    @keyword_only
-    def setParams(
-        self,
-        file_path: Union[Path, str],
-        output_folder: Union[Path, str],
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        # noinspection Mypy
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        # noinspection Mypy
-        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         file_path: Union[Path, str] = self.getFilePath()
@@ -110,8 +92,8 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[Path, str]:
-        return self.getOrDefault(self.file_path)  # type: ignore
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getOutputFolder(self) -> Union[Path, str]:
-        return self.getOrDefault(self.output_folder)  # type: ignore
+        return self.getOrDefault(self.output_folder)

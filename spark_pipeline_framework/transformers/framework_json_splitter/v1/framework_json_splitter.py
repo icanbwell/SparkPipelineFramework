@@ -44,34 +44,19 @@ class FrameworkJsonSplitter(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.file_path: Param = Param(self, "file_path", "")
+        self.file_path: Param[str] = Param(self, "file_path", "")
         self._setDefault(file_path=file_path)
 
-        self.output_folder: Param = Param(self, "output_folder", "")
+        self.output_folder: Param[str] = Param(self, "output_folder", "")
         self._setDefault(output_folder=output_folder)
 
-        self.max_size_per_file_in_mb: Param = Param(self, "max_size_per_file_in_mb", "")
+        self.max_size_per_file_in_mb: Param[int] = Param(
+            self, "max_size_per_file_in_mb", ""
+        )
         self._setDefault(max_size_per_file_in_mb=max_size_per_file_in_mb)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        file_path: Union[Path, str],
-        output_folder: Union[Path, str],
-        max_size_per_file_in_mb: float,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         file_path: Union[Path, str] = self.getFilePath()
@@ -134,12 +119,12 @@ class FrameworkJsonSplitter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[Path, str]:
-        return self.getOrDefault(self.file_path)  # type: ignore
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getOutputFolder(self) -> Union[Path, str]:
-        return self.getOrDefault(self.output_folder)  # type: ignore
+        return self.getOrDefault(self.output_folder)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMaxSizePerFileInMb(self) -> float:
-        return self.getOrDefault(self.max_size_per_file_in_mb)  # type: ignore
+        return self.getOrDefault(self.max_size_per_file_in_mb)

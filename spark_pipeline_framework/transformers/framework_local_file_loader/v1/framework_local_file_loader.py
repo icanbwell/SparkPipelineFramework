@@ -1,7 +1,7 @@
 import re
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any
+from typing import Union, List, Optional, Dict, Any, cast
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -32,42 +32,47 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         has_header: bool = True,
         infer_schema: bool = False,
         cache_table: bool = True,
-        schema: StructType = None,
+        schema: Optional[StructType] = None,
         clean_column_names: bool = False,
         create_file_path: bool = False,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        **kwargs: Dict[Any, Any],
     ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         self.logger: Logger = get_logger(__name__)
 
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.filepath: Param = Param(self, "filepath", "")
+        self.filepath: Param[str] = Param(self, "filepath", "")
         self._setDefault(filepath=None)
 
-        self.schema: Param = Param(self, "schema", "")
+        self.schema: Param[str] = Param(self, "schema", "")
         self._setDefault(schema=None)
 
-        self.clean_column_names: Param = Param(self, "clean_column_names", "")
+        self.clean_column_names: Param[bool] = Param(self, "clean_column_names", "")
         self._setDefault(clean_column_names=False)
 
-        self.cache_table: Param = Param(self, "cache_table", "")
+        self.cache_table: Param[bool] = Param(self, "cache_table", "")
         self._setDefault(cache_table=True)
 
-        self.limit: Param = Param(self, "limit", "")
+        self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=-1)
 
-        self.infer_schema: Param = Param(self, "infer_schema", "")
+        self.infer_schema: Param[bool] = Param(self, "infer_schema", "")
         self._setDefault(infer_schema=False)
 
-        self.create_file_path: Param = Param(self, "create_file_path", "")
+        self.create_file_path: Param[bool] = Param(self, "create_file_path", "")
         self._setDefault(create_file_path=False)
+
+        self.delimiter: Param[str] = Param(self, "delimiter", "")
+        self._setDefault(delimiter=",")
+
+        self.has_header: Param[bool] = Param(self, "has_header", "")
+        self._setDefault(has_header=True)
 
         if not filepath:
             raise ValueError("filepath is None or empty")
@@ -75,10 +80,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.logger.info(f"Received filepath: {filepath}")
 
         kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        self._set(**kwargs)
+        self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
@@ -175,76 +177,36 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         """
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setView(self, value: Param) -> "FrameworkLocalFileLoader":
-        self._paramMap[self.view] = value
-        return self
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setFilepath(self, value: Param) -> "FrameworkLocalFileLoader":
-        self._paramMap[self.filepath] = value
-        return self
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilepath(self) -> Union[str, List[str], Path]:
-        return self.getOrDefault(self.filepath)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setSchema(self, value: Param) -> "FrameworkLocalFileLoader":
-        self._paramMap[self.schema] = value
-        return self
+        return self.getOrDefault(self.filepath)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
-        return self.getOrDefault(self.schema)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCleanColumnNames(self, value: Param) -> "FrameworkLocalFileLoader":
-        self._paramMap[self.clean_column_names] = value
-        return self
+        return cast(StructType, self.getOrDefault(self.schema))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCleanColumnNames(self) -> bool:
-        return self.getOrDefault(self.clean_column_names)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCacheTable(self, value: Param) -> "FrameworkLocalFileLoader":
-        self._paramMap[self.cache_table] = value
-        return self
+        return self.getOrDefault(self.clean_column_names)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCacheTable(self) -> bool:
-        return self.getOrDefault(self.cache_table)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setInferSchema(self, value: Param) -> "FrameworkLocalFileLoader":
-        self._paramMap[self.infer_schema] = value
-        return self
+        return self.getOrDefault(self.cache_table)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getInferSchema(self) -> bool:
-        return self.getOrDefault(self.infer_schema)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setLimit(self, value: Param) -> "FrameworkLocalFileLoader":
-        self._paramMap[self.limit] = value
-        return self
+        return self.getOrDefault(self.infer_schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)  # type: ignore
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def setCreateFilePath(self, value: bool) -> "FrameworkLocalFileLoader":
-        self._paramMap[self.create_file_path] = value
-        return self
+        return self.getOrDefault(self.limit)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCreateFilePath(self) -> bool:
-        return self.getOrDefault(self.create_file_path)  # type: ignore
+        return self.getOrDefault(self.create_file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:

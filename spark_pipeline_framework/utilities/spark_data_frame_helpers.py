@@ -1,9 +1,15 @@
-from typing import Dict, Any, List, Optional, Union
+from collections import OrderedDict
+from typing import Dict, Any, List, Optional, Union, cast
 
 # noinspection PyProtectedMember
 from pyspark import SparkContext, SQLContext, Row
+from pyspark.rdd import RDD
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StructType, DataType
+from pyspark.sql.types import StructType, DataType, AtomicType
+
+
+def convert_to_row(d: Dict[Any, Any]) -> Row:
+    return Row(**OrderedDict(sorted(d.items())))
 
 
 def create_view_from_dictionary(
@@ -12,7 +18,10 @@ def create_view_from_dictionary(
     spark_session: SparkSession,
     schema: Optional[Union[DataType, str]] = None,
 ) -> DataFrame:
-    df: DataFrame = spark_session.createDataFrame(data=data, schema=schema)
+    rdd: RDD[Any] = spark_session.sparkContext.parallelize(data).map(convert_to_row)
+    df: DataFrame = spark_session.createDataFrame(
+        data=rdd, schema=cast(AtomicType, schema)
+    )
     df.createOrReplaceTempView(name=view)
     return df
 
@@ -46,10 +55,10 @@ def spark_is_data_frame_empty(df: DataFrame) -> bool:
 def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
     if extended:
         # noinspection PyProtectedMember
-        return df._jdf.queryExecution().toString()
+        return df._jdf.queryExecution().toString()  # type: ignore
     else:
         # noinspection PyProtectedMember
-        return df._jdf.queryExecution().simpleString()
+        return df._jdf.queryExecution().simpleString()  # type: ignore
 
 
 def spark_table_exists(sql_ctx: SQLContext, view: str) -> bool:
@@ -59,7 +68,7 @@ def spark_table_exists(sql_ctx: SQLContext, view: str) -> bool:
 
 def sc(df: DataFrame) -> SparkContext:
     # noinspection PyProtectedMember
-    return df._sc
+    return cast(SparkContext, df._sc)
 
 
 def add_metadata_to_column(df: DataFrame, column: str, metadata: Any) -> DataFrame:

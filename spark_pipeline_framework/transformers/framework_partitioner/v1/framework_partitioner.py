@@ -30,34 +30,19 @@ class FrameworkPartitioner(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.view: Param = Param(self, "view", "")
+        self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.desired_partitions: Param = Param(self, "desired_partitions", "")
+        self.desired_partitions: Param[Optional[int]] = Param(
+            self, "desired_partitions", ""
+        )
         self._setDefault(desired_partitions=desired_partitions)
 
-        self.partition_by: Param = Param(self, "partition_by", "")
+        self.partition_by: Param[Optional[List[str]]] = Param(self, "partition_by", "")
         self._setDefault(partition_by=partition_by)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        view: str,
-        desired_partitions: Optional[int] = None,
-        partition_by: Optional[List[str]] = None,
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
@@ -68,11 +53,11 @@ class FrameworkPartitioner(FrameworkTransformer):
         num_partitions: int = result_df.rdd.getNumPartitions()
         self.logger.info(f"view {view} has {num_partitions} partitions")
         if desired_partitions and partition_by:
-            result_df = result_df.repartition(desired_partitions, partition_by)
+            result_df = result_df.repartition(desired_partitions, partition_by[0])
         elif desired_partitions:
             result_df = result_df.repartition(desired_partitions)
         elif partition_by:
-            result_df = result_df.repartition(partition_by)
+            result_df = result_df.repartition(partition_by[0])
         else:
             return df
 
@@ -86,12 +71,12 @@ class FrameworkPartitioner(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)  # type: ignore
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDesiredPartitions(self) -> Optional[int]:
-        return self.getOrDefault(self.desired_partitions)  # type: ignore
+        return self.getOrDefault(self.desired_partitions)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPartitionBy(self) -> Optional[List[str]]:
-        return self.getOrDefault(self.partition_by)  # type: ignore
+        return self.getOrDefault(self.partition_by)
