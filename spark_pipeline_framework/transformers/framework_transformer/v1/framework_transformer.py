@@ -108,36 +108,8 @@ class FrameworkTransformer(
         # noinspection PyUnresolvedReferences,PyProtectedMember
         super()._setDefault(**kwargs)  # type: ignore
 
-    # # This is here to avoid mypy from complaining since this is a protected member
-    # # @property
-    # # def _input_kwargs(self) -> Dict[str, Any]:
-    # #     return self._input_kwargs
-    #
     def _set(self, **kwargs: Any) -> None:
+        # filter out any args that don't have parameters
+        kwargs = {key: value for key, value in kwargs.items() if self.hasParam(key)}
         # noinspection PyUnresolvedReferences,PyProtectedMember
         super()._set(**kwargs)  # type: ignore
-
-    # # noinspection PyPep8Naming
-    # @property
-    # def _paramMap(self):
-    #     # noinspection PyUnresolvedReferences,PyProtectedMember
-    #     return super()._paramMap  # type: ignore
-    #
-    # # noinspection PyPep8Naming
-    # @_paramMap.setter
-    # def _paramMap(self, p):
-    #     # noinspection PyUnresolvedReferences,PyProtectedMember
-    #     super()._paramMap = p  # type: ignorer
-
-    # This is here to avoid mypy from complaining since this is a protected member
-    # noinspection PyPep8Naming
-    # def _setDefault(self, **kwargs: Any) -> None:
-    #     ...
-
-    # This is here to avoid mypy from complaining since this is a protected member
-    # _input_kwargs: Dict[str, Any]
-
-    # def _set(self, **kwargs: Any) -> None:
-    #     ...
-
-    # _paramMap: Dict[Param[Any], Any]
