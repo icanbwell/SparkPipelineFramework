@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -18,9 +18,17 @@ from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
 class FrameworkPipeline(Transformer):
-    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
+    def __init__(
+        self, parameters: Dict[str, Any], progress_logger: ProgressLogger
+    ) -> None:
+        """
+        Base class for all pipelines
+        :param parameters:
+        :param progress_logger:
+        """
         super(FrameworkPipeline, self).__init__()
         self.transformers: List[Transformer] = []
+        self.steps: List[Union[Transformer, List[Transformer]]] = []
         self.parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
 
@@ -29,6 +37,10 @@ class FrameworkPipeline(Transformer):
         return self
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        # if steps are defined but not transformers then convert steps to transformers first
+        if len(self.steps) > 0 and len(self.transformers) == 0:
+            self.transformers = self.create_steps(self.steps)
+        # get the logger to use
         logger = get_logger(__name__)
         count_of_transformers: int = len(self.transformers)
         i: int = 0

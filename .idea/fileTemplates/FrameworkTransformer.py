@@ -13,7 +13,7 @@ class $ClassName(FrameworkTransformer):
     @keyword_only
     def __init__(
         self,
-        # add your parameters here (be sure to add them to setParams below too)
+        # add your parameters here
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None
@@ -29,24 +29,9 @@ class $ClassName(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal
-    @keyword_only
-    def setParams(
-        self,
-        # add your parameters here
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None
-    ) -> Any:
-        kwargs = self._input_kwargs
-        super().setParams(
-            name=name, parameters=parameters, progress_logger=progress_logger
-        )
-        return self._set(**kwargs)
-
     def _transform(self, df: DataFrame) -> DataFrame:
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     # def getView(self) -> Optional[str]:
-    #     return self.getOrDefault(self.view)  # type: ignore
+    #     return self.getOrDefault(self.view)
