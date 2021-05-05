@@ -10,7 +10,10 @@ from spark_pipeline_framework.utilities.flattener import flatten
 
 def create_steps(
     my_list: Union[
-        List[Transformer], List[FrameworkTransformer], List[List[Transformer]]
+        List[Transformer],
+        List[FrameworkTransformer],
+        List[Union[Transformer, List[Transformer]]],
+        List[Union[FrameworkTransformer, List[FrameworkTransformer]]],
     ]
 ) -> List[Transformer]:
     return flatten(my_list)

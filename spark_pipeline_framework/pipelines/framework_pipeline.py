@@ -101,7 +101,10 @@ class FrameworkPipeline(Transformer):
     def create_steps(
         self,
         my_list: Union[
-            List[Transformer], List[FrameworkTransformer], List[List[Transformer]]
+            List[Transformer],
+            List[FrameworkTransformer],
+            List[Union[Transformer, List[Transformer]]],
+            List[Union[FrameworkTransformer, List[FrameworkTransformer]]],
         ],
     ) -> List[Transformer]:
         return create_steps(my_list)
