@@ -18,11 +18,37 @@ def create_view_from_dictionary(
     spark_session: SparkSession,
     schema: Optional[Union[DataType, str]] = None,
 ) -> DataFrame:
+    """
+    parses the dictionary and converts it to a dataframe and creates a view
+    :param view:
+    :param data:
+    :param spark_session:
+    :param schema:
+    :return: new data frame
+    """
+    df: DataFrame = create_dataframe_from_dictionary(
+        data=data, spark_session=spark_session, schema=schema
+    )
+    df.createOrReplaceTempView(name=view)
+    return df
+
+
+def create_dataframe_from_dictionary(
+    data: List[Dict[str, Any]],
+    spark_session: SparkSession,
+    schema: Optional[Union[DataType, str]] = None,
+) -> DataFrame:
+    """
+    Creates data frame from dictionary
+    :param data:
+    :param spark_session:
+    :param schema:
+    :return: data frame
+    """
     rdd: RDD[Any] = spark_session.sparkContext.parallelize(data).map(convert_to_row)
     df: DataFrame = spark_session.createDataFrame(
         data=rdd, schema=cast(AtomicType, schema)
     )
-    df.createOrReplaceTempView(name=view)
     return df
 
 
