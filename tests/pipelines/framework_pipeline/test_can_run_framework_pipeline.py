@@ -36,10 +36,10 @@ class MyPipeline(FrameworkPipeline):
                 ),
                 FeaturesCarriersV1(
                     parameters=parameters, progress_logger=progress_logger
-                ).transformers,
+                ),
                 FeaturesCarriersPythonV1(
                     parameters=parameters, progress_logger=progress_logger
-                ).transformers,
+                ),
             ]
         )
 
