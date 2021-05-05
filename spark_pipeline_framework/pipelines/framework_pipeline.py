@@ -99,6 +99,12 @@ class FrameworkPipeline(Transformer):
 
     # noinspection PyMethodMayBeStatic
     def create_steps(
-        self, my_list: List[Union[Transformer, List[Transformer]]]
+        self,
+        my_list: Union[
+            List[Transformer], List[FrameworkTransformer], List[List[Transformer]]
+        ],
     ) -> List[Transformer]:
         return create_steps(my_list)
+
+    def finalize(self) -> None:
+        pass
