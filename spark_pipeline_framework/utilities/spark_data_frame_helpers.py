@@ -1,11 +1,11 @@
 from collections import OrderedDict
-from typing import Dict, Any, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, cast
 
 # noinspection PyProtectedMember
 from pyspark import SparkContext, SQLContext, Row
 from pyspark.rdd import RDD
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StructType, DataType, AtomicType
+from pyspark.sql.types import StructType
 
 
 def convert_to_row(d: Dict[Any, Any]) -> Row:
@@ -16,7 +16,7 @@ def create_view_from_dictionary(
     view: str,
     data: List[Dict[str, Any]],
     spark_session: SparkSession,
-    schema: Optional[Union[DataType, str]] = None,
+    schema: Optional[StructType] = None,
 ) -> DataFrame:
     """
     parses the dictionary and converts it to a dataframe and creates a view
@@ -36,7 +36,7 @@ def create_view_from_dictionary(
 def create_dataframe_from_dictionary(
     data: List[Dict[str, Any]],
     spark_session: SparkSession,
-    schema: Optional[Union[DataType, str]] = None,
+    schema: Optional[StructType] = None,
 ) -> DataFrame:
     """
     Creates data frame from dictionary
@@ -45,10 +45,8 @@ def create_dataframe_from_dictionary(
     :param schema:
     :return: data frame
     """
-    rdd: RDD[Any] = spark_session.sparkContext.parallelize(data).map(convert_to_row)
-    df: DataFrame = spark_session.createDataFrame(
-        data=rdd, schema=cast(AtomicType, schema)
-    )
+    rdd: RDD[Dict[str, Any]] = spark_session.sparkContext.parallelize(data)
+    df: DataFrame = rdd.toDF(schema=schema) if schema is not None else rdd.toDF()
     return df
 
 
