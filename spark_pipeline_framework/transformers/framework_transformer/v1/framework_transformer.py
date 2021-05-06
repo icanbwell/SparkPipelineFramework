@@ -11,6 +11,7 @@ from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 
 # noinspection PyPackageRequirements
 from pyspark.sql.dataframe import DataFrame
+from typing_extensions import final
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -52,14 +53,10 @@ class FrameworkTransformer(
         return self._set(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring, PyUnusedLocal,Mypy
+    @final
     def setParams(self, **kwargs: Any) -> Any:
         # ignore any parameters
-        kwargs = {
-            key: value
-            for key, value in kwargs.items()
-            if key not in ["progress_logger", "parameters"]
-            and not isinstance(value, dict)
-        }
+        kwargs = {key: value for key, value in kwargs.items() if self.hasParam(key)}
         return self._set(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
