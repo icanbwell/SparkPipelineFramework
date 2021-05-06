@@ -49,13 +49,13 @@ class FrameworkPipeline(Transformer):
             event_name=pipeline_name, event_text=f"Starting Pipeline {pipeline_name}"
         )
         for transformer in self.transformers:
-            assert isinstance(transformer, FrameworkTransformer), type(transformer)
+            assert isinstance(transformer, Transformer), type(transformer)
             stage_name: Optional[str] = None
             try:
                 i += 1
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
-                    stage_name = transformer.getName()
+                    stage_name = transformer.getName()  # type: ignore
                     logger.info(
                         f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
                         f"({i} of {count_of_transformers}) ----"
@@ -74,7 +74,7 @@ class FrameworkPipeline(Transformer):
             except Exception as e:
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
-                    stage_name = transformer.getName()
+                    stage_name = transformer.getName()  # type: ignore
                 else:
                     stage_name = transformer.__class__.__name__
                 logger.error(
@@ -94,7 +94,7 @@ class FrameworkPipeline(Transformer):
 
                 if hasattr(transformer, "getSql"):
                     # noinspection Mypy
-                    logger.error(transformer.getSql())
+                    logger.error(transformer.getSql())  # type: ignore
                 logger.error(
                     "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 )
