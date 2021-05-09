@@ -29,8 +29,12 @@ class FrameworkPipeline(Transformer):
         super(FrameworkPipeline, self).__init__()
         self.transformers: List[Transformer] = []
         self.steps: List[Union[Transformer, List[Transformer]]] = []
-        self.parameters: Dict[str, Any] = parameters
+        self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
+
+    @property
+    def parameters(self) -> Dict[str, Any]:
+        return self.__parameters
 
     # noinspection PyUnusedLocal
     def fit(self, df: DataFrame) -> "FrameworkPipeline":
