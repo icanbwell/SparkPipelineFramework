@@ -11,6 +11,8 @@ sparkautomapper = ">=0.2.34"
 pymysql="*"
 furl="*"
 requests = ">=2.25.1"
+scrapy = "2.5.0"
+boto3 = "1.17.8"
 
 [dev-packages]
 setuptools="*"
