@@ -1,13 +1,16 @@
 import os
 import shutil
 import tempfile
+from typing import Any, Optional
 from urllib import request as url_request
 from urllib import parse as url_parse
 from zipfile import ZipFile, is_zipfile
 
 
 class ThrowOnErrorOpener(url_request.FancyURLopener):
-    def http_error_default(self, url, fp, errcode, errmsg, headers):
+    def http_error_default(
+        self, url: str, fp: Any, errcode: int, errmsg: str, headers: Any
+    ) -> Any:
         raise Exception(f"{errcode}: {errmsg}")
 
 
@@ -18,13 +21,13 @@ class FileDownloader:
     """
 
     def __init__(
-        self, url: str, download_path: str = None,
+        self, url: str, download_path: Optional[str] = "",
     ):
         self.url = url
         self.download_to_path = download_path or ""
 
     @staticmethod
-    def check_if_path_exists(path: str):
+    def check_if_path_exists(path: str) -> bool:
         if not os.path.exists(path):
             raise FileNotFoundError(f"File does not exists at this path: {path}")
         return True
@@ -34,7 +37,7 @@ class FileDownloader:
         filename = os.path.basename(url_parse.urlparse(url).path)
         filename = filename.strip(" \n\t.")
         if len(filename) == 0:
-            return None
+            return None  # type: ignore
         return filename
 
     # @staticmethod
@@ -66,7 +69,7 @@ class FileDownloader:
     #     return name
 
     @staticmethod
-    def rename_filename_if_exists(filename):
+    def rename_filename_if_exists(filename: str) -> str:
         """Expands name portion of filename with numeric ' (x)' suffix to
         return filename that doesn't exist already.
         """
@@ -83,8 +86,12 @@ class FileDownloader:
         return os.path.join(dirname, f"{name} ({idx}).{ext}")
 
     def extract_zip_files(
-        self, filename: str, path: str, out_path: str = None, create_dir: bool = True
-    ):
+        self,
+        filename: str,
+        path: str,
+        out_path: Optional[str] = None,
+        create_dir: bool = True,
+    ) -> str:
         """
 
         """
@@ -100,9 +107,9 @@ class FileDownloader:
                     zip_ref.extractall(out_path)
                 return out_path
 
-        return None
+        return None  # type: ignore
 
-    def download_files_from_url(self):
+    def download_files_from_url(self) -> str:
         """
         Function to download files from a url
 

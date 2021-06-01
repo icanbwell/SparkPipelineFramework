@@ -8,8 +8,8 @@ from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_file_transformer.v1.framework_file_transformer import (
-    FrameworkFileTransformer,
+from spark_pipeline_framework.transformers.framework_param_transformer.v1.framework_param_transformer import (
+    FrameworkParamTransformer,
 )
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
@@ -17,7 +17,7 @@ from spark_pipeline_framework.utilities.FriendlySparkException import (
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
-class FrameworkFilePipeline(FrameworkPipeline):
+class FrameworkParamPipeline(FrameworkPipeline):
     def __init__(
         self, parameters: Dict[str, Any], progress_logger: ProgressLogger
     ) -> None:
@@ -26,21 +26,21 @@ class FrameworkFilePipeline(FrameworkPipeline):
         :param parameters:
         :param progress_logger:
         """
-        super(FrameworkFilePipeline, self).__init__(
+        super(FrameworkParamPipeline, self).__init__(
             parameters=parameters, progress_logger=progress_logger,
         )
-        self.transformers: List[FrameworkFileTransformer] = []
+        self.transformers: List[FrameworkParamTransformer] = []  # type: ignore
         self.steps: List[
-            Union[FrameworkFileTransformer, List[FrameworkFileTransformer]]
-        ] = []
+            Union[FrameworkParamTransformer, List[FrameworkParamTransformer]]
+        ] = []  # type: ignore
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
 
     # noinspection PyUnusedLocal
-    def fit(self, df: DataFrame, response: List[str]) -> "FrameworkFilePipeline":
+    def fit(self, df: DataFrame, response: Dict[str, Any]) -> "FrameworkParamPipeline":  # type: ignore
         return self
 
-    def _transform(self, df: DataFrame, response: List[str]) -> List[str]:
+    def _transform(self, df: DataFrame, response: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         # if steps are defined but not transformers then convert steps to transformers first
         if len(self.steps) > 0 and len(self.transformers) == 0:
             self.transformers = self.create_steps(self.steps)
@@ -53,13 +53,13 @@ class FrameworkFilePipeline(FrameworkPipeline):
             event_name=pipeline_name, event_text=f"Starting Pipeline {pipeline_name}"
         )
         for transformer in self.transformers:
-            assert isinstance(transformer, FrameworkFileTransformer), type(transformer)
+            assert isinstance(transformer, FrameworkParamTransformer), type(transformer)
             stage_name: Optional[str] = None
             try:
                 i += 1
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
-                    stage_name = transformer.getName()  # type: ignore
+                    stage_name = transformer.getName()
                     logger.info(
                         f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
                         f"({i} of {count_of_transformers}) ----"
@@ -76,7 +76,7 @@ class FrameworkFilePipeline(FrameworkPipeline):
             except Exception as e:
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
-                    stage_name = transformer.getName()  # type: ignore
+                    stage_name = transformer.getName()
                 else:
                     stage_name = transformer.__class__.__name__
                 logger.error(
@@ -96,7 +96,7 @@ class FrameworkFilePipeline(FrameworkPipeline):
 
                 if hasattr(transformer, "getSql"):
                     # noinspection Mypy
-                    logger.error(transformer.getSql())  # type: ignore
+                    logger.error(transformer.getSql())
                 logger.error(
                     "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 )
@@ -111,23 +111,23 @@ class FrameworkFilePipeline(FrameworkPipeline):
         )
         return response
 
-    def transform(self, dataset, response, params=None):
+    def transform(self, dataset: DataFrame, response: Dict[str, Any], params: Dict[Any, Any] = None):  # type: ignore
         if params is None:
             params = dict()
         if isinstance(params, dict):
             if params:
-                return self.copy(params)._transform(dataset, response)
+                return self.copy(params)._transform(dataset, response)  # type: ignore
             else:
                 return self._transform(dataset, response)
         else:
             raise ValueError("Params must be a param map but got %s." % type(params))
 
     # noinspection PyMethodMayBeStatic
-    def create_steps(
+    def create_steps(  # type: ignore
         self,
         my_list: Union[
-            List[FrameworkFileTransformer],
-            List[Union[FrameworkFileTransformer, List[FrameworkFileTransformer]]],
+            List[FrameworkParamTransformer],
+            List[Union[FrameworkParamTransformer, List[FrameworkParamTransformer]]],
         ],
-    ) -> List[FrameworkFileTransformer]:
-        return create_steps(my_list)
+    ) -> List[FrameworkParamTransformer]:
+        return create_steps(my_list)  # type: ignore

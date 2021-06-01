@@ -1,3 +1,4 @@
+# type: ignore
 from scrapy.crawler import CrawlerProcess
 
 

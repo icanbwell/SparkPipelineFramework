@@ -1,21 +1,22 @@
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_file_transformer.v1.framework_file_transformer import (
-    FrameworkFileTransformer,
+from spark_pipeline_framework.transformers.framework_param_transformer.v1.framework_param_transformer import (
+    FrameworkParamTransformer,
 )
-from spark_pipeline_framework.utilities.scrapy_custom_crawler import ScrapyCustomCrawler
+from spark_pipeline_framework.utilities.scrapy_custom_crawler import ScrapyCustomCrawler  # type: ignore
 
 
-class FrameworkWebCrawler(FrameworkFileTransformer):
+class FrameworkWebCrawler(FrameworkParamTransformer):
     def __init__(
         self,
-        spider_class: classmethod,
-        name: str = None,
+        spider_class: type,
+        name: str = None,  # type: ignore
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
+        response_key: Optional[str] = "urls",
     ):
         assert name
 
@@ -23,8 +24,11 @@ class FrameworkWebCrawler(FrameworkFileTransformer):
             name=name, parameters=parameters, progress_logger=progress_logger
         )
         self.spider_class = spider_class
+        self.response_key = response_key or "urls"
 
-    def _transform(self, df: DataFrame, response: List[str]) -> List[str]:
+    def _transform(self, df: DataFrame, response: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         crawler = ScrapyCustomCrawler()
         crawler.crawl(self.spider_class)
-        return crawler.output.get("response", [])
+        out = crawler.output.get("response", [])
+        response[self.response_key] = out
+        return response

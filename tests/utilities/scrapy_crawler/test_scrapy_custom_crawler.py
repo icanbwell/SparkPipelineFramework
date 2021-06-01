@@ -1,4 +1,4 @@
-from spark_pipeline_framework.utilities.scrapy_custom_crawler import ScrapyCustomCrawler
+from spark_pipeline_framework.utilities.scrapy_custom_crawler import ScrapyCustomCrawler  # type: ignore
 from tests.utilities.scrapy_crawler.test_spider_class import TestSpiderClass
 
 

@@ -4,8 +4,8 @@ from typing import Dict, Any
 from library.pipelines.reference_data_download_test_pipeline.v1.test_spider_class.python_wget_module_test_spider import (
     PythonWgetModuleTestSpider,
 )
-from spark_pipeline_framework.pipelines.framework_file_pipeline import (
-    FrameworkFilePipeline,
+from spark_pipeline_framework.pipelines.framework_param_pipeline import (
+    FrameworkParamPipeline,
 )
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
@@ -17,7 +17,7 @@ from spark_pipeline_framework.transformers.framework_web_crawler.v1.framework_we
 )
 
 
-class ReferenceDataDownloadTestPipeline(FrameworkFilePipeline):
+class ReferenceDataDownloadTestPipeline(FrameworkParamPipeline):
     def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
         super(ReferenceDataDownloadTestPipeline, self).__init__(
             parameters=parameters, progress_logger=progress_logger

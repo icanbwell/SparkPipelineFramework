@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import Any, Dict
 
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
@@ -19,7 +19,7 @@ def test_webcrawler_pipeline(spark_session: SparkSession) -> None:
         spark_session.sparkContext.emptyRDD(), schema
     )
 
-    response: List[str] = []
+    response: Dict[str, Any] = {}
 
     # Act
     parameters: Dict[str, Any] = {}
