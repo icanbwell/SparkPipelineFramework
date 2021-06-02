@@ -40,34 +40,6 @@ class FileDownloader:
             return None  # type: ignore
         return filename
 
-    # @staticmethod
-    # def get_filename_from_headers(headers: Any) -> str:
-    #     """Detect filename from Content-Disposition headers if present.
-    #     :param headers: Dict/List/str:
-    #
-    #     """
-    #     if isinstance(headers, str):
-    #         headers = headers.splitlines()
-    #     if isinstance(headers, list):
-    #         headers = dict([x.split(':', 1) for x in headers])
-    #     cdisp = headers.get("Content-Disposition")
-    #     if not cdisp:
-    #         return None
-    #     cdtype = cdisp.split(';')
-    #     if len(cdtype) == 1:
-    #         return None
-    #     if cdtype[0].strip().lower() not in ('inline', 'attachment'):
-    #         return None
-    #     # several filename params is illegal, but just in case
-    #     fnames = [x for x in cdtype[1:] if x.strip().startswith('filename=')]
-    #     if len(fnames) > 1:
-    #         return None
-    #     name = fnames[0].split('=')[1].strip(' \t"')
-    #     name = os.path.basename(name)
-    #     if not name:
-    #         return None
-    #     return name
-
     @staticmethod
     def rename_filename_if_exists(filename: str) -> str:
         """Expands name portion of filename with numeric ' (x)' suffix to

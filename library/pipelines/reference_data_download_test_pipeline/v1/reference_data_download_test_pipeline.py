@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Dict, Any
 
 from library.pipelines.reference_data_download_test_pipeline.v1.test_spider_class.python_wget_module_test_spider import (
@@ -23,13 +24,8 @@ class ReferenceDataDownloadTestPipeline(FrameworkParamPipeline):
             parameters=parameters, progress_logger=progress_logger
         )
 
-        download_path: str = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "data"
-        )
+        download_path: str = os.path.join(Path(__file__).parent, "data")
 
-        # df, response
-        # df
-        # "key", "value"
         self.transformers = self.create_steps(
             [
                 FrameworkWebCrawler(

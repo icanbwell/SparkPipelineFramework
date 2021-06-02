@@ -17,7 +17,13 @@ class FrameworkWebCrawler(FrameworkParamTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         response_key: Optional[str] = "urls",
-    ):
+    ) -> None:
+        """
+        Framework to begin the crawl process for the defined spiders
+
+        :param spider_class: type <Spider class>: Spider class (spider) which has to crawl
+        :param response_key: str [optional]: Parameters key which will hold the response from the crawler
+        """
         assert name
 
         super().__init__(

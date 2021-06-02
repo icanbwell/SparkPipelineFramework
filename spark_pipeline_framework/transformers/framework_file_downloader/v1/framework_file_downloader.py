@@ -27,6 +27,14 @@ class FrameworkFileDownloader(FrameworkParamTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         extract_zips: Optional[bool] = False,
     ) -> None:
+        """
+        Framework to download files from urls
+
+        :param download_urls: list(str) [optional]: List of urls from which the files have to be downloaded
+        :param download_to_path: str [optional]: Path where the file has to be downloaded
+        :param param_key: str [optional]: Parameter key in which urls are stored
+        :param extract_zips: bool [optional]: Flag to indicate extraction of the downloaded files
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
