@@ -22,12 +22,12 @@ class FrameworkParamTransformer(FrameworkTransformer):
         self.progress_logger: Optional[ProgressLogger] = progress_logger
         self.parameters: Optional[Dict[str, Any]] = parameters
 
-    def _transform(self, df: DataFrame, response: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+    def _transform(self, df: DataFrame, response: Dict[str, Any]) -> Any:  # type: ignore
         return response
 
     def transform(  # type: ignore
         self, dataset: DataFrame, response: Dict[str, Any], params=None
-    ) -> Dict[str, Any]:
+    ) -> Any:
         if params is None:
             params = dict()
         if isinstance(params, dict):

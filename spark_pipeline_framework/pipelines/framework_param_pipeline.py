@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
+from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -10,6 +11,9 @@ from spark_pipeline_framework.progress_logger.progress_log_metric import (
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_param_transformer.v1.framework_param_transformer import (
     FrameworkParamTransformer,
+)
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
 )
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
@@ -29,9 +33,14 @@ class FrameworkParamPipeline(FrameworkPipeline):
         super(FrameworkParamPipeline, self).__init__(
             parameters=parameters, progress_logger=progress_logger,
         )
-        self.transformers: List[FrameworkParamTransformer] = []  # type: ignore
+        self.transformers: List[Union[FrameworkParamTransformer, Transformer]] = []
         self.steps: List[
-            Union[FrameworkParamTransformer, List[FrameworkParamTransformer]]
+            Union[
+                FrameworkParamTransformer,
+                List[FrameworkParamTransformer],
+                Transformer,
+                List[Transformer],
+            ]
         ] = []  # type: ignore
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
@@ -40,10 +49,10 @@ class FrameworkParamPipeline(FrameworkPipeline):
     def fit(self, df: DataFrame, response: Dict[str, Any]) -> "FrameworkParamPipeline":  # type: ignore
         return self
 
-    def _transform(self, df: DataFrame, response: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+    def _transform(self, df: DataFrame, response: Dict[str, Any]) -> Any:  # type: ignore
         # if steps are defined but not transformers then convert steps to transformers first
         if len(self.steps) > 0 and len(self.transformers) == 0:
-            self.transformers = self.create_steps(self.steps)
+            self.transformers = self.create_steps(self.steps)  # type: ignore
         # get the logger to use
         logger = get_logger(__name__)
         count_of_transformers: int = len(self.transformers)
@@ -53,7 +62,7 @@ class FrameworkParamPipeline(FrameworkPipeline):
             event_name=pipeline_name, event_text=f"Starting Pipeline {pipeline_name}"
         )
         for transformer in self.transformers:
-            assert isinstance(transformer, FrameworkParamTransformer), type(transformer)
+            assert isinstance(transformer, FrameworkTransformer), type(transformer)
             stage_name: Optional[str] = None
             try:
                 i += 1
@@ -61,7 +70,7 @@ class FrameworkParamPipeline(FrameworkPipeline):
                     # noinspection Mypy
                     stage_name = transformer.getName()
                     logger.info(
-                        f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
+                        f"---- Running param pipeline [{pipeline_name}] transformer [{stage_name}]  "
                         f"({i} of {count_of_transformers}) ----"
                     )
                 else:
@@ -72,7 +81,10 @@ class FrameworkParamPipeline(FrameworkPipeline):
                     self.progress_logger.log_event(
                         pipeline_name, event_text=f"Running pipeline step {stage_name}"
                     )
-                    response = transformer.transform(dataset=df, response=response)
+                    if isinstance(transformer, FrameworkParamTransformer):
+                        response = transformer.transform(dataset=df, response=response)
+                    elif isinstance(transformer, FrameworkTransformer):
+                        response = transformer.transform(dataset=df)  # type: ignore
             except Exception as e:
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
@@ -123,11 +135,15 @@ class FrameworkParamPipeline(FrameworkPipeline):
             raise ValueError("Params must be a param map but got %s." % type(params))
 
     # noinspection PyMethodMayBeStatic
-    def create_steps(  # type: ignore
+    def create_steps(
         self,
         my_list: Union[
+            List[Transformer],
+            List[FrameworkTransformer],
             List[FrameworkParamTransformer],
+            List[Union[Transformer, List[Transformer]]],
+            List[Union[FrameworkTransformer, List[FrameworkTransformer]]],
             List[Union[FrameworkParamTransformer, List[FrameworkParamTransformer]]],
         ],
-    ) -> List[FrameworkParamTransformer]:
+    ) -> List[Union[Transformer, FrameworkParamTransformer]]:
         return create_steps(my_list)  # type: ignore
