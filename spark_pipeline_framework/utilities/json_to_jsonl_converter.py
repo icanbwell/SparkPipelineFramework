@@ -18,13 +18,7 @@ def convert_json_to_jsonl(src_file: Path, dst_file: Path) -> Path:
     if not os.path.exists(dst_folder):
         os.mkdir(dst_folder)
 
-    # first detect if the src_file is already in jsonl format
-    with open(src_file, "r") as file:
-        beginning_lines: List[str] = file.readlines()
-        # if each line begins with { then this is a jsonl file
-        is_jsonl_file: bool = all(
-            [line.lstrip().startswith("{") for line in beginning_lines]
-        )
+    is_jsonl_file: bool = check_if_file_is_jsonl(src_file=src_file)
 
     if is_jsonl_file:  # already in jsonl format
         with open(src_file, "r") as file:
@@ -51,3 +45,21 @@ def convert_json_to_jsonl(src_file: Path, dst_file: Path) -> Path:
             file.write("\n")
 
     return dst_file
+
+
+def check_if_file_is_jsonl(src_file: Path) -> bool:
+    """
+    Returns whether the file is in jsonl format
+    :param src_file:
+    :type src_file:
+    :return:
+    :rtype:
+    """
+    # first detect if the src_file is already in jsonl format
+    with open(src_file, "r") as file:
+        beginning_lines: List[str] = file.readlines()
+        # if each line begins with { then this is a jsonl file
+        is_jsonl_file: bool = all(
+            [line.lstrip().startswith("{") for line in beginning_lines]
+        )
+    return is_jsonl_file
