@@ -9,6 +9,9 @@ from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner_exception import (
+    FrameworkMappingRunnerException,
+)
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
@@ -86,7 +89,9 @@ class FrameworkMappingLoader(FrameworkTransformer):
             try:
                 a.transform(df=df)
             except Exception as e:
-                raise Exception(f"Error running automapper {a.view}") from e
+                raise FrameworkMappingRunnerException(
+                    msg=f"Error running automapper {a.view}", exception=e
+                ) from e
 
         return df
 

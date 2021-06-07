@@ -49,4 +49,5 @@ def test_me() -> None:
                     formatted_struct1 += '"'
                 last_item_was_letter = True
                 formatted_struct1 += item
+    print("")
     print(formatted_struct1)

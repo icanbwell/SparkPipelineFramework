@@ -5,6 +5,9 @@ from typing import Any, Optional, List
 
 from pyspark.sql.utils import AnalysisException
 
+from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner_exception import (
+    FrameworkMappingRunnerException,
+)
 from spark_pipeline_framework.utilities.cannot_cast_exception_parser import (
     parse_cannot_cast_exception,
 )
@@ -26,17 +29,25 @@ class FriendlySparkException(Exception):
         try:
             self.exception: Exception = exception
             self.stage_name: Optional[str] = stage_name
-            # Summary is a boolean argument
-            # If True, it prints the exception summary
-            # This way, we can avoid printing the summary all
-            # the way along the exception "bubbling up"
-            error_text: str = (
-                (stage_name or "") + ": " + FriendlySparkException.exception_summary()
-            )
-            self.message: str = error_text
+            self.message: str = ""
             if isinstance(exception, AnalysisException):
                 self.message = str(exception)
-            super().__init__(error_text)
+            elif isinstance(exception, FrameworkMappingRunnerException):
+                self.message = str(exception)
+            else:
+                # Summary is a boolean argument
+                # If True, it prints the exception summary
+                # This way, we can avoid printing the summary all
+                # the way along the exception "bubbling up"
+                error_text: str = (
+                    (stage_name or "")
+                    + ": "
+                    + FriendlySparkException.exception_summary()
+                )
+                self.message = error_text
+
+            # print(f"TEMPO exception type: {type(exception)}")
+            super().__init__(self.message)
         except KeyError:
             pass
 
