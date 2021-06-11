@@ -34,5 +34,4 @@ def test_file_downloader(spark_session: SparkSession) -> None:
     ).transform(df, response)
 
     # Assert
-    print(response)
     assert response

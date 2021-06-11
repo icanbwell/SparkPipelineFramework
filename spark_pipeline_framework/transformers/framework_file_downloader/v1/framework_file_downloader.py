@@ -69,16 +69,13 @@ class FrameworkFileDownloader(FrameworkParamTransformer):
 
         for url in urls:
             with ProgressLogMetric(name=name or url, progress_logger=progress_logger):
-                downloader = FileDownloader(url=url, download_path=download_path)
+                downloader = FileDownloader(
+                    url=url, download_path=download_path, extract_archives=extract_zips
+                )
                 result = downloader.download_files_from_url()
-                if extract_zips:
-                    extracted_result = downloader.extract_zip_files(
-                        result, download_path
-                    )
-                    result = extracted_result or result
                 out.append(result)
 
-        response["filenames"] = out
+        response["filepaths"] = out
 
         return response
 

@@ -2,9 +2,12 @@ import os
 import shutil
 import tempfile
 from typing import Any, Optional
-from urllib import request as url_request
 from urllib import parse as url_parse
+from urllib import request as url_request
 from zipfile import ZipFile, is_zipfile
+
+import boto3  # type: ignore
+import requests
 
 
 class ThrowOnErrorOpener(url_request.FancyURLopener):
@@ -21,10 +24,11 @@ class FileDownloader:
     """
 
     def __init__(
-        self, url: str, download_path: Optional[str] = "",
+        self, url: str, download_path: str, extract_archives: Optional[bool] = False,
     ):
         self.url = url
-        self.download_to_path = download_path or ""
+        self.download_to_path = download_path
+        self.extract_archives = extract_archives
 
     @staticmethod
     def check_if_path_exists(path: str) -> bool:
@@ -58,21 +62,19 @@ class FileDownloader:
         return os.path.join(dirname, f"{name} ({idx}).{ext}")
 
     def extract_zip_files(
-        self,
-        filename: str,
-        path: str,
-        out_path: Optional[str] = None,
-        create_dir: bool = True,
+        self, filename: str, path: str, out_path: Optional[str] = None,
     ) -> str:
         """
-
+        This function extracts the archive files and returns the corresponding file path.
+        Returns null if the specified path does not exists
+        :param filename: str: Name of the archive file
+        :param path: str: File path of the archive file
+        :param out_path: optional(str): Destination file path where the extracted files should be stored (default is same as path)
+        :returns filename: str: Output file path
         """
         file_loc = os.path.join(path, filename)
         out_path = out_path or path
 
-        # if create_dir:
-        #     if self.check_if_path_exists(out_path):
-        #         out_path = os.path.join(out_path, filename)
         if self.check_if_path_exists(path):
             if is_zipfile(file_loc):
                 with ZipFile(file_loc, "r") as zip_ref:
@@ -81,13 +83,8 @@ class FileDownloader:
 
         return None  # type: ignore
 
-    def download_files_from_url(self) -> str:
-        """
-        Function to download files from a url
-
-        """
-        name_from_url = self.get_filename_from_url(self.url)
-        prefix = (name_from_url or self.download_to_path or "") + ".."
+    def download_files_locally(self, filename: str) -> str:
+        prefix = (filename or self.download_to_path or "") + ".."
         (fd, tmpfile) = tempfile.mkstemp(".tmp", prefix=prefix, dir=".")
         os.close(fd)
         os.unlink(tmpfile)
@@ -98,12 +95,51 @@ class FileDownloader:
         (tmpfile, headers) = ThrowOnErrorOpener().retrieve(self.url, tmpfile)
 
         if os.path.isdir(self.download_to_path):
-            filename = name_from_url
-            filename = os.path.join(self.download_to_path, filename)
+            filepath = filename
+            filepath = os.path.join(self.download_to_path, filepath)
         else:
-            filename = self.download_to_path or name_from_url
-        if os.path.exists(filename):
-            filename = self.rename_filename_if_exists(filename)
-        shutil.move(tmpfile, filename)
+            filepath = self.download_to_path or filename
+        if os.path.exists(filepath):
+            filepath = self.rename_filename_if_exists(filepath)
+        shutil.move(tmpfile, filepath)
 
-        return filename
+        if self.extract_archives:
+            filepath = self.extract_zip_files(
+                filename=filepath, path=self.download_to_path,
+            )
+
+        return filepath
+
+    def download_files_to_s3(
+        self, filename: str, bucket: str, download_path: str
+    ) -> str:
+        file_request = requests.get(self.url, stream=True)
+        s3_resource = boto3.resource("s3")
+
+        bucket = s3_resource.Bucket(bucket)
+        s3_location = f"{download_path}/{filename}"
+
+        if bucket.creation_date is not None:  # type: ignore
+            return bucket.upload_fileobj(file_request.raw, s3_location)  # type: ignore
+        else:
+            raise s3_resource.exception.NoSuchBucket(f"{bucket} does not exists!!")
+
+    def download_files_from_url(self) -> str:
+        """
+        Function to download files from a url
+
+        """
+        filename = self.get_filename_from_url(self.url)
+        url_segments = url_parse.urlparse(self.download_to_path)
+
+        if url_segments.scheme in ["s3", "s3a"]:
+            return os.path.join(
+                self.url,
+                self.download_files_to_s3(
+                    str(filename),
+                    str(url_segments.netloc),
+                    str(url_segments.path).strip("/"),
+                ),
+            )
+        else:
+            return self.download_files_locally(filename)
