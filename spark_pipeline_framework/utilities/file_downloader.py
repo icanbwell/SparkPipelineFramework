@@ -63,7 +63,7 @@ class FileDownloader:
 
     def extract_zip_files(
         self, filename: str, path: str, out_path: Optional[str] = None,
-    ) -> str:
+    ) -> Optional[str]:
         """
         This function extracts the archive files and returns the corresponding file path.
         Returns null if the specified path does not exists
@@ -81,7 +81,7 @@ class FileDownloader:
                     zip_ref.extractall(out_path)
                 return out_path
 
-        return None  # type: ignore
+        return None
 
     def download_files_locally(self, filename: str) -> str:
         prefix = (filename or self.download_to_path or "") + ".."
@@ -104,8 +104,9 @@ class FileDownloader:
         shutil.move(tmpfile, filepath)
 
         if self.extract_archives:
-            filepath = self.extract_zip_files(
-                filename=filepath, path=self.download_to_path,
+            filepath = (
+                self.extract_zip_files(filename=filepath, path=self.download_to_path,)
+                or filepath
             )
 
         return filepath
