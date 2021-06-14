@@ -148,3 +148,5 @@ tests/**/temp*/
 /tests/metastore_db/
 /metastore_db/
 /tests/**/metastore_db/
+/tests/transformers/framework_file_downloader/v1/data/
+/tests/utilities/file_downloader/data/

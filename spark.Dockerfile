@@ -1,4 +1,4 @@
-FROM imranq2/spark_python:0.1.25
+FROM imranq2/spark_python:0.1.27
 # https://github.com/imranq2/docker.spark_python
 USER root
 
