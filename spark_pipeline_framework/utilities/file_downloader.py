@@ -84,7 +84,8 @@ class FileDownloader:
         return None
 
     def download_files_locally(self, filename: str) -> str:
-        prefix = (filename or self.download_to_path or "") + ".."
+        download_to_path = self.download_to_path[7:]
+        prefix = (filename or download_to_path or "") + ".."
         (fd, tmpfile) = tempfile.mkstemp(".tmp", prefix=prefix, dir=".")
         os.close(fd)
         os.unlink(tmpfile)
@@ -94,18 +95,18 @@ class FileDownloader:
 
         (tmpfile, headers) = ThrowOnErrorOpener().retrieve(self.url, tmpfile)
 
-        if os.path.isdir(self.download_to_path):
+        if os.path.isdir(download_to_path):
             filepath = filename
-            filepath = os.path.join(self.download_to_path, filepath)
+            filepath = os.path.join(download_to_path, filepath)
         else:
-            filepath = self.download_to_path or filename
+            filepath = download_to_path or filename
         if os.path.exists(filepath):
             filepath = self.rename_filename_if_exists(filepath)
         shutil.move(tmpfile, filepath)
 
         if self.extract_archives:
             filepath = (
-                self.extract_zip_files(filename=filepath, path=self.download_to_path,)
+                self.extract_zip_files(filename=filepath, path=download_to_path,)
                 or filepath
             )
 
@@ -142,5 +143,7 @@ class FileDownloader:
                     str(url_segments.path).strip("/"),
                 ),
             )
-        else:
+        elif url_segments.scheme in ["file"]:
             return self.download_files_locally(filename)
+        else:
+            raise NotImplementedError
