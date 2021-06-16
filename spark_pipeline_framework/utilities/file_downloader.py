@@ -126,7 +126,7 @@ class FileDownloader:
         else:
             raise s3_resource.exception.NoSuchBucket(f"{bucket} does not exists!!")
 
-    def download_files_from_url(self) -> str:
+    def download_files_from_url(self) -> Optional[str]:
         """
         Function to download files from a url
 
@@ -135,7 +135,7 @@ class FileDownloader:
         url_segments = url_parse.urlparse(self.download_to_path)
 
         if url_segments.scheme in ["s3", "s3a"]:
-            return os.path.join(
+            filepath = os.path.join(
                 self.url,
                 self.download_files_to_s3(
                     str(filename),
@@ -144,6 +144,11 @@ class FileDownloader:
                 ),
             )
         elif url_segments.scheme in ["file"]:
-            return self.download_files_locally(filename)
+            filepath = self.download_files_locally(filename)
         else:
             raise NotImplementedError
+
+        if filepath:
+            return filename
+
+        return None

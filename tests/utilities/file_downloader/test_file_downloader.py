@@ -14,4 +14,4 @@ def test_file_downloader() -> None:
     filename = downloader.download_files_from_url()
 
     # Assert
-    assert os.path.exists(os.path.join(download_path, filename))
+    assert os.path.exists(os.path.join(download_path, filename))  # type: ignore
