@@ -14,5 +14,6 @@ def test_file_downloader() -> None:
     filename = downloader.download_files_from_url()
 
     # Assert
+    local_file_protocol_length = len("file://")
     if download_path.split(":")[0] in ["file"]:
-        assert os.path.exists(os.path.join(download_path[7:], filename))  # type: ignore
+        assert os.path.exists(os.path.join(download_path[local_file_protocol_length:], filename))  # type: ignore

@@ -84,7 +84,8 @@ class FileDownloader:
         return None
 
     def download_files_locally(self, filename: str) -> str:
-        download_to_path = self.download_to_path[7:]
+        local_file_protocol_length: int = len("file://")
+        download_to_path = self.download_to_path[local_file_protocol_length:]
         prefix = (filename or download_to_path or "") + ".."
         (fd, tmpfile) = tempfile.mkstemp(".tmp", prefix=prefix, dir=".")
         os.close(fd)
