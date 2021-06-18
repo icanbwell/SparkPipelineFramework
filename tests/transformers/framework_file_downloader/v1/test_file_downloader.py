@@ -24,7 +24,7 @@ def test_file_downloader(spark_session: SparkSession) -> None:
     response: Dict[str, Any] = {}
 
     download_url: str = "https://files.pythonhosted.org/packages/47/6a/62e288da7bcda82b935ff0c6cfe542970f04e29c756b0e147251b2fb251f/wget-3.2.zip"
-    download_to_path: str = os.path.join(Path(__file__).parent, "data")
+    download_to_path: str = f"file://{os.path.join(Path(__file__).parent, 'data')}"
 
     # Act
     response = FrameworkFileDownloader(

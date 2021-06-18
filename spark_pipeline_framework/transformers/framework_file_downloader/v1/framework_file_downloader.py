@@ -73,9 +73,10 @@ class FrameworkFileDownloader(FrameworkParamTransformer):
                     url=url, download_path=download_path, extract_archives=extract_zips
                 )
                 result = downloader.download_files_from_url()
-                out.append(result)
+                if result:
+                    out.append(str(result))
 
-        response["filepaths"] = out
+        response["filenames"] = out
 
         return response
 

@@ -84,7 +84,7 @@ class FrameworkParamPipeline(FrameworkPipeline):
                     if isinstance(transformer, FrameworkParamTransformer):
                         response = transformer.transform(dataset=df, response=response)
                     elif isinstance(transformer, FrameworkTransformer):
-                        response = transformer.transform(dataset=df)  # type: ignore
+                        _ = transformer.transform(dataset=df)
             except Exception as e:
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy

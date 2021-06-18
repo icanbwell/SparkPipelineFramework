@@ -84,7 +84,9 @@ class FileDownloader:
         return None
 
     def download_files_locally(self, filename: str) -> str:
-        prefix = (filename or self.download_to_path or "") + ".."
+        local_file_protocol_length: int = len("file://")
+        download_to_path = self.download_to_path[local_file_protocol_length:]
+        prefix = (filename or download_to_path or "") + ".."
         (fd, tmpfile) = tempfile.mkstemp(".tmp", prefix=prefix, dir=".")
         os.close(fd)
         os.unlink(tmpfile)
@@ -94,18 +96,18 @@ class FileDownloader:
 
         (tmpfile, headers) = ThrowOnErrorOpener().retrieve(self.url, tmpfile)
 
-        if os.path.isdir(self.download_to_path):
+        if os.path.isdir(download_to_path):
             filepath = filename
-            filepath = os.path.join(self.download_to_path, filepath)
+            filepath = os.path.join(download_to_path, filepath)
         else:
-            filepath = self.download_to_path or filename
+            filepath = download_to_path or filename
         if os.path.exists(filepath):
             filepath = self.rename_filename_if_exists(filepath)
         shutil.move(tmpfile, filepath)
 
         if self.extract_archives:
             filepath = (
-                self.extract_zip_files(filename=filepath, path=self.download_to_path,)
+                self.extract_zip_files(filename=filepath, path=download_to_path,)
                 or filepath
             )
 
@@ -125,7 +127,7 @@ class FileDownloader:
         else:
             raise s3_resource.exception.NoSuchBucket(f"{bucket} does not exists!!")
 
-    def download_files_from_url(self) -> str:
+    def download_files_from_url(self) -> Optional[str]:
         """
         Function to download files from a url
 
@@ -134,7 +136,7 @@ class FileDownloader:
         url_segments = url_parse.urlparse(self.download_to_path)
 
         if url_segments.scheme in ["s3", "s3a"]:
-            return os.path.join(
+            filepath = os.path.join(
                 self.url,
                 self.download_files_to_s3(
                     str(filename),
@@ -142,5 +144,12 @@ class FileDownloader:
                     str(url_segments.path).strip("/"),
                 ),
             )
+        elif url_segments.scheme in ["file"]:
+            filepath = self.download_files_locally(filename)
         else:
-            return self.download_files_locally(filename)
+            raise NotImplementedError
+
+        if filepath:
+            return filename
+
+        return None
