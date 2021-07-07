@@ -37,6 +37,7 @@ def test_can_run_framework_mapping_runner_multiple_mappings(
             data_dir.joinpath("library/features/carriers_multiple_mappings/v1")
         ),
         import_module_name=".mapping",
+        function_name="mapping",
     )
     with ProgressLogger() as progress_logger:
         FrameworkMappingLoader(

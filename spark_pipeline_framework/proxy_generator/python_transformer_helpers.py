@@ -55,7 +55,7 @@ def get_python_transformer_from_location(
 
 
 def get_python_function_from_location(
-    location: str, import_module_name: str
+    location: str, import_module_name: str, function_name: Optional[str] = None
 ) -> Callable[[Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]]:
     assert location
     search = re.search(r"/library/", location)
@@ -66,9 +66,20 @@ def get_python_function_from_location(
     module = import_module(import_module_name, lib_path)
     md = module.__dict__
     # noinspection PyTypeChecker
+    my_functions: List[
+        Callable[[Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]]
+    ] = (
+        [md[c] for c in md if isinstance(md[c], types.FunctionType)]
+        if not function_name
+        else [
+            md[c]
+            for c in md
+            if isinstance(md[c], types.FunctionType) and c == function_name
+        ]
+    )
     my_function: Callable[
         [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
-    ] = [md[c] for c in md if isinstance(md[c], types.FunctionType)][0]
+    ] = my_functions[0]
     my_function_signature = signature(my_function)
     my_function_args = [
         param

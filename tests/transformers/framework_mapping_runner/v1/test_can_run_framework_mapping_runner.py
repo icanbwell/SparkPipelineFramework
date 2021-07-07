@@ -33,6 +33,7 @@ def test_can_run_framework_mapping_runner(spark_session: SparkSession) -> None:
     ] = get_python_function_from_location(
         location=str(data_dir.joinpath("library/features/carriers_mapping/v1")),
         import_module_name=".mapping",
+        function_name="mapping",
     )
     with ProgressLogger() as progress_logger:
         FrameworkMappingLoader(

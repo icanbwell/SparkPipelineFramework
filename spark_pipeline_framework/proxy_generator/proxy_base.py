@@ -143,7 +143,9 @@ class ProxyBase(FrameworkTransformer):
         return FrameworkMappingLoader(
             view=parameters["view"] if parameters and "view" in parameters else "",
             mapping_function=get_python_function_from_location(
-                location=self.location, import_module_name=import_module_name
+                location=self.location,
+                import_module_name=import_module_name,
+                function_name="mapping",
             ),
             parameters=parameters,
             progress_logger=self.getProgressLogger(),
