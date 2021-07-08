@@ -70,6 +70,8 @@ class FrameworkJsonExporter(FrameworkTransformer):
                     assert not spark_is_data_frame_empty(df=df)
                     df.write.mode("overwrite").json(path=str(path))
 
+                self.logger.info(f"[{name or view}] written to {path}")
+
             except AnalysisException as e:
                 self.logger.error(f"[{name or view}]File write failed to {path}")
                 raise e
