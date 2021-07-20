@@ -31,6 +31,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         cache_table: bool = True,
         schema: Optional[StructType] = None,
         create_file_path: bool = False,
+        mapping_file_name: Optional[str] = None,
     ) -> None:
         super().__init__(
             view=view,

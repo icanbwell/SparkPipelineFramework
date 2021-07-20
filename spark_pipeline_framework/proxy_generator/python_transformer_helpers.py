@@ -17,6 +17,7 @@ def get_python_transformer_from_location(
     import_module_name: str,
     parameters: Dict[str, Any],
     progress_logger: Optional[ProgressLogger],
+    mapping_file_name: Optional[str] = None,
 ) -> Transformer:
     assert location
     # assert isinstance(parameters, dict)
@@ -43,6 +44,7 @@ def get_python_transformer_from_location(
     class_parameters = parameters.copy()
     class_parameters["parameters"] = parameters
     class_parameters["progress_logger"] = progress_logger
+    class_parameters["mapping_file_name"] = mapping_file_name
     if len(my_class_args) > 0 and len(class_parameters) > 0:
         return cast(
             Transformer,

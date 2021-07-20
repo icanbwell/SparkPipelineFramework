@@ -27,6 +27,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False,
+        mapping_file_name: Optional[str] = None,
     ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -44,6 +45,11 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
         self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=None)
+
+        self.mapping_file_name: Param[Optional[str]] = Param(
+            self, "mapping_file_name", ""
+        )
+        self._setDefault(mapping_file_name=None)
 
         self.log_sql: Param[bool] = Param(self, "log_sql", "")
         self._setDefault(log_sql=False)
@@ -98,3 +104,10 @@ class FrameworkSqlTransformer(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
         return self.getOrDefault(self.verify_count_remains_same)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getMappingFileName(self) -> Optional[str]:
+        return self.getOrDefault(self.mapping_file_name)
+
+    def __str__(self) -> str:
+        return f"{self.mapping_file_name}: view={self.view}"

@@ -1,11 +1,12 @@
 # noinspection DuplicatedCode
+from os import environ
 from sys import stderr
 from logging import Logger, getLogger, StreamHandler, Formatter, INFO
 
 
 def get_logger(name: str, level: int = INFO) -> Logger:
     logger: Logger = getLogger(name)
-    logger.setLevel(level)
+    logger.setLevel(environ.get("LOGLEVEL") or level)
 
     if logger.handlers:
         pass

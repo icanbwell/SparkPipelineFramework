@@ -110,3 +110,12 @@ class FrameworkTransformer(
         kwargs = {key: value for key, value in kwargs.items() if self.hasParam(key)}
         # noinspection PyUnresolvedReferences,PyProtectedMember
         super()._set(**kwargs)  # type: ignore
+
+    def __str__(self) -> str:
+        stage_name: str = ""
+        stage_name += f"name={self.getName()} "
+        if hasattr(self, "getView"):
+            # noinspection Mypy
+            stage_name += f"view={self.getView()} "  # type: ignore
+        stage_name += "type=" + self.__class__.__name__
+        return stage_name
