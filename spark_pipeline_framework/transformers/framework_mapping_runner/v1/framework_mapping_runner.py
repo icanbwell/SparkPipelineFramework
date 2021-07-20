@@ -31,6 +31,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
+        mapping_file_name: Optional[str] = None,
     ) -> None:
         """
         This class loads AutoMappers and runs them
@@ -82,15 +83,22 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
         assert isinstance(auto_mappers, list)
 
-        for a in auto_mappers:
-            assert isinstance(a, AutoMapper)
-            if a.view:
-                self.views.append(a.view)
+        i: int = 0
+        count: int = len(auto_mappers)
+        for automapper in auto_mappers:
+            i += 1
+            assert isinstance(automapper, AutoMapper)
+            if automapper.view:
+                self.views.append(automapper.view)
+            self.logger.info(
+                f"---- Running AutoMapper {i} of {count} [{automapper}] ----"
+            )
+
             try:
-                a.transform(df=df)
+                automapper.transform(df=df)
             except Exception as e:
                 raise FrameworkMappingRunnerException(
-                    msg=f"Error running automapper {a.view}", exception=e
+                    msg=f"Error running automapper {automapper.view}", exception=e
                 ) from e
 
         return df
@@ -106,3 +114,6 @@ class FrameworkMappingLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMappingFunction(self) -> AutoMapperFunction:
         return self.mapping_function
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}: {self.getView()}"

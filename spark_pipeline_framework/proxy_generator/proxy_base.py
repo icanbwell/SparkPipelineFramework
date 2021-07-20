@@ -9,6 +9,7 @@ from pyspark.ml.base import Transformer
 # noinspection PyPackageRequirements
 from pyspark.sql import DataFrame
 
+from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
     get_python_transformer_from_location,
@@ -44,6 +45,7 @@ class ProxyBase(FrameworkTransformer):
         self.verify_count_remains_same: bool = verify_count_remains_same
         self.location: str = str(location)
         self.my_transformers: List[Transformer] = []
+        self.logger = get_logger(__name__)
 
         assert self.location
         # Iterate over files to create transformers
@@ -68,6 +70,7 @@ class ProxyBase(FrameworkTransformer):
                         path_to_csv=path.join(self.location, file),
                         delimiter=parameters.get("delimiter", ","),
                         has_header=parameters.get("has_header", True),
+                        mapping_file_name=file,
                     )
                 )
             elif file.endswith(".sql"):
@@ -82,6 +85,7 @@ class ProxyBase(FrameworkTransformer):
                         log_sql=parameters.get("debug_log_sql", False),
                         view=file.replace(".sql", ""),
                         verify_count_remains_same=verify_count_remains_same,
+                        mapping_file_name=file,
                     )
                 )
             elif file.endswith("mapping.py"):
@@ -89,12 +93,12 @@ class ProxyBase(FrameworkTransformer):
                 # strip off .py to get the module name
                 import_module_name: str = file_name_only.replace(".py", "")
                 self.my_transformers.append(
-                    self.get_python_mapping_transformer("." + import_module_name)
+                    self.get_python_mapping_transformer("." + import_module_name, file)
                 )
             elif file.endswith("calculate.py") or file.endswith("pipeline.py"):
                 file_name_only = file.replace(".py", "")
                 self.my_transformers.append(
-                    self.get_python_transformer(f".{file_name_only}")
+                    self.get_python_transformer(f".{file_name_only}", file)
                 )
 
         assert len(self.my_transformers) > 0, (
@@ -123,7 +127,14 @@ class ProxyBase(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         # iterate through my transformers
         transformer: Transformer
+        i: int = 0
+        count: int = len(self.my_transformers)
         for transformer in self.my_transformers:
+            i += 1
+            self.logger.info(
+                f"---- Running mapping transformer {i} of {count} [{transformer}]  "
+            )
+
             df = transformer.transform(df)
         return df
 
@@ -131,7 +142,9 @@ class ProxyBase(FrameworkTransformer):
     def fit(self, df: DataFrame) -> Transformer:
         return self
 
-    def get_python_transformer(self, import_module_name: str) -> Transformer:
+    def get_python_transformer(
+        self, import_module_name: str, mapping_file_name: Optional[str] = None
+    ) -> Transformer:
         progress_logger = self.getProgressLogger()
         assert progress_logger
         return get_python_transformer_from_location(
@@ -139,9 +152,12 @@ class ProxyBase(FrameworkTransformer):
             import_module_name=import_module_name,
             parameters=self.getParameters() or {},
             progress_logger=progress_logger,
+            mapping_file_name=mapping_file_name,
         )
 
-    def get_python_mapping_transformer(self, import_module_name: str) -> Transformer:
+    def get_python_mapping_transformer(
+        self, import_module_name: str, mapping_file_name: Optional[str]
+    ) -> Transformer:
         parameters: Optional[Dict[str, Any]] = self.getParameters()
         return FrameworkMappingLoader(
             view=parameters["view"] if parameters and "view" in parameters else "",
@@ -152,4 +168,5 @@ class ProxyBase(FrameworkTransformer):
             ),
             parameters=parameters,
             progress_logger=self.getProgressLogger(),
+            mapping_file_name=mapping_file_name,
         )

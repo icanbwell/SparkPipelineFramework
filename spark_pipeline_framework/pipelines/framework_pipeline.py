@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -54,25 +54,19 @@ class FrameworkPipeline(Transformer):
         )
         for transformer in self.transformers:
             assert isinstance(transformer, Transformer), type(transformer)
-            stage_name: Optional[str] = None
             try:
                 i += 1
-                if hasattr(transformer, "getName"):
-                    # noinspection Mypy
-                    stage_name = transformer.getName()  # type: ignore
-                    logger.info(
-                        f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
-                        f"({i} of {count_of_transformers}) ----"
-                    )
-                else:
-                    stage_name = transformer.__class__.__name__
-                    # self.spark_session.sparkContext.setJobDescription(stage_name)
-                    # print_memory_stats(sc(df))
+                logger.info(
+                    f"---- Running pipeline [{pipeline_name}] transformer [{transformer}]  "
+                    f"({i} of {count_of_transformers}) ----"
+                )
+
                 with ProgressLogMetric(
-                    progress_logger=self.progress_logger, name=stage_name or "unknown"
+                    progress_logger=self.progress_logger,
+                    name=str(transformer) or "unknown",
                 ):
                     self.progress_logger.log_event(
-                        pipeline_name, event_text=f"Running pipeline step {stage_name}"
+                        pipeline_name, event_text=f"Running pipeline step {transformer}"
                     )
                     df = transformer.transform(dataset=df)
             except Exception as e:
