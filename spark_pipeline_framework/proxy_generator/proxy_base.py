@@ -3,7 +3,10 @@ from os import listdir, path
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 
+# noinspection PyPackageRequirements
 from pyspark.ml.base import Transformer
+
+# noinspection PyPackageRequirements
 from pyspark.sql import DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -44,7 +47,7 @@ class ProxyBase(FrameworkTransformer):
 
         assert self.location
         # Iterate over files to create transformers
-        files: List[str] = listdir(self.location)
+        files: List[str] = sorted(listdir(self.location))
         index_of_module: int = self.location.rfind("/library/")
         module_ = index_of_module + 1
         module_name: str = self.location[module_:].replace("/", ".")
