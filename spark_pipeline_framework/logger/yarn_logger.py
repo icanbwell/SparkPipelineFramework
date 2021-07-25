@@ -1,12 +1,13 @@
-# noinspection DuplicatedCode
 from os import environ
 from sys import stderr
 from logging import Logger, getLogger, StreamHandler, Formatter, INFO
+from typing import Union
 
 
-def get_logger(name: str, level: int = INFO) -> Logger:
+def get_logger(name: str, level: Union[int, str] = INFO) -> Logger:
     logger: Logger = getLogger(name)
-    logger.setLevel(environ.get("LOGLEVEL") or level)
+    level = environ.get("LOGLEVEL") or level
+    logger.setLevel(level)
 
     if logger.handlers:
         pass
