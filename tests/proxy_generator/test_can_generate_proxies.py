@@ -80,7 +80,7 @@ def test_can_generate_proxies() -> None:
 
 
 def recursive_overwrite(
-        src: str, dst: str, ignore: Optional[Callable[[str, List[str]], Set[str]]] = None
+    src: str, dst: str, ignore: Optional[Callable[[str, List[str]], Set[str]]] = None
 ) -> None:
     if path.isdir(src):
         print(f"dir={src}")
