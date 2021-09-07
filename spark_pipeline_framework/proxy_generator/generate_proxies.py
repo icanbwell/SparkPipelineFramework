@@ -32,6 +32,8 @@ class ProxyGenerator:
             # noinspection SpellCheckingInspection
             if path_tuple[0].endswith("__pycache__"):
                 pass
+            elif path_tuple[0].__contains__("test"):
+                pass
             else:
                 current_path: str = path.join(folder, path_tuple[0])
                 if is_path_empty(current_path):
