@@ -21,7 +21,7 @@ down:
 	docker-compose down
 
 .PHONY:clean-pre-commit
-clean-pre-commit: ## removes pre-commit hookgener
+clean-pre-commit: ## removes pre-commit hook
 	rm -f .git/hooks/pre-commit
 
 .PHONY:setup-pre-commit
