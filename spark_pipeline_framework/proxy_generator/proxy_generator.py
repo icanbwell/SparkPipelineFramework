@@ -85,7 +85,8 @@ class ProxyGenerator:
         # now recursively generate proxies
         # noinspection SpellCheckingInspection
         for subfolder in folders:
-            ProxyGenerator.generate_proxies(path.join(folder, subfolder))
+            if subfolder != "test":
+                ProxyGenerator.generate_proxies(path.join(folder, subfolder))
 
     @staticmethod
     def write_transformer(file_name: str, folder: str) -> None:

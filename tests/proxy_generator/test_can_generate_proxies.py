@@ -37,24 +37,50 @@ def test_can_generate_proxies() -> None:
     )
     assert path.exists(data_source_path)
 
-    assert path.join(
-        temp_library_folder,
-        "features",
-        "my_sql_feature",
-        "v1",
-        "features_my_sql_feature_v1.py",
+    assert path.exists
+    (
+        path.join(
+            temp_library_folder,
+            "features",
+            "my_sql_feature",
+            "v1",
+            "features_my_sql_feature_v1.py",
+        )
     )
-    assert path.join(
-        temp_library_folder,
-        "features",
-        "my_python_feature",
-        "v1",
-        "features_my_python_feature_v1.py",
+    assert path.exists(
+        path.join(
+            temp_library_folder,
+            "features",
+            "my_python_feature",
+            "v1",
+            "features_my_python_feature_v1.py",
+        )
+    )
+
+    assert path.exists(
+        path.join(
+            temp_library_folder,
+            "features",
+            "member_claims",
+            "v1",
+            "features_member_claims_v1.py",
+        )
+    )
+
+    assert not path.exists(
+        path.join(
+            temp_library_folder,
+            "features",
+            "member_claims",
+            "v1",
+            "test",
+            "features_member_claims_v1_test.py",
+        )
     )
 
 
 def recursive_overwrite(
-    src: str, dst: str, ignore: Optional[Callable[[str, List[str]], Set[str]]] = None
+        src: str, dst: str, ignore: Optional[Callable[[str, List[str]], Set[str]]] = None
 ) -> None:
     if path.isdir(src):
         print(f"dir={src}")
