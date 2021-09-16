@@ -39,8 +39,10 @@ class FrameworkPipeline(Transformer):
             self._run_id: str = run_id
         if client_name:
             parameters["CLIENT_NAME"] = client_name
+            self.client_name: str = client_name
         if vendor_name:
             parameters["VENDOR_NAME"] = vendor_name
+            self.vendor_name: str = vendor_name
         if data_lake_path:
             self.data_lake_path: Optional[str] = data_lake_path
         elif "data_lake_path" in parameters:
