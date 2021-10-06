@@ -16,6 +16,7 @@ boto3 = ">=1.17.8"
 types-requests="~=0.1.11"
 types-PyMySQL="~=0.1.5"
 chardet=">=4.0.0"
+slack_sdk = ">=3.11.2"
 
 [dev-packages]
 setuptools="*"

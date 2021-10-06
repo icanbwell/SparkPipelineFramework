@@ -1,14 +1,16 @@
 import pytest
 
-from spark_pipeline_framework.utilities.slack_client import SlackClient
+from spark_pipeline_framework.utilities.slack.slack_client_native import (
+    SlackClientNative,
+)
 
 
 @pytest.mark.skip("Actually sends a message to slack")
-def test_slack_client() -> None:
+def test_slack_client_native() -> None:
     slack_token = "put in token here to test"
-    channel: str = "#helix_pipeline_notifications"
+    channel: str = "#helix_pipeline_notifications_dev"
     bot_user_name = "Helix Pipeline Monitor"
-    client = SlackClient(
+    client = SlackClientNative(
         slack_token=slack_token, channel=channel, bot_user_name=bot_user_name
     )
     slack_info = f'There are *{19}* double images detected for *{22}* products. Please check the <https://{"foo"}.s3-eu-west-1.amazonaws.com/{"bar"}|Double Images Monitor>.'

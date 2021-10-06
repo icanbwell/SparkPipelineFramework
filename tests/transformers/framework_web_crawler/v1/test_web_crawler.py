@@ -8,8 +8,8 @@ from spark_pipeline_framework.transformers.framework_web_crawler.v1.framework_we
     FrameworkWebCrawler,
 )
 from tests.conftest import clean_spark_session
-from tests.transformers.framework_web_crawler.v1.spider_classes.test_spider_class import (  # type: ignore
-    TestSpiderClass,
+from tests.transformers.framework_web_crawler.v1.spider_classes.spider_test_class import (  # type: ignore
+    SpiderTestClass,
 )
 
 
@@ -26,7 +26,7 @@ def test_web_crawler(spark_session: SparkSession) -> None:
 
     # Act
     response = FrameworkWebCrawler(
-        spider_class=TestSpiderClass, name="test_crawler"
+        spider_class=SpiderTestClass, name="test_crawler"
     ).transform(df, response)
 
     # Assert
