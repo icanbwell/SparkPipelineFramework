@@ -67,7 +67,7 @@ class ProxyBase(FrameworkTransformer):
                 self.my_transformers.append(
                     FrameworkCsvLoader(
                         view=file_name,
-                        path_to_csv=path.join(self.location, file),
+                        filepath=path.join(self.location, file),
                         delimiter=parameters.get("delimiter", ","),
                         has_header=parameters.get("has_header", True),
                         mapping_file_name=file,

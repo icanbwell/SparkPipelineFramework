@@ -32,7 +32,7 @@ def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
 
     stages: List[Transformer] = create_steps(
         [
-            FrameworkCsvLoader(view="flights", path_to_csv=flights_path),
+            FrameworkCsvLoader(view="flights", filepath=flights_path),
             FeaturesCarriersV1(parameters=parameters),
         ]
     )

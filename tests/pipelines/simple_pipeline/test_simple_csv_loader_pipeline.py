@@ -32,7 +32,7 @@ def test_simple_csv_loader_pipeline(spark_session: SparkSession) -> None:
     # })
 
     stages: List[Union[Estimator[Any], Transformer]] = [
-        FrameworkCsvLoader(view="flights", path_to_csv=flights_path),
+        FrameworkCsvLoader(view="flights", filepath=flights_path),
         SQLTransformer(statement="SELECT * FROM flights"),
     ]
 

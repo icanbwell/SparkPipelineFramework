@@ -68,6 +68,7 @@ class SlackEventLogger(EventLogger):
         ) if slack_error_channel else None
         self.flow_run_name: Optional[str] = flow_run_name
         self.log_placeholder_url: Optional[str] = log_placeholder_url
+        self.has_sent_log_url: bool = False
 
     def log_progress_event(
         self,
@@ -77,11 +78,6 @@ class SlackEventLogger(EventLogger):
         event_format_string: str,
         backoff: bool = True,
     ) -> None:
-        if current == 1:
-            if self.log_placeholder_url:
-                log_url = self.get_grafana_url()
-                if log_url:
-                    self.log_event("log", log_url)
         # for first 10 batches send every time
         # for 10 to 100 send every 10 batches
         # after 100 send every 100 batches
@@ -101,6 +97,12 @@ class SlackEventLogger(EventLogger):
 
     def log_event(self, event_name: str, event_text: str) -> None:
         self.slack_client.post_message_to_slack(event_text)
+        if not self.has_sent_log_url:
+            if self.log_placeholder_url:
+                log_url = self.get_grafana_url()
+                if log_url:
+                    self.log_event("log", log_url)
+            self.has_sent_log_url = True
 
     def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
         # don't send full exception to slack since it can have PHI
