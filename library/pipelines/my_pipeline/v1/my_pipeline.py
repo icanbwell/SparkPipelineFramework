@@ -23,7 +23,7 @@ class MyPipeline(FrameworkPipeline):
             [
                 FrameworkCsvLoader(
                     view="flights",
-                    path_to_csv=parameters["flights_path"],
+                    filepath=parameters["flights_path"],
                     parameters=parameters,
                     progress_logger=progress_logger,
                 ),

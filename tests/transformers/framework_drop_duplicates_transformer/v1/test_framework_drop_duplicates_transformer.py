@@ -22,7 +22,7 @@ def test_framework_drop_duplicates_transformer(spark_session: SparkSession) -> N
     view: str = "primary_care_protocol"
     FrameworkCsvLoader(
         view=view,
-        path_to_csv=data_dir.joinpath("primary_care_protocol.csv"),
+        filepath=data_dir.joinpath("primary_care_protocol.csv"),
         clean_column_names=False,
     ).transform(df)
 

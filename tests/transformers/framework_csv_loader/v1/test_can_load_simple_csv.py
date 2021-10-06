@@ -38,7 +38,7 @@ def test_can_load_simple_csv(spark_session: SparkSession) -> None:
 
     # Act
     FrameworkCsvLoader(
-        view="my_view", path_to_csv=test_file_path, delimiter=","
+        view="my_view", filepath=test_file_path, delimiter=","
     ).transform(df)
 
     # noinspection SqlDialectInspection
@@ -65,9 +65,7 @@ def test_can_load_non_standard_delimited_csv(spark_session: SparkSession) -> Non
     )
 
     # Act
-    loader = FrameworkCsvLoader(
-        view="my_view", path_to_csv=test_file_path, delimiter="|"
-    )
+    loader = FrameworkCsvLoader(view="my_view", filepath=test_file_path, delimiter="|")
     loader.transform(df)
 
     # noinspection SqlDialectInspection
@@ -96,7 +94,7 @@ def test_can_load_csv_without_header(spark_session: SparkSession) -> None:
 
     # Act
     FrameworkCsvLoader(
-        view="another_view", path_to_csv=test_file_path, delimiter=",", has_header=False
+        view="another_view", filepath=test_file_path, delimiter=",", has_header=False
     ).transform(df)
 
     # noinspection SqlDialectInspection
@@ -123,7 +121,7 @@ def test_correctly_loads_csv_with_clean_flag_off(spark_session: SparkSession) ->
     # Act
     FrameworkCsvLoader(
         view="my_view",
-        path_to_csv=test_file_path,
+        filepath=test_file_path,
         delimiter=",",
         clean_column_names=False,
     ).transform(df)
@@ -155,10 +153,7 @@ def test_correctly_loads_csv_with_clean_flag_on(spark_session: SparkSession) -> 
 
     # Act
     FrameworkCsvLoader(
-        view="my_view",
-        path_to_csv=test_file_path,
-        delimiter=",",
-        clean_column_names=True,
+        view="my_view", filepath=test_file_path, delimiter=",", clean_column_names=True,
     ).transform(df)
 
     # noinspection SqlDialectInspection
@@ -187,7 +182,7 @@ def test_can_load_multiline_csv(spark_session: SparkSession) -> None:
 
     # Act
     FrameworkCsvLoader(
-        view="my_view", path_to_csv=test_file_path, delimiter=",", multiline=True
+        view="my_view", filepath=test_file_path, delimiter=",", multiline=True
     ).transform(df)
 
     # noinspection SqlDialectInspection

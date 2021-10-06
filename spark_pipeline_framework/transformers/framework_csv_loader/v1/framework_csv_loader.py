@@ -18,7 +18,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
     def __init__(
         self,
         view: str,
-        path_to_csv: Union[str, List[str], Path],
+        filepath: Union[str, List[str], Path],
         delimiter: str = ",",
         has_header: bool = True,
         clean_column_names: bool = False,
@@ -35,7 +35,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
     ) -> None:
         super().__init__(
             view=view,
-            filepath=path_to_csv,
+            filepath=filepath,
             clean_column_names=clean_column_names,
             name=name,
             parameters=parameters,
