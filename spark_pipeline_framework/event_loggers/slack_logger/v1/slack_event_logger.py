@@ -68,10 +68,6 @@ class SlackEventLogger(EventLogger):
         ) if slack_error_channel else None
         self.flow_run_name: Optional[str] = flow_run_name
         self.log_placeholder_url: Optional[str] = log_placeholder_url
-        if log_placeholder_url:
-            log_url = self.get_grafana_url()
-            if log_url:
-                self.log_event("log", log_url)
 
     def log_progress_event(
         self,
@@ -81,6 +77,11 @@ class SlackEventLogger(EventLogger):
         event_format_string: str,
         backoff: bool = True,
     ) -> None:
+        if current == 1:
+            if self.log_placeholder_url:
+                log_url = self.get_grafana_url()
+                if log_url:
+                    self.log_event("log", log_url)
         # for first 10 batches send every time
         # for 10 to 100 send every 10 batches
         # after 100 send every 100 batches
