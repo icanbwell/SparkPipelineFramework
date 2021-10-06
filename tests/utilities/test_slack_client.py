@@ -1,6 +1,6 @@
 import pytest
 
-from spark_pipeline_framework.utilities.slack_client import SlackClient
+from spark_pipeline_framework.utilities.slack.slack_client import SlackClient
 
 
 @pytest.mark.skip("Actually sends a message to slack")

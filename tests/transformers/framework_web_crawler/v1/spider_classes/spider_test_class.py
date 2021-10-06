@@ -5,7 +5,7 @@ from scrapy.http import Response  # type: ignore
 from spark_pipeline_framework.utilities.base_spider_class import BaseSpiderClass
 
 
-class TestSpiderClass(BaseSpiderClass):
+class SpiderTestClass(BaseSpiderClass):
     def __init__(self, **kwargs: Dict[str, Any]):
         super().__init__(
             name="test_spider", urls=["http://quotes.toscrape.com/"], **kwargs,

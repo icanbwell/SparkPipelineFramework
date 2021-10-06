@@ -4,8 +4,10 @@ from typing import Any, Optional
 import requests
 from requests.adapters import HTTPAdapter
 
+from spark_pipeline_framework.utilities.slack.base_slack_client import BaseSlackClient
 
-class SlackClient:
+
+class SlackClient(BaseSlackClient):
     """
     Implements a basic Slack client in http to post messages to a channel
     Inspired by https://keestalkstech.com/2019/10/simple-python-code-to-send-message-to-slack-channel-without-packages/
