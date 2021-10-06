@@ -104,12 +104,12 @@ class SlackEventLogger(EventLogger):
     def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
         # don't send full exception to slack since it can have PHI
         self.slack_client.post_message_to_slack(
-            f"Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {type(ex)}. {self.get_grafana_url()}"
+            f"Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {type(ex)}. <{self.get_grafana_url()}>"
         )
 
         if self.slack_error_client:
             self.slack_error_client.post_message_to_slack(
-                f"Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {type(ex)}. {self.get_grafana_url()}"
+                f"Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {type(ex)}. <{self.get_grafana_url()}>"
             )
 
     def get_grafana_url(self) -> Optional[str]:
