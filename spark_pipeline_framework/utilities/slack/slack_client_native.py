@@ -51,10 +51,15 @@ class SlackClientNative(BaseSlackClient):
                 username=self.slack_user_name,
                 blocks=json.dumps(blocks) if blocks else None,
             )
+
+            if not self.slack_thread and use_conversation_threads:
+                if (
+                    response.status_code == 200
+                    and response.data
+                    and "ts" in response.data
+                ):
+                    self.slack_thread = response.data["ts"]  # type: ignore
+            return response
         except SlackApiError as e:
             logger.warning(f"Slack API Error: {e.response['error']}")
-
-        if not self.slack_thread and use_conversation_threads:
-            if response.status_code == 200 and response.data and "ts" in response.data:
-                self.slack_thread = response.data["ts"]  # type: ignore
-        return response
+            return None
