@@ -37,7 +37,7 @@ class SlackClient(BaseSlackClient):
         :param use_conversation_threads: whether to send messages as reply to first message
         :return: response from Slack
         """
-        if text:
+        if not text:
             return
 
         headers = {

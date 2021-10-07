@@ -41,7 +41,7 @@ class SlackClientNative(BaseSlackClient):
         :param use_conversation_threads: whether to send messages as reply to first message
         :return: response from Slack
         """
-        if text:
+        if not text:
             return
 
         web = WebClient(token=self.slack_token)
