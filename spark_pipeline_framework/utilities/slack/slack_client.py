@@ -37,6 +37,9 @@ class SlackClient(BaseSlackClient):
         :param use_conversation_threads: whether to send messages as reply to first message
         :return: response from Slack
         """
+        if text:
+            return
+
         headers = {
             "Content-type": "application/json; charset=utf-8",
             "Authorization": f"Bearer {self.slack_token}",
