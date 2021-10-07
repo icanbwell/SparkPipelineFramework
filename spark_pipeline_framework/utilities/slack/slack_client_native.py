@@ -1,10 +1,15 @@
 import json
+from logging import getLogger
 from typing import Any, Optional
 
 from slack_sdk.web.client import WebClient
 from slack_sdk.web.slack_response import SlackResponse
+from slack_sdk.errors import SlackApiError
 
 from spark_pipeline_framework.utilities.slack.base_slack_client import BaseSlackClient
+
+
+logger = getLogger(__name__)
 
 
 class SlackClientNative(BaseSlackClient):
@@ -37,14 +42,18 @@ class SlackClientNative(BaseSlackClient):
         :return: response from Slack
         """
         web = WebClient(token=self.slack_token)
-        response: SlackResponse = web.chat_postMessage(
-            text=text,
-            channel=self.slack_channel,
-            thread_ts=self.slack_thread,
-            icon_url=self.slack_icon_url,
-            username=self.slack_user_name,
-            blocks=json.dumps(blocks) if blocks else None,
-        )
+        try:
+            response: SlackResponse = web.chat_postMessage(
+                text=text,
+                channel=self.slack_channel,
+                thread_ts=self.slack_thread,
+                icon_url=self.slack_icon_url,
+                username=self.slack_user_name,
+                blocks=json.dumps(blocks) if blocks else None,
+            )
+        except SlackApiError as e:
+            logger.warning(f"Slack API Error: {e.response['error']}")
+
         if not self.slack_thread and use_conversation_threads:
             if response.status_code == 200 and response.data and "ts" in response.data:
                 self.slack_thread = response.data["ts"]  # type: ignore
