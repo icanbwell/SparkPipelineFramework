@@ -52,7 +52,10 @@ class SlackClientNative(BaseSlackClient):
         if not text:
             return
 
-        if self.wait_till_datetime and self.wait_till_datetime > datetime.utcnow():
+        if (
+            self.wait_till_datetime is not None
+            and self.wait_till_datetime > datetime.utcnow()
+        ):
             return
 
         try:
