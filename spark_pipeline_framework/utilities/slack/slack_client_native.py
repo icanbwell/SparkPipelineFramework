@@ -1,9 +1,15 @@
 import json
+from datetime import datetime, timedelta
 from logging import getLogger
 from typing import Any, Optional
 
+# noinspection PyUnresolvedReferences
 from slack_sdk.web.client import WebClient
+
+# noinspection PyUnresolvedReferences
 from slack_sdk.web.slack_response import SlackResponse
+
+# noinspection PyUnresolvedReferences
 from slack_sdk.errors import SlackApiError
 
 from spark_pipeline_framework.utilities.slack.base_slack_client import BaseSlackClient
@@ -30,6 +36,8 @@ class SlackClientNative(BaseSlackClient):
         self.slack_icon_url: str = "https://www.flaticon.com/free-icon/freepik_23317"
         self.slack_user_name: str = bot_user_name
         self.slack_thread: Optional[str] = None
+        # if we have to wait till a time before slack will let us send messages
+        self.wait_till_datetime: Optional[datetime] = None
 
     def post_message_to_slack(
         self, text: str, blocks: Any = None, use_conversation_threads: bool = True
@@ -44,8 +52,11 @@ class SlackClientNative(BaseSlackClient):
         if not text:
             return
 
-        web = WebClient(token=self.slack_token)
+        if self.wait_till_datetime and self.wait_till_datetime > datetime.utcnow():
+            return
+
         try:
+            web = WebClient(token=self.slack_token)
             response: SlackResponse = web.chat_postMessage(
                 text=text,
                 channel=self.slack_channel,
@@ -62,7 +73,18 @@ class SlackClientNative(BaseSlackClient):
                     and "ts" in response.data
                 ):
                     self.slack_thread = response.data["ts"]  # type: ignore
+            self.wait_till_datetime = None  # clear this on success
             return response
         except SlackApiError as e:
             logger.warning(f"Slack API Error: {e.response['error']}")
+            if e.response.status_code == 429:
+                # The `Retry-After` header will tell you how long to wait before retrying
+                delay_in_seconds: int = int(e.response.headers["Retry-After"])
+                logger.warning(f"Rate limited. Retrying in {delay_in_seconds} seconds")
+                self.wait_till_datetime = datetime.utcnow() + timedelta(
+                    seconds=delay_in_seconds
+                )
+            return None
+        except Exception as e:
+            logger.warning(f"Unknown error calling Slack API: {e}")
             return None
