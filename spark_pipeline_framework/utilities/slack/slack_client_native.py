@@ -50,13 +50,13 @@ class SlackClientNative(BaseSlackClient):
         :return: response from Slack
         """
         if not text:
-            return
+            return None
 
         if (
             self.wait_till_datetime is not None
             and self.wait_till_datetime > datetime.utcnow()
         ):
-            return
+            return None
 
         try:
             web = WebClient(token=self.slack_token)
