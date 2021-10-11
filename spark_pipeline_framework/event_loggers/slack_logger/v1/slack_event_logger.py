@@ -101,7 +101,7 @@ class SlackEventLogger(EventLogger):
             if self.log_placeholder_url:
                 log_url = self.get_grafana_url()
                 if log_url:
-                    self.log_event("log", log_url)
+                    self.slack_client.post_message_to_slack(log_url)
             self.has_sent_log_url = True
 
     def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
