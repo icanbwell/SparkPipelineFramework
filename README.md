@@ -12,8 +12,9 @@ SparkPipelineFramework implements a few design patterns to make it easier to cre
 4. Enables Autocomplete of transformations when creating pipelines (in PyCharm).
 5. Implement many separation-of-concerns e.g., logging, performance monitoring, error reporting
 6. Supports both non-ML, ML and mixed workloads
-7. Has an additional library SparkPipelineFramework.AWS that makes running Spark pipelines in AWS easier
-8. Has a sister library SparkPipelineFramework.Catalog that implements a data and ML model catalog so you can load and save data by catalog name instead of path and can manage different versions of the data
+7. Has an additional(optional) library SparkAutoMapper(https://github.com/icanbwell/SparkAutoMapper) that enables data engineers and data analysts to easily map data without writing code.
+8. Has an additional(optional) library SparkPipelineFramework.Testing (https://github.com/icanbwell/SparkPipelineFramework.Testing) that allows you to create unit tests without writing code; you just put in the input file and confirm the output file
+
 
 # PyPi Package
 This code is available as a package to import into your project.
