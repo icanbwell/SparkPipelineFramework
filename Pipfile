@@ -6,8 +6,8 @@ name = "pypi"
 [packages]
 numpy = ">=1.19.2"
 logger = "*"
-pyspark = "==3.1.1"
-sparkautomapper = ">=0.2.50"
+pyspark = "==3.2.0"
+sparkautomapper = ">=0.2.51"
 pymysql="*"
 furl="*"
 requests = ">=2.25.1"
@@ -32,10 +32,10 @@ Sphinx="==3.5.3"
 sphinx-autoapi="==1.7.0"
 sphinx-rtd-theme="==0.5.1"
 recommonmark="==0.7.1"
-pyspark="==3.1.1"  # should match the version of spark we use for testing
-pipenv-setup = ">=3.1.1"
+pyspark="==3.2.0"  # should match the version of spark we use for testing
+pipenv-setup = ">=3.1.2"
 Deprecated = "==1.2.12"
-sparkdataframecomparer = ">=0.1.68"
+sparkdataframecomparer = ">=0.1.69"
 
 [requires]
 python_version = "3.7"
