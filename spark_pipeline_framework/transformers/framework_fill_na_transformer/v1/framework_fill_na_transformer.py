@@ -54,6 +54,7 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
                 f"filling rows if any null values with replacement_value found for columns: {list(column_mapping.keys())}"
             )
             df_with_na: DataFrame = df.sql_ctx.table(view)
+            df.sql_ctx.dropTempTable(view)
             df_with_filled_na = df_with_na
             data_types = get_dtype(df_with_na, list(column_mapping.keys()))
 

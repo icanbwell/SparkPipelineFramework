@@ -59,6 +59,9 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
 
         assert view
         result_df: DataFrame = df.sql_ctx.table(view)
+        # tmp_view: str = f"{view}_tmp"
+        # result_df.createOrReplaceTempView(tmp_view)
+        df.sql_ctx.dropTempTable(view)
 
         if keep_columns and len(keep_columns) > 0:
             all_columns = result_df.columns

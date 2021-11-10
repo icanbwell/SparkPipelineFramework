@@ -52,6 +52,7 @@ class FrameworkDropRowsWithNullTransformer(FrameworkTransformer):
                 f"dropping rows if any null values found for columns: {columns_to_drop}"
             )
             df_with_rows: DataFrame = df.sql_ctx.table(view)
+            df.sql_ctx.dropTempTable(view)
             df_with_dropped_rows = df_with_rows.dropna(subset=columns_to_drop)
             df_with_dropped_rows.createOrReplaceTempView(view)
         return df
