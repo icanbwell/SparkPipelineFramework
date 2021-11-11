@@ -50,6 +50,7 @@ class FrameworkPartitioner(FrameworkTransformer):
         partition_by: Optional[List[str]] = self.getPartitionBy()
 
         result_df: DataFrame = df.sql_ctx.table(view)
+        df.sql_ctx.dropTempTable(view)
         num_partitions: int = result_df.rdd.getNumPartitions()
         self.logger.info(f"view {view} has {num_partitions} partitions")
         if desired_partitions and partition_by:
