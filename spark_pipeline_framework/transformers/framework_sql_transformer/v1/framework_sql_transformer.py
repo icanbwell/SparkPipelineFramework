@@ -84,6 +84,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                 raise
 
             if view:
+                df.sql_ctx.dropTempTable(view)
                 df.createOrReplaceTempView(view)
             self.logger.info(f"GenericSqlTransformer [{name}] finished running SQL")
 
