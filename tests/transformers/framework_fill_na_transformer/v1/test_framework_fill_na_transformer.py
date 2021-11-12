@@ -27,7 +27,6 @@ def test_framework_fill_na_transformer(spark_session: SparkSession) -> None:
 
     # ensure we have all the rows even the ones we want to drop
     result_df: DataFrame = spark_session.table(view)
-    df.sql_ctx.dropTempTable(view)
     result_df = result_df.withColumn(
         "Minimum Age", result_df["Minimum Age"].cast("float")
     )

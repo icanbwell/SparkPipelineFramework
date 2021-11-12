@@ -7,6 +7,25 @@ services:
       context: .
     volumes:
       - ./:/SparkpipelineFramework/
-#      - ../SparkAutoMapper/spark_auto_mapper:/opt/project/spark_auto_mapper
     container_name: spf_dev
     working_dir: /SparkpipelineFramework
+
+  spark:
+    user: root
+    image: sparkpipelineframework_dev:latest
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - '8080:8080'
+      - '7077:7077'
+      - '4040:4040'
+    restart: always
+    healthcheck:
+        test: ["CMD-SHELL", "/opt/bitnami/spark/bin/spark-submit --master spark://spark:7077 /opt/bitnami/spark/examples/src/main/python/pi.py 10"]
+        timeout: 300s
+        retries: 5
+        start_period: 60s
