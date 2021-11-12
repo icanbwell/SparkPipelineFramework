@@ -56,7 +56,6 @@ class FrameworkFilterByColumnTransformer(FrameworkTransformer):
         include_only: List[Union[str, int, float]] = self.getIncludeOnly()
 
         result_df: DataFrame = df.sql_ctx.table(view)
-        df.sql_ctx.dropTempTable(view)
         result_df = result_df.where(col(column).isin(include_only))
         result_df.createOrReplaceTempView(view)
 

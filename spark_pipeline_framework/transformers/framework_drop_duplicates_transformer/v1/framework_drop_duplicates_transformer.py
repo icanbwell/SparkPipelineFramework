@@ -48,7 +48,6 @@ class FrameworkDropDuplicatesTransformer(FrameworkTransformer):
         columns: List[str] = self.getColumns()
 
         result_df: DataFrame = df.sql_ctx.table(view)
-        df.sql_ctx.dropTempTable(view)
         result_df = result_df.drop_duplicates(columns)
         result_df.createOrReplaceTempView(view)
 
