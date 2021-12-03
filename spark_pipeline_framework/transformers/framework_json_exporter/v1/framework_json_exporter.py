@@ -65,10 +65,10 @@ class FrameworkJsonExporter(FrameworkTransformer):
                 if view:
                     df_view: DataFrame = df.sql_ctx.table(view)
                     assert not spark_is_data_frame_empty(df=df_view)
-                    df_view.write.mode("overwrite").json(path=str(path))
+                    df_view.write.mode("overwrite").option("ignoreNullFields", "false").json(path=str(path))
                 else:
                     assert not spark_is_data_frame_empty(df=df)
-                    df.write.mode("overwrite").json(path=str(path))
+                    df.write.mode("overwrite").option("ignoreNullFields", "false").json(path=str(path))
 
                 self.logger.info(f"[{name or view}] written to {path}")
 
