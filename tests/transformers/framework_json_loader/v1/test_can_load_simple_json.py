@@ -37,3 +37,28 @@ def test_can_load_simple_json(spark_session: SparkSession) -> None:
     assert len(result.collect()[1]["authors"]) == 2
     assert result.collect()[1]["authors"][0]["surname"] == "Friedman"
     assert result.collect()[1]["edition"] == 3
+
+
+def test_can_load_simple_json_with_schema(spark_session: SparkSession) -> None:
+    # Arrange
+    clean_spark_session(spark_session)
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    test_file_path: str = f"{data_dir.joinpath('schema_test.json')}"
+    test_file_path_2: str = f"{data_dir.joinpath('schema_test_2.json')}"
+
+    schema = StructType([])
+
+    df: DataFrame = spark_session.createDataFrame(
+        spark_session.sparkContext.emptyRDD(), schema
+    )
+
+    # Act
+    FrameworkJsonLoader(view="books", filepath=test_file_path).transform(df)
+    FrameworkJsonLoader(
+        view="books_schema", filepath=test_file_path_2, use_schema_from_view="books"
+    ).transform(df)
+    result: DataFrame = spark_session.sql("SELECT * FROM books")
+    result_2: DataFrame = spark_session.sql("SELECT * FROM books_schema")
+
+    # Act
+    assert result.schema == result_2.schema
