@@ -38,6 +38,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         cache_table: bool = True,
         schema: Optional[StructType] = None,
         create_file_path: bool = False,
+        use_schema_from_view: Optional[str] = None,
     ) -> None:
         super().__init__(
             view=view,
@@ -53,6 +54,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
             cache_table=cache_table,
             schema=schema,
             create_file_path=create_file_path,
+            use_schema_from_view=use_schema_from_view,
         )
 
         self.multiLine: Param[bool] = Param(self, "multiLine", "")

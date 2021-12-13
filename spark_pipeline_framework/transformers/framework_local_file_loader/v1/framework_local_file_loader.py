@@ -35,6 +35,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         schema: Optional[StructType] = None,
         clean_column_names: bool = False,
         create_file_path: bool = False,
+        use_schema_from_view: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -68,6 +69,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.create_file_path: Param[bool] = Param(self, "create_file_path", "")
         self._setDefault(create_file_path=False)
 
+        self.use_schema_from_view: Param[str] = Param(self, "use_schema_from_view", "")
+        self._setDefault(use_schema_from_view=None)
+
         self.delimiter: Param[str] = Param(self, "delimiter", "")
         self._setDefault(delimiter=",")
 
@@ -91,6 +95,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         infer_schema = self.getInferSchema()
         limit = self.getLimit()
         create_file_path = self.getCreateFilePath()
+        use_schema_from_view = self.getUseSchemaFromView()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         if not filepath:
@@ -126,6 +131,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
         if schema:
             df_reader = df_reader.schema(schema)
+        elif use_schema_from_view:
+            df_source_view_for_schema = df.sql_ctx.table(use_schema_from_view)
+            df_reader = df_reader.schema(df_source_view_for_schema.schema)
         elif infer_schema:
             df_reader = df_reader.option("inferSchema", "true")
         else:
@@ -207,6 +215,10 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCreateFilePath(self) -> bool:
         return self.getOrDefault(self.create_file_path)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getUseSchemaFromView(self) -> str:
+        return self.getOrDefault(self.use_schema_from_view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
