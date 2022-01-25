@@ -18,6 +18,20 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 
 
 class ColumnSpec(NamedTuple):
+    """
+    The definition of a column for fixed width file formats
+        column_name: the name of the column
+
+        start_pos: the starting position of the data for this column in the file
+
+        length: the length of the data for this column
+
+        data_type: the data type for the data in the column, e.g. StringType(), IntegerType()
+
+    example:
+      ColumnSpec(column_name="id", start_pos=1, length=3, data_type=StringType())
+    """
+
     column_name: str
     start_pos: int
     length: int
@@ -25,6 +39,11 @@ class ColumnSpec(NamedTuple):
 
 
 class FrameworkFixedWidthLoader(FrameworkTransformer):
+    """
+    Load fixed width files into a dataframe by specifying the path to the file and the schema
+    """
+
+    # noinspection PyUnusedLocal
     @keyword_only
     def __init__(
         self,
@@ -35,6 +54,44 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
     ) -> None:
+        """
+        Initializes the fixed_width_file_loader
+
+        :param view: The name of the view that the resultant DataFrame will be stored in
+        :param filepath: The path to the fixed width file to load
+        :param columns: A list of columns defined using a ColumnSpec that defines the name, start_index, length and DataType for the column
+        :param name: sets the name of the transformer as it will appear in logs
+        :param parameters:
+        :param progress_logger:
+
+        example:
+            FrameworkFixedWidthLoader(
+                view="my_view",
+                filepath=test_file_path,
+
+                columns=[
+                    ColumnSpec(column_name="id", start_pos=1, length=3, data_type=StringType()),
+
+                    ColumnSpec(
+                        column_name="some_date", start_pos=4, length=8, data_type=StringType()
+                    ),
+
+                    ColumnSpec(
+                        column_name="some_string",
+                        start_pos=12,
+                        length=3,
+                        data_type=StringType(),
+                    ),
+
+                    ColumnSpec(
+                        column_name="some_integer",
+                        start_pos=15,
+                        length=4,
+                        data_type=IntegerType(),
+                    ),
+                ],
+            )
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -67,8 +124,6 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
             f"Loading file for view {view}: {paths}"
         )
         df_reader = df.sql_ctx.read.text(paths=paths)
-        df_reader.printSchema()
-        df_reader.show()
         df_reader = df_reader.select(
             *[
                 trim(col("value").substr(column.start_pos, column.length))
@@ -85,6 +140,12 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         return df
 
     def _get_absolute_paths(self, filepath: Union[str, List[str], Path]) -> List[str]:
+        """
+        Abstracts handling of paths so we can use paths on both k8s in AWS as well as local
+
+        :param filepath: the path or paths to format appropriately
+        :return: a list of paths optimized for local or k8s usages
+        """
         if not filepath:
             raise ValueError(f"filepath is empty: {filepath}")
 
