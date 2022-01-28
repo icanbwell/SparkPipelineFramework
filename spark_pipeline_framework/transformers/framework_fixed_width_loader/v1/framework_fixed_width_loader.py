@@ -4,6 +4,7 @@ from typing import Union, List, Optional, Dict, Any, NamedTuple
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
+from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, trim
 from pyspark.sql.types import DataType
@@ -50,6 +51,7 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         view: str,
         filepath: Union[str, List[str], Path],
         columns: List[ColumnSpec],
+        has_header: bool = True,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -106,6 +108,9 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         self.columns: Param[List[ColumnSpec]] = Param(self, "columns", "")
         self._setDefault(columns=None)
 
+        self.has_header: Param[bool] = Param(self, "has_header", "")
+        self._setDefault(has_header=True)
+
         if not filepath:
             raise ValueError("filepath is None or empty")
 
@@ -120,11 +125,21 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         columns: List[ColumnSpec] = self.getColumns()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         paths = self._get_absolute_paths(filepath=filepath)
+        has_header = self.getHasHeader()
         progress_logger and progress_logger.write_to_log(
             f"Loading file for view {view}: {paths}"
         )
-        df_reader = df.sql_ctx.read.text(paths=paths)
-        df_reader = df_reader.select(
+
+        df_reader: DataFrameReader = df.sql_ctx.read
+
+        if has_header:
+            df_reader.option("header", "true")
+
+        df_text = df_reader.text(paths=paths)
+        if has_header:
+            header = df_text.first()[0]
+            df_text = df_text.filter(~col("value").contains(header))  # type:ignore
+        df_text = df_text.select(
             *[
                 trim(col("value").substr(column.start_pos, column.length))
                 .cast(column.data_type)
@@ -132,7 +147,7 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
                 for column in columns
             ]
         )
-        df_reader.createOrReplaceTempView(view)
+        df_text.createOrReplaceTempView(view)
 
         progress_logger and progress_logger.write_to_log(
             f"Finished Loading file for View[{view}]: {paths}"
@@ -181,3 +196,7 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumns(self) -> List[ColumnSpec]:
         return self.getOrDefault(self.columns)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getHasHeader(self) -> bool:
+        return self.getOrDefault(self.has_header)
