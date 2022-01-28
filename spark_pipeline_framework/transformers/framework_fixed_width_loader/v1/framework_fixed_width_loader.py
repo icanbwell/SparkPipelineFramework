@@ -131,10 +131,6 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         )
 
         df_reader: DataFrameReader = df.sql_ctx.read
-
-        if has_header:
-            df_reader.option("header", "true")
-
         df_text = df_reader.text(paths=paths)
         if has_header:
             header = df_text.first()[0]
