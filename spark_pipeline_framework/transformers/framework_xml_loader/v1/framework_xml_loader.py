@@ -19,6 +19,11 @@ from spark_pipeline_framework.utilities.file_helpers import get_absolute_paths
 
 
 class FrameworkXmlLoader(FrameworkTransformer):
+    """
+    Load xml files into a DataFrame by specifying a path and an optional schema
+    """
+
+    # noinspection PyUnusedLocal
     @keyword_only
     def __init__(
         self,
@@ -34,6 +39,8 @@ class FrameworkXmlLoader(FrameworkTransformer):
         Initializes the framework_xml_loader
         :param view: The name of the view that the resultant DataFrame will be stored in
         :param filepath: The path to the xml file to load
+        :param row_tag: The row tag of your xml files to treat as a row
+        :param schema: The schema to apply to the DataFrame, if not passed schema will be inferred
         :param name: sets the name of the transformer as it will appear in logs
         :param parameters:
         :param progress_logger:
