@@ -84,8 +84,6 @@ class FrameworkValidationTransformer(FrameworkTransformer):
                 f"SELECT * from {pipeline_validation_df_name} where is_failed == 1"
             )
             error_count = errors_df.count()
-            if error_count > 0:
-                errors_df.show(1000, truncate=False)
             assert (
                 error_count == 0
             ), f"Pipeline failed validation, there were {error_count} errors. See additional logs or details"

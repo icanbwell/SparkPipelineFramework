@@ -27,4 +27,4 @@ class FeatureCarrierPythonTransformer(PythonProxyBase):
         assert progress_logger
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        pass
+        return df
