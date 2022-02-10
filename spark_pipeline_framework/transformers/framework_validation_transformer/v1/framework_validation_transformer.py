@@ -17,6 +17,12 @@ pipeline_validation_df_name = "pipeline_validation"
 
 
 class FrameworkValidationTransformer(FrameworkTransformer):
+    """
+    The FrameworkValidationTransformer will run all SQL based validations in the paths specified and optionally fail the
+    pipeline if validations fail. The results of validation will be stored in a dataframe and persisted with a temp table
+    named 'pipeline_validation'
+    """
+
     # noinspection PyUnusedLocal
     @keyword_only
     def __init__(
@@ -28,6 +34,15 @@ class FrameworkValidationTransformer(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
     ) -> None:
+        """
+
+        :param validation_source_path: the root path to the validation queries
+        :param validation_queries: a list of validation queries paths relative to the root path, can be the path of a file relative to the root path, or a path to a directory relative to root path
+        :param fail_on_validation: if True, fails the pipeline at this transformer, defaults to False
+        :param name: a name for the transformer step
+        :param parameters: parameters
+        :param progress_logger: the logger to use for logging
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
