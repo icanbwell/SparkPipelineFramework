@@ -2,6 +2,9 @@ from typing import Any, Dict, List, Union, Optional
 
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
+from spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter import (
+    FrameworkCsvExporter,
+)
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
@@ -10,6 +13,9 @@ from spark_pipeline_framework.progress_logger.progress_log_metric import (
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
+)
+from spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer import (
+    pipeline_validation_df_name,
 )
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
@@ -26,6 +32,7 @@ class FrameworkPipeline(Transformer):
         client_name: Optional[str] = None,
         vendor_name: Optional[str] = None,
         data_lake_path: Optional[str] = None,
+        validation_output_path: Optional[str] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -47,6 +54,8 @@ class FrameworkPipeline(Transformer):
             self.data_lake_path: Optional[str] = data_lake_path
         elif "data_lake_path" in parameters:
             self.data_lake_path = parameters["data_lake_path"]
+
+        self.validation_output_path: Optional[str] = validation_output_path
 
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
@@ -125,10 +134,33 @@ class FrameworkPipeline(Transformer):
                     ex=e,
                 )
                 raise friendly_spark_exception from e
+
+        self._validate(df)
+
         self.progress_logger.log_event(
             event_name=pipeline_name, event_text=f"Finished Pipeline {pipeline_name}"
         )
         return df
+
+    def _validate(self, df: DataFrame) -> None:
+        tables_df = df.sql_ctx.tables().filter(
+            f"tableName ='{pipeline_validation_df_name}'"
+        )
+        if tables_df.count() == 1 and self.validation_output_path:
+            FrameworkCsvExporter(
+                view=pipeline_validation_df_name,
+                file_path=self.validation_output_path,
+                header=True,
+                parameters=self.parameters,
+                progress_logger=self.progress_logger,
+            ).transform(df)
+            errors_df = df.sql_ctx.sql(
+                f"SELECT * from {pipeline_validation_df_name} where is_failed == 1"
+            )
+            error_count = errors_df.count()
+            assert (
+                error_count == 0
+            ), f"Pipeline failed validation, there were {error_count} errors. Validation dataframe written to {self.validation_output_path}"
 
     # noinspection PyMethodMayBeStatic
     def create_steps(
