@@ -13,6 +13,8 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 
+pipeline_validation_df_name = "pipeline_validation"
+
 
 class FrameworkValidationTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
@@ -57,37 +59,52 @@ class FrameworkValidationTransformer(FrameworkTransformer):
         validation_source_path = self.getValidationSourcePath()
         validation_queries = self.getValidationQueries()
         fail_on_validation = self.getFailOnValidation()
-        validation_df: DataFrame = df.sql_ctx.table("pipeline_validation")
+
         for query in validation_queries:
             path = os.path.join(validation_source_path, query)
-            self._validate(path, df, validation_df)
+            self._validate(path, df)
 
         if fail_on_validation:
             errors_df = df.sql_ctx.sql(
-                "SELECT * from pipeline_validation where FAILED == 1"
+                f"SELECT * from {pipeline_validation_df_name} where is_failed == 1"
             )
             error_count = errors_df.count()
+            if error_count > 0:
+                errors_df.show(1000, truncate=False)
             assert (
                 error_count == 0
             ), f"Pipeline failed validation, there were {error_count} errors. See additional logs or details"
         return df
 
-    def _validate(
-        self, path: str, df: DataFrame, validation_df: Optional[DataFrame] = None
-    ) -> None:
+    def _validate(self, path: str, df: DataFrame,) -> None:
+        validation_df = self.get_validation_df(df)
         if os.path.isfile(path):
             with open(path, "r") as query_file:
+                self.logger.info(f"Executing validation query: {path}")
                 query_text = query_file.read()
+                query_text = query_text.upper().replace(
+                    "SELECT", f"SELECT '{path}' as query,\n"
+                )
                 if validation_df:
                     validation_df = validation_df.union(df.sql_ctx.sql(query_text))
-                    validation_df.createOrReplaceTempView("pipeline_validation")
+                    validation_df.createOrReplaceTempView(pipeline_validation_df_name)
                 else:
                     validation_df = df.sql_ctx.sql(query_text)
-                    validation_df.createOrReplaceTempView("pipeline_validation")
+                    validation_df.createOrReplaceTempView(pipeline_validation_df_name)
         else:
             paths = os.listdir(path)
-            for path in paths:
-                self._validate(path, df, validation_df)
+            for child_path in paths:
+                new_path = os.path.join(path, child_path)
+                self._validate(new_path, df)
+
+    def get_validation_df(self, df: DataFrame) -> Optional[DataFrame]:
+        validation_df: Optional[DataFrame] = None
+        tables_df = df.sql_ctx.tables().filter(
+            f"tableName ='{pipeline_validation_df_name}'"
+        )
+        if tables_df.count() == 1:
+            validation_df = df.sql_ctx.table(pipeline_validation_df_name)
+        return validation_df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getValidationSourcePath(self) -> str:
