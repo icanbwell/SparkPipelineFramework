@@ -144,9 +144,9 @@ class FrameworkPipeline(Transformer):
             )
             return df
         finally:
-            self._validate(df)
+            self._check_validation(df)
 
-    def _validate(self, df: DataFrame) -> None:
+    def _check_validation(self, df: DataFrame) -> None:
         tables_df = df.sql_ctx.tables().filter(
             f"tableName ='{pipeline_validation_df_name}'"
         )
