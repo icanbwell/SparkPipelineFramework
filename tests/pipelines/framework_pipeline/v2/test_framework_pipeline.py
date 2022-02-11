@@ -80,6 +80,37 @@ class MyValidatedPipeline(FrameworkPipeline):
         )
 
 
+class MyFailFastValidatedPipeline(FrameworkPipeline):
+    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
+        super(MyFailFastValidatedPipeline, self).__init__(
+            parameters=parameters,
+            progress_logger=progress_logger,
+            run_id="12345678",
+            validation_output_path=parameters["validation_output_path"],
+        )
+        self.transformers = self.create_steps(
+            [
+                FrameworkCsvLoader(
+                    view="flights",
+                    filepath=parameters["flights_path"],
+                    parameters=parameters,
+                    progress_logger=progress_logger,
+                ),
+                FrameworkValidationTransformer(
+                    validation_source_path=parameters["validation_source_path"],
+                    validation_queries=["validate.sql"],
+                    fail_on_validation=True,
+                ),
+                FeaturesCarriersV1(
+                    parameters=parameters, progress_logger=progress_logger
+                ),
+                FeaturesCarriersPythonV1(
+                    parameters=parameters, progress_logger=progress_logger
+                ),
+            ]
+        )
+
+
 def test_can_run_validated_framework_pipeline(spark_session: SparkSession) -> None:
     with pytest.raises(AssertionError):
         # Arrange
@@ -175,6 +206,46 @@ def test_validated_framework_pipeline_writes_results(
     try:
         with ProgressLogger() as progress_logger:
             pipeline: MyValidatedPipeline = MyValidatedPipeline(
+                parameters=parameters, progress_logger=progress_logger
+            )
+            transformer = pipeline.fit(df)
+            transformer.transform(df)
+    except AssertionError:
+        validation_df = df.sql_ctx.read.csv(output_path, header=True)
+        validation_df.show(truncate=False)
+        assert validation_df.count() == 1
+
+
+def test_fail_fast_validated_framework_pipeline_writes_results(
+    spark_session: SparkSession,
+) -> None:
+    # Arrange
+    clean_spark_session(spark_session)
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
+    output_path: str = f"file://{data_dir.joinpath('temp').joinpath('validation.csv')}"
+
+    if path.isdir(data_dir.joinpath("temp")):
+        shutil.rmtree(data_dir.joinpath("temp"))
+
+    schema = StructType([])
+
+    df: DataFrame = spark_session.createDataFrame(
+        spark_session.sparkContext.emptyRDD(), schema
+    )
+
+    spark_session.sql("DROP TABLE IF EXISTS default.flights")
+
+    # Act
+    parameters = {
+        "flights_path": flights_path,
+        "validation_source_path": str(data_dir),
+        "validation_output_path": output_path,
+    }
+
+    try:
+        with ProgressLogger() as progress_logger:
+            pipeline: MyFailFastValidatedPipeline = MyFailFastValidatedPipeline(
                 parameters=parameters, progress_logger=progress_logger
             )
             transformer = pipeline.fit(df)
