@@ -1,4 +1,5 @@
 import os
+import pathlib
 from typing import Optional, Dict, Any, List
 
 from pyspark import keyword_only
@@ -90,22 +91,29 @@ class FrameworkValidationTransformer(FrameworkTransformer):
         return df
 
     def _validate(self, path: str, df: DataFrame,) -> None:
-        validation_df = self.get_validation_df(df)
+        validation_df: Optional[DataFrame] = self.get_validation_df(df)
         if os.path.isfile(path):
             with open(path, "r") as query_file:
                 self.logger.info(f"Executing validation query: {path}")
-                query_text = query_file.read()
-                query_text = query_text.upper().replace(
-                    "SELECT", f"SELECT '{path}' as query,\n"
-                )
-                if validation_df:
-                    validation_df = validation_df.union(df.sql_ctx.sql(query_text))
-                    validation_df.createOrReplaceTempView(pipeline_validation_df_name)
-                else:
-                    validation_df = df.sql_ctx.sql(query_text)
-                    validation_df.createOrReplaceTempView(pipeline_validation_df_name)
+                query_file_extension: str = pathlib.Path(path).suffix.lower()
+                query_text: str = query_file.read()
+                if query_file_extension == ".sql":
+                    query_text = query_text.upper().replace(
+                        "SELECT", f"SELECT '{path}' as query,\n"
+                    )
+                    if validation_df:
+                        validation_df = validation_df.union(df.sql_ctx.sql(query_text))
+                        validation_df.createOrReplaceTempView(
+                            pipeline_validation_df_name
+                        )
+                    else:
+                        validation_df = df.sql_ctx.sql(query_text)
+                        validation_df.createOrReplaceTempView(
+                            pipeline_validation_df_name
+                        )
         else:
-            paths = os.listdir(path)
+            paths: List[str] = os.listdir(path)
+            child_path: str
             for child_path in paths:
                 new_path = os.path.join(path, child_path)
                 self._validate(new_path, df)
