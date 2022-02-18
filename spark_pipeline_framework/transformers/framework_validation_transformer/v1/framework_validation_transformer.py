@@ -2,6 +2,7 @@ import os
 import pathlib
 from typing import Optional, Dict, Any, List
 
+import requests
 from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -111,6 +112,9 @@ class FrameworkValidationTransformer(FrameworkTransformer):
                         validation_df.createOrReplaceTempView(
                             pipeline_validation_df_name
                         )
+                elif query_file_extension in [".graphql", ".gql"]:
+                    response = requests.post("/graphql", json={"query": query_text})
+                    assert response.status_code == 200, response.json
         else:
             paths: List[str] = os.listdir(path)
             child_path: str

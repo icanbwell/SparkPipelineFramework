@@ -9,3 +9,12 @@ services:
       - ./:/SparkpipelineFramework/
     container_name: spf_dev
     working_dir: /SparkpipelineFramework
+
+  mock-server:
+    image: jamesdbloom/mockserver:mockserver-5.11.2
+    command: -logLevel DEBUG -serverPort 1080
+    ports:
+      - '1080:1080'
+    environment:
+      - LOG_LEVEL=DEBUG
+      - MOCKSERVER_LIVENESS_HTTP_GET_PATH=/health

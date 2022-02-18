@@ -1,7 +1,7 @@
 from os import environ
 from sys import stderr
 from logging import Logger, getLogger, StreamHandler, Formatter, INFO
-from typing import Union
+from typing import Union, TextIO
 
 
 def get_logger(name: str, level: Union[int, str] = INFO) -> Logger:
@@ -12,7 +12,7 @@ def get_logger(name: str, level: Union[int, str] = INFO) -> Logger:
     if logger.handlers:
         pass
     else:
-        stream_handler: StreamHandler = StreamHandler(stderr)
+        stream_handler: StreamHandler[TextIO] = StreamHandler(stderr)
         stream_handler.setLevel(level=level)
         # noinspection SpellCheckingInspection
         formatter: Formatter = Formatter(

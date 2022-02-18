@@ -13,6 +13,7 @@ from spark_pipeline_framework.transformers.framework_validation_transformer.v1.f
 )
 
 from tests.conftest import clean_spark_session
+from tests.utilities.mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
 def test_validation_throws_error(spark_session: SparkSession) -> None:
@@ -20,6 +21,7 @@ def test_validation_throws_error(spark_session: SparkSession) -> None:
         clean_spark_session(spark_session)
         query_dir: Path = Path(__file__).parent.joinpath("./queries")
         data_dir: Path = Path(__file__).parent.joinpath("./data")
+        requests_dir: Path = Path(__file__).parent.joinpath("./request_json_calls")
         test_data_file: str = f"{data_dir.joinpath('test.csv')}"
         validation_query_file: str = "validate.sql"
 
@@ -30,6 +32,17 @@ def test_validation_throws_error(spark_session: SparkSession) -> None:
         )
 
         FrameworkCsvLoader(view="my_view", filepath=test_data_file).transform(df)
+
+        mock_server_url = "http://mock-server:1080"
+        mock_client: MockServerFriendlyClient = MockServerFriendlyClient(
+            base_url=mock_server_url
+        )
+
+        mock_client.expect_files_as_requests(requests_dir, url_prefix=None)
+
+        mock_client.verify_expectations(
+            test_name="test_framework_validation_transformer"
+        )
 
         FrameworkValidationTransformer(
             validation_source_path=str(query_dir),

@@ -19,6 +19,7 @@ init: devdocker up setup-pre-commit  ## Initializes the local developer environm
 .PHONY: up
 up: Pipfile.lock
 	docker-compose up --build -d --remove-orphans
+	@echo MockServer dashboard: http://localhost:1080/mockserver/dashboard
 
 .PHONY: down
 down:
