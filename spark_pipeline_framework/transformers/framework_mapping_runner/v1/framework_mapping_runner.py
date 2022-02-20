@@ -93,6 +93,17 @@ class FrameworkMappingLoader(FrameworkTransformer):
             self.logger.info(
                 f"---- Running AutoMapper {i} of {count} [{automapper}] ----"
             )
+            table_names: List[str] = df.sql_ctx.tableNames()
+
+            # if view exists then drop it
+            if (
+                automapper.view
+                and automapper.use_single_select
+                and not automapper.reuse_existing_view
+                and automapper.view in table_names
+            ):
+                self.logger.info(f"Dropping view {automapper.view}")
+                df.sql_ctx.dropTempTable(tableName=automapper.view)
 
             try:
                 automapper.transform(df=df)
