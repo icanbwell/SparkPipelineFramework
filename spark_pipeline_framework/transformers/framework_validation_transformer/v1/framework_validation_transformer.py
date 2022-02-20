@@ -113,7 +113,10 @@ class FrameworkValidationTransformer(FrameworkTransformer):
                             pipeline_validation_df_name
                         )
                 elif query_file_extension in [".graphql", ".gql"]:
-                    response = requests.post("/graphql", json={"query": query_text})
+                    server_url = "http://mock-server:1080"
+                    response = requests.post(
+                        f"{server_url}/graphql", json={"query": query_text}
+                    )
                     assert response.status_code == 200, response.json
         else:
             paths: List[str] = os.listdir(path)

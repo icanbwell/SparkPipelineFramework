@@ -199,8 +199,12 @@ class MockServerFriendlyClient(object):
             exceptions.append(
                 MockServerExpectationNotFoundException(
                     url=expectation["path"],
-                    json=expectation["body"]["json"] if "body" in expectation else None,
-                    querystring_params=expectation["queryStringParameters"],
+                    json=expectation["body"]["json"]
+                    if "body" in expectation and "json" in expectation["body"]
+                    else None,
+                    querystring_params=expectation["queryStringParameters"]
+                    if "queryStringParameters" in expectation
+                    else None,
                 )
             )
         # and for every request in unmatched_requests

@@ -1,0 +1,59 @@
+query getProviders {
+    providers(search: "Alabrash", user: {
+        id: "foo"
+        session_id: "bar"
+        request_id: "bar2"
+        referring_url: "http://foo.com"
+    },
+        index: [practitioner]
+        fuzzy: {
+            fuzziness: "0"
+        }
+      client: [
+          {
+              id: bwell
+          }
+      ]
+    ) {
+        total_count
+        results {
+            npi
+            accepting_new
+            ancillary_networks
+            client
+            client_preferred
+            clients
+            content
+            content_auto
+            gender
+            high_level_specialty
+            in_networks
+            insurance {
+                display
+            }
+            is_covid_testing_location
+            language
+            location {
+                position {
+                    lat
+                    lon
+                }
+            }
+            out_networks
+            patients
+            patients_favorite
+            patients_pcp
+            practice
+            provider_filters
+            recent_appointments
+            specialty {
+                display
+            }
+            visit_reasons
+            next_available_slot {
+                appointmentType
+                start
+            }
+        }
+    }
+}

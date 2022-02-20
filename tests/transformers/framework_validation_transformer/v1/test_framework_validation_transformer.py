@@ -38,11 +38,8 @@ def test_validation_throws_error(spark_session: SparkSession) -> None:
             base_url=mock_server_url
         )
 
+        mock_client.reset()
         mock_client.expect_files_as_requests(requests_dir, url_prefix=None)
-
-        mock_client.verify_expectations(
-            test_name="test_framework_validation_transformer"
-        )
 
         FrameworkValidationTransformer(
             validation_source_path=str(query_dir),
@@ -51,6 +48,10 @@ def test_validation_throws_error(spark_session: SparkSession) -> None:
         ).transform(df)
 
         df.sql_ctx.table("pipeline_validation").show(truncate=False)
+
+        mock_client.verify_expectations(
+            test_name="test_framework_validation_transformer"
+        )
 
 
 def test_validation_records_error(spark_session: SparkSession) -> None:
