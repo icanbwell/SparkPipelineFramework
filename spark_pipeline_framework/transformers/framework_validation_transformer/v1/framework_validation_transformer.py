@@ -1,4 +1,6 @@
 import os
+
+from smart_open import open as smart_open  # type: ignore
 from typing import Optional, Dict, Any, List
 
 from pyspark import keyword_only
@@ -12,6 +14,7 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.file_helpers import isfile, listdir
 
 pipeline_validation_df_name = "pipeline_validation"
 
@@ -91,8 +94,8 @@ class FrameworkValidationTransformer(FrameworkTransformer):
 
     def _validate(self, path: str, df: DataFrame,) -> None:
         validation_df = self.get_validation_df(df)
-        if os.path.isfile(path):
-            with open(path, "r") as query_file:
+        if isfile(path):
+            with smart_open(path, "r") as query_file:
                 self.logger.info(f"Executing validation query: {path}")
                 query_text = query_file.read()
                 query_text = query_text.upper().replace(
@@ -105,7 +108,7 @@ class FrameworkValidationTransformer(FrameworkTransformer):
                     validation_df = df.sql_ctx.sql(query_text)
                     validation_df.createOrReplaceTempView(pipeline_validation_df_name)
         else:
-            paths = os.listdir(path)
+            paths = listdir(path)
             for child_path in paths:
                 new_path = os.path.join(path, child_path)
                 self._validate(new_path, df)

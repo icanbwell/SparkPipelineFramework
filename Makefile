@@ -9,6 +9,10 @@ Pipfile.lock: Pipfile
 devdocker: ## Builds the docker for dev
 	docker-compose build
 
+.PHONY:shell
+shell:devdocker ## Brings up the bash shell in dev docker
+	docker-compose run --rm --name helix_shell dev /bin/bash
+
 .PHONY:init
 init: devdocker up setup-pre-commit  ## Initializes the local developer environment
 

@@ -1,3 +1,7 @@
+import os
+import boto3  # type: ignore
+from botocore.exceptions import ClientError  # type: ignore
+from smart_open import s3  # type: ignore
 from pathlib import Path
 from typing import Union, List
 
@@ -32,3 +36,33 @@ def get_absolute_paths(filepath: Union[str, List[str], Path]) -> List[str]:
         return absolute_paths
     else:
         raise TypeError(f"Unknown type '{type(filepath)}' for filepath {filepath}")
+
+
+def isfile(path: str) -> bool:
+    if path.startswith("s3://"):
+        s3_uri = s3.parse_uri(path)
+        bucket = s3_uri["bucket_id"]
+        prefix = s3_uri["key_id"]
+        s3_resource = boto3.resource("s3")
+        try:
+            s3_resource.Object(bucket, prefix).load()
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                return False
+            else:
+                raise e
+
+    return os.path.isfile(path)
+
+
+def listdir(path: str) -> List[str]:
+    if path.startswith("s3://"):
+        s3_uri = s3.parse_uri(path)
+        bucket = s3_uri["bucket_id"]
+        prefix = s3_uri["key_id"]
+        query_files = []
+        for key, content in s3.iter_bucket(bucket, prefix=prefix):
+            query_files.append(key)
+        return query_files
+    return os.listdir(path)
