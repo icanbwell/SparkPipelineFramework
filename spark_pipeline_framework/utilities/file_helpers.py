@@ -57,12 +57,15 @@ def isfile(path: str) -> bool:
 
 
 def listdir(path: str) -> List[str]:
+    query_files = []
     if path.startswith("s3://"):
         s3_uri = s3.parse_uri(path)
         bucket = s3_uri["bucket_id"]
         prefix = s3_uri["key_id"]
-        query_files = []
         for key, content in s3.iter_bucket(bucket, prefix=prefix):
-            query_files.append(key)
+            query_files.append(f"s3://{bucket}/{key}")
         return query_files
-    return os.listdir(path)
+    paths = os.listdir(path)
+    for sub_path in paths:
+        query_files.append(os.path.join(path, sub_path))
+    return query_files
