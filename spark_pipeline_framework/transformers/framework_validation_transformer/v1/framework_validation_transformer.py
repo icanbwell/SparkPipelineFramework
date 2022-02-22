@@ -95,6 +95,7 @@ class FrameworkValidationTransformer(FrameworkTransformer):
     def _validate(self, path: str, df: DataFrame,) -> None:
         validation_df = self.get_validation_df(df)
         if isfile(path):
+            self.logger.info(f"Path: {path} is a file")
             with smart_open(path, "r") as query_file:
                 self.logger.info(f"Executing validation query: {path}")
                 query_text = query_file.read()
@@ -108,10 +109,11 @@ class FrameworkValidationTransformer(FrameworkTransformer):
                     validation_df = df.sql_ctx.sql(query_text)
                     validation_df.createOrReplaceTempView(pipeline_validation_df_name)
         else:
+            self.logger.info(f"Path: {path} is a directory, getting paths")
             paths = listdir(path)
+            self.logger.info(f"Got paths: {paths}")
             for child_path in paths:
-                new_path = os.path.join(path, child_path)
-                self._validate(new_path, df)
+                self._validate(child_path, df)
 
     def get_validation_df(self, df: DataFrame) -> Optional[DataFrame]:
         validation_df: Optional[DataFrame] = None
