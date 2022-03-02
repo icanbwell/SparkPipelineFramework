@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.utilities.class_helpers`
-=======================================================
+:py:mod:`spark_pipeline_framework.utilities.class_helpers`
+==========================================================
 
 .. py:module:: spark_pipeline_framework.utilities.class_helpers
 
@@ -16,13 +16,14 @@ Classes
 
 
 
-.. class:: ClassHelpers
 
-   .. method:: get_first_class_in_file(full_reference: str) -> Type[Transformer]
+.. py:class:: ClassHelpers
+
+   .. py:method:: get_first_class_in_file(full_reference: str) -> Type[pyspark.ml.base.Transformer]
       :staticmethod:
 
 
-   .. method:: instantiate_class_with_parameters(class_parameters: Dict[(str, Any)], my_class: Type[Any]) -> Any
+   .. py:method:: instantiate_class_with_parameters(class_parameters: Dict[str, Any], my_class: Type[Any]) -> Any
       :staticmethod:
 
 

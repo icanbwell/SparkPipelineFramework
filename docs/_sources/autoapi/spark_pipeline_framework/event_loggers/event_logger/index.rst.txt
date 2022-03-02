@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.event_loggers.event_logger`
-==========================================================
+:py:mod:`spark_pipeline_framework.event_loggers.event_logger`
+=============================================================
 
 .. py:module:: spark_pipeline_framework.event_loggers.event_logger
 
@@ -16,9 +16,10 @@ Classes
 
 
 
-.. class:: EventLogger
 
-   .. method:: log_progress_event(self, event_name: str, current: int, total: int, event_format_string: str, backoff: bool = True) -> None
+.. py:class:: EventLogger
+
+   .. py:method:: log_progress_event(self, event_name: str, current: int, total: int, event_format_string: str, backoff: bool = True) -> None
 
       Logs a progress event
       :param event_name:
@@ -28,7 +29,7 @@ Classes
       :param backoff:
 
 
-   .. method:: log_event(self, event_name: str, event_text: str) -> None
+   .. py:method:: log_event(self, event_name: str, event_text: str) -> None
 
       Logs a normal event
 
@@ -36,7 +37,7 @@ Classes
       :param event_text:
 
 
-   .. method:: log_exception(self, event_name: str, event_text: str, ex: Exception) -> None
+   .. py:method:: log_exception(self, event_name: str, event_text: str, ex: Exception) -> None
 
       Logs an exception
 

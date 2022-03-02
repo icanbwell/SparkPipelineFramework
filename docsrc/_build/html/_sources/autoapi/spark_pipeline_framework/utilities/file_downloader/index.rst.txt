@@ -1,0 +1,75 @@
+:py:mod:`spark_pipeline_framework.utilities.file_downloader`
+============================================================
+
+.. py:module:: spark_pipeline_framework.utilities.file_downloader
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.file_downloader.ThrowOnErrorOpener
+   spark_pipeline_framework.utilities.file_downloader.FileDownloader
+
+
+
+
+.. py:class:: ThrowOnErrorOpener(*args, **kwargs)
+
+   Bases: :py:obj:`urllib.request.FancyURLopener`
+
+   Derived class with handlers for errors we can handle (perhaps).
+
+   .. py:method:: http_error_default(self, url: str, fp: Any, errcode: int, errmsg: str, headers: Any) -> Any
+
+      Default error handling -- don't raise an exception.
+
+
+
+.. py:class:: FileDownloader(url: str, download_path: str, extract_archives: Optional[bool] = False)
+
+   Module to download files from urls
+   Inspired from python wget module: https://github.com/steveeJ/python-wget
+
+   .. py:method:: check_if_path_exists(path: str) -> bool
+      :staticmethod:
+
+
+   .. py:method:: get_filename_from_url(url: str) -> str
+      :staticmethod:
+
+
+   .. py:method:: rename_filename_if_exists(filename: str) -> str
+      :staticmethod:
+
+      Expands name portion of filename with numeric ' (x)' suffix to
+      return filename that doesn't exist already.
+
+
+   .. py:method:: extract_zip_files(self, filename: str, path: str, out_path: Optional[str] = None) -> Optional[str]
+
+      This function extracts the archive files and returns the corresponding file path.
+      Returns null if the specified path does not exists
+      :param filename: str: Name of the archive file
+      :param path: str: File path of the archive file
+      :param out_path: optional(str): Destination file path where the extracted files should be stored (default is same as path)
+      :returns filename: str: Output file path
+
+
+   .. py:method:: download_files_locally(self, filename: str) -> str
+
+
+   .. py:method:: download_files_to_s3(self, filename: str, bucket: str, download_path: str) -> str
+
+
+   .. py:method:: download_files_from_url(self) -> Optional[str]
+
+      Function to download files from a url
+
+
+
+

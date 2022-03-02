@@ -1,0 +1,68 @@
+:py:mod:`spark_pipeline_framework.pipelines.framework_param_pipeline`
+=====================================================================
+
+.. py:module:: spark_pipeline_framework.pipelines.framework_param_pipeline
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.pipelines.framework_param_pipeline.FrameworkParamPipeline
+
+
+
+
+.. py:class:: FrameworkParamPipeline(parameters: Dict[str, Any], progress_logger: spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger)
+
+   Bases: :py:obj:`spark_pipeline_framework.pipelines.framework_pipeline.FrameworkPipeline`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. py:method:: fit(self, df: pyspark.sql.dataframe.DataFrame, response: Dict[str, Any]) -> FrameworkParamPipeline
+
+
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame, response: Dict[str, Any]) -> Any
+
+      Transforms the input dataset.
+
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
+
+
+   .. py:method:: transform(self, dataset: pyspark.sql.dataframe.DataFrame, response: Dict[str, Any], params: Dict[Any, Any] = None)
+
+      Transforms the input dataset with optional parameters.
+
+      .. versionadded:: 1.3.0
+
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset
+      params : dict, optional
+          an optional param map that overrides embedded params.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
+
+
+   .. py:method:: create_steps(self, my_list: Union[List[pyspark.ml.base.Transformer], List[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer], List[spark_pipeline_framework.transformers.framework_param_transformer.v1.framework_param_transformer.FrameworkParamTransformer], List[Union[pyspark.ml.base.Transformer, List[pyspark.ml.base.Transformer]]], List[Union[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer, List[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer]]], List[Union[spark_pipeline_framework.transformers.framework_param_transformer.v1.framework_param_transformer.FrameworkParamTransformer, List[spark_pipeline_framework.transformers.framework_param_transformer.v1.framework_param_transformer.FrameworkParamTransformer]]]]) -> List[Union[pyspark.ml.base.Transformer, spark_pipeline_framework.transformers.framework_param_transformer.v1.framework_param_transformer.FrameworkParamTransformer]]
+
+
+

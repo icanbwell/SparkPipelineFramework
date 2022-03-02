@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader`
-=================================================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader`
+====================================================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader
 
@@ -16,48 +16,40 @@ Classes
 
 
 
-.. class:: FrameworkParquetLoader(view: str, file_path: Union[(str, List[str], Path)], name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None, merge_schema: bool = False, limit: int = -1)
 
+.. py:class:: FrameworkParquetLoader(view: str, file_path: Union[str, List[str], pathlib.Path], name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, merge_schema: bool = False, limit: int = -1)
 
-   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: setParams(self, view: str, file_path: Union[(str, List[str], Path)], name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None, merge_schema: bool = False, limit: int = -1) -> None
-
-
-   .. method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
 
       Transforms the input dataset.
 
-      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
-      :returns: transformed dataset
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
 
 
-   .. method:: setView(self, value: str) -> spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader.FrameworkParquetLoader
+   .. py:method:: getView(self) -> str
 
 
-   .. method:: getView(self) -> str
+   .. py:method:: getFilePath(self) -> Union[str, List[str], pathlib.Path]
 
 
-   .. method:: setFilePath(self, value: Union[(str, List[str], Path)]) -> spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader.FrameworkParquetLoader
+   .. py:method:: getMergeSchema(self) -> bool
 
 
-   .. method:: getFilePath(self) -> Union[(str, List[str], Path)]
-
-
-   .. method:: setMergeSchema(self, value: bool) -> spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader.FrameworkParquetLoader
-
-
-   .. method:: getMergeSchema(self) -> bool
-
-
-   .. method:: setLimit(self, value: int) -> spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework_parquet_loader.FrameworkParquetLoader
-
-
-   .. method:: getLimit(self) -> int
+   .. py:method:: getLimit(self) -> int
 
 
 

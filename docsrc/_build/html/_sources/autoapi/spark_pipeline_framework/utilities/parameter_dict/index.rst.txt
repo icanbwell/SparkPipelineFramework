@@ -1,0 +1,33 @@
+:py:mod:`spark_pipeline_framework.utilities.parameter_dict`
+===========================================================
+
+.. py:module:: spark_pipeline_framework.utilities.parameter_dict
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.parameter_dict.ParameterDict
+
+
+
+
+.. py:class:: ParameterDict(*args, **kwargs)
+
+   Bases: :py:obj:`collections.UserDict`
+
+   This dictionary returns the value if the key exists otherwise if the key starts with view_
+   then it returns the key minus view_
+
+   .. py:method:: __getitem__(self, key: str) -> Any
+
+
+   .. py:method:: copy(self) -> ParameterDict
+
+
+

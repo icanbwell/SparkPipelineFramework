@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.logger`
-======================================
+:py:mod:`spark_pipeline_framework.logger`
+=========================================
 
 .. py:module:: spark_pipeline_framework.logger
 

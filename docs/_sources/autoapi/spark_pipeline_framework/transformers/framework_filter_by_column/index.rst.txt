@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_filter_by_column`
-=======================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_filter_by_column`
+==========================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_filter_by_column
 

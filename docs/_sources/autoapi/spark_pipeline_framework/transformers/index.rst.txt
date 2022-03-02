@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers`
-============================================
+:py:mod:`spark_pipeline_framework.transformers`
+===============================================
 
 .. py:module:: spark_pipeline_framework.transformers
 
@@ -17,7 +17,11 @@ Subpackages
    framework_db_query_runner/index.rst
    framework_drop_duplicates_transformer/index.rst
    framework_drop_rows_with_null_transformer/index.rst
+   framework_file_downloader/index.rst
+   framework_fill_na_transformer/index.rst
    framework_filter_by_column/index.rst
+   framework_fixed_width_loader/index.rst
+   framework_if_else_transformer/index.rst
    framework_jdbc_exporter/index.rst
    framework_jdbc_reader/index.rst
    framework_json_exporter/index.rst
@@ -27,6 +31,7 @@ Subpackages
    framework_kafka_reader/index.rst
    framework_local_file_loader/index.rst
    framework_mapping_runner/index.rst
+   framework_param_transformer/index.rst
    framework_parquet_exporter/index.rst
    framework_parquet_loader/index.rst
    framework_partitioner/index.rst
@@ -34,5 +39,8 @@ Subpackages
    framework_sql_transformer/index.rst
    framework_transformer/index.rst
    framework_url_loader/index.rst
+   framework_validation_transformer/index.rst
+   framework_web_crawler/index.rst
+   framework_xml_loader/index.rst
 
 

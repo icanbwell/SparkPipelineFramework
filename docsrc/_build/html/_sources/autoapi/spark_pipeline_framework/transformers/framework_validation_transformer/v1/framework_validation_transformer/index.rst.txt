@@ -1,0 +1,71 @@
+:py:mod:`spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer`
+====================================================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer.FrameworkValidationTransformer
+
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer.pipeline_validation_df_name
+
+
+.. py:data:: pipeline_validation_df_name
+   :annotation: = pipeline_validation
+
+   
+
+.. py:class:: FrameworkValidationTransformer(validation_source_path: str, validation_queries: List[str], fail_on_validation: bool = False, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None)
+
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+
+   The FrameworkValidationTransformer will run all SQL based validations in the paths specified and optionally fail the
+   pipeline if validations fail. The results of validation will be stored in a dataframe and persisted with a temp table
+   named 'pipeline_validation'
+
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+
+      Transforms the input dataset.
+
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
+
+
+   .. py:method:: _validate(self, path: str, df: pyspark.sql.dataframe.DataFrame) -> None
+
+
+   .. py:method:: get_validation_df(self, df: pyspark.sql.dataframe.DataFrame) -> Optional[pyspark.sql.dataframe.DataFrame]
+
+
+   .. py:method:: getValidationSourcePath(self) -> str
+
+
+   .. py:method:: getValidationQueries(self) -> List[str]
+
+
+   .. py:method:: getFailOnValidation(self) -> bool
+
+
+

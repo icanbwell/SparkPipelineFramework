@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.utilities.pipeline_helper`
-=========================================================
+:py:mod:`spark_pipeline_framework.utilities.pipeline_helper`
+============================================================
 
 .. py:module:: spark_pipeline_framework.utilities.pipeline_helper
 
@@ -16,6 +16,7 @@ Functions
    spark_pipeline_framework.utilities.pipeline_helper.create_steps
 
 
-.. function:: create_steps(my_list: List[Union[Transformer, List[Transformer]]]) -> List[Transformer]
+
+.. py:function:: create_steps(my_list: Union[List[pyspark.ml.Transformer], List[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer], List[Union[pyspark.ml.Transformer, List[pyspark.ml.Transformer]]], List[Union[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer, List[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer]]]]) -> List[pyspark.ml.Transformer]
 
 

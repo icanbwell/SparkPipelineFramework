@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_jdbc_exporter.v1.framework_jdbc_exporter`
-===============================================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_jdbc_exporter.v1.framework_jdbc_exporter`
+==================================================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_jdbc_exporter.v1.framework_jdbc_exporter
 
@@ -16,40 +16,28 @@ Classes
 
 
 
-.. class:: FrameworkJdbcExporter(jdbc_url: str, table: str, driver: str, **kwargs: Dict[(Any, Any)])
 
+.. py:class:: FrameworkJdbcExporter(jdbc_url: str, table: str, driver: str, view: Optional[str] = None, name: Optional[str] = None, mode: str = FrameworkBaseExporter.MODE_ERROR, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1, options: Dict[str, Any] = {})
 
-   Bases: :class:`spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter.FrameworkBaseExporter`
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter.FrameworkBaseExporter`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: setJdbcUrl(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_jdbc_exporter.v1.framework_jdbc_exporter.FrameworkJdbcExporter
+   .. py:method:: getJdbcUrl(self) -> str
 
 
-   .. method:: getJdbcUrl(self) -> str
+   .. py:method:: getTable(self) -> str
 
 
-   .. method:: setTable(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_jdbc_exporter.v1.framework_jdbc_exporter.FrameworkJdbcExporter
+   .. py:method:: getDriver(self) -> str
 
 
-   .. method:: getTable(self) -> str
+   .. py:method:: getFormat(self) -> str
 
 
-   .. method:: setDriver(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_jdbc_exporter.v1.framework_jdbc_exporter.FrameworkJdbcExporter
-
-
-   .. method:: getDriver(self) -> str
-
-
-   .. method:: getFormat(self) -> str
-
-
-   .. method:: setOptions(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_jdbc_exporter.v1.framework_jdbc_exporter.FrameworkJdbcExporter
-
-
-   .. method:: getOptions(self) -> Dict[(str, Any)]
+   .. py:method:: getOptions(self) -> Dict[str, Any]
 
 
 

@@ -1,7 +1,16 @@
-:mod:`spark_pipeline_framework.pipelines`
-=========================================
+:py:mod:`spark_pipeline_framework.pipelines`
+============================================
 
 .. py:module:: spark_pipeline_framework.pipelines
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   v2/index.rst
 
 
 Submodules
@@ -10,6 +19,7 @@ Submodules
    :titlesonly:
    :maxdepth: 1
 
+   framework_param_pipeline/index.rst
    framework_pipeline/index.rst
 
 

@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.proxy_generator.proxy_base`
-==========================================================
+:py:mod:`spark_pipeline_framework.proxy_generator.proxy_base`
+=============================================================
 
 .. py:module:: spark_pipeline_framework.proxy_generator.proxy_base
 
@@ -16,38 +16,45 @@ Classes
 
 
 
-.. class:: ProxyBase(parameters: Dict[(str, Any)], location: Union[(str, Path)], progress_logger: Optional[ProgressLogger] = None, verify_count_remains_same: bool = False)
 
+.. py:class:: ProxyBase(parameters: Dict[str, Any], location: Union[str, pathlib.Path], progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, verify_count_remains_same: bool = False)
 
-   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: read_file_as_string(file_path: str) -> str
+   .. py:method:: read_file_as_string(file_path: str) -> str
       :staticmethod:
 
 
-   .. method:: transformers(self) -> List[Transformer]
+   .. py:method:: transformers(self) -> List[pyspark.ml.base.Transformer]
       :property:
 
 
-   .. method:: _transform(self, df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame
+   .. py:method:: _transform(self, df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame
 
       Transforms the input dataset.
 
-      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
-      :returns: transformed dataset
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
 
 
-   .. method:: fit(self, df: pyspark.sql.DataFrame) -> pyspark.ml.base.Transformer
+   .. py:method:: fit(self, df: pyspark.sql.DataFrame) -> pyspark.ml.base.Transformer
 
 
-   .. method:: get_python_transformer(self, import_module_name: str) -> pyspark.ml.base.Transformer
+   .. py:method:: get_python_transformer(self, import_module_name: str, mapping_file_name: Optional[str] = None) -> pyspark.ml.base.Transformer
 
 
-   .. method:: get_python_mapping_transformer(self, import_module_name: str) -> pyspark.ml.base.Transformer
+   .. py:method:: get_python_mapping_transformer(self, import_module_name: str, mapping_file_name: Optional[str]) -> pyspark.ml.base.Transformer
 
 
 

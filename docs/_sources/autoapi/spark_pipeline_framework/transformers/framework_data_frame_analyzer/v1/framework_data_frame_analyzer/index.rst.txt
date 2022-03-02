@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_data_frame_analyzer.v1.framework_data_frame_analyzer`
-===========================================================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_data_frame_analyzer.v1.framework_data_frame_analyzer`
+==============================================================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_data_frame_analyzer.v1.framework_data_frame_analyzer
 
@@ -16,39 +16,43 @@ Classes
 
 
 
-.. class:: FrameworkDataFrameAnalyzer(view: str, analysis_views_prefix: Optional[str] = None, output_folder: Optional[Union[Path, str]] = None, columns_to_analyze: Optional[List[str]] = None, columns_to_skip: Optional[List[str]] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None)
 
+.. py:class:: FrameworkDataFrameAnalyzer(view: str, analysis_views_prefix: Optional[str] = None, output_folder: Optional[Union[pathlib.Path, str]] = None, columns_to_analyze: Optional[List[str]] = None, columns_to_skip: Optional[List[str]] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None)
 
-   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: setParams(self, view: str, analysis_views_prefix: Optional[str] = None, output_folder: Optional[Union[Path, str]] = None, columns_to_analyze: Optional[List[str]] = None, columns_to_skip: Optional[List[str]] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None) -> Any
-
-
-   .. method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
 
       Transforms the input dataset.
 
-      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
-      :returns: transformed dataset
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
 
 
-   .. method:: getView(self) -> str
+   .. py:method:: getView(self) -> str
 
 
-   .. method:: getAnalysisViewsPrefix(self) -> str
+   .. py:method:: getAnalysisViewsPrefix(self) -> Optional[str]
 
 
-   .. method:: getOutputFolder(self) -> Optional[Union[Path, str]]
+   .. py:method:: getOutputFolder(self) -> Optional[Union[pathlib.Path, str]]
 
 
-   .. method:: getColumnsToAnalyze(self) -> Optional[List[str]]
+   .. py:method:: getColumnsToAnalyze(self) -> Optional[List[str]]
 
 
-   .. method:: getColumnsToSkip(self) -> Optional[List[str]]
+   .. py:method:: getColumnsToSkip(self) -> Optional[List[str]]
 
 
 

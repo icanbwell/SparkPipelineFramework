@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.progress_logger.progress_log_metric`
-===================================================================
+:py:mod:`spark_pipeline_framework.progress_logger.progress_log_metric`
+======================================================================
 
 .. py:module:: spark_pipeline_framework.progress_logger.progress_log_metric
 
@@ -16,22 +16,22 @@ Classes
 
 
 
-.. class:: ProgressLogMetric(name: str, progress_logger: Optional[ProgressLogger])
+
+.. py:class:: ProgressLogMetric(name: str, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger])
+
+   .. py:method:: __enter__(self) -> ProgressLogMetric
 
 
-   .. method:: __enter__(self) -> spark_pipeline_framework.progress_logger.progress_log_metric.ProgressLogMetric
+   .. py:method:: __exit__(self, exc_type: Optional[BaseException], exc_value: Optional[BaseException], traceback: Optional[types.TracebackType]) -> None
 
 
-   .. method:: __exit__(self, exc_type: Optional[BaseException], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> None
-
-
-   .. method:: start(self) -> spark_pipeline_framework.progress_logger.progress_log_metric.ProgressLogMetric
+   .. py:method:: start(self) -> ProgressLogMetric
 
       start
       :return:
 
 
-   .. method:: stop(self) -> None
+   .. py:method:: stop(self) -> None
 
       stop
 

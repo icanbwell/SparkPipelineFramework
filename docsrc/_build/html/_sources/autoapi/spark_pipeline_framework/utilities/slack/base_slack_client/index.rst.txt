@@ -1,0 +1,26 @@
+:py:mod:`spark_pipeline_framework.utilities.slack.base_slack_client`
+====================================================================
+
+.. py:module:: spark_pipeline_framework.utilities.slack.base_slack_client
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.slack.base_slack_client.BaseSlackClient
+
+
+
+
+.. py:class:: BaseSlackClient
+
+   .. py:method:: post_message_to_slack(self, text: str, blocks: Any = None, use_conversation_threads: bool = True) -> Any
+      :abstractmethod:
+
+
+

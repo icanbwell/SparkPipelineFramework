@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
@@ -83,7 +86,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../index.html">API Reference</a></li>
 </ul>
@@ -172,6 +175,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pipelines/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.pipelines</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipelines/v2/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.pipelines.v2</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pipelines/v2/framework_pipeline/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.pipelines.v2.framework_pipeline</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pipelines/framework_param_pipeline/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.pipelines.framework_param_pipeline</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pipelines/framework_pipeline/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.pipelines.framework_pipeline</span></code></a></li>
 </ul>
 </li>
@@ -218,8 +226,24 @@
 <li class="toctree-l3"><a class="reference internal" href="transformers/framework_drop_rows_with_null_transformer/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_drop_rows_with_null_transformer.v1</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="transformers/framework_file_downloader/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_file_downloader</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="transformers/framework_file_downloader/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_file_downloader.v1</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="transformers/framework_fill_na_transformer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_fill_na_transformer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="transformers/framework_fill_na_transformer/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_fill_na_transformer.v1</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="transformers/framework_filter_by_column/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_filter_by_column</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="transformers/framework_filter_by_column/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_filter_by_column.v1</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="transformers/framework_fixed_width_loader/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_fixed_width_loader</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="transformers/framework_fixed_width_loader/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_fixed_width_loader.v1</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="transformers/framework_if_else_transformer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_if_else_transformer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="transformers/framework_if_else_transformer/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_if_else_transformer.v1</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="transformers/framework_jdbc_exporter/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_jdbc_exporter</span></code></a><ul>
@@ -258,6 +282,10 @@
 <li class="toctree-l3"><a class="reference internal" href="transformers/framework_mapping_runner/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_mapping_runner.v1</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="transformers/framework_param_transformer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_param_transformer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="transformers/framework_param_transformer/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_param_transformer.v1</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="transformers/framework_parquet_exporter/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_parquet_exporter</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="transformers/framework_parquet_exporter/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_parquet_exporter.v1</span></code></a></li>
 </ul>
@@ -286,20 +314,42 @@
 <li class="toctree-l3"><a class="reference internal" href="transformers/framework_url_loader/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_url_loader.v1</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="transformers/framework_validation_transformer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_validation_transformer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="transformers/framework_validation_transformer/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_validation_transformer.v1</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="transformers/framework_web_crawler/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_web_crawler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="transformers/framework_web_crawler/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_web_crawler.v1</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="transformers/framework_xml_loader/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_xml_loader</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="transformers/framework_xml_loader/v1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.transformers.framework_xml_loader.v1</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utilities/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="utilities/slack/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.slack</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="utilities/slack/base_slack_client/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.slack.base_slack_client</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utilities/slack/slack_client/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.slack.slack_client</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utilities/slack/slack_client_native/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.slack.slack_client_native</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/FriendlySparkException/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.FriendlySparkException</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/base_spider_class/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.base_spider_class</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/cannot_cast_exception_parser/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.cannot_cast_exception_parser</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/class_helpers/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.class_helpers</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/file_downloader/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.file_downloader</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/file_helpers/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.file_helpers</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/flattener/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.flattener</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/json_to_jsonl_converter/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.json_to_jsonl_converter</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/list_utils/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.list_utils</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/module_utilities/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.module_utilities</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/parameter_dict/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.parameter_dict</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/pipeline_helper/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.pipeline_helper</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/run_if_else/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.run_if_else</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/save_csv_to_parquet/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.save_csv_to_parquet</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities/slack_client/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.slack_client</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/scrapy_custom_crawler/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.scrapy_custom_crawler</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities/spark_data_frame_helpers/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spark_pipeline_framework.utilities.spark_data_frame_helpers</span></code></a></li>
 </ul>
 </li>

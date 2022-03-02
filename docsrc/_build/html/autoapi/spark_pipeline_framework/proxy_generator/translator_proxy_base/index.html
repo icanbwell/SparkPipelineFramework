@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
@@ -83,7 +86,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
 </ul>
@@ -171,11 +174,11 @@
 </tbody>
 </table>
 <dl class="py class">
-<dt id="spark_pipeline_framework.proxy_generator.translator_proxy_base.TranslatorProxyBase">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.proxy_generator.translator_proxy_base.</span></code><code class="sig-name descname"><span class="pre">TranslatorProxyBase</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csv_file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.translator_proxy_base.TranslatorProxyBase" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="spark_pipeline_framework.proxy_generator.translator_proxy_base.TranslatorProxyBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.proxy_generator.translator_proxy_base.</span></span><span class="sig-name descname"><span class="pre">TranslatorProxyBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csv_file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.translator_proxy_base.TranslatorProxyBase" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
-<dt id="spark_pipeline_framework.proxy_generator.translator_proxy_base.TranslatorProxyBase.get_mapping">
-<code class="sig-name descname"><span class="pre">get_mapping</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">AutoMapperTextInputType</span><span class="p"><span class="pre">,</span> </span><span class="pre">AutoMapperAnyDataType</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.translator_proxy_base.TranslatorProxyBase.get_mapping" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="spark_pipeline_framework.proxy_generator.translator_proxy_base.TranslatorProxyBase.get_mapping">
+<span class="sig-name descname"><span class="pre">get_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">spark_auto_mapper.type_definitions.defined_types.AutoMapperTextInputType</span><span class="p"><span class="pre">,</span> </span><span class="pre">spark_auto_mapper.type_definitions.defined_types.AutoMapperAnyDataType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#spark_pipeline_framework.proxy_generator.translator_proxy_base.TranslatorProxyBase.get_mapping" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

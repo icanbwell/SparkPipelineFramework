@@ -1,0 +1,16 @@
+:py:mod:`spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner_exception`
+==============================================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner_exception
+
+
+Module Contents
+---------------
+
+.. py:exception:: FrameworkMappingRunnerException(msg: str, exception: Exception)
+
+   Bases: :py:obj:`Exception`
+
+   Common base class for all non-exit exceptions.
+
+

@@ -1,0 +1,48 @@
+:py:mod:`spark_pipeline_framework.utilities.slack.slack_client_native`
+======================================================================
+
+.. py:module:: spark_pipeline_framework.utilities.slack.slack_client_native
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.slack.slack_client_native.SlackClientNative
+
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.slack.slack_client_native.logger
+
+
+.. py:data:: logger
+   
+
+   
+
+.. py:class:: SlackClientNative(slack_token: str, channel: str, bot_user_name: str)
+
+   Bases: :py:obj:`spark_pipeline_framework.utilities.slack.base_slack_client.BaseSlackClient`
+
+   Implements a native Slack client
+
+   .. py:method:: post_message_to_slack(self, text: str, blocks: Any = None, use_conversation_threads: bool = True) -> Any
+
+      Posts a message to Slack
+      :param text: message to post.  Can be markdown.
+      :param blocks: (Optional) blocks to post
+      :param use_conversation_threads: whether to send messages as reply to first message
+      :return: response from Slack
+
+
+

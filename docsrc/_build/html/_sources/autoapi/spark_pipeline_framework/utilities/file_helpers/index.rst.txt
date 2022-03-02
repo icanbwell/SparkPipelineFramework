@@ -1,0 +1,35 @@
+:py:mod:`spark_pipeline_framework.utilities.file_helpers`
+=========================================================
+
+.. py:module:: spark_pipeline_framework.utilities.file_helpers
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.file_helpers.get_absolute_paths
+   spark_pipeline_framework.utilities.file_helpers.isfile
+   spark_pipeline_framework.utilities.file_helpers.listdir
+
+
+
+.. py:function:: get_absolute_paths(filepath: Union[str, List[str], pathlib.Path]) -> List[str]
+
+   Abstracts handling of paths so we can use paths on both k8s in AWS as well as local
+
+   :param filepath: the path or paths to format appropriately
+   :return: a list of paths optimized for local or k8s usages
+
+
+.. py:function:: isfile(path: str) -> bool
+
+
+.. py:function:: listdir(path: str) -> List[str]
+
+

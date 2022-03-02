@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
@@ -83,7 +86,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
 </ul>
@@ -165,28 +168,18 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.run_if_else.run_if_else" title="spark_pipeline_framework.utilities.run_if_else.run_if_else"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_if_else</span></code></a>(enable: bool, stages: Union[(List[Transformer], Callable[[], List[Transformer]])], else_stages: Optional[Union[List[Transformer], Callable[[], List[Transformer]]]] = None) → List[Transformer]</p></td>
-<td><p>If enable is true then it returns stages otherwise it returns else_stages</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.run_if_else.run_if_else" title="spark_pipeline_framework.utilities.run_if_else.run_if_else"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_if_else</span></code></a>(enable: Union[bool, Callable[[pyspark.sql.dataframe.DataFrame], bool]], stages: Union[List[pyspark.ml.Transformer], Callable[[], List[pyspark.ml.Transformer]]], else_stages: Optional[Union[List[pyspark.ml.Transformer], Callable[[], List[pyspark.ml.Transformer]]]] = None) → spark_pipeline_framework.transformers.framework_if_else_transformer.v1.framework_if_else_transformer.FrameworkIfElseTransformer</p></td>
+<td><p>If enable flag is true then runs stages else runs else_stages</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py function">
-<dt id="spark_pipeline_framework.utilities.run_if_else.run_if_else">
-<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.run_if_else.</span></code><code class="sig-name descname"><span class="pre">run_if_else</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enable</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stages</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">else_stages</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.run_if_else.run_if_else" title="Permalink to this definition">¶</a></dt>
-<dd><p>If enable is true then it returns stages otherwise it returns else_stages
-(If stages or else_stages is a function then it evaluates it and returns the result</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>enable</strong> – whether to return stages or else_stages</p></li>
-<li><p><strong>stages</strong> – </p></li>
-<li><p><strong>else_stages</strong> – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="spark_pipeline_framework.utilities.run_if_else.run_if_else">
+<span class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.run_if_else.</span></span><span class="sig-name descname"><span class="pre">run_if_else</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enable</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.sql.dataframe.DataFrame</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stages</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">else_stages</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../transformers/framework_if_else_transformer/v1/framework_if_else_transformer/index.html#spark_pipeline_framework.transformers.framework_if_else_transformer.v1.framework_if_else_transformer.FrameworkIfElseTransformer" title="spark_pipeline_framework.transformers.framework_if_else_transformer.v1.framework_if_else_transformer.FrameworkIfElseTransformer"><span class="pre">spark_pipeline_framework.transformers.framework_if_else_transformer.v1.framework_if_else_transformer.FrameworkIfElseTransformer</span></a></span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.run_if_else.run_if_else" title="Permalink to this definition">¶</a></dt>
+<dd><p>If enable flag is true then runs stages else runs else_stages
+:param enable: a boolean or a function that takes a DataFrame and returns a boolean
+:param stages: list of transformers or a function that returns a list of transformers
+:param else_stages: list of transformers or a function that returns a list of transformers</p>
 </dd></dl>
 
 </div>

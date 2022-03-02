@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
@@ -83,7 +86,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
 </ul>
@@ -171,16 +174,16 @@
 </tbody>
 </table>
 <dl class="py class">
-<dt id="spark_pipeline_framework.utilities.class_helpers.ClassHelpers">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.class_helpers.</span></code><code class="sig-name descname"><span class="pre">ClassHelpers</span></code><a class="headerlink" href="#spark_pipeline_framework.utilities.class_helpers.ClassHelpers" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="spark_pipeline_framework.utilities.class_helpers.ClassHelpers">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.class_helpers.</span></span><span class="sig-name descname"><span class="pre">ClassHelpers</span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.class_helpers.ClassHelpers" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
-<dt id="spark_pipeline_framework.utilities.class_helpers.ClassHelpers.get_first_class_in_file">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">get_first_class_in_file</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">full_reference</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.class_helpers.ClassHelpers.get_first_class_in_file" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="spark_pipeline_framework.utilities.class_helpers.ClassHelpers.get_first_class_in_file">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_first_class_in_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">full_reference</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.base.Transformer</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.class_helpers.ClassHelpers.get_first_class_in_file" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt id="spark_pipeline_framework.utilities.class_helpers.ClassHelpers.instantiate_class_with_parameters">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">instantiate_class_with_parameters</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_parameters</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">my_class</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Any</span><a class="headerlink" href="#spark_pipeline_framework.utilities.class_helpers.ClassHelpers.instantiate_class_with_parameters" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="spark_pipeline_framework.utilities.class_helpers.ClassHelpers.instantiate_class_with_parameters">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">instantiate_class_with_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_parameters</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">my_class</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.class_helpers.ClassHelpers.instantiate_class_with_parameters" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

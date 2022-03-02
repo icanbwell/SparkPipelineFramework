@@ -1,0 +1,42 @@
+:py:mod:`spark_pipeline_framework.utilities.base_spider_class`
+==============================================================
+
+.. py:module:: spark_pipeline_framework.utilities.base_spider_class
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.base_spider_class.BaseSpiderClass
+
+
+
+
+.. py:class:: BaseSpiderClass(name: str, urls: List[str], **kwargs: Any)
+
+   Bases: :py:obj:`scrapy.Spider`
+
+   Base class of scrapy spiders.
+   All spiders must inherit from this class.
+
+   .. py:method:: start_requests(self) -> Any
+
+      Function to define the start urls and callback methods for a spider
+
+
+   .. py:method:: parse(self, response: scrapy.http.Response, **kwargs: Dict[str, Any]) -> Any
+
+      Function to search for look for elements and yield them.
+
+
+   .. py:method:: close(self, spider: scrapy.Spider, reason: Union[str, Exception]) -> None
+
+      Function to define tasks to perform before crawl completion
+
+
+

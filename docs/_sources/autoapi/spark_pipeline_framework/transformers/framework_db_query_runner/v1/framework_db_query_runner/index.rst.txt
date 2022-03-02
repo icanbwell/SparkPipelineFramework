@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner`
-===================================================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner`
+======================================================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner
 
@@ -16,57 +16,46 @@ Classes
 
 
 
-.. class:: FrameworkDBQueryRunner(username: str, password: str, host: str, port: int, query: str, db_name: Optional[str] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None)
 
+.. py:class:: FrameworkDBQueryRunner(username: str, password: str, host: str, port: int, query: str, db_name: Optional[str] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None)
 
-   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
 
       Transforms the input dataset.
 
-      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
-      :returns: transformed dataset
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
 
 
-   .. method:: setUsername(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner.FrameworkDBQueryRunner
+   .. py:method:: getUsername(self) -> str
 
 
-   .. method:: getUsername(self) -> str
+   .. py:method:: getPassword(self) -> str
 
 
-   .. method:: setPassword(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner.FrameworkDBQueryRunner
+   .. py:method:: getHost(self) -> str
 
 
-   .. method:: getPassword(self) -> str
+   .. py:method:: getPort(self) -> int
 
 
-   .. method:: setHost(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner.FrameworkDBQueryRunner
+   .. py:method:: getQuery(self) -> str
 
 
-   .. method:: getHost(self) -> str
-
-
-   .. method:: setPort(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner.FrameworkDBQueryRunner
-
-
-   .. method:: getPort(self) -> int
-
-
-   .. method:: setQuery(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner.FrameworkDBQueryRunner
-
-
-   .. method:: getQuery(self) -> str
-
-
-   .. method:: setDb(self, value: pyspark.ml.param.Param) -> spark_pipeline_framework.transformers.framework_db_query_runner.v1.framework_db_query_runner.FrameworkDBQueryRunner
-
-
-   .. method:: getDb(self) -> str
+   .. py:method:: getDb(self) -> Optional[str]
 
 
 

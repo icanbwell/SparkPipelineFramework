@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.progress_logger.progress_logger`
-===============================================================
+:py:mod:`spark_pipeline_framework.progress_logger.progress_logger`
+==================================================================
 
 .. py:module:: spark_pipeline_framework.progress_logger.progress_logger
 
@@ -16,31 +16,31 @@ Classes
 
 
 
-.. class:: ProgressLogger(event_loggers: Optional[List[EventLogger]] = None)
+
+.. py:class:: ProgressLogger(event_loggers: Optional[List[spark_pipeline_framework.event_loggers.event_logger.EventLogger]] = None)
+
+   .. py:method:: __enter__(self) -> ProgressLogger
 
 
-   .. method:: __enter__(self) -> spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger
+   .. py:method:: __exit__(self, exc_type: Optional[BaseException], exc_value: Optional[BaseException], traceback: Optional[types.TracebackType]) -> None
 
 
-   .. method:: __exit__(self, exc_type: Optional[BaseException], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> None
+   .. py:method:: log_metric(self, name: str, time_diff_in_minutes: float) -> None
 
 
-   .. method:: log_metric(self, name: str, time_diff_in_minutes: float) -> None
+   .. py:method:: log_artifact(self, key: str, contents: str, folder_path: Optional[str] = None) -> None
 
 
-   .. method:: log_artifact(self, key: str, contents: str, folder_path: Optional[str] = None) -> None
+   .. py:method:: write_to_log(self, name: str, message: str = '') -> bool
 
 
-   .. method:: write_to_log(self, name: str, message: str = '') -> bool
+   .. py:method:: log_exception(self, event_name: str, event_text: str, ex: Exception) -> None
 
 
-   .. method:: log_exception(self, event_name: str, event_text: str, ex: Exception) -> None
+   .. py:method:: log_progress_event(self, event_name: str, current: int, total: int, event_format_string: str, backoff: bool = True) -> None
 
 
-   .. method:: log_progress_event(self, event_name: str, current: int, total: int, event_format_string: str, backoff: bool = True) -> None
-
-
-   .. method:: log_event(self, event_name: str, event_text: str) -> None
+   .. py:method:: log_event(self, event_name: str, event_text: str) -> None
 
 
 

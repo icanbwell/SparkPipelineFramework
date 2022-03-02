@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader`
-=========================================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader`
+============================================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader
 
@@ -16,37 +16,28 @@ Classes
 
 
 
-.. class:: FrameworkCsvLoader(view: str, path_to_csv: Union[(str, List[str], Path)], delimiter: str = ',', has_header: bool = True, clean_column_names: bool = False, multiline: bool = False, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None, **kwargs: Dict[(Any, Any)])
 
+.. py:class:: FrameworkCsvLoader(view: str, filepath: Union[str, List[str], pathlib.Path], delimiter: str = ',', has_header: bool = True, clean_column_names: bool = False, multiline: bool = False, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1, infer_schema: bool = False, cache_table: bool = True, schema: Optional[pyspark.sql.types.StructType] = None, create_file_path: bool = False, mapping_file_name: Optional[str] = None)
 
-   Bases: :class:`spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader`
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: setDelimiter(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader.FrameworkCsvLoader
+   .. py:method:: getDelimiter(self) -> str
 
 
-   .. method:: getDelimiter(self) -> str
+   .. py:method:: getHasHeader(self) -> bool
 
 
-   .. method:: setHasHeader(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader.FrameworkCsvLoader
+   .. py:method:: getMultiline(self) -> bool
 
 
-   .. method:: getHasHeader(self) -> bool
+   .. py:method:: getReaderFormat(self) -> str
 
 
-   .. method:: setMultiline(self, value: pyspark.ml.param.shared.Param) -> spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader.FrameworkCsvLoader
-
-
-   .. method:: getMultiline(self) -> bool
-
-
-   .. method:: getReaderFormat(self) -> str
-
-
-   .. method:: getReaderOptions(self) -> Dict[(str, Any)]
+   .. py:method:: getReaderOptions(self) -> Dict[str, Any]
 
 
 

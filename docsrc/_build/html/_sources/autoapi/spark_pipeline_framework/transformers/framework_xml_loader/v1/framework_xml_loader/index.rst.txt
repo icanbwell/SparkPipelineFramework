@@ -1,0 +1,53 @@
+:py:mod:`spark_pipeline_framework.transformers.framework_xml_loader.v1.framework_xml_loader`
+============================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_xml_loader.v1.framework_xml_loader
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_xml_loader.v1.framework_xml_loader.FrameworkXmlLoader
+
+
+
+
+.. py:class:: FrameworkXmlLoader(view: str, filepath: Union[str, List[str], pathlib.Path], row_tag: str, schema: Optional[pyspark.sql.types.StructType] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None)
+
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+
+   Load xml files into a DataFrame by specifying a path and an optional schema
+
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+
+      Transforms the input dataset.
+
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
+
+
+   .. py:method:: getView(self) -> str
+
+
+   .. py:method:: getFilepath(self) -> Union[str, List[str], pathlib.Path]
+
+
+   .. py:method:: getRowTag(self) -> str
+
+
+   .. py:method:: getSchema(self) -> pyspark.sql.types.StructType
+
+
+

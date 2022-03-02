@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter`
-=============================================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter`
+================================================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter
 
@@ -16,31 +16,28 @@ Classes
 
 
 
-.. class:: FrameworkCsvExporter(file_path: Union[(str, Path)], header: bool, delimiter: str = ',', **kwargs: Dict[(Any, Any)])
 
+.. py:class:: FrameworkCsvExporter(file_path: Union[str, pathlib.Path], header: bool, delimiter: str = ',', view: Optional[str] = None, name: Optional[str] = None, mode: str = FrameworkBaseExporter.MODE_ERROR, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1)
 
-   Bases: :class:`spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter.FrameworkBaseExporter`
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter.FrameworkBaseExporter`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: setFilePath(self, value: Union[(str, Path)]) -> spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter.FrameworkCsvExporter
+   .. py:method:: getFilePath(self) -> Union[str, pathlib.Path]
 
 
-   .. method:: getFilePath(self) -> Union[(str, Path)]
+   .. py:method:: getHeader(self) -> bool
 
 
-   .. method:: getHeader(self) -> bool
+   .. py:method:: getDelimiter(self) -> str
 
 
-   .. method:: getDelimiter(self) -> bool
+   .. py:method:: getFormat(self) -> str
 
 
-   .. method:: getFormat(self) -> str
-
-
-   .. method:: getOptions(self) -> Dict[(str, Any)]
+   .. py:method:: getOptions(self) -> Dict[str, Any]
 
 
 

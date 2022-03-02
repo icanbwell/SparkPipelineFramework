@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer`
-===========================================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer`
+==============================================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer
 
@@ -16,46 +16,65 @@ Classes
 
 
 
-.. class:: FrameworkTransformer(name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None)
 
+.. py:class:: FrameworkTransformer(name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None)
 
-   Bases: :class:`pyspark.ml.base.Transformer`, :class:`pyspark.ml.util.DefaultParamsReadable`, :class:`pyspark.ml.util.DefaultParamsWritable`
+   Bases: :py:obj:`pyspark.ml.base.Transformer`, :py:obj:`pyspark.ml.util.DefaultParamsReadable`, :py:obj:`pyspark.ml.util.DefaultParamsWritable`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: setParams(self, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None) -> Any
+   .. py:method:: setStandardParams(self, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None) -> Any
 
 
-   .. method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+   .. py:method:: setParams(self, **kwargs: Any) -> Any
+
+
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
 
       Transforms the input dataset.
 
-      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
-      :returns: transformed dataset
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
 
 
-   .. method:: transformers(self) -> List[Transformer]
+   .. py:method:: transformers(self) -> List[pyspark.ml.base.Transformer]
       :property:
 
 
-   .. method:: setName(self, value: str) -> spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer
+   .. py:method:: getName(self) -> Optional[str]
 
 
-   .. method:: getName(self) -> Optional[str]
+   .. py:method:: getProgressLogger(self) -> Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger]
 
 
-   .. method:: setProgressLogger(self, value: Optional[ProgressLogger]) -> spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer
+   .. py:method:: getParameters(self) -> Optional[Dict[str, Any]]
 
 
-   .. method:: getProgressLogger(self) -> Optional[ProgressLogger]
+   .. py:method:: getSql(self) -> Optional[str]
 
 
-   .. method:: setParameters(self, value: Optional[Dict[str, Any]]) -> spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer
+   .. py:method:: _setDefault(self, **kwargs: Any) -> None
+
+      Sets default params.
 
 
-   .. method:: getParameters(self) -> Optional[Dict[str, Any]]
+   .. py:method:: _set(self, **kwargs: Any) -> None
+
+      Sets user-supplied params.
+
+
+   .. py:method:: __str__(self) -> str
+
+      Return str(self).
 
 
 

@@ -1,0 +1,58 @@
+:py:mod:`spark_pipeline_framework.transformers.framework_fill_na_transformer.v1.framework_fill_na_transformer`
+==============================================================================================================
+
+.. py:module:: spark_pipeline_framework.transformers.framework_fill_na_transformer.v1.framework_fill_na_transformer
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_fill_na_transformer.v1.framework_fill_na_transformer.FrameworkFillNaTransformer
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.transformers.framework_fill_na_transformer.v1.framework_fill_na_transformer.get_dtype
+
+
+
+.. py:function:: get_dtype(df: pyspark.sql.DataFrame, colnames: List[str]) -> Dict[str, str]
+
+
+.. py:class:: FrameworkFillNaTransformer(view: str, column_mapping: Dict[str, Any], name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None)
+
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+
+   Replace NA/Null values with a specified value for each column in the dictionary
+
+   .. py:method:: _transform(self, df: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame
+
+      Transforms the input dataset.
+
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
+
+
+   .. py:method:: getView(self) -> str
+
+
+   .. py:method:: getColumnMapping(self) -> Dict[str, Any]
+
+
+

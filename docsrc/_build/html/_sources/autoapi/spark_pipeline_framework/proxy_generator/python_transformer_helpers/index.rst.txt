@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.proxy_generator.python_transformer_helpers`
-==========================================================================
+:py:mod:`spark_pipeline_framework.proxy_generator.python_transformer_helpers`
+=============================================================================
 
 .. py:module:: spark_pipeline_framework.proxy_generator.python_transformer_helpers
 
@@ -18,12 +18,13 @@ Functions
    spark_pipeline_framework.proxy_generator.python_transformer_helpers.load_all_modules_from_dir
 
 
-.. function:: get_python_transformer_from_location(location: str, import_module_name: str, parameters: Dict[(str, Any)], progress_logger: Optional[ProgressLogger]) -> pyspark.ml.Transformer
+
+.. py:function:: get_python_transformer_from_location(location: str, import_module_name: str, parameters: Dict[str, Any], progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger], mapping_file_name: Optional[str] = None) -> pyspark.ml.Transformer
 
 
-.. function:: get_python_function_from_location(location: str, import_module_name: str) -> Callable[([Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]])]
+.. py:function:: get_python_function_from_location(location: str, import_module_name: str, function_name: Optional[str] = None) -> Callable[[Dict[str, Any]], Union[spark_auto_mapper.automappers.automapper_base.AutoMapperBase, List[spark_auto_mapper.automappers.automapper_base.AutoMapperBase]]]
 
 
-.. function:: load_all_modules_from_dir(dirname: str) -> None
+.. py:function:: load_all_modules_from_dir(dirname: str) -> None
 
 

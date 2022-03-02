@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.proxy_generator.proxy_generator`
-===============================================================
+:py:mod:`spark_pipeline_framework.proxy_generator.proxy_generator`
+==================================================================
 
 .. py:module:: spark_pipeline_framework.proxy_generator.proxy_generator
 
@@ -16,21 +16,22 @@ Classes
 
 
 
-.. class:: ProxyGenerator
 
-   .. method:: remove_empty_dirs(folder: str) -> None
+.. py:class:: ProxyGenerator
+
+   .. py:method:: remove_empty_dirs(folder: str) -> None
       :staticmethod:
 
 
-   .. method:: generate_proxies(folder: str) -> None
+   .. py:method:: generate_proxies(folder: str) -> None
       :staticmethod:
 
 
-   .. method:: write_transformer(file_name: str, folder: str) -> None
+   .. py:method:: write_transformer(file_name: str, folder: str) -> None
       :staticmethod:
 
 
-   .. method:: write_translator(file_name: str, folder: str, csv_file: str) -> None
+   .. py:method:: write_translator(file_name: str, folder: str, csv_file: str) -> None
       :staticmethod:
 
 

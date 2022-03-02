@@ -1,0 +1,63 @@
+:py:mod:`spark_pipeline_framework.pipelines.v2.framework_pipeline`
+==================================================================
+
+.. py:module:: spark_pipeline_framework.pipelines.v2.framework_pipeline
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.pipelines.v2.framework_pipeline.FrameworkPipeline
+
+
+
+
+.. py:class:: FrameworkPipeline(parameters: Dict[str, Any], progress_logger: spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger, run_id: Optional[str], client_name: Optional[str] = None, vendor_name: Optional[str] = None, data_lake_path: Optional[str] = None, validation_output_path: Optional[str] = None)
+
+   Bases: :py:obj:`pyspark.ml.base.Transformer`
+
+   Abstract class for transformers that transform one dataset into another.
+
+   .. versionadded:: 1.3.0
+
+   .. py:method:: parameters(self) -> Dict[str, Any]
+      :property:
+
+
+   .. py:method:: run_id(self) -> str
+      :property:
+
+
+   .. py:method:: fit(self, df: pyspark.sql.dataframe.DataFrame) -> FrameworkPipeline
+
+
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+
+      Transforms the input dataset.
+
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
+
+
+   .. py:method:: _check_validation(self, df: pyspark.sql.dataframe.DataFrame) -> None
+
+
+   .. py:method:: create_steps(self, my_list: Union[List[pyspark.ml.base.Transformer], List[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer], List[Union[pyspark.ml.base.Transformer, List[pyspark.ml.base.Transformer]]], List[Union[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer, List[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer]]]]) -> List[pyspark.ml.base.Transformer]
+
+
+   .. py:method:: finalize(self) -> None
+
+
+

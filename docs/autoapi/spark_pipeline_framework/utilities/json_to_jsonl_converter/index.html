@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
@@ -83,7 +86,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
 </ul>
@@ -168,15 +171,28 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.json_to_jsonl_converter.convert_json_to_jsonl" title="spark_pipeline_framework.utilities.json_to_jsonl_converter.convert_json_to_jsonl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_json_to_jsonl</span></code></a>(src_file: pathlib.Path, dst_file: pathlib.Path) → pathlib.Path</p></td>
 <td><p>Converts json files to jsonl file</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.json_to_jsonl_converter.check_if_file_is_jsonl" title="spark_pipeline_framework.utilities.json_to_jsonl_converter.check_if_file_is_jsonl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_if_file_is_jsonl</span></code></a>(src_file: pathlib.Path) → bool</p></td>
+<td><p>Returns whether the file is in jsonl format</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py function">
-<dt id="spark_pipeline_framework.utilities.json_to_jsonl_converter.convert_json_to_jsonl">
-<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.json_to_jsonl_converter.</span></code><code class="sig-name descname"><span class="pre">convert_json_to_jsonl</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pathlib.Path</span><a class="headerlink" href="#spark_pipeline_framework.utilities.json_to_jsonl_converter.convert_json_to_jsonl" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="spark_pipeline_framework.utilities.json_to_jsonl_converter.convert_json_to_jsonl">
+<span class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.json_to_jsonl_converter.</span></span><span class="sig-name descname"><span class="pre">convert_json_to_jsonl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pathlib.Path</span></span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.json_to_jsonl_converter.convert_json_to_jsonl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts json files to jsonl file
 :param src_file: json file
 :param dst_file:
 :return: path to jsonl file</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="spark_pipeline_framework.utilities.json_to_jsonl_converter.check_if_file_is_jsonl">
+<span class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.json_to_jsonl_converter.</span></span><span class="sig-name descname"><span class="pre">check_if_file_is_jsonl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pathlib.Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.json_to_jsonl_converter.check_if_file_is_jsonl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether the file is in jsonl format
+:param src_file:
+:type src_file:
+:return:
+:rtype:</p>
 </dd></dl>
 
 </div>

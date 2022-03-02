@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.utilities.flattener`
-===================================================
+:py:mod:`spark_pipeline_framework.utilities.flattener`
+======================================================
 
 .. py:module:: spark_pipeline_framework.utilities.flattener
 
@@ -16,7 +16,8 @@ Functions
    spark_pipeline_framework.utilities.flattener.flatten
 
 
-.. function:: flatten(my_list: List[Any]) -> List[Any]
+
+.. py:function:: flatten(my_list: List[Any]) -> List[Any]
 
    :param my_list:
    :return:

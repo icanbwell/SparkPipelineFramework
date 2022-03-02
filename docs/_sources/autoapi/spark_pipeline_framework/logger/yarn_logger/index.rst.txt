@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.logger.yarn_logger`
-==================================================
+:py:mod:`spark_pipeline_framework.logger.yarn_logger`
+=====================================================
 
 .. py:module:: spark_pipeline_framework.logger.yarn_logger
 
@@ -16,6 +16,7 @@ Functions
    spark_pipeline_framework.logger.yarn_logger.get_logger
 
 
-.. function:: get_logger(name: str, level: int = INFO) -> logging.Logger
+
+.. py:function:: get_logger(name: str, level: Union[int, str] = INFO) -> logging.Logger
 
 

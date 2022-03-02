@@ -1,5 +1,5 @@
-:mod:`spark_pipeline_framework.transformers.framework_partitioner.v1.framework_partitioner`
-===========================================================================================
+:py:mod:`spark_pipeline_framework.transformers.framework_partitioner.v1.framework_partitioner`
+==============================================================================================
 
 .. py:module:: spark_pipeline_framework.transformers.framework_partitioner.v1.framework_partitioner
 
@@ -16,33 +16,37 @@ Classes
 
 
 
-.. class:: FrameworkPartitioner(view: str, desired_partitions: Optional[int] = None, partition_by: Optional[List[str]] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None)
 
+.. py:class:: FrameworkPartitioner(view: str, desired_partitions: Optional[int] = None, partition_by: Optional[List[str]] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None)
 
-   Bases: :class:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
+   Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
 
    Abstract class for transformers that transform one dataset into another.
 
    .. versionadded:: 1.3.0
 
-   .. method:: setParams(self, view: str, desired_partitions: Optional[int] = None, partition_by: Optional[List[str]] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[ProgressLogger] = None) -> Any
-
-
-   .. method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
+   .. py:method:: _transform(self, df: pyspark.sql.dataframe.DataFrame) -> pyspark.sql.dataframe.DataFrame
 
       Transforms the input dataset.
 
-      :param dataset: input dataset, which is an instance of :py:class:`pyspark.sql.DataFrame`
-      :returns: transformed dataset
+      Parameters
+      ----------
+      dataset : :py:class:`pyspark.sql.DataFrame`
+          input dataset.
+
+      Returns
+      -------
+      :py:class:`pyspark.sql.DataFrame`
+          transformed dataset
 
 
-   .. method:: getView(self) -> str
+   .. py:method:: getView(self) -> str
 
 
-   .. method:: getDesiredPartitions(self) -> Optional[int]
+   .. py:method:: getDesiredPartitions(self) -> Optional[int]
 
 
-   .. method:: getPartitionBy(self) -> Optional[List[str]]
+   .. py:method:: getPartitionBy(self) -> Optional[List[str]]
 
 
 

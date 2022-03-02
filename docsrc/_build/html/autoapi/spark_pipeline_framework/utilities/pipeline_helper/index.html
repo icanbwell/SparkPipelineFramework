@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
@@ -83,7 +86,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
 </ul>
@@ -165,14 +168,14 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.pipeline_helper.create_steps" title="spark_pipeline_framework.utilities.pipeline_helper.create_steps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_steps</span></code></a>(my_list: List[Union[Transformer, List[Transformer]]]) → List[Transformer]</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#spark_pipeline_framework.utilities.pipeline_helper.create_steps" title="spark_pipeline_framework.utilities.pipeline_helper.create_steps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_steps</span></code></a>(my_list: Union[List[pyspark.ml.Transformer], List[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer], List[Union[pyspark.ml.Transformer, List[pyspark.ml.Transformer]]], List[Union[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer, List[spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer]]]]) → List[pyspark.ml.Transformer]</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py function">
-<dt id="spark_pipeline_framework.utilities.pipeline_helper.create_steps">
-<code class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.pipeline_helper.</span></code><code class="sig-name descname"><span class="pre">create_steps</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">my_list</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Transformer</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.pipeline_helper.create_steps" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="spark_pipeline_framework.utilities.pipeline_helper.create_steps">
+<span class="sig-prename descclassname"><span class="pre">spark_pipeline_framework.utilities.pipeline_helper.</span></span><span class="sig-name descname"><span class="pre">create_steps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">my_list</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../transformers/framework_transformer/v1/framework_transformer/index.html#spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer" title="spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer"><span class="pre">spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.Transformer</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.Transformer</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../transformers/framework_transformer/v1/framework_transformer/index.html#spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer" title="spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer"><span class="pre">spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer</span></a><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../transformers/framework_transformer/v1/framework_transformer/index.html#spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer" title="spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer"><span class="pre">spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pyspark.ml.Transformer</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#spark_pipeline_framework.utilities.pipeline_helper.create_steps" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>

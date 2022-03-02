@@ -1,0 +1,17 @@
+:py:mod:`spark_pipeline_framework.utilities.slack`
+==================================================
+
+.. py:module:: spark_pipeline_framework.utilities.slack
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   base_slack_client/index.rst
+   slack_client/index.rst
+   slack_client_native/index.rst
+
+
