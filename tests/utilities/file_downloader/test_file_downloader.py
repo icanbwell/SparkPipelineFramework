@@ -10,7 +10,10 @@ def test_file_downloader() -> None:
     download_path: str = f"file://{os.path.join(Path(__file__).parent, 'data')}"
 
     # Act
-    downloader = FileDownloader(url=file_url, download_path=download_path,)
+    downloader = FileDownloader(
+        url=file_url,
+        download_path=download_path,
+    )
     filename = downloader.download_files_from_url()
 
     # Assert

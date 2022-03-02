@@ -1,5 +1,5 @@
-FROM imranq2/spark_python:0.1.28
-# https://github.com/imranq2/docker.spark_python
+FROM imranq2/spark-py:3.0.50
+# https://github.com/imranq2/kubernetes.spark_python
 USER root
 
 ENV PYTHONPATH=/spf
@@ -15,6 +15,9 @@ RUN pipenv sync --dev --system
 # COPY ./conf/* /opt/bitnami/spark/conf/
 
 COPY . /spf
+
+# override entrypoint to remove extra logging
+RUN mv /opt/minimal_entrypoint.sh /opt/entrypoint.sh
 
 # run pre-commit once so it installs all the hooks and subsequent runs are fast
 # RUN pre-commit install

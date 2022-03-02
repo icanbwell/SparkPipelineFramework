@@ -153,7 +153,10 @@ def test_correctly_loads_csv_with_clean_flag_on(spark_session: SparkSession) -> 
 
     # Act
     FrameworkCsvLoader(
-        view="my_view", filepath=test_file_path, delimiter=",", clean_column_names=True,
+        view="my_view",
+        filepath=test_file_path,
+        delimiter=",",
+        clean_column_names=True,
     ).transform(df)
 
     # noinspection SqlDialectInspection

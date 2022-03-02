@@ -48,24 +48,36 @@ class SlackEventLogger(EventLogger):
         self.slack_error_channel: Optional[str] = slack_error_channel
         self.slack_user_name: str = bot_user_name
         self.backoff: bool = backoff
-        self.slack_client: BaseSlackClient = SlackClientNative(
-            slack_token=slack_token, channel=slack_channel, bot_user_name=bot_user_name
-        ) if use_native_slack_client else SlackClient(
-            slack_token=slack_token, channel=slack_channel, bot_user_name=bot_user_name
-        )
-        self.slack_error_client: Optional[BaseSlackClient] = (
+        self.slack_client: BaseSlackClient = (
             SlackClientNative(
                 slack_token=slack_token,
-                channel=slack_error_channel,
+                channel=slack_channel,
                 bot_user_name=bot_user_name,
             )
             if use_native_slack_client
             else SlackClient(
                 slack_token=slack_token,
-                channel=slack_error_channel,
+                channel=slack_channel,
                 bot_user_name=bot_user_name,
             )
-        ) if slack_error_channel else None
+        )
+        self.slack_error_client: Optional[BaseSlackClient] = (
+            (
+                SlackClientNative(
+                    slack_token=slack_token,
+                    channel=slack_error_channel,
+                    bot_user_name=bot_user_name,
+                )
+                if use_native_slack_client
+                else SlackClient(
+                    slack_token=slack_token,
+                    channel=slack_error_channel,
+                    bot_user_name=bot_user_name,
+                )
+            )
+            if slack_error_channel
+            else None
+        )
         self.flow_run_name: Optional[str] = flow_run_name
         self.log_placeholder_url: Optional[str] = log_placeholder_url
         self.has_sent_log_url: bool = False

@@ -20,7 +20,10 @@ def test_can_run_framework_mapping_runner_multiple_mappings(
     data_dir: Path = Path(__file__).parent.parent.joinpath("./")
 
     spark_session.createDataFrame(
-        [(1, "Qureshi", "Imran"), (2, "Vidal", "Michael"),],  # noqa: E231
+        [
+            (1, "Qureshi", "Imran"),
+            (2, "Vidal", "Michael"),
+        ],  # noqa: E231
         ["member_id", "last_name", "first_name"],
     ).createOrReplaceTempView("patients")
 

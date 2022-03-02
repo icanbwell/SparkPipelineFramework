@@ -78,7 +78,7 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         with ProgressLogMetric(name="db_query_runner", progress_logger=progress_logger):
-            connection: Connection = pymysql.connect(
+            connection: Connection = pymysql.connect(  # type: ignore
                 user=self.getUsername(),
                 password=self.getPassword(),
                 host=self.getHost(),

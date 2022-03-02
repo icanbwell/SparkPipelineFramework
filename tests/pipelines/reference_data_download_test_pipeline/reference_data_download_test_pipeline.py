@@ -26,7 +26,8 @@ def test_webcrawler_pipeline(spark_session: SparkSession) -> None:
 
     with ProgressLogger() as progress_logger:
         pipeline: ReferenceDataDownloadTestPipeline = ReferenceDataDownloadTestPipeline(
-            progress_logger=progress_logger, parameters=parameters,
+            progress_logger=progress_logger,
+            parameters=parameters,
         )
         transformer = pipeline.fit(df, response)
         outcome = transformer.transform(df, response)

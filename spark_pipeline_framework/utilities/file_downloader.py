@@ -24,7 +24,10 @@ class FileDownloader:
     """
 
     def __init__(
-        self, url: str, download_path: str, extract_archives: Optional[bool] = False,
+        self,
+        url: str,
+        download_path: str,
+        extract_archives: Optional[bool] = False,
     ):
         self.url = url
         self.download_to_path = download_path
@@ -62,7 +65,10 @@ class FileDownloader:
         return os.path.join(dirname, f"{name} ({idx}).{ext}")
 
     def extract_zip_files(
-        self, filename: str, path: str, out_path: Optional[str] = None,
+        self,
+        filename: str,
+        path: str,
+        out_path: Optional[str] = None,
     ) -> Optional[str]:
         """
         This function extracts the archive files and returns the corresponding file path.
@@ -107,7 +113,10 @@ class FileDownloader:
 
         if self.extract_archives:
             filepath = (
-                self.extract_zip_files(filename=filepath, path=download_to_path,)
+                self.extract_zip_files(
+                    filename=filepath,
+                    path=download_to_path,
+                )
                 or filepath
             )
 

@@ -39,7 +39,8 @@ run-pre-commit: setup-pre-commit
 .PHONY:update
 update: down Pipfile.lock setup-pre-commit  ## Updates all the packages using Pipfile
 	docker-compose run --rm --name spf_pipenv dev pipenv sync --dev && \
-	make devdocker
+	make devdocker && \
+	make pipenv-setup
 
 .PHONY:tests
 tests:
@@ -56,3 +57,7 @@ sphinx-html:
 	@rm -rf docs/*
 	@touch docs/.nojekyll
 	cp -a docsrc/_build/html/. docs
+
+.PHONY:pipenv-setup
+pipenv-setup:devdocker ## Brings up the bash shell in dev docker
+	docker-compose run --rm --name spark_pipeline_framework dev pipenv-setup sync --pipfile

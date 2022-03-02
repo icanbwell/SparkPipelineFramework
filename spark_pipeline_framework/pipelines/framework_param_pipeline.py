@@ -31,7 +31,8 @@ class FrameworkParamPipeline(FrameworkPipeline):
         :param progress_logger:
         """
         super(FrameworkParamPipeline, self).__init__(
-            parameters=parameters, progress_logger=progress_logger,
+            parameters=parameters,
+            progress_logger=progress_logger,
         )
         self.transformers: List[Union[FrameworkParamTransformer, Transformer]] = []
         self.steps: List[

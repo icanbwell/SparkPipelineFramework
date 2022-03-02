@@ -117,7 +117,9 @@ def test_can_run_validated_framework_pipeline(spark_session: SparkSession) -> No
         clean_spark_session(spark_session)
         data_dir: Path = Path(__file__).parent.joinpath("./")
         flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
-        output_path: str = f"file://{data_dir.joinpath('temp').joinpath('validation.csv')}"
+        output_path: str = (
+            f"file://{data_dir.joinpath('temp').joinpath('validation.csv')}"
+        )
 
         if path.isdir(data_dir.joinpath("temp")):
             shutil.rmtree(data_dir.joinpath("temp"))

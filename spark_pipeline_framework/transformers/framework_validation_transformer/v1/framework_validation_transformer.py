@@ -92,7 +92,11 @@ class FrameworkValidationTransformer(FrameworkTransformer):
             ), f"Pipeline failed validation, there were {error_count} errors. See additional logs or details"
         return df
 
-    def _validate(self, path: str, df: DataFrame,) -> None:
+    def _validate(
+        self,
+        path: str,
+        df: DataFrame,
+    ) -> None:
         validation_df = self.get_validation_df(df)
         if isfile(path):
             self.logger.info(f"Path: {path} is a file")

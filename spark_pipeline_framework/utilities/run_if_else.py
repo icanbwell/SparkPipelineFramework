@@ -16,10 +16,10 @@ def run_if_else(
     ] = None,
 ) -> FrameworkIfElseTransformer:
     """
-        If enable flag is true then runs stages else runs else_stages
-        :param enable: a boolean or a function that takes a DataFrame and returns a boolean
-        :param stages: list of transformers or a function that returns a list of transformers
-        :param else_stages: list of transformers or a function that returns a list of transformers
+    If enable flag is true then runs stages else runs else_stages
+    :param enable: a boolean or a function that takes a DataFrame and returns a boolean
+    :param stages: list of transformers or a function that returns a list of transformers
+    :param else_stages: list of transformers or a function that returns a list of transformers
     """
     return FrameworkIfElseTransformer(
         enable=enable, stages=stages, else_stages=else_stages
