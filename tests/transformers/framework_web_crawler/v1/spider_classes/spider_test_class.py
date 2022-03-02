@@ -8,7 +8,9 @@ from spark_pipeline_framework.utilities.base_spider_class import BaseSpiderClass
 class SpiderTestClass(BaseSpiderClass):
     def __init__(self, **kwargs: Dict[str, Any]):
         super().__init__(
-            name="test_spider", urls=["http://quotes.toscrape.com/"], **kwargs,
+            name="test_spider",
+            urls=["http://quotes.toscrape.com/"],
+            **kwargs,
         )
 
     def parse(self, response: Response, **kwargs: Dict[str, Any]) -> Any:

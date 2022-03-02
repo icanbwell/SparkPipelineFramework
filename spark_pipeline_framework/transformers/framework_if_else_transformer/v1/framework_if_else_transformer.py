@@ -50,9 +50,9 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         enable = self.enable if isinstance(self.enable, bool) else self.enable(df)
         if enable:
-            stages: List[Transformer] = self.stages if isinstance(
-                self.stages, list
-            ) else self.stages()
+            stages: List[Transformer] = (
+                self.stages if isinstance(self.stages, list) else self.stages()
+            )
         else:
             stages = (
                 []

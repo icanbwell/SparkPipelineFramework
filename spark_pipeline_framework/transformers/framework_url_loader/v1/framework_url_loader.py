@@ -5,7 +5,7 @@ from requests import Response
 from requests.adapters import HTTPAdapter
 
 import requests
-from urllib3 import Retry  # type: ignore
+from urllib3 import Retry
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
