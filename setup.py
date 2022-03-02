@@ -61,7 +61,7 @@ setup(
         "pymysql>=1.0.2",
         "furl>=2.1.3",
         "requests>=2.27.1",
-        "scrapy>=2.5.0",
+        "scrapy>=2.6.1",
         "boto3>=1.17.8",
         "types-requests>=0.1.11",
         "types-pymysql>=0.1.5",
