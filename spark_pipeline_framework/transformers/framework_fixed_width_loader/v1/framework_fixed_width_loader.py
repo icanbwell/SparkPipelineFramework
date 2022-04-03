@@ -135,7 +135,7 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         df_text = df_reader.text(paths=paths)
         if has_header:
             header = df_text.first()[0]
-            df_text = df_text.filter(~col("value").contains(header))  # type:ignore
+            df_text = df_text.filter(~col("value").contains(header))
         df_text = df_text.select(
             *[
                 trim(col("value").substr(column.start_pos, column.length))
