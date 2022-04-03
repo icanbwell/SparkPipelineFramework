@@ -1,5 +1,5 @@
-FROM imranq2/spark-py:3.0.50
-# https://github.com/imranq2/kubernetes.spark_python
+FROM imranq2/helix.spark:3.1.2.8-slim
+# https://github.com/icanbwell/helix.spark
 USER root
 
 ENV PYTHONPATH=/spf
