@@ -9,9 +9,13 @@ def flatten(my_list: List[Any]) -> List[Any]:
     """
     if not my_list:
         return my_list
-    if isinstance(my_list[0], list):
-        return flatten(my_list[0]) + flatten(my_list[1:])
-    return my_list[:1] + flatten(my_list[1:])
+    flat_list: List[Any] = []
+    for element in my_list:
+        if type(element) is list:
+            flat_list.extend(flatten(element))
+        else:
+            flat_list.append(element)
+    return flat_list
 
 
 # def create_stages(transformer_list: List, parameters, progress_logger):
