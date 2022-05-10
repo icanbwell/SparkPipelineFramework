@@ -11,7 +11,7 @@ def flatten(my_list: List[Any]) -> List[Any]:
         return my_list
     flat_list: List[Any] = []
     for element in my_list:
-        if type(element) is list:
+        if isinstance(element, list):
             flat_list.extend(flatten(element))
         else:
             flat_list.append(element)
