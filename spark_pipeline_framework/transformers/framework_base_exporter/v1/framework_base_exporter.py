@@ -15,32 +15,22 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 
 
 class FrameworkBaseExporter(FrameworkTransformer):
-    MODE_APPEND = "append"
-    MODE_OVERWRITE = "overwrite"
-    MODE_IGNORE = "ignore"
-    MODE_ERROR = "error"
-    MODE_CHOICES = (
-        MODE_APPEND,
-        MODE_OVERWRITE,
-        MODE_IGNORE,
-        MODE_ERROR,
-    )
-
     # noinspection PyUnusedLocal
     @keyword_only
     def __init__(
         self,
         view: Optional[str] = None,
         name: Optional[str] = None,
-        mode: str = MODE_ERROR,
+        mode: str = FileWriteModes.MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1,
     ):
-        assert mode in FrameworkBaseExporter.MODE_CHOICES
+        assert mode in FileWriteModes.MODE_CHOICES
 
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger

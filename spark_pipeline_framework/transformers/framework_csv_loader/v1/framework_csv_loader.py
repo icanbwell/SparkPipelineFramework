@@ -10,6 +10,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import (
     FrameworkLocalFileLoader,
 )
+from spark_pipeline_framework.utilities.file_modes import FileReadModes
 
 
 class FrameworkCsvLoader(FrameworkLocalFileLoader):
@@ -32,6 +33,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         schema: Optional[StructType] = None,
         create_file_path: bool = False,
         mapping_file_name: Optional[str] = None,
+        mode: str = FileReadModes.MODE_PERMISSIVE,
     ) -> None:
         super().__init__(
             view=view,
@@ -47,6 +49,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
             cache_table=cache_table,
             schema=schema,
             create_file_path=create_file_path,
+            mode=mode,
         )
 
         self.multiline: Param[bool] = Param(self, "multiline", "")

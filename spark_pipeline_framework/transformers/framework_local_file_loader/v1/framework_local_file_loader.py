@@ -16,6 +16,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.file_modes import FileReadModes
 
 
 class FrameworkLocalFileLoader(FrameworkTransformer):
@@ -39,10 +40,14 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
+        mode: str = FileReadModes.MODE_PERMISSIVE,
     ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
+
+        assert mode in FileReadModes.MODE_CHOICES
+
         self.logger: Logger = get_logger(__name__)
 
         self.view: Param[str] = Param(self, "view", "")
@@ -77,6 +82,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
         self.has_header: Param[bool] = Param(self, "has_header", "")
         self._setDefault(has_header=True)
+
+        self.mode: Param[str] = Param(self, "mode", "")
+        self._setDefault(mode=mode)
 
         if not filepath:
             raise ValueError("filepath is None or empty")
@@ -128,6 +136,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.preprocess(df=df, absolute_paths=absolute_paths)
 
         df_reader: DataFrameReader = df.sql_ctx.read
+        df_reader = df_reader.option("mode", self.getMode())
 
         if schema:
             df_reader = df_reader.schema(schema)
@@ -141,6 +150,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
         df2: DataFrame
         df_reader = df_reader.format(self.getReaderFormat())
+
         for k, v in self.getReaderOptions().items():
             df_reader = df_reader.option(k, v)
 
@@ -231,3 +241,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getReaderOptions(self) -> Dict[str, Any]:
         raise NotImplementedError("Must implement in baseclass")
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getMode(self) -> str:
+        return self.getOrDefault(self.mode)
