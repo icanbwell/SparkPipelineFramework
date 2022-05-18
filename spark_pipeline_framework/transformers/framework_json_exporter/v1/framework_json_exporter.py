@@ -14,6 +14,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
@@ -30,8 +31,13 @@ class FrameworkJsonExporter(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1,
+        mode: str = FileWriteModes.MODE_OVERWRITE,
     ):
-        super().__init__()
+        super().__init__(
+            name=name, parameters=parameters, progress_logger=progress_logger
+        )
+
+        assert mode in FileWriteModes.MODE_CHOICES
 
         assert isinstance(file_path, Path) or isinstance(file_path, str)
 
@@ -47,6 +53,9 @@ class FrameworkJsonExporter(FrameworkTransformer):
 
         self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=None)
+
+        self.mode: Param[str] = Param(self, "mode", "")
+        self._setDefault(mode=mode)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -65,10 +74,10 @@ class FrameworkJsonExporter(FrameworkTransformer):
                 if view:
                     df_view: DataFrame = df.sql_ctx.table(view)
                     assert not spark_is_data_frame_empty(df=df_view)
-                    df_view.write.mode("overwrite").json(path=str(path))
+                    df_view.write.mode(self.getMode()).json(path=str(path))
                 else:
                     assert not spark_is_data_frame_empty(df=df)
-                    df.write.mode("overwrite").json(path=str(path))
+                    df.write.mode(self.getMode()).json(path=str(path))
 
                 self.logger.info(f"[{name or view}] written to {path}")
 
@@ -92,3 +101,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
         return self.getOrDefault(self.name) or self.getOrDefault(self.view)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getMode(self) -> str:
+        return self.getOrDefault(self.mode)

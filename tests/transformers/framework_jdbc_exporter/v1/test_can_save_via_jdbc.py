@@ -3,6 +3,7 @@ from pyspark.sql.session import SparkSession
 from spark_pipeline_framework.transformers.framework_jdbc_exporter.v1.framework_jdbc_exporter import (
     FrameworkJdbcExporter,
 )
+from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 
 
 def test_can_save_via_jdbc(spark_session: SparkSession) -> None:
@@ -22,7 +23,7 @@ def test_can_save_via_jdbc(spark_session: SparkSession) -> None:
         jdbc_url=jdbc_url,
         table=table,
         driver=driver,
-        mode=FrameworkJdbcExporter.MODE_OVERWRITE,
+        mode=FileWriteModes.MODE_OVERWRITE,
     )
 
     # Assert
@@ -52,7 +53,7 @@ def test_can_specify_additional_writer_options(spark_session: SparkSession) -> N
         view=view,
         table=table,
         driver=driver,
-        mode=FrameworkJdbcExporter.MODE_OVERWRITE,
+        mode=FileWriteModes.MODE_OVERWRITE,
         options=options,
     )
 

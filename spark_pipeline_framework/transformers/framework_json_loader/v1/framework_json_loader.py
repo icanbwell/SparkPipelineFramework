@@ -18,6 +18,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import (
     FrameworkLocalFileLoader,
 )
+from spark_pipeline_framework.utilities.file_modes import FileReadModes
 
 
 class FrameworkJsonLoader(FrameworkLocalFileLoader):
@@ -39,6 +40,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         schema: Optional[StructType] = None,
         create_file_path: bool = False,
         use_schema_from_view: Optional[str] = None,
+        mode: str = FileReadModes.MODE_PERMISSIVE,
     ) -> None:
         super().__init__(
             view=view,
@@ -55,6 +57,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
             schema=schema,
             create_file_path=create_file_path,
             use_schema_from_view=use_schema_from_view,
+            mode=mode,
         )
 
         self.multiLine: Param[bool] = Param(self, "multiLine", "")
