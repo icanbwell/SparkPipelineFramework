@@ -17,6 +17,7 @@ types-PyMySQL=">=0.1.5"
 chardet=">=4.0.0"
 slack_sdk = ">=3.15.2"
 smart_open = { extras = ['s3'], version = ">=5.2.1" }
+mlflow = "==1.26.0"
 
 [dev-packages]
 setuptools="*"

@@ -5,6 +5,9 @@ USER root
 ENV PYTHONPATH=/spf
 ENV CLASSPATH=/spf/jars:$CLASSPATH
 
+# remove the older version of entrypoints with apt-get because that is how it was installed
+RUN apt-get remove python3-entrypoints -y
+
 COPY Pipfile* /spf/
 WORKDIR /spf
 
