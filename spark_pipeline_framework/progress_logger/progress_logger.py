@@ -1,18 +1,62 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
+
+import mlflow  # type: ignore
+from mlflow.entities import Experiment, RunStatus  # type: ignore
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
 
+class MlFlowConfig:
+    def __init__(
+        self,
+        mlflow_tracking_url: str,
+        pipeline_name: str,
+        flow_run_name: str,
+        parameters: Dict[str, Any],
+    ):
+        self.mlflow_tracking_url = mlflow_tracking_url
+        self.pipeline_name = pipeline_name
+        self.flow_run_name = flow_run_name
+        self.parameters = parameters
+
+
 class ProgressLogger:
-    def __init__(self, event_loggers: Optional[List[EventLogger]] = None) -> None:
+    def __init__(
+        self,
+        event_loggers: Optional[List[EventLogger]] = None,
+        mlflow_config: Optional[MlFlowConfig] = None,
+    ) -> None:
         self.logger = get_logger(__name__)
         self.event_loggers: Optional[List[EventLogger]] = event_loggers
+        self.mlflow_config: Optional[MlFlowConfig] = mlflow_config
 
     def __enter__(self) -> "ProgressLogger":
+        if self.mlflow_config is None:
+            self.logger.info("MLFLOW IS NOT ENABLED")
+            return self
+        self.logger.info("MLFLOW IS ENABLED")
+        mlflow.set_tracking_uri(self.mlflow_config.mlflow_tracking_url)
+        # get or create experiment
+        experiment: Experiment = mlflow.get_experiment_by_name(
+            name=self.mlflow_config.pipeline_name
+        )
+
+        if experiment is None:
+            experiment_id: str = mlflow.create_experiment(
+                name=self.mlflow_config.pipeline_name
+            )
+        else:
+            experiment_id = experiment.experiment_id
+        mlflow.set_experiment(experiment_id=experiment_id)
+
+        mlflow.start_run(run_name=self.mlflow_config.flow_run_name)
+        # set the parameters used in the pipeline run
+        mlflow.log_params(params=self.mlflow_config.parameters)
+
         return self
 
     def __exit__(
@@ -21,10 +65,23 @@ class ProgressLogger:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        pass
+        # safe to call without checking if we have a tracking url set for mlflow
+        mlflow.end_run()
+
+    def start_mlflow_run(self, run_name: str, is_nested: bool = True) -> None:
+        if self.mlflow_config is None:
+            return
+        mlflow.start_run(run_name=run_name, nested=is_nested)
+
+    def end_mlflow_run(self, status: RunStatus = RunStatus.FINISHED) -> None:
+        mlflow.end_run(status=RunStatus.to_string(status))
 
     def log_metric(self, name: str, time_diff_in_minutes: float) -> None:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
+        if self.mlflow_config is not None:
+            # Names may only contain alphanumerics, underscores (_), dashes (-), periods (.), spaces ( ), and slashes (/)
+            clean_name = name.replace("=", "-")
+            mlflow.log_metric(key=clean_name, value=time_diff_in_minutes)
 
     # noinspection PyUnusedLocal
     def log_artifact(

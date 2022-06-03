@@ -150,3 +150,6 @@ tests/**/temp*/
 /tests/**/metastore_db/
 /tests/transformers/framework_file_downloader/v1/data/
 /tests/utilities/file_downloader/data/
+
+# mlfow files
+/mlruns
