@@ -68,6 +68,7 @@ setup(
         "chardet>=4.0.0",
         "slack-sdk>=3.15.2",
         "smart-open[s3]>=5.2.1",
+        "mlflow==1.26.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
