@@ -72,11 +72,11 @@ class ProgressLogger:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        # safe to call without checking if we have a tracking url set for mlflow
         self.logger.info("ENDING PARENT RUN")
         if exc_value:
             # there was an exception so mark the parent run as failed
             self.end_mlflow_run(status=RunStatus.FAILED)
+        # safe to call without checking if we have a tracking url set for mlflow
         mlflow.end_run()
 
     def start_mlflow_run(self, run_name: str, is_nested: bool = True) -> None:
