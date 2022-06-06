@@ -53,7 +53,9 @@ services:
     image: imranq2/mlflow_server:0.1.6
     ports:
       - '5050:5000'
-    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri mysql+pymysql://root:root_password@warehouse:3306/fhir_rpt --default-artifact-root ./mlruns 
+    volumes: 
+      - ./mlflow_artifacts/:/opt/project/mlflow_artifacts/
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri mysql+pymysql://root:root_password@warehouse:3306/fhir_rpt --default-artifact-root ./opt/project/mlflow_artifacts
       
 volumes:
   mysql_data:

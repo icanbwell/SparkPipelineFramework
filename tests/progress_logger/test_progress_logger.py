@@ -4,7 +4,7 @@ from shutil import rmtree
 from typing import Dict, Any
 
 import mlflow  # type: ignore
-from mlflow.entities import Experiment  # type: ignore
+from mlflow.entities import Run  # type: ignore
 from spark_pipeline_framework.progress_logger.progress_logger import (
     ProgressLogger,
     MlFlowConfig,
@@ -71,16 +71,18 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
     # Act
     parameters = {"flights_path": flights_path}
 
-    flow_run_name = "20220601_121209_fluffy-fox"
-    flow_run_name = flow_run_name.split("_")[-1]
+    flow_run_name = "fluffy-fox"
 
     mlflow_tracking_url = temp_dir.joinpath("mlflow")
+    artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
+    experiment_name = "UnityPoint Kyruus Providers"
 
     mlflow_config = MlFlowConfig(
         parameters=parameters,
-        pipeline_name="UnityPoint Kyruus Providers",
+        experiment_name=experiment_name,
         flow_run_name=flow_run_name,
         mlflow_tracking_url=str(mlflow_tracking_url),
+        artifact_url=artifact_url,
     )
 
     with ProgressLogger(mlflow_config=mlflow_config) as progress_logger:
@@ -90,9 +92,27 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
         transformer = pipeline.fit(df)
         transformer.transform(df)
 
-    # want to ensure we have an experiment created in mlflow
-    assert os.path.isdir(mlflow_tracking_url)
-    assert os.path.isdir(mlflow_tracking_url.joinpath("1"))
+    # assert we have an experiment created in mlflow
+    experiment = mlflow.get_experiment_by_name(name=experiment_name)
+    assert experiment is not None, "the mlflow experiment was not created"
+    # assert the experiment has one parent run and 3 nested runs
+    runs = mlflow.search_runs(
+        experiment_ids=[experiment.experiment_id], output_format="list"
+    )
+    assert len(runs) == 4, "there should be 4 runs total, 1 parent and 3 nested"
+    parent_runs = [
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
+    ]
+    assert len(parent_runs) == 1
+    nested_runs = [
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
+    ]
+    assert len(nested_runs) == 3
+    # assert that the parent run has the params
+    parent_run: Run = parent_runs[0]
+    assert (
+        parent_run.data.params.get("flights_path") == flights_path
+    ), "parent run should have the flights_path parameter set"
 
 
 def test_progress_logger_without_mlflow(spark_session: SparkSession) -> None:
@@ -130,42 +150,3 @@ def test_progress_logger_without_mlflow(spark_session: SparkSession) -> None:
     mlflow_default_dir: Path = data_dir.joinpath("mlruns")
     if os.path.isdir(mlflow_default_dir):
         rmtree(mlflow_default_dir)
-
-
-def test_mlflow_fluent() -> None:
-    def get_or_create_experiment(name: str) -> str:
-        experiment: Experiment = mlflow.get_experiment_by_name(name=name)
-
-        if experiment is not None:
-            return str(experiment.experiment_id)
-
-        experiment_id: str = mlflow.create_experiment(name=name)
-        return experiment_id
-
-    mlflow_tracking_url = "http://mlflow:5000/"
-    mlflow.set_tracking_uri(uri=mlflow_tracking_url)
-    pipeline_name = "Demo Pipeline"
-    flow_run_name = "tremendous-aardwolf"
-    parameters = {
-        "flights_path": "flights_path",
-        "validation_source_path": "/data-source/path",
-        "validation_output_path": "/data-output/path",
-    }
-
-    transformers = [
-        "FrameworkCsvLoader",
-        "FrameworkValidationTransformer",
-        "FeaturesCarriersV1",
-    ]
-
-    experiment_id = get_or_create_experiment(name=pipeline_name)
-    mlflow.set_experiment(experiment_id=experiment_id)
-
-    with mlflow.start_run(experiment_id=experiment_id, run_name=flow_run_name):
-        # set the parameters used in the pipeline run
-        mlflow.log_params(params=parameters)
-
-        for transformer in transformers:
-            # set the first feature transform
-            with mlflow.start_run(run_name=transformer, nested=True):
-                mlflow.log_param(key="foo", value="bar")

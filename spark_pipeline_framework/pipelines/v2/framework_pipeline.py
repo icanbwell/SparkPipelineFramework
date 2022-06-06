@@ -147,6 +147,9 @@ class FrameworkPipeline(Transformer):
                         event_text=f"Exception in Stage={stage_name}",
                         ex=e,
                     )
+                    self.progress_logger.log_artifact(
+                        key="_exception.txt", contents="-".join(error_messages)
+                    )
                     self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)
                     raise friendly_spark_exception from e
 

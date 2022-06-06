@@ -153,3 +153,4 @@ tests/**/temp*/
 
 # mlfow files
 /mlruns
+/mlflow_artifacts

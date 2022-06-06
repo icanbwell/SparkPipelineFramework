@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -14,12 +15,14 @@ class MlFlowConfig:
     def __init__(
         self,
         mlflow_tracking_url: str,
-        pipeline_name: str,
+        artifact_url: str,
+        experiment_name: str,
         flow_run_name: str,
         parameters: Dict[str, Any],
     ):
         self.mlflow_tracking_url = mlflow_tracking_url
-        self.pipeline_name = pipeline_name
+        self.artifact_url = artifact_url
+        self.experiment_name = experiment_name
         self.flow_run_name = flow_run_name
         self.parameters = parameters
 
@@ -40,20 +43,24 @@ class ProgressLogger:
             return self
         self.logger.info("MLFLOW IS ENABLED")
         mlflow.set_tracking_uri(self.mlflow_config.mlflow_tracking_url)
+        self.logger.info(f"MLFLOW TRACKING URL: {mlflow.get_tracking_uri()}")
+
         # get or create experiment
         experiment: Experiment = mlflow.get_experiment_by_name(
-            name=self.mlflow_config.pipeline_name
+            name=self.mlflow_config.experiment_name
         )
 
         if experiment is None:
             experiment_id: str = mlflow.create_experiment(
-                name=self.mlflow_config.pipeline_name
+                name=self.mlflow_config.experiment_name,
+                artifact_location=self.mlflow_config.artifact_url,
             )
         else:
             experiment_id = experiment.experiment_id
         mlflow.set_experiment(experiment_id=experiment_id)
 
         mlflow.start_run(run_name=self.mlflow_config.flow_run_name)
+        self.logger.info(f"MLFLOW ARTIFACTS URL: {mlflow.get_artifact_uri()}")
         # set the parameters used in the pipeline run
         mlflow.log_params(params=self.mlflow_config.parameters)
 
@@ -66,6 +73,10 @@ class ProgressLogger:
         traceback: Optional[TracebackType],
     ) -> None:
         # safe to call without checking if we have a tracking url set for mlflow
+        self.logger.info("ENDING PARENT RUN")
+        if exc_value:
+            # there was an exception so mark the parent run as failed
+            self.end_mlflow_run(status=RunStatus.FAILED)
         mlflow.end_run()
 
     def start_mlflow_run(self, run_name: str, is_nested: bool = True) -> None:
@@ -80,7 +91,7 @@ class ProgressLogger:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
         if self.mlflow_config is not None:
             # Names may only contain alphanumerics, underscores (_), dashes (-), periods (.), spaces ( ), and slashes (/)
-            clean_name = name.replace("=", "-")
+            clean_name = re.sub(r"[^\w\-\.\s\/]", "-", name)
             mlflow.log_metric(key=clean_name, value=time_diff_in_minutes)
 
     # noinspection PyUnusedLocal
@@ -94,6 +105,9 @@ class ProgressLogger:
                 with open(file_path, "w") as file:
                     file.write(contents)
                     self.logger.info(f"Wrote sql to {file_path}")
+
+                if self.mlflow_config is not None:
+                    mlflow.log_artifact(local_path=str(file_path))
 
         except Exception as e:
             self.logger.warning(f"Error in log_artifact writing to mlflow: {str(e)}")
