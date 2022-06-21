@@ -90,9 +90,27 @@ class ProgressLogger:
     def log_metric(self, name: str, time_diff_in_minutes: float) -> None:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
         if self.mlflow_config is not None:
-            # Names may only contain alphanumerics, underscores (_), dashes (-), periods (.), spaces ( ), and slashes (/)
-            clean_name = re.sub(r"[^\w\-\.\s\/]", "-", name)
-            mlflow.log_metric(key=clean_name, value=time_diff_in_minutes)
+            mlflow.log_metric(
+                key=self.__mlflow_clean_string(name), value=time_diff_in_minutes
+            )
+
+    def log_param(self, key: str, value: str) -> None:
+        self.logger.info(f"{key}: {value}")
+        if self.mlflow_config is not None:
+            mlflow.log_param(key=self.__mlflow_clean_string(key), value=value)
+
+    def log_params(self, params: Dict[str, Any]) -> None:
+        if self.mlflow_config is not None:
+            mlflow.log_params(params=params)
+
+    def __mlflow_clean_string(self, value: str) -> str:
+        """
+
+        MLFlow keys may only contain alphanumerics, underscores (_),
+        dashes (-), periods (.), spaces ( ), and slashes (/)
+
+        """
+        return re.sub(r"[^\w\-\.\s\/]", "-", value)
 
     # noinspection PyUnusedLocal
     def log_artifact(
