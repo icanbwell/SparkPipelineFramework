@@ -88,6 +88,7 @@ class FrameworkPipeline(Transformer):
                 event_name=pipeline_name,
                 event_text=f"Starting Pipeline {pipeline_name}",
             )
+            self.progress_logger.log_params(params=self.__parameters)
 
             for transformer in self.transformers:
                 assert isinstance(transformer, Transformer), type(transformer)
@@ -97,6 +98,9 @@ class FrameworkPipeline(Transformer):
                         f"---- Running pipeline [{pipeline_name}] transformer [{transformer}]  "
                         f"({i} of {count_of_transformers}) ----"
                     )
+                    self.progress_logger.start_mlflow_run(
+                        run_name=str(transformer), is_nested=True
+                    )
 
                     with ProgressLogMetric(
                         progress_logger=self.progress_logger,
@@ -105,9 +109,6 @@ class FrameworkPipeline(Transformer):
                         self.progress_logger.log_event(
                             pipeline_name,
                             event_text=f"Running pipeline step {transformer}",
-                        )
-                        self.progress_logger.start_mlflow_run(
-                            run_name=str(transformer), is_nested=True
                         )
                         df = transformer.transform(dataset=df)
                         self.progress_logger.log_event(
@@ -144,11 +145,8 @@ class FrameworkPipeline(Transformer):
                     )
                     self.progress_logger.log_exception(
                         event_name=pipeline_name,
-                        event_text=f"Exception in Stage={stage_name}",
+                        event_text=f"Exception in Stage={stage_name} -- {'-'.join(error_messages)}",
                         ex=e,
-                    )
-                    self.progress_logger.log_artifact(
-                        key="_exception.txt", contents="-".join(error_messages)
                     )
                     self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)
                     raise friendly_spark_exception from e
