@@ -15,6 +15,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.file_modes import FileReadModes
 
 
 class FrameworkParquetLoader(FrameworkTransformer):
@@ -29,10 +30,12 @@ class FrameworkParquetLoader(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         merge_schema: bool = False,
         limit: int = -1,
+        mode: str = FileReadModes.MODE_PERMISSIVE,
     ):
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
+        assert mode in FileReadModes.MODE_CHOICES
 
         self.logger = get_logger(__name__)
 
@@ -48,6 +51,9 @@ class FrameworkParquetLoader(FrameworkTransformer):
         self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=None)
 
+        self.mode: Param[str] = Param(self, "mode", "")
+        self._setDefault(mode=mode)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -59,18 +65,25 @@ class FrameworkParquetLoader(FrameworkTransformer):
         merge_schema: bool = self.getMergeSchema()
         limit: int = self.getLimit()
 
+        progress_logger and progress_logger.write_to_log(
+            f"Loading parquet file for view {view}: {path}"
+        )
+
         with ProgressLogMetric(
             name=f"{name or view}_table_loader", progress_logger=progress_logger
         ):
             try:
+                df_reader = df.sql_ctx.read
+                df_reader = df_reader.option("mode", self.getMode())
+
                 if merge_schema is True:
                     final_df = (
-                        df.sql_ctx.read.option("mergeSchema", "true")
+                        df_reader.option("mergeSchema", "true")
                         .format("parquet")
                         .load(path=str(path))
                     )
                 else:
-                    final_df = df.sql_ctx.read.format("parquet").load(path=str(path))
+                    final_df = df_reader.format("parquet").load(path=str(path))
 
                 assert (
                     "_corrupt_record" not in final_df.columns
@@ -100,3 +113,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
         return self.getOrDefault(self.limit)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getMode(self) -> str:
+        return self.getOrDefault(self.mode)

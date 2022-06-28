@@ -3,7 +3,7 @@ LANG=en_US.utf-8
 export LANG
 
 Pipfile.lock: Pipfile
-	docker-compose run --rm --name spark_pipeline_framework dev pipenv lock --dev
+	docker-compose run --rm --name spark_pipeline_framework dev sh -c "rm -f Pipfile.lock && pipenv lock --dev"
 
 .PHONY:devdocker
 devdocker: ## Builds the docker for dev
@@ -22,7 +22,8 @@ up: Pipfile.lock
 
 .PHONY: down
 down:
-	docker-compose down
+	docker-compose down --remove-orphans && \
+	docker volume prune --filter label=mlflow -f
 
 .PHONY:clean-pre-commit
 clean-pre-commit: ## removes pre-commit hook

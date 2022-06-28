@@ -10,6 +10,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import (
     FrameworkBaseExporter,
 )
+from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 
 
 class FrameworkParquetExporter(FrameworkBaseExporter):
@@ -21,7 +22,7 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
         file_path: Union[str, Path],
         view: Optional[str] = None,
         name: Optional[str] = None,
-        mode: str = FrameworkBaseExporter.MODE_ERROR,
+        mode: str = FileWriteModes.MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1,
