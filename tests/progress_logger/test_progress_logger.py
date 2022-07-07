@@ -1,5 +1,7 @@
 import os
+import string
 from pathlib import Path
+import random
 from shutil import rmtree
 from typing import Dict, Any, Callable, Union, List
 
@@ -162,7 +164,10 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
     mlflow_tracking_url = temp_dir.joinpath("mlflow")
     # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
-    experiment_name = "UnityPoint Kyruus Providers"
+    random_string = "".join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
+    )
+    experiment_name = random_string
 
     mlflow_config = MlFlowConfig(
         parameters=parameters,
