@@ -129,9 +129,11 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         else:
             raise TypeError(f"Unknown type '{type(filepath)}' for filepath {filepath}")
 
-        progress_logger and progress_logger.write_to_log(
-            f"Loading {self.getReaderFormat()} file for view {view}: {absolute_paths}, infer_schema: {infer_schema}"
-        )
+        if progress_logger:
+            progress_logger.write_to_log(
+                f"Loading {self.getReaderFormat()} file for view {view}: {absolute_paths}, infer_schema: {infer_schema}"
+            )
+            progress_logger.log_param("data_path", ", ".join(absolute_paths))
 
         self.preprocess(df=df, absolute_paths=absolute_paths)
 
