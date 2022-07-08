@@ -62,7 +62,7 @@ class ProgressLogger:
         mlflow.start_run(run_name=self.mlflow_config.flow_run_name)
         self.logger.info(f"MLFLOW ARTIFACTS URL: {mlflow.get_artifact_uri()}")
         # set the parameters used in the pipeline run
-        mlflow.log_params(params=self.mlflow_config.parameters)
+        self.log_params(params=self.mlflow_config.parameters)
 
         return self
 
@@ -101,7 +101,9 @@ class ProgressLogger:
 
     def log_params(self, params: Dict[str, Any]) -> None:
         if self.mlflow_config is not None:
-            mlflow.log_params(params=params)
+            # intentionally not using mlflow.log_params due to issues with its SqlAlchemy implementation
+            for key, value in params.items():
+                self.log_param(key=key, value=value)
 
     def __mlflow_clean_string(self, value: str) -> str:
         """
@@ -109,7 +111,12 @@ class ProgressLogger:
         MLFlow keys may only contain alphanumerics, underscores (_),
         dashes (-), periods (.), spaces ( ), and slashes (/)
 
+
+        mlflow run metric names through https://docs.python.org/3/library/os.path.html#os.path.normpath when validating
+        metric names (https://github.com/mlflow/mlflow/blob/217799b10780b22f787137f80f5cf5c2b5cf85b1/mlflow/utils/validation.py#L95).
+        one side effect of this is if the value contains `//` it will be changed to `/` and fail the _validate_metric_name check.
         """
+        value = value.replace("//", "/")
         return re.sub(r"[^\w\-\.\s\/]", "-", value)
 
     # noinspection PyUnusedLocal

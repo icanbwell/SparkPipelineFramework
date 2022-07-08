@@ -127,9 +127,10 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         paths = get_absolute_paths(filepath=filepath)
         has_header = self.getHasHeader()
-        progress_logger and progress_logger.write_to_log(
-            f"Loading file for view {view}: {paths}"
-        )
+
+        if progress_logger:
+            progress_logger.write_to_log(f"Loading file for view {view}: {paths}")
+            progress_logger.log_param("data_path", ", ".join(paths))
 
         df_reader: DataFrameReader = df.sql_ctx.read
         df_text = df_reader.text(paths=paths)
