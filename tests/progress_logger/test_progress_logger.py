@@ -248,6 +248,7 @@ def test_progress_logger_without_mlflow(spark_session: SparkSession) -> None:
         rmtree(temp_dir)
     os.makedirs(temp_dir)
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
+    export_path: str = str(temp_dir.joinpath("ouptput").joinpath("flights.json"))
 
     schema = StructType([])
 
@@ -278,6 +279,7 @@ def test_progress_logger_without_mlflow(spark_session: SparkSession) -> None:
         ),
         "foo": "bar",
         "view2": "my_view_2",
+        "export_path": export_path,
     }
 
     with ProgressLogger() as progress_logger:
