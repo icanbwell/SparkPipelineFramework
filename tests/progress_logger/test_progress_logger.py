@@ -8,6 +8,10 @@ from typing import Dict, Any, Callable, Union, List
 import mlflow  # type: ignore
 from mlflow.entities import Run  # type: ignore
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
+from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
+    FrameworkJsonExporter,
+)
+
 from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
     FrameworkMappingLoader,
 )
@@ -85,6 +89,13 @@ class SimplePipeline(FrameworkPipeline):
                     parameters=parameters,
                     progress_logger=progress_logger,
                 ),
+                FrameworkJsonExporter(
+                    file_path=parameters["export_path"],
+                    view="flights",
+                    name="export flights as json",
+                    parameters=parameters,
+                    progress_logger=progress_logger,
+                ),
             ]
         )
 
@@ -127,6 +138,7 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
         rmtree(temp_dir)
     os.makedirs(temp_dir)
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
+    export_path: str = str(temp_dir.joinpath("ouptput").joinpath("flights.json"))
 
     schema = StructType([])
 
@@ -157,6 +169,7 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
         ),
         "foo": "bar",
         "view2": "my_view_2",
+        "export_path": export_path,
     }
 
     flow_run_name = "fluffy-fox"
@@ -191,7 +204,7 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
     runs = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
-    assert len(runs) == 8, "there should be 8 runs total, 1 parent and 7 nested"
+    assert len(runs) == 9, "there should be 9 runs total, 1 parent and 8 nested"
     parent_runs = [
         run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
     ]
@@ -199,12 +212,32 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
     nested_runs = [
         run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
     ]
-    assert len(nested_runs) == 7
+    assert len(nested_runs) == 8
     # assert that the parent run has the params
     parent_run: Run = parent_runs[0]
     assert (
         parent_run.data.params.get("flights_path") == flights_path
     ), "parent run should have the flights_path parameter set"
+
+    # assert that load and export runs have the data param set
+    csv_loader_run = [
+        run
+        for run in nested_runs
+        if "FrameworkCsvLoader" in run.data.tags.get("mlflow.runName")
+    ]
+    assert len(csv_loader_run) == 1
+    assert (
+        csv_loader_run[0].data.params.get("data_path") == flights_path
+    ), "csv loader run should have 'data_path` param set"
+    json_export_run = [
+        run
+        for run in nested_runs
+        if "FrameworkJsonExporter" in run.data.tags.get("mlflow.runName")
+    ]
+    assert len(json_export_run) == 1
+    assert (
+        json_export_run[0].data.params.get("data_export_path") == export_path
+    ), "export run should have 'data_export_path` param set"
 
 
 def test_progress_logger_without_mlflow(spark_session: SparkSession) -> None:

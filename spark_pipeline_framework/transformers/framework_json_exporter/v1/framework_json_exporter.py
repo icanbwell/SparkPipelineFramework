@@ -80,7 +80,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
                     df.write.mode(self.getMode()).json(path=str(path))
 
                 if progress_logger:
-                    progress_logger.log_param("data_path", str(path))
+                    progress_logger.log_param("data_export_path", str(path))
                     progress_logger.write_to_log(f"[{name or view}] written to {path}")
 
             except AnalysisException as e:
