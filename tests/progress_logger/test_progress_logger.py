@@ -6,8 +6,11 @@ from shutil import rmtree
 from typing import Dict, Any, Callable, Union, List
 
 import mlflow  # type: ignore
-from mlflow.entities import Run  # type: ignore
+import pytest
+from mlflow.entities import Run, RunStatus  # type: ignore
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
+from spark_pipeline_framework.event_loggers.event_logger import EventLogger
+
 from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
     FrameworkJsonExporter,
 )
@@ -129,14 +132,22 @@ class MappingPipeline(FrameworkPipeline):
         )
 
 
-def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
+@pytest.fixture(scope="module")
+def test_setup() -> None:
+    data_dir = Path(__file__).parent
+    temp_dir = data_dir.joinpath("temp")
+    if os.path.isdir(temp_dir):
+        rmtree(temp_dir)
+    os.makedirs(temp_dir)
+
+
+def test_progress_logger_with_mlflow(
+    spark_session: SparkSession, test_setup: Any
+) -> None:
     # Arrange
     clean_spark_session(spark_session)
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
-    if os.path.isdir(temp_dir):
-        rmtree(temp_dir)
-    os.makedirs(temp_dir)
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
     export_path: str = str(temp_dir.joinpath("ouptput").joinpath("flights.json"))
 
@@ -170,6 +181,7 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
         "foo": "bar",
         "view2": "my_view_2",
         "export_path": export_path,
+        "conn_str": "jdbc:mysql://username:Im5CYsCO923GFAebv6bf@warehouse-mysql.server:3306/schema?rewriteBatchedStatements=true",
     }
 
     flow_run_name = "fluffy-fox"
@@ -240,13 +252,13 @@ def test_progress_logger_with_mlflow(spark_session: SparkSession) -> None:
     ), "export run should have 'data_export_path` param set"
 
 
-def test_progress_logger_without_mlflow(spark_session: SparkSession) -> None:
+def test_progress_logger_without_mlflow(
+    spark_session: SparkSession, test_setup: Any
+) -> None:
     clean_spark_session(spark_session)
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
-    if os.path.isdir(temp_dir):
-        rmtree(temp_dir)
-    os.makedirs(temp_dir)
+
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
     export_path: str = str(temp_dir.joinpath("ouptput").joinpath("flights.json"))
 
@@ -297,3 +309,62 @@ def test_progress_logger_without_mlflow(spark_session: SparkSession) -> None:
     mlflow_default_dir: Path = data_dir.joinpath("mlruns")
     if os.path.isdir(mlflow_default_dir):
         rmtree(mlflow_default_dir)
+
+
+def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    temp_dir: Path = data_dir.joinpath("temp")
+    event_log_path = temp_dir.joinpath("event_log")
+
+    class FileEventLogger(EventLogger):
+        def __init__(self, log_path: Path):
+            self.log_path = log_path
+            os.makedirs(self.log_path)
+
+        def log_event(self, event_name: str, event_text: str) -> None:
+            log_file_path: Path = self.log_path.joinpath(
+                f"{event_name.replace(' ', '_')}"
+            )
+            with open(log_file_path, "w") as text_file:
+                text_file.write(event_text)
+
+    file_event_logger = FileEventLogger(log_path=event_log_path)
+
+    parameters = {"foo": "bar", "view2": "my_view_2"}
+
+    mlflow_tracking_url = temp_dir.joinpath("mlflow")
+    artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
+    experiment_name: str = "error_tests"
+
+    mlflow_config = MlFlowConfig(
+        parameters=parameters,
+        experiment_name=experiment_name,
+        flow_run_name="run",
+        mlflow_tracking_url=str(mlflow_tracking_url),
+        artifact_url=artifact_url,
+    )
+    with ProgressLogger(
+        mlflow_config=mlflow_config, event_loggers=[file_event_logger]
+    ) as progress_logger:
+        # log a param with the same key and different values and verify we get other params logged and notification of failure
+        params = {"bar": "foo", "foo": "foo", "log": "this"}
+        progress_logger.log_params(params=params)
+
+    # assert that there are all the params logged except for the one causing the error
+    experiment = mlflow.get_experiment_by_name(name=experiment_name)
+    assert experiment is not None, "the mlflow experiment was not created"
+
+    runs: List[Run] = mlflow.search_runs(
+        experiment_ids=[experiment.experiment_id], output_format="list"
+    )
+    assert len(runs) == 1
+    run: Run = runs[0]
+    assert run.info.status == RunStatus.to_string(RunStatus.FINISHED)
+
+    # assert that the 'log' param was set properly
+    log_param_value = run.data.params.get("log")
+    assert log_param_value == "this"
+
+    # assert that an event notification was sent out
+    event_log_files = os.listdir(event_log_path)
+    assert len(event_log_files) == 1
