@@ -181,6 +181,7 @@ def test_progress_logger_with_mlflow(
         "foo": "bar",
         "view2": "my_view_2",
         "export_path": export_path,
+        "conn_str": "jdbc:mysql://username:Im5CYsCO923GFAebv6bf@warehouse-mysql.server:3306/schema?rewriteBatchedStatements=true",
     }
 
     flow_run_name = "fluffy-fox"

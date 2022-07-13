@@ -101,7 +101,10 @@ class ProgressLogger:
         self.logger.info(f"{key}: {value}")
         if self.mlflow_config is not None:
             try:
-                mlflow.log_param(key=self.__mlflow_clean_string(key), value=value)
+                mlflow.log_param(
+                    key=self.__mlflow_clean_string(key),
+                    value=self.__mlflow_clean_param_value(value),
+                )
             except Exception as e:
                 self.log_event("mlflow log param error", str({e}))
 
@@ -124,6 +127,18 @@ class ProgressLogger:
         """
         value = value.replace("//", "/")
         return re.sub(r"[^\w\-\.\s\/]", "-", value)
+
+    def __mlflow_clean_param_value(self, param_value: str) -> str:
+        """
+        replace sensitive values in the string with asterisks
+        """
+        sensitive_value_replacement: str = "*******"
+        db_password_regex = r"(?<=:)\w+(?=@)"
+        cleaned_value = re.sub(
+            db_password_regex, sensitive_value_replacement, param_value
+        )
+
+        return cleaned_value
 
     # noinspection PyUnusedLocal
     def log_artifact(
