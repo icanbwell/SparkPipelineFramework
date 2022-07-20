@@ -350,6 +350,12 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
         params = {"bar": "foo", "foo": "foo", "log": "this"}
         progress_logger.log_params(params=params)
 
+        # test with different data types to see if we get an error when logging
+        progress_logger.log_param("page_size", 200)  # type: ignore
+        progress_logger.log_param("catalog_entry_name", None)  # type: ignore
+
+        progress_logger.log_metric(name=200, time_diff_in_minutes=1)  # type: ignore
+
     # assert that there are all the params logged except for the one causing the error
     experiment = mlflow.get_experiment_by_name(name=experiment_name)
     assert experiment is not None, "the mlflow experiment was not created"
