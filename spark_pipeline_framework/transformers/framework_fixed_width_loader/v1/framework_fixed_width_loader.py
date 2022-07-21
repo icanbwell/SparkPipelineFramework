@@ -135,9 +135,10 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         df_reader: DataFrameReader = df.sql_ctx.read
         df_text = df_reader.text(paths=paths)
         if has_header:
-            first: Row = df_text.first()
-            header = first[0]
-            df_text = df_text.filter(~col("value").contains(header))
+            first: Optional[Row] = df_text.first()
+            if first is not None:
+                header = first[0]
+                df_text = df_text.filter(~col("value").contains(header))
         df_text = df_text.select(
             *[
                 trim(col("value").substr(column.start_pos, column.length))

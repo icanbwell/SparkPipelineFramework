@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -36,18 +36,18 @@ class PythonProxyBase(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setName(self, value: str) -> "PythonProxyBase":
-        self._paramMap[self.name] = value  # type: ignore
+        self._paramMap[self.name] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getOrDefault(self.name or self.__class__.__name__)
+        return cast(str, self.getOrDefault(self.name or self.__class__.__name__))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setProgressLogger(self, value: ProgressLogger) -> "PythonProxyBase":
-        self._paramMap[self.progress_logger] = value  # type: ignore
+        self._paramMap[self.progress_logger] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getProgressLogger(self) -> Optional[ProgressLogger]:
-        return self.getOrDefault(self.progress_logger)  # type: ignore
+        return cast(ProgressLogger, self.getOrDefault(self.progress_logger))

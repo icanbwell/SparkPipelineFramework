@@ -1,7 +1,7 @@
 import os
 
 from smart_open import open as smart_open  # type: ignore
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, cast
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -119,6 +119,7 @@ class FrameworkValidationTransformer(FrameworkTransformer):
             for child_path in paths:
                 self._validate(child_path, df)
 
+    # noinspection PyMethodMayBeStatic
     def get_validation_df(self, df: DataFrame) -> Optional[DataFrame]:
         validation_df: Optional[DataFrame] = None
         tables_df = df.sql_ctx.tables().filter(
@@ -130,12 +131,12 @@ class FrameworkValidationTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getValidationSourcePath(self) -> str:
-        return self.getOrDefault(self.validation_source_path)
+        return cast(str, self.getOrDefault(self.validation_source_path))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getValidationQueries(self) -> List[str]:
-        return self.getOrDefault(self.validation_queries)
+        return cast(List[str], self.getOrDefault(self.validation_queries))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFailOnValidation(self) -> bool:
-        return self.getOrDefault(self.fail_on_validation)
+        return cast(bool, self.getOrDefault(self.fail_on_validation))

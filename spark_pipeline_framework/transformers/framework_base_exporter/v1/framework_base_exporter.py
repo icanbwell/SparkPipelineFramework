@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -85,15 +85,15 @@ class FrameworkBaseExporter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return cast(str, self.getOrDefault(self.view))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
-        return self.getOrDefault(self.mode)
+        return cast(str, self.getOrDefault(self.mode))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)
+        return cast(int, self.getOrDefault(self.limit))
 
     # noinspection PyPep8Naming
     def getFormat(self) -> str:

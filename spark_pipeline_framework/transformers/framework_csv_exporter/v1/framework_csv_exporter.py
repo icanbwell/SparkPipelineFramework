@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, Dict, Any, Optional
+from typing import Union, Dict, Any, Optional, cast
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -55,15 +55,15 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[str, Path]:
-        return self.getOrDefault(self.file_path)
+        return cast(Union[str, Path], self.getOrDefault(self.file_path))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getHeader(self) -> bool:
-        return self.getOrDefault(self.header)
+        return cast(bool, self.getOrDefault(self.header))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDelimiter(self) -> str:
-        return self.getOrDefault(self.delimiter)
+        return cast(str, self.getOrDefault(self.delimiter))
 
     def getFormat(self) -> str:
         return "csv"

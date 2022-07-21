@@ -1,16 +1,11 @@
 from pathlib import Path
-from typing import Union, List, Dict, Any, Optional
+from typing import Union, List, Dict, Any, Optional, cast
 
-# noinspection PyPackageRequirements
 from pyspark import keyword_only
+from pyspark.ml.param import Param
 
-# noinspection PyPackageRequirements
-from pyspark.ml.param.shared import Param
-
-# noinspection PyPackageRequirements
 from pyspark.sql.dataframe import DataFrame
 
-# noinspection PyPackageRequirements
 from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -81,12 +76,12 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def setMultiLine(self, value: bool) -> "FrameworkJsonLoader":
-        self._paramMap[self.multiLine] = value  # type: ignore
+        self._paramMap[self.multiLine] = value
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMultiLine(self) -> str:
-        return self.getOrDefault(self.multiLine)  # type: ignore
+        return cast(str, self.getOrDefault(self.multiLine))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getReaderFormat(self) -> str:

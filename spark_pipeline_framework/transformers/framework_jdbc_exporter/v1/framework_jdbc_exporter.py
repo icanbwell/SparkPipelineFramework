@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -58,15 +58,15 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getJdbcUrl(self) -> str:
-        return self.getOrDefault(self.jdbc_url)
+        return cast(str, self.getOrDefault(self.jdbc_url))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getTable(self) -> str:
-        return self.getOrDefault(self.table)
+        return cast(str, self.getOrDefault(self.table))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDriver(self) -> str:
-        return self.getOrDefault(self.driver)
+        return cast(str, self.getOrDefault(self.driver))
 
     def getFormat(self) -> str:
         return "jdbc"

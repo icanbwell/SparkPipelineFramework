@@ -42,7 +42,7 @@ class FrameworkParamPipeline(FrameworkPipeline):
                 Transformer,
                 List[Transformer],
             ]
-        ] = []  # type: ignore
+        ] = []
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
 
@@ -53,7 +53,7 @@ class FrameworkParamPipeline(FrameworkPipeline):
     def _transform(self, df: DataFrame, response: Dict[str, Any]) -> Any:  # type: ignore
         # if steps are defined but not transformers then convert steps to transformers first
         if len(self.steps) > 0 and len(self.transformers) == 0:
-            self.transformers = self.create_steps(self.steps)  # type: ignore
+            self.transformers = self.create_steps(self.steps)
         # get the logger to use
         logger = get_logger(__name__)
         count_of_transformers: int = len(self.transformers)
@@ -129,7 +129,7 @@ class FrameworkParamPipeline(FrameworkPipeline):
             params = dict()
         if isinstance(params, dict):
             if params:
-                return self.copy(params)._transform(dataset, response)  # type: ignore
+                return self.copy(params)._transform(dataset, response)
             else:
                 return self._transform(dataset, response)
         else:
@@ -147,4 +147,4 @@ class FrameworkParamPipeline(FrameworkPipeline):
             List[Union[FrameworkParamTransformer, List[FrameworkParamTransformer]]],
         ],
     ) -> List[Union[Transformer, FrameworkParamTransformer]]:
-        return create_steps(my_list)  # type: ignore
+        return create_steps(my_list)

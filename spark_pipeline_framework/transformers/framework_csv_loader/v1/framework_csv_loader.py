@@ -1,9 +1,8 @@
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Union, Optional, cast
 
-# noinspection PyProtectedMember
 from pyspark import keyword_only
-from pyspark.ml.param.shared import Param
+from pyspark.ml.param import Param
 from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -63,15 +62,15 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDelimiter(self) -> str:
-        return self.getOrDefault(self.delimiter)
+        return cast(str, self.getOrDefault(self.delimiter))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getHasHeader(self) -> bool:
-        return self.getOrDefault(self.has_header)
+        return cast(bool, self.getOrDefault(self.has_header))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMultiline(self) -> bool:
-        return self.getOrDefault(self.multiline)
+        return cast(bool, self.getOrDefault(self.multiline))
 
     def getReaderFormat(self) -> str:
         return "csv"

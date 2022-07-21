@@ -119,7 +119,7 @@ class FrameworkPipeline(Transformer):
                 except Exception as e:
                     if hasattr(transformer, "getName"):
                         # noinspection Mypy
-                        stage_name = transformer.getName()  # type: ignore
+                        stage_name = transformer.getName()
                     else:
                         stage_name = transformer.__class__.__name__
                     logger.error(
@@ -139,7 +139,7 @@ class FrameworkPipeline(Transformer):
 
                     if hasattr(transformer, "getSql"):
                         # noinspection Mypy
-                        logger.error(transformer.getSql())  # type: ignore
+                        logger.error(transformer.getSql())
                     logger.error(
                         "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                     )

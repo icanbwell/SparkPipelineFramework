@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, cast
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -80,14 +80,18 @@ class FrameworkFileDownloader(FrameworkParamTransformer):
 
         return response
 
+    # noinspection PyPep8Naming
     def getParamKey(self) -> str:
-        return self.getOrDefault(self.param_key)
+        return cast(str, self.getOrDefault(self.param_key))
 
+    # noinspection PyPep8Naming
     def getDownloadUrls(self) -> str:
-        return self.getOrDefault(self.download_urls)
+        return cast(str, self.getOrDefault(self.download_urls))
 
+    # noinspection PyPep8Naming
     def getDownloadToPath(self) -> Optional[str]:
-        return self.getOrDefault(self.download_to_path)
+        return cast(Optional[str], self.getOrDefault(self.download_to_path))
 
+    # noinspection PyPep8Naming
     def getExtractZips(self) -> bool:
-        return self.getOrDefault(self.extract_zips)
+        return cast(bool, self.getOrDefault(self.extract_zips))

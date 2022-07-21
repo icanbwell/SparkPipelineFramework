@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, cast
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -74,8 +74,8 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> Optional[str]:
-        return self.getOrDefault(self.view)
+        return cast(Optional[str], self.getOrDefault(self.view))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
-        return self.getOrDefault(self.verify_count_remains_same)
+        return cast(bool, self.getOrDefault(self.verify_count_remains_same))
