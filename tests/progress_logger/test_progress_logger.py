@@ -121,7 +121,7 @@ class MappingPipeline(FrameworkPipeline):
         )
 
         self.transformers = self.create_steps(
-            [  # type: ignore
+            [
                 FrameworkMappingLoader(
                     view="members",
                     mapping_function=mapping_function,

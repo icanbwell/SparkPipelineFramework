@@ -1,4 +1,4 @@
-from typing import Dict, Any, Callable, Optional, Union, List
+from typing import Dict, Any, Callable, Optional, Union, List, cast
 
 # noinspection PyProtectedMember
 from mlflow.entities import RunStatus  # type: ignore
@@ -128,7 +128,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return cast(str, self.getOrDefault(self.view))
 
     # noinspection PyPep8Naming
     def getViews(self) -> List[str]:
