@@ -67,7 +67,7 @@ class SimplePipeline(FrameworkPipeline):
         )
 
         self.transformers = self.create_steps(
-            [
+            [  # type: ignore
                 FrameworkCsvLoader(
                     view="flights",
                     filepath=parameters["flights_path"],

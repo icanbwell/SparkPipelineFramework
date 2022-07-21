@@ -33,7 +33,7 @@ class MyUnValidatedPipeline(FrameworkPipeline):
             parameters=parameters, progress_logger=progress_logger, run_id="12345678"
         )
         self.transformers = self.create_steps(
-            [
+            [  # type: ignore
                 FrameworkCsvLoader(
                     view="flights",
                     filepath=parameters["flights_path"],
@@ -59,7 +59,7 @@ class MyValidatedPipeline(FrameworkPipeline):
             validation_output_path=parameters["validation_output_path"],
         )
         self.transformers = self.create_steps(
-            [
+            [  # type: ignore
                 FrameworkCsvLoader(
                     view="flights",
                     filepath=parameters["flights_path"],
@@ -89,7 +89,7 @@ class MyFailFastValidatedPipeline(FrameworkPipeline):
             validation_output_path=parameters["validation_output_path"],
         )
         self.transformers = self.create_steps(
-            [
+            [  # type: ignore
                 FrameworkCsvLoader(
                     view="flights",
                     filepath=parameters["flights_path"],

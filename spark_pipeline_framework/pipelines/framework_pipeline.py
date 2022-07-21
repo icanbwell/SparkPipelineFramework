@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Union
 
 from pyspark.ml.base import Transformer
+from pyspark.ml.util import DefaultParamsReadable
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -115,6 +116,7 @@ class FrameworkPipeline(Transformer):
             List[FrameworkTransformer],
             List[Union[Transformer, List[Transformer]]],
             List[Union[FrameworkTransformer, List[FrameworkTransformer]]],
+            List[DefaultParamsReadable[Any]],
         ],
     ) -> List[Transformer]:
         return create_steps(my_list)
