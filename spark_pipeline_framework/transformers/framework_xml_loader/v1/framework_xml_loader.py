@@ -1,6 +1,6 @@
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any
+from typing import Union, List, Optional, Dict, Any, cast
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -93,16 +93,16 @@ class FrameworkXmlLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return cast(str, self.getOrDefault(self.view))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilepath(self) -> Union[str, List[str], Path]:
-        return self.getOrDefault(self.filepath)
+        return cast(Union[str, List[str], Path], self.getOrDefault(self.filepath))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getRowTag(self) -> str:
-        return self.getOrDefault(self.row_tag)
+        return cast(str, self.getOrDefault(self.row_tag))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
-        return self.getOrDefault(self.schema)
+        return cast(StructType, self.getOrDefault(self.schema))

@@ -73,7 +73,7 @@ class FrameworkTransformer(
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
-        return self.getOrDefault(self.name)
+        return self.getOrDefault(self.name)  # type: ignore
 
     # # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     # def setProgressLogger(
@@ -103,19 +103,19 @@ class FrameworkTransformer(
     # noinspection PyPep8Naming
     def _setDefault(self, **kwargs: Any) -> None:
         # noinspection PyUnresolvedReferences,PyProtectedMember
-        super()._setDefault(**kwargs)  # type: ignore
+        super()._setDefault(**kwargs)
 
     def _set(self, **kwargs: Any) -> None:
         # filter out any args that don't have parameters
         kwargs = {key: value for key, value in kwargs.items() if self.hasParam(key)}
         # noinspection PyUnresolvedReferences,PyProtectedMember
-        super()._set(**kwargs)  # type: ignore
+        super()._set(**kwargs)
 
     def __str__(self) -> str:
         stage_name: str = ""
         stage_name += f"name={self.getName()} "
         if hasattr(self, "getView"):
             # noinspection Mypy
-            stage_name += f"view={self.getView()} "  # type: ignore
+            stage_name += f"view={self.getView()} "
         stage_name += "type=" + self.__class__.__name__
         return stage_name

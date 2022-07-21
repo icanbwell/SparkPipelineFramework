@@ -3,7 +3,7 @@ import math
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, Any, Optional, Union, List
+from typing import Dict, Any, Optional, Union, List, cast
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -119,12 +119,12 @@ class FrameworkJsonSplitter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[Path, str]:
-        return self.getOrDefault(self.file_path)
+        return cast(Union[Path, str], self.getOrDefault(self.file_path))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getOutputFolder(self) -> Union[Path, str]:
-        return self.getOrDefault(self.output_folder)
+        return cast(Union[Path, str], self.getOrDefault(self.output_folder))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMaxSizePerFileInMb(self) -> float:
-        return self.getOrDefault(self.max_size_per_file_in_mb)
+        return cast(float, self.getOrDefault(self.max_size_per_file_in_mb))

@@ -5,7 +5,7 @@ from typing import Union, List, Optional, Dict, Any, cast
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
-from pyspark.ml.param.shared import Param
+from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import input_file_name
 from pyspark.sql.readwriter import DataFrameReader
@@ -198,11 +198,11 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return cast(str, self.getOrDefault(self.view))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilepath(self) -> Union[str, List[str], Path]:
-        return self.getOrDefault(self.filepath)
+        return cast(Union[str, List[str], Path], self.getOrDefault(self.filepath))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
@@ -210,27 +210,27 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCleanColumnNames(self) -> bool:
-        return self.getOrDefault(self.clean_column_names)
+        return cast(bool, self.getOrDefault(self.clean_column_names))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCacheTable(self) -> bool:
-        return self.getOrDefault(self.cache_table)
+        return cast(bool, self.getOrDefault(self.cache_table))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getInferSchema(self) -> bool:
-        return self.getOrDefault(self.infer_schema)
+        return cast(bool, self.getOrDefault(self.infer_schema))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)
+        return cast(int, self.getOrDefault(self.limit))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCreateFilePath(self) -> bool:
-        return self.getOrDefault(self.create_file_path)
+        return cast(bool, self.getOrDefault(self.create_file_path))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getUseSchemaFromView(self) -> str:
-        return self.getOrDefault(self.use_schema_from_view)
+        return cast(str, self.getOrDefault(self.use_schema_from_view))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
@@ -246,4 +246,4 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
-        return self.getOrDefault(self.mode)
+        return cast(str, self.getOrDefault(self.mode))

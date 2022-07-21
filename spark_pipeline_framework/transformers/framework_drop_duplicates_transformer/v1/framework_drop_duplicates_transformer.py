@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, cast
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -55,8 +55,8 @@ class FrameworkDropDuplicatesTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return cast(str, self.getOrDefault(self.view))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumns(self) -> List[str]:
-        return self.getOrDefault(self.columns)
+        return cast(List[str], self.getOrDefault(self.columns))

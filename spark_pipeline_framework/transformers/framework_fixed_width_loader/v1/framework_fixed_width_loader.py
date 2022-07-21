@@ -1,13 +1,13 @@
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any, NamedTuple
+from typing import Union, List, Optional, Dict, Any, NamedTuple, cast
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, trim
-from pyspark.sql.types import DataType
+from pyspark.sql.types import DataType, Row
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
@@ -135,7 +135,8 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         df_reader: DataFrameReader = df.sql_ctx.read
         df_text = df_reader.text(paths=paths)
         if has_header:
-            header = df_text.first()[0]
+            first: Row = df_text.first()
+            header = first[0]
             df_text = df_text.filter(~col("value").contains(header))
         df_text = df_text.select(
             *[
@@ -154,16 +155,16 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return self.getOrDefault(self.view)
+        return cast(str, self.getOrDefault(self.view))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilepath(self) -> Union[str, List[str], Path]:
-        return self.getOrDefault(self.filepath)
+        return cast(Union[str, List[str], Path], self.getOrDefault(self.filepath))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumns(self) -> List[ColumnSpec]:
-        return self.getOrDefault(self.columns)
+        return cast(List[ColumnSpec], self.getOrDefault(self.columns))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getHasHeader(self) -> bool:
-        return self.getOrDefault(self.has_header)
+        return cast(bool, self.getOrDefault(self.has_header))

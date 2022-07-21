@@ -32,7 +32,7 @@ class FrameworkParamTransformer(FrameworkTransformer):
             params = dict()
         if isinstance(params, dict):
             if params:
-                return self.copy(params)._transform(dataset, response)  # type: ignore
+                return self.copy(params)._transform(dataset, response)
             else:
                 return self._transform(dataset, response)
         else:

@@ -37,7 +37,7 @@ def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
         ]
     )
 
-    pipeline: Pipeline = Pipeline(stages=stages)  # type: ignore
+    pipeline: Pipeline = Pipeline(stages=stages)
     transformer = pipeline.fit(df)
     transformer.transform(df)
 

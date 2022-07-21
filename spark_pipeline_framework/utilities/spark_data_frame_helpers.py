@@ -1,11 +1,12 @@
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 # noinspection PyProtectedMember
-from pyspark import SparkContext, SQLContext, Row
+from pyspark import SparkContext
 from pyspark.rdd import RDD
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StructType
+from pyspark.sql.context import SQLContext
+from pyspark.sql.types import StructType, Row
 
 
 def convert_to_row(d: Dict[Any, Any]) -> Row:
@@ -79,10 +80,10 @@ def spark_is_data_frame_empty(df: DataFrame) -> bool:
 def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
     if extended:
         # noinspection PyProtectedMember
-        return df._jdf.queryExecution().toString()  # type: ignore
+        return df._jdf.queryExecution().toString()
     else:
         # noinspection PyProtectedMember
-        return df._jdf.queryExecution().simpleString()  # type: ignore
+        return df._jdf.queryExecution().simpleString()
 
 
 def spark_table_exists(sql_ctx: SQLContext, view: str) -> bool:
@@ -92,7 +93,7 @@ def spark_table_exists(sql_ctx: SQLContext, view: str) -> bool:
 
 def sc(df: DataFrame) -> SparkContext:
     # noinspection PyProtectedMember
-    return cast(SparkContext, df._sc)
+    return df._sc
 
 
 def add_metadata_to_column(df: DataFrame, column: str, metadata: Any) -> DataFrame:
