@@ -17,7 +17,7 @@ Classes
 
 
 
-.. py:class:: FrameworkCsvLoader(view: str, filepath: Union[str, List[str], pathlib.Path], delimiter: str = ',', has_header: bool = True, clean_column_names: bool = False, multiline: bool = False, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1, infer_schema: bool = False, cache_table: bool = True, schema: Optional[pyspark.sql.types.StructType] = None, create_file_path: bool = False, mapping_file_name: Optional[str] = None)
+.. py:class:: FrameworkCsvLoader(view: str, filepath: Union[str, List[str], pathlib.Path], delimiter: str = ',', has_header: bool = True, clean_column_names: bool = False, multiline: bool = False, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1, infer_schema: bool = False, cache_table: bool = True, schema: Optional[pyspark.sql.types.StructType] = None, create_file_path: bool = False, mapping_file_name: Optional[str] = None, mode: str = FileReadModes.MODE_PERMISSIVE)
 
    Bases: :py:obj:`spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader.FrameworkLocalFileLoader`
 

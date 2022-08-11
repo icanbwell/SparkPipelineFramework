@@ -17,7 +17,7 @@ Classes
 
 
 
-.. py:class:: FrameworkParquetExporter(file_path: Union[str, pathlib.Path], view: Optional[str] = None, name: Optional[str] = None, mode: str = FrameworkBaseExporter.MODE_ERROR, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1)
+.. py:class:: FrameworkParquetExporter(file_path: Union[str, pathlib.Path], view: Optional[str] = None, name: Optional[str] = None, mode: str = FileWriteModes.MODE_ERROR, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1)
 
    Bases: :py:obj:`spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter.FrameworkBaseExporter`
 
