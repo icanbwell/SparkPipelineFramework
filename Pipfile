@@ -44,7 +44,7 @@ sparkdataframecomparer = "==1.0.4"
 black = ">=22.3.0"
 
 [requires]
-python_version = "3.7"
+python_version = "3.9.1"
 
 [pipenv]
 allow_prereleases = false
