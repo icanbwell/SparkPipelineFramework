@@ -17,7 +17,7 @@ Classes
 
 
 
-.. py:class:: FrameworkJsonExporter(file_path: Union[pathlib.Path, str], view: Optional[str] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1)
+.. py:class:: FrameworkJsonExporter(file_path: Union[pathlib.Path, str], view: Optional[str] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, limit: int = -1, mode: str = FileWriteModes.MODE_OVERWRITE)
 
    Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
 
@@ -50,6 +50,9 @@ Classes
 
 
    .. py:method:: getName(self) -> Optional[str]
+
+
+   .. py:method:: getMode(self) -> str
 
 
 

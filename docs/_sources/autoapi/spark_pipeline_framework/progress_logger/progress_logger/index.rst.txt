@@ -12,12 +12,16 @@ Classes
 
 .. autoapisummary::
 
+   spark_pipeline_framework.progress_logger.progress_logger.MlFlowConfig
    spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger
 
 
 
 
-.. py:class:: ProgressLogger(event_loggers: Optional[List[spark_pipeline_framework.event_loggers.event_logger.EventLogger]] = None)
+.. py:class:: MlFlowConfig(mlflow_tracking_url: str, artifact_url: str, experiment_name: str, flow_run_name: str, parameters: Dict[str, Any])
+
+
+.. py:class:: ProgressLogger(event_loggers: Optional[List[spark_pipeline_framework.event_loggers.event_logger.EventLogger]] = None, mlflow_config: Optional[MlFlowConfig] = None)
 
    .. py:method:: __enter__(self) -> ProgressLogger
 
@@ -25,7 +29,35 @@ Classes
    .. py:method:: __exit__(self, exc_type: Optional[BaseException], exc_value: Optional[BaseException], traceback: Optional[types.TracebackType]) -> None
 
 
+   .. py:method:: start_mlflow_run(self, run_name: str, is_nested: bool = True) -> None
+
+
+   .. py:method:: end_mlflow_run(self, status: mlflow.entities.RunStatus = RunStatus.FINISHED) -> None
+
+
    .. py:method:: log_metric(self, name: str, time_diff_in_minutes: float) -> None
+
+
+   .. py:method:: log_param(self, key: str, value: str) -> None
+
+
+   .. py:method:: log_params(self, params: Dict[str, Any]) -> None
+
+
+   .. py:method:: __mlflow_clean_string(self, value: str) -> str
+
+      MLFlow keys may only contain alphanumerics, underscores (_),
+      dashes (-), periods (.), spaces ( ), and slashes (/)
+
+
+      mlflow run metric names through https://docs.python.org/3/library/os.path.html#os.path.normpath when validating
+      metric names (https://github.com/mlflow/mlflow/blob/217799b10780b22f787137f80f5cf5c2b5cf85b1/mlflow/utils/validation.py#L95).
+      one side effect of this is if the value contains `//` it will be changed to `/` and fail the _validate_metric_name check.
+
+
+   .. py:method:: __mlflow_clean_param_value(self, param_value: str) -> str
+
+      replace sensitive values in the string with asterisks
 
 
    .. py:method:: log_artifact(self, key: str, contents: str, folder_path: Optional[str] = None) -> None

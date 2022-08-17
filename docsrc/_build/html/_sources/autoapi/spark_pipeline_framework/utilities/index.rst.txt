@@ -20,11 +20,11 @@ Submodules
    :maxdepth: 1
 
    FriendlySparkException/index.rst
-   base_spider_class/index.rst
    cannot_cast_exception_parser/index.rst
    class_helpers/index.rst
    file_downloader/index.rst
    file_helpers/index.rst
+   file_modes/index.rst
    flattener/index.rst
    json_to_jsonl_converter/index.rst
    list_utils/index.rst
@@ -33,7 +33,6 @@ Submodules
    pipeline_helper/index.rst
    run_if_else/index.rst
    save_csv_to_parquet/index.rst
-   scrapy_custom_crawler/index.rst
    spark_data_frame_helpers/index.rst
 
 
