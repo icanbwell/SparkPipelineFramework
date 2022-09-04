@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING, TypeVar
 from pyspark.ml.base import Transformer
 
 # noinspection PyPackageRequirements
-from pyspark.ml.param import Param, Params
+from pyspark.ml.param import Param
 
 # noinspection PyPackageRequirements
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
@@ -128,4 +128,5 @@ class FrameworkTransformer(
     # Have to re-declare here because MyPy does not seem to pick up the overload from base class (Params)
     def getOrDefault(self, param: Param[T]) -> T:
         # noinspection PyUnresolvedReferences
-        return super(Params, self).getOrDefault(param)  # type: ignore
+        # return super(Params, self).getOrDefault(param)  # type: ignore
+        return super().getOrDefault(param)  # type: ignore
