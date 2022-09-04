@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any, Union, Optional, cast
+from typing import Dict, Any, Union, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -90,22 +90,20 @@ class FrameworkJsonExporter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> Optional[str]:
-        return cast(Optional[str], self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[Path, str]:
-        return cast(Union[Path, str], self.getOrDefault(self.file_path))
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLimit(self) -> int:
-        return cast(int, self.getOrDefault(self.limit))
+        return self.getOrDefault(self.limit)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
-        return cast(
-            Optional[str], self.getOrDefault(self.name) or self.getOrDefault(self.view)
-        )
+        return self.getOrDefault(self.name) or self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
-        return cast(str, self.getOrDefault(self.mode))
+        return self.getOrDefault(self.mode)

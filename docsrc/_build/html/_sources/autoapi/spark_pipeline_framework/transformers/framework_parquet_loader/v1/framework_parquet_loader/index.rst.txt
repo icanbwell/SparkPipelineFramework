@@ -17,7 +17,7 @@ Classes
 
 
 
-.. py:class:: FrameworkParquetLoader(view: str, file_path: Union[str, List[str], pathlib.Path], name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, merge_schema: bool = False, limit: int = -1)
+.. py:class:: FrameworkParquetLoader(view: str, file_path: Union[str, List[str], pathlib.Path], name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, merge_schema: bool = False, limit: int = -1, mode: str = FileReadModes.MODE_PERMISSIVE)
 
    Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
 
@@ -50,6 +50,9 @@ Classes
 
 
    .. py:method:: getLimit(self) -> int
+
+
+   .. py:method:: getMode(self) -> str
 
 
 

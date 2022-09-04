@@ -62,11 +62,10 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
                 else self.else_stages()
             )
         for stage in stages:
-            if self.progress_logger is not None:
-                self.progress_logger.start_mlflow_run(
-                    run_name=str(stage), is_nested=True
-                )
+            progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+            if progress_logger is not None:
+                progress_logger.start_mlflow_run(run_name=str(stage), is_nested=True)
             df = stage.transform(df)
-            if self.progress_logger is not None:
-                self.progress_logger.end_mlflow_run()
+            if progress_logger is not None:
+                progress_logger.end_mlflow_run()
         return df

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -117,30 +117,28 @@ class FrameworkKafkaReader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getKafkaBrokers(self) -> str:
-        return cast(str, self.getOrDefault(self.kafka_brokers))
+        return self.getOrDefault(self.kafka_brokers)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getTopic(self) -> str:
-        return cast(str, self.getOrDefault(self.topic))
+        return self.getOrDefault(self.topic)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getStartingOffset(self) -> int:
-        return cast(int, self.getOrDefault(self.starting_offset))
+        return self.getOrDefault(self.starting_offset)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getUseSsl(self) -> bool:
-        return cast(bool, self.getOrDefault(self.use_ssl))
+        return self.getOrDefault(self.use_ssl)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
-        return cast(StructType, self.getOrDefault(self.schema))
+        return self.getOrDefault(self.schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPreviousCheckpointView(self) -> Optional[str]:
-        return cast(Optional[str], self.getOrDefault(self.previous_checkpoint_view))
+        return self.getOrDefault(self.previous_checkpoint_view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
-        return cast(
-            Optional[str], self.getOrDefault(self.name) or self.getOrDefault(self.topic)
-        )
+        return self.getOrDefault(self.name) or self.getOrDefault(self.topic)

@@ -1,6 +1,6 @@
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any, NamedTuple, cast
+from typing import Union, List, Optional, Dict, Any, NamedTuple
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -156,16 +156,16 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return cast(str, self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilepath(self) -> Union[str, List[str], Path]:
-        return cast(Union[str, List[str], Path], self.getOrDefault(self.filepath))
+        return self.getOrDefault(self.filepath)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumns(self) -> List[ColumnSpec]:
-        return cast(List[ColumnSpec], self.getOrDefault(self.columns))
+        return self.getOrDefault(self.columns)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getHasHeader(self) -> bool:
-        return cast(bool, self.getOrDefault(self.has_header))
+        return self.getOrDefault(self.has_header)

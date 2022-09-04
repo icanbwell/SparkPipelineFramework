@@ -1,4 +1,4 @@
-from typing import Dict, Any, Callable, Optional, Union, List, cast
+from typing import Any, Callable, Dict, List, Optional, Union
 
 # noinspection PyProtectedMember
 from mlflow.entities import RunStatus  # type: ignore
@@ -105,30 +105,32 @@ class FrameworkMappingLoader(FrameworkTransformer):
             ):
                 self.logger.info(f"Dropping view {automapper.view}")
                 df.sql_ctx.dropTempTable(tableName=automapper.view)
+
+            progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
             try:
-                if self.progress_logger is not None:
-                    self.progress_logger.start_mlflow_run(
+                if progress_logger is not None:
+                    progress_logger.start_mlflow_run(
                         run_name=str(automapper), is_nested=True
                     )
 
                 automapper.transform(df=df)
 
-                if self.progress_logger is not None:
-                    self.progress_logger.end_mlflow_run()
+                if progress_logger is not None:
+                    progress_logger.end_mlflow_run()
             except Exception as e:
                 error_msg = f"Error running automapper {automapper.view}"
-                if self.progress_logger is not None:
-                    self.progress_logger.log_exception(
+                if progress_logger is not None:
+                    progress_logger.log_exception(
                         event_name=str(automapper), event_text=error_msg, ex=e
                     )
-                    self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)
+                    progress_logger.end_mlflow_run(status=RunStatus.FAILED)
                 raise FrameworkMappingRunnerException(msg=error_msg, exception=e) from e
 
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return cast(str, self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming
     def getViews(self) -> List[str]:

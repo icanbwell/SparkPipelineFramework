@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Union, cast
+from typing import Dict, Any, Optional, List, Union
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -125,20 +125,20 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return cast(str, self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getAnalysisViewsPrefix(self) -> Optional[str]:
-        return cast(Optional[str], self.getOrDefault(self.analysis_views_prefix))
+        return self.getOrDefault(self.analysis_views_prefix)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getOutputFolder(self) -> Optional[Union[Path, str]]:
-        return cast(Optional[Union[Path, str]], self.getOrDefault(self.output_folder))
+        return self.getOrDefault(self.output_folder)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnsToAnalyze(self) -> Optional[List[str]]:
-        return cast(Optional[List[str]], self.getOrDefault(self.columns_to_analyze))
+        return self.getOrDefault(self.columns_to_analyze)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnsToSkip(self) -> Optional[List[str]]:
-        return cast(Optional[List[str]], self.getOrDefault(self.columns_to_skip))
+        return self.getOrDefault(self.columns_to_skip)

@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, cast
+from typing import Dict, Any, Optional
 
 from furl import furl
 from requests import Response
@@ -86,12 +86,12 @@ class FrameworkUrlLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getServerUrl(self) -> str:
-        return cast(str, self.getOrDefault(self.server_url))
+        return self.getOrDefault(self.server_url)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getRelativeUrl(self) -> str:
-        return cast(str, self.getOrDefault(self.relative_url))
+        return self.getOrDefault(self.relative_url)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMethod(self) -> str:
-        return cast(str, self.getOrDefault(self.method))
+        return self.getOrDefault(self.method)

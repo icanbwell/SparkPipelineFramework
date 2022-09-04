@@ -31,7 +31,6 @@ Subpackages
    framework_kafka_reader/index.rst
    framework_local_file_loader/index.rst
    framework_mapping_runner/index.rst
-   framework_param_transformer/index.rst
    framework_parquet_exporter/index.rst
    framework_parquet_loader/index.rst
    framework_partitioner/index.rst
@@ -40,7 +39,6 @@ Subpackages
    framework_transformer/index.rst
    framework_url_loader/index.rst
    framework_validation_transformer/index.rst
-   framework_web_crawler/index.rst
    framework_xml_loader/index.rst
 
 

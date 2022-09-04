@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 import pymysql
 from pymysql import OperationalError
@@ -102,24 +102,24 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getUsername(self) -> str:
-        return cast(str, self.getOrDefault(self.username))
+        return self.getOrDefault(self.username)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPassword(self) -> str:
-        return cast(str, self.getOrDefault(self.password))
+        return self.getOrDefault(self.password)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getHost(self) -> str:
-        return cast(str, self.getOrDefault(self.host))
+        return self.getOrDefault(self.host)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPort(self) -> int:
-        return cast(int, self.getOrDefault(self.port))
+        return self.getOrDefault(self.port)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getQuery(self) -> str:
-        return cast(str, self.getOrDefault(self.query))
+        return self.getOrDefault(self.query)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDb(self) -> Optional[str]:
-        return cast(Optional[str], self.getOrDefault(self.db_name))
+        return self.getOrDefault(self.db_name)

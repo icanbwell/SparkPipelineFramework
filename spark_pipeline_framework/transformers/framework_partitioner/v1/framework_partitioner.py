@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List, cast
+from typing import Dict, Any, Optional, List
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -71,12 +71,12 @@ class FrameworkPartitioner(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return cast(str, self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDesiredPartitions(self) -> Optional[int]:
-        return cast(Optional[int], self.getOrDefault(self.desired_partitions))
+        return self.getOrDefault(self.desired_partitions)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getPartitionBy(self) -> Optional[List[str]]:
-        return cast(Optional[List[str]], self.getOrDefault(self.partition_by))
+        return self.getOrDefault(self.partition_by)

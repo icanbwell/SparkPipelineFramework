@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, cast
+from typing import Optional, Dict, Any
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -91,23 +91,23 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSql(self) -> Optional[str]:
-        return cast(Optional[str], self.getOrDefault(self.sql))
+        return self.getOrDefault(self.sql)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> Optional[str]:
-        return cast(Optional[str], self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLogSql(self) -> bool:
-        return cast(bool, self.getOrDefault(self.log_sql))
+        return self.getOrDefault(self.log_sql)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
-        return cast(bool, self.getOrDefault(self.verify_count_remains_same))
+        return self.getOrDefault(self.verify_count_remains_same)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMappingFileName(self) -> Optional[str]:
-        return cast(Optional[str], self.getOrDefault(self.mapping_file_name))
+        return self.getOrDefault(self.mapping_file_name)
 
     def __str__(self) -> str:
         return f"{self.mapping_file_name}: view={self.view}"

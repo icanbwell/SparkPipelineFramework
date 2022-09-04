@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Dict, Union, cast
+from typing import List, Optional, Any, Dict, Union
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -76,8 +76,8 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return cast(str, self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnMapping(self) -> Dict[str, Any]:
-        return cast(Dict[str, Any], self.getOrDefault(self.column_mapping))
+        return self.getOrDefault(self.column_mapping)

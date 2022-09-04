@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, cast
+from typing import Dict, Any, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -72,11 +72,11 @@ class FrameworkJdbcReader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getJdbcUrl(self) -> str:
-        return cast(str, self.getOrDefault(self.jdbc_url))
+        return self.getOrDefault(self.jdbc_url)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDriver(self) -> str:
-        return cast(str, self.getOrDefault(self.driver))
+        return self.getOrDefault(self.driver)
 
     # noinspection PyPep8Naming,PyMethodMayBeStatic
     def getFormat(self) -> str:
@@ -84,8 +84,8 @@ class FrameworkJdbcReader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getQuery(self) -> str:
-        return cast(str, self.getOrDefault(self.query))
+        return self.getOrDefault(self.query)
 
     # noinspection PyPep8Naming
     def getView(self) -> Optional[str]:
-        return cast(Optional[str], self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)

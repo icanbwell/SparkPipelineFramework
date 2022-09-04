@@ -80,10 +80,10 @@ def spark_is_data_frame_empty(df: DataFrame) -> bool:
 def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
     if extended:
         # noinspection PyProtectedMember
-        return df._jdf.queryExecution().toString()
+        return df._jdf.queryExecution().toString()  # type: ignore
     else:
         # noinspection PyProtectedMember
-        return df._jdf.queryExecution().simpleString()
+        return df._jdf.queryExecution().simpleString()  # type: ignore
 
 
 def spark_table_exists(sql_ctx: SQLContext, view: str) -> bool:
@@ -93,7 +93,7 @@ def spark_table_exists(sql_ctx: SQLContext, view: str) -> bool:
 
 def sc(df: DataFrame) -> SparkContext:
     # noinspection PyProtectedMember
-    return df._sc
+    return df._sc  # type: ignore
 
 
 def add_metadata_to_column(df: DataFrame, column: str, metadata: Any) -> DataFrame:

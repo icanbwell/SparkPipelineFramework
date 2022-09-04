@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Union, Optional, cast
+from typing import Any, Dict, Union, Optional
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -48,7 +48,7 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[str, Path]:
-        return cast(Union[str, Path], self.getOrDefault(self.file_path))
+        return self.getOrDefault(self.file_path)
 
     def getFormat(self) -> str:
         return "parquet"

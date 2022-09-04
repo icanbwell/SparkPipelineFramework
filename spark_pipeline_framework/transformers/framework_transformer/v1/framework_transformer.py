@@ -38,7 +38,10 @@ class FrameworkTransformer(
         self.name: Param[str] = Param(self, "name", "")
         self._setDefault(name=name)
 
-        self.progress_logger: Optional[ProgressLogger] = progress_logger
+        self.progress_logger: Param[Optional[ProgressLogger]] = Param(
+            self, "progress_logger", ""
+        )
+        self._setDefault(progress_logger=progress_logger)
 
         self.parameters: Optional[Dict[str, Any]] = parameters
 
@@ -73,7 +76,7 @@ class FrameworkTransformer(
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
-        return self.getOrDefault(self.name)  # type: ignore
+        return self.getOrDefault(self.name)
 
     # # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     # def setProgressLogger(
@@ -84,7 +87,7 @@ class FrameworkTransformer(
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getProgressLogger(self) -> Optional[ProgressLogger]:
-        return self.progress_logger
+        return self.getOrDefault(self.progress_logger)
 
     # # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     # def setParameters(self, value: Optional[Dict[str, Any]]) -> "FrameworkTransformer":
@@ -103,19 +106,19 @@ class FrameworkTransformer(
     # noinspection PyPep8Naming
     def _setDefault(self, **kwargs: Any) -> None:
         # noinspection PyUnresolvedReferences,PyProtectedMember
-        super()._setDefault(**kwargs)
+        super()._setDefault(**kwargs)  # type: ignore
 
     def _set(self, **kwargs: Any) -> None:
         # filter out any args that don't have parameters
         kwargs = {key: value for key, value in kwargs.items() if self.hasParam(key)}
         # noinspection PyUnresolvedReferences,PyProtectedMember
-        super()._set(**kwargs)
+        super()._set(**kwargs)  # type: ignore
 
     def __str__(self) -> str:
         stage_name: str = ""
         stage_name += f"name={self.getName()} "
         if hasattr(self, "getView"):
             # noinspection Mypy
-            stage_name += f"view={self.getView()} "
+            stage_name += f"view={self.getView()} "  # type: ignore
         stage_name += "type=" + self.__class__.__name__
         return stage_name

@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Dict, cast
+from typing import List, Optional, Any, Dict
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -58,8 +58,8 @@ class FrameworkDropRowsWithNullTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return cast(str, self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumnsToCheck(self) -> List[str]:
-        return cast(List[str], self.getOrDefault(self.columns_to_check))
+        return self.getOrDefault(self.columns_to_check)

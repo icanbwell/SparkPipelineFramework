@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List, Union, cast
+from typing import Dict, Any, Optional, List, Union
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -63,12 +63,12 @@ class FrameworkFilterByColumnTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
-        return cast(str, self.getOrDefault(self.view))
+        return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumn(self) -> str:
-        return cast(str, self.getOrDefault(self.column))
+        return self.getOrDefault(self.column)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getIncludeOnly(self) -> List[Union[str, int, float]]:
-        return cast(List[Union[str, int, float]], self.getOrDefault(self.include_only))
+        return self.getOrDefault(self.include_only)

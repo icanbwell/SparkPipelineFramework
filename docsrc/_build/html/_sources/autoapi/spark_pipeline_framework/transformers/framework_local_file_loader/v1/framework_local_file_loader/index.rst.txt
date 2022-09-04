@@ -17,7 +17,7 @@ Classes
 
 
 
-.. py:class:: FrameworkLocalFileLoader(view: str, filepath: Union[str, List[str], pathlib.Path], delimiter: str = ',', limit: int = -1, has_header: bool = True, infer_schema: bool = False, cache_table: bool = True, schema: Optional[pyspark.sql.types.StructType] = None, clean_column_names: bool = False, create_file_path: bool = False, use_schema_from_view: Optional[str] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None)
+.. py:class:: FrameworkLocalFileLoader(view: str, filepath: Union[str, List[str], pathlib.Path], delimiter: str = ',', limit: int = -1, has_header: bool = True, infer_schema: bool = False, cache_table: bool = True, schema: Optional[pyspark.sql.types.StructType] = None, clean_column_names: bool = False, create_file_path: bool = False, use_schema_from_view: Optional[str] = None, name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, progress_logger: Optional[spark_pipeline_framework.progress_logger.progress_logger.ProgressLogger] = None, mode: str = FileReadModes.MODE_PERMISSIVE)
 
    Bases: :py:obj:`spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer.FrameworkTransformer`
 
@@ -84,6 +84,9 @@ Classes
 
    .. py:method:: getReaderOptions(self) -> Dict[str, Any]
       :abstractmethod:
+
+
+   .. py:method:: getMode(self) -> str
 
 
 
