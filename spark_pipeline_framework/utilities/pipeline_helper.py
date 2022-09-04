@@ -1,7 +1,6 @@
-from typing import List, Union, Any
+from typing import List, Union
 
 from pyspark.ml import Transformer
-from pyspark.ml.util import DefaultParamsReadable
 
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
@@ -15,7 +14,7 @@ def create_steps(
         List[FrameworkTransformer],
         List[Union[Transformer, List[Transformer]]],
         List[Union[FrameworkTransformer, List[FrameworkTransformer]]],
-        List[DefaultParamsReadable[Any]],
+        # List[DefaultParamsReadable[Any]],
     ]
 ) -> List[Transformer]:
     return flatten(my_list)
