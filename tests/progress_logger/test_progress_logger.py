@@ -8,6 +8,7 @@ from typing import Dict, Any, Callable, Union, List, cast
 import mlflow  # type: ignore
 import pytest
 from mlflow.entities import Run, RunStatus  # type: ignore
+from pyspark.ml import Transformer
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 
@@ -70,39 +71,42 @@ class SimplePipeline(FrameworkPipeline):
         )
 
         self.transformers = self.create_steps(
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    filepath=parameters["flights_path"],
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FeaturesCarriersV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-                FrameworkIfElseTransformer(
-                    enable=True,
-                    progress_logger=progress_logger,
-                    stages=[
-                        FeaturesCarriersPythonV1(
-                            parameters=parameters, progress_logger=progress_logger
-                        ),
-                    ],
-                ),
-                FrameworkMappingLoader(
-                    view="members",
-                    mapping_function=mapping_function,
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FrameworkJsonExporter(
-                    file_path=parameters["export_path"],
-                    view="flights",
-                    name="export flights as json",
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-            ]
+            cast(
+                List[Transformer],
+                [
+                    FrameworkCsvLoader(
+                        view="flights",
+                        filepath=parameters["flights_path"],
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FeaturesCarriersV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                    FrameworkIfElseTransformer(
+                        enable=True,
+                        progress_logger=progress_logger,
+                        stages=[
+                            FeaturesCarriersPythonV1(
+                                parameters=parameters, progress_logger=progress_logger
+                            ),
+                        ],
+                    ),
+                    FrameworkMappingLoader(
+                        view="members",
+                        mapping_function=mapping_function,
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FrameworkJsonExporter(
+                        file_path=parameters["export_path"],
+                        view="flights",
+                        name="export flights as json",
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                ],
+            )
         )
 
 

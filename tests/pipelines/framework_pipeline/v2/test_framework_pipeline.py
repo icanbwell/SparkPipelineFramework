@@ -1,9 +1,10 @@
 import shutil
 from os import path
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, cast, List
 
 import pytest
+from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
@@ -33,20 +34,23 @@ class MyUnValidatedPipeline(FrameworkPipeline):
             parameters=parameters, progress_logger=progress_logger, run_id="12345678"
         )
         self.transformers = self.create_steps(
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    filepath=parameters["flights_path"],
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FeaturesCarriersV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-                FeaturesCarriersPythonV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-            ]
+            cast(
+                List[Transformer],
+                [
+                    FrameworkCsvLoader(
+                        view="flights",
+                        filepath=parameters["flights_path"],
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FeaturesCarriersV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                    FeaturesCarriersPythonV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                ],
+            )
         )
 
 
@@ -59,24 +63,27 @@ class MyValidatedPipeline(FrameworkPipeline):
             validation_output_path=parameters["validation_output_path"],
         )
         self.transformers = self.create_steps(
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    filepath=parameters["flights_path"],
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FrameworkValidationTransformer(
-                    validation_source_path=parameters["validation_source_path"],
-                    validation_queries=["validate.sql"],
-                ),
-                FeaturesCarriersV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-                FeaturesCarriersPythonV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-            ]
+            cast(
+                List[Transformer],
+                [
+                    FrameworkCsvLoader(
+                        view="flights",
+                        filepath=parameters["flights_path"],
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FrameworkValidationTransformer(
+                        validation_source_path=parameters["validation_source_path"],
+                        validation_queries=["validate.sql"],
+                    ),
+                    FeaturesCarriersV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                    FeaturesCarriersPythonV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                ],
+            )
         )
 
 
@@ -89,25 +96,28 @@ class MyFailFastValidatedPipeline(FrameworkPipeline):
             validation_output_path=parameters["validation_output_path"],
         )
         self.transformers = self.create_steps(
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    filepath=parameters["flights_path"],
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FrameworkValidationTransformer(
-                    validation_source_path=parameters["validation_source_path"],
-                    validation_queries=["validate.sql"],
-                    fail_on_validation=True,
-                ),
-                FeaturesCarriersV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-                FeaturesCarriersPythonV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-            ]
+            cast(
+                List[Transformer],
+                [
+                    FrameworkCsvLoader(
+                        view="flights",
+                        filepath=parameters["flights_path"],
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FrameworkValidationTransformer(
+                        validation_source_path=parameters["validation_source_path"],
+                        validation_queries=["validate.sql"],
+                        fail_on_validation=True,
+                    ),
+                    FeaturesCarriersV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                    FeaturesCarriersPythonV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                ],
+            )
         )
 
 
