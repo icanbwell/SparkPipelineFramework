@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from mlflow.entities import RunStatus  # type: ignore
 from pyspark.ml.base import Transformer
@@ -92,7 +92,7 @@ class FrameworkPipeline(Transformer):
 
             for transformer in self.transformers:
                 assert isinstance(transformer, Transformer), type(transformer)
-                assert isinstance(transformer, FrameworkTransformer), type(transformer)
+                # assert isinstance(transformer, FrameworkTransformer), type(transformer)
                 try:
                     i += 1
                     logger.info(
