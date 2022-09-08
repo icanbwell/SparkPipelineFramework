@@ -14,6 +14,9 @@ from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 
 
 class FrameworkParquetExporter(FrameworkBaseExporter):
+    """
+    Saves given view to parquet
+    """
 
     # noinspection PyUnusedLocal
     @keyword_only
@@ -27,6 +30,16 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
         progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1,
     ) -> None:
+        """
+        Saves given view to parquet
+
+
+        :param view: view to save to parquet
+        :param file_path: where to save
+        :param name: a name for the transformer step
+        :param parameters: parameters
+        :param progress_logger: the logger to use for logging
+        """
         super().__init__(
             view=view,
             name=name,

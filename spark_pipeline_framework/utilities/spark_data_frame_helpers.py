@@ -74,7 +74,8 @@ def spark_is_data_frame_empty(df: DataFrame) -> bool:
     Efficient way to check if the data frame is empty without getting the count of the whole data frame
     """
     # from: https://stackoverflow.com/questions/32707620/how-to-check-if-spark-dataframe-is-empty
-    return not bool(df.head(1))
+    # Spark 3.3 adds native function: https://github.com/apache/spark/pull/34483
+    return df.isEmpty()
 
 
 def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
