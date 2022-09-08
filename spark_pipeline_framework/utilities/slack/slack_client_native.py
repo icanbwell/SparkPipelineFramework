@@ -66,7 +66,7 @@ class SlackClientNative(BaseSlackClient):
                 thread_ts=self.slack_thread,
                 icon_url=self.slack_icon_url,
                 username=self.slack_user_name,
-                blocks=json.dumps(blocks) if blocks else None,  # type: ignore
+                blocks=json.dumps(blocks) if blocks else None,
             )
 
             if not self.slack_thread and use_conversation_threads:
