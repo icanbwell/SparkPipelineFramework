@@ -19,6 +19,10 @@ from spark_pipeline_framework.utilities.file_modes import FileReadModes
 
 
 class FrameworkParquetLoader(FrameworkTransformer):
+    """
+    Loads a view from parquet
+    """
+
     # noinspection PyUnusedLocal
     @keyword_only
     def __init__(
@@ -32,6 +36,16 @@ class FrameworkParquetLoader(FrameworkTransformer):
         limit: int = -1,
         mode: str = FileReadModes.MODE_PERMISSIVE,
     ):
+        """
+        Loads given view from parquet
+
+
+        :param view: view to load from parquet
+        :param file_path: where to load from
+        :param name: a name for the transformer step
+        :param parameters: parameters
+        :param progress_logger: the logger to use for logging
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )

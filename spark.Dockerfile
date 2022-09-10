@@ -1,4 +1,4 @@
-FROM imranq2/helix.spark:3.1.2.8-slim
+FROM imranq2/helix.spark:3.3.0.1-slim
 # https://github.com/icanbwell/helix.spark
 USER root
 
@@ -12,7 +12,7 @@ COPY Pipfile* /spf/
 WORKDIR /spf
 
 RUN df -h # for space monitoring
-RUN pipenv sync --dev --system
+RUN pipenv sync --dev --system && pipenv run pip install pyspark==3.3.0
 
 # COPY ./jars/* /opt/bitnami/spark/jars/
 # COPY ./conf/* /opt/bitnami/spark/conf/

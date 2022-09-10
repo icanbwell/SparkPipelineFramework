@@ -3,11 +3,12 @@ import string
 from pathlib import Path
 import random
 from shutil import rmtree
-from typing import Dict, Any, Callable, Union, List
+from typing import Dict, Any, Callable, Union, List, cast
 
 import mlflow  # type: ignore
 import pytest
 from mlflow.entities import Run, RunStatus  # type: ignore
+from pyspark.ml import Transformer
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 
@@ -44,6 +45,9 @@ from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv
 )
 
 from spark_pipeline_framework.pipelines.v2.framework_pipeline import FrameworkPipeline
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 
 from tests.conftest import clean_spark_session
 
@@ -67,39 +71,42 @@ class SimplePipeline(FrameworkPipeline):
         )
 
         self.transformers = self.create_steps(
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    filepath=parameters["flights_path"],
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FeaturesCarriersV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-                FrameworkIfElseTransformer(
-                    enable=True,
-                    progress_logger=progress_logger,
-                    stages=[
-                        FeaturesCarriersPythonV1(
-                            parameters=parameters, progress_logger=progress_logger
-                        ),
-                    ],
-                ),
-                FrameworkMappingLoader(
-                    view="members",
-                    mapping_function=mapping_function,
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FrameworkJsonExporter(
-                    file_path=parameters["export_path"],
-                    view="flights",
-                    name="export flights as json",
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-            ]
+            cast(
+                List[Transformer],
+                [
+                    FrameworkCsvLoader(
+                        view="flights",
+                        filepath=parameters["flights_path"],
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FeaturesCarriersV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                    FrameworkIfElseTransformer(
+                        enable=True,
+                        progress_logger=progress_logger,
+                        stages=[
+                            FeaturesCarriersPythonV1(
+                                parameters=parameters, progress_logger=progress_logger
+                            ),
+                        ],
+                    ),
+                    FrameworkMappingLoader(
+                        view="members",
+                        mapping_function=mapping_function,
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FrameworkJsonExporter(
+                        file_path=parameters["export_path"],
+                        view="flights",
+                        name="export flights as json",
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                ],
+            )
         )
 
 
@@ -121,14 +128,17 @@ class MappingPipeline(FrameworkPipeline):
         )
 
         self.transformers = self.create_steps(
-            [  # type: ignore
-                FrameworkMappingLoader(
-                    view="members",
-                    mapping_function=mapping_function,
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                )
-            ]
+            cast(
+                List[FrameworkTransformer],
+                [
+                    FrameworkMappingLoader(
+                        view="members",
+                        mapping_function=mapping_function,
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    )
+                ],
+            )
         )
 
 
@@ -153,9 +163,7 @@ def test_progress_logger_with_mlflow(
 
     schema = StructType([])
 
-    df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema
-    )
+    spark_session.createDataFrame(spark_session.sparkContext.emptyRDD(), schema)
 
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
@@ -181,7 +189,8 @@ def test_progress_logger_with_mlflow(
         "foo": "bar",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:Im5CYsCO923GFAebv6bf@warehouse-mysql.server:3306/schema?rewriteBatchedStatements=true",
+        "conn_str": "jdbc:mysql://username:Im5CYsCO923GFAebv6bf@warehouse-mysql.server:3306/"
+        + "schema?rewriteBatchedStatements=true",
     }
 
     flow_run_name = "fluffy-fox"
@@ -264,9 +273,7 @@ def test_progress_logger_without_mlflow(
 
     schema = StructType([])
 
-    df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema
-    )
+    spark_session.createDataFrame(spark_session.sparkContext.emptyRDD(), schema)
 
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
@@ -346,7 +353,8 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     with ProgressLogger(
         mlflow_config=mlflow_config, event_loggers=[file_event_logger]
     ) as progress_logger:
-        # log a param with the same key and different values and verify we get other params logged and notification of failure
+        # log a param with the same key and different values and
+        # verify we get other params logged and notification of failure
         params = {"bar": "foo", "foo": "foo", "log": "this"}
         progress_logger.log_params(params=params)
 

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from mlflow.entities import RunStatus  # type: ignore
 from pyspark.ml.base import Transformer
@@ -92,6 +92,7 @@ class FrameworkPipeline(Transformer):
 
             for transformer in self.transformers:
                 assert isinstance(transformer, Transformer), type(transformer)
+                # assert isinstance(transformer, FrameworkTransformer), type(transformer)
                 try:
                     i += 1
                     logger.info(
@@ -119,11 +120,12 @@ class FrameworkPipeline(Transformer):
                 except Exception as e:
                     if hasattr(transformer, "getName"):
                         # noinspection Mypy
-                        stage_name = transformer.getName()  # type: ignore
+                        stage_name = transformer.getName()
                     else:
                         stage_name = transformer.__class__.__name__
                     logger.error(
-                        f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
+                        f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer "
+                        + "[{stage_name}] threw exception !!!!!!!!!!!!!"
                     )
                     # use exception chaining to add stage name but keep original exception
                     friendly_spark_exception: FriendlySparkException = (
@@ -139,7 +141,7 @@ class FrameworkPipeline(Transformer):
 
                     if hasattr(transformer, "getSql"):
                         # noinspection Mypy
-                        logger.error(transformer.getSql())  # type: ignore
+                        logger.error(transformer.getSql())
                     logger.error(
                         "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                     )
@@ -175,9 +177,10 @@ class FrameworkPipeline(Transformer):
                 f"SELECT * from {pipeline_validation_df_name} where is_failed == 1"
             )
             error_count = errors_df.count()
-            assert (
-                error_count == 0
-            ), f"Pipeline failed validation, there were {error_count} errors. Validation dataframe written to {self.validation_output_path}"
+            assert error_count == 0, (
+                f"Pipeline failed validation, there were {error_count} errors."
+                + " Validation dataframe written to {self.validation_output_path}"
+            )
 
     # noinspection PyMethodMayBeStatic
     def create_steps(

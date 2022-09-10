@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Any, Dict, List, Union, Optional
 
-# noinspection PyProtectedMember
 from pyspark import keyword_only
-from pyspark.ml.param.shared import Param
+from pyspark.ml.param import Param
 from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
