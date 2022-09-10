@@ -7,14 +7,6 @@
 Module Contents
 ---------------
 
-Classes
-~~~~~~~
-
-.. autoapisummary::
-
-   spark_pipeline_framework.proxy_generator.generate_proxies.ProxyGenerator
-
-
 
 Functions
 ~~~~~~~~~
@@ -22,25 +14,6 @@ Functions
 .. autoapisummary::
 
    spark_pipeline_framework.proxy_generator.generate_proxies.main
-
-
-
-.. py:class:: ProxyGenerator
-
-   .. py:method:: remove_empty_dirs(folder: str) -> None
-      :staticmethod:
-
-
-   .. py:method:: generate_proxies(folder: str) -> None
-      :staticmethod:
-
-
-   .. py:method:: write_transformer(file_name: str, folder: str) -> None
-      :staticmethod:
-
-
-   .. py:method:: write_translator(file_name: str, folder: str, csv_file: str) -> None
-      :staticmethod:
 
 
 

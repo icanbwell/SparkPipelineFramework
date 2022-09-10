@@ -1,0 +1,71 @@
+:py:mod:`spark_pipeline_framework.utilities.file_modes`
+=======================================================
+
+.. py:module:: spark_pipeline_framework.utilities.file_modes
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   spark_pipeline_framework.utilities.file_modes.FileWriteModes
+   spark_pipeline_framework.utilities.file_modes.FileReadModes
+
+
+
+
+.. py:class:: FileWriteModes
+
+   .. py:attribute:: MODE_APPEND
+      :annotation: = append
+
+      
+
+   .. py:attribute:: MODE_OVERWRITE
+      :annotation: = overwrite
+
+      
+
+   .. py:attribute:: MODE_IGNORE
+      :annotation: = ignore
+
+      
+
+   .. py:attribute:: MODE_ERROR
+      :annotation: = error
+
+      
+
+   .. py:attribute:: MODE_CHOICES
+      
+
+      
+
+
+.. py:class:: FileReadModes
+
+   .. py:attribute:: MODE_PERMISSIVE
+      :annotation: = permissive
+
+      
+
+   .. py:attribute:: MODE_DROP_MALFORMED
+      :annotation: = dropMalformed
+
+      
+
+   .. py:attribute:: MODE_FAIL_FAST
+      :annotation: = failFast
+
+      
+
+   .. py:attribute:: MODE_CHOICES
+      
+
+      
+
+

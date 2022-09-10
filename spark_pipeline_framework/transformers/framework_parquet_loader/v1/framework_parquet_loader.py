@@ -65,9 +65,11 @@ class FrameworkParquetLoader(FrameworkTransformer):
         merge_schema: bool = self.getMergeSchema()
         limit: int = self.getLimit()
 
-        progress_logger and progress_logger.write_to_log(
-            f"Loading parquet file for view {view}: {path}"
-        )
+        if progress_logger:
+            progress_logger.write_to_log(
+                f"Loading parquet file for view {view}: {path}"
+            )
+            progress_logger.log_param(key="data_path", value=str(path))
 
         with ProgressLogMetric(
             name=f"{name or view}_table_loader", progress_logger=progress_logger

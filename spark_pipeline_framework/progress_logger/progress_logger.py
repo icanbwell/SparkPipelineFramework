@@ -62,7 +62,7 @@ class ProgressLogger:
         mlflow.start_run(run_name=self.mlflow_config.flow_run_name)
         self.logger.info(f"MLFLOW ARTIFACTS URL: {mlflow.get_artifact_uri()}")
         # set the parameters used in the pipeline run
-        mlflow.log_params(params=self.mlflow_config.parameters)
+        self.log_params(params=self.mlflow_config.parameters)
 
         return self
 
@@ -90,18 +90,29 @@ class ProgressLogger:
     def log_metric(self, name: str, time_diff_in_minutes: float) -> None:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
         if self.mlflow_config is not None:
-            mlflow.log_metric(
-                key=self.__mlflow_clean_string(name), value=time_diff_in_minutes
-            )
+            try:
+                mlflow.log_metric(
+                    key=self.__mlflow_clean_string(name), value=time_diff_in_minutes
+                )
+            except Exception as e:
+                self.log_event("mlflow log metric error", str({e}))
 
     def log_param(self, key: str, value: str) -> None:
-        self.logger.info(f"{key}: {value}")
+        self.write_to_log(name=key, message=value)
         if self.mlflow_config is not None:
-            mlflow.log_param(key=self.__mlflow_clean_string(key), value=value)
+            try:
+                mlflow.log_param(
+                    key=self.__mlflow_clean_string(key),
+                    value=self.__mlflow_clean_param_value(value),
+                )
+            except Exception as e:
+                self.log_event("mlflow log param error", str({e}))
 
     def log_params(self, params: Dict[str, Any]) -> None:
         if self.mlflow_config is not None:
-            mlflow.log_params(params=params)
+            # intentionally not using mlflow.log_params due to issues with its SqlAlchemy implementation
+            for key, value in params.items():
+                self.log_param(key=key, value=value)
 
     def __mlflow_clean_string(self, value: str) -> str:
         """
@@ -109,8 +120,25 @@ class ProgressLogger:
         MLFlow keys may only contain alphanumerics, underscores (_),
         dashes (-), periods (.), spaces ( ), and slashes (/)
 
+
+        mlflow run metric names through https://docs.python.org/3/library/os.path.html#os.path.normpath when validating
+        metric names (https://github.com/mlflow/mlflow/blob/217799b10780b22f787137f80f5cf5c2b5cf85b1/mlflow/utils/validation.py#L95).
+        one side effect of this is if the value contains `//` it will be changed to `/` and fail the _validate_metric_name check.
         """
+        value = str(value).replace("//", "/")
         return re.sub(r"[^\w\-\.\s\/]", "-", value)
+
+    def __mlflow_clean_param_value(self, param_value: str) -> str:
+        """
+        replace sensitive values in the string with asterisks
+        """
+        sensitive_value_replacement: str = "*******"
+        db_password_regex = r"(?<=:)\w+(?=@)"
+        cleaned_value = re.sub(
+            db_password_regex, sensitive_value_replacement, str(param_value)
+        )
+
+        return cleaned_value
 
     # noinspection PyUnusedLocal
     def log_artifact(
@@ -128,7 +156,7 @@ class ProgressLogger:
                     mlflow.log_artifact(local_path=str(file_path))
 
         except Exception as e:
-            self.logger.warning(f"Error in log_artifact writing to mlflow: {str(e)}")
+            self.log_event("Error in log_artifact writing to mlflow", str(e))
 
     def write_to_log(self, name: str, message: str = "") -> bool:
         self.logger.info(name + ": " + str(message))
@@ -162,7 +190,7 @@ class ProgressLogger:
                 )
 
     def log_event(self, event_name: str, event_text: str) -> None:
-        self.logger.info(event_text)
+        self.write_to_log(name=event_name, message=event_text)
         if self.event_loggers:
             for event_logger in self.event_loggers:
                 event_logger.log_event(event_name=event_name, event_text=event_text)
