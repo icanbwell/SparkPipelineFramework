@@ -1,5 +1,7 @@
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List, cast
+
+from pyspark.ml import Transformer
 
 # noinspection PyPackageRequirements
 from pyspark.sql.dataframe import DataFrame
@@ -27,20 +29,23 @@ class MyPipeline(FrameworkPipeline):
             parameters=parameters, progress_logger=progress_logger
         )
         self.transformers = self.create_steps(
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    filepath=parameters["flights_path"],
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FeaturesCarriersV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-                FeaturesCarriersPythonV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-            ]
+            cast(
+                List[Transformer],
+                [
+                    FrameworkCsvLoader(
+                        view="flights",
+                        filepath=parameters["flights_path"],
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FeaturesCarriersV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                    FeaturesCarriersPythonV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                ],
+            )
         )
 
 

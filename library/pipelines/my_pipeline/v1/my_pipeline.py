@@ -1,4 +1,6 @@
-from typing import Dict, Any
+from typing import Dict, Any, cast, List
+
+from pyspark.ml import Transformer
 
 from library.features.carriers_python.v1.features_carriers_python_v1 import (
     FeaturesCarriersPythonV1,
@@ -20,18 +22,21 @@ class MyPipeline(FrameworkPipeline):
             parameters=parameters, progress_logger=progress_logger
         )
         self.transformers = self.create_steps(
-            [
-                FrameworkCsvLoader(
-                    view="flights",
-                    filepath=parameters["flights_path"],
-                    parameters=parameters,
-                    progress_logger=progress_logger,
-                ),
-                FeaturesCarriersV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-                FeaturesCarriersPythonV1(
-                    parameters=parameters, progress_logger=progress_logger
-                ),
-            ]
+            cast(
+                List[Transformer],
+                [
+                    FrameworkCsvLoader(
+                        view="flights",
+                        filepath=parameters["flights_path"],
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FeaturesCarriersV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                    FeaturesCarriersPythonV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                ],
+            )
         )

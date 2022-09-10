@@ -57,8 +57,8 @@ setup(
     install_requires=[
         "logger>=1.4",
         "protobuf==3.20.*",
-        "pyspark>=3.1.1,<3.2",
-        "sparkautomapper>=1.0.15",
+        "pyspark>=3.1.1",
+        "sparkautomapper>=1.0.17",
         "pymysql==1.0.2",
         "furl>=2.1.3",
         "requests>=2.27.1",

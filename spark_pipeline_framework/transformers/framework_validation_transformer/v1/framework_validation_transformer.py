@@ -119,6 +119,7 @@ class FrameworkValidationTransformer(FrameworkTransformer):
             for child_path in paths:
                 self._validate(child_path, df)
 
+    # noinspection PyMethodMayBeStatic
     def get_validation_df(self, df: DataFrame) -> Optional[DataFrame]:
         validation_df: Optional[DataFrame] = None
         tables_df = df.sql_ctx.tables().filter(

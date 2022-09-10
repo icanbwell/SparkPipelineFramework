@@ -54,8 +54,8 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         # name = self.getName()
         view = self.getView()
         # progress_logger: ProgressLogger = self.getProgressLogger()
-        drop_columns: Optional[List[str]] = self.getOrDefault("drop_columns")
-        keep_columns: Optional[List[str]] = self.getOrDefault("keep_columns")
+        drop_columns: Optional[List[str]] = self.getOrDefault(self.drop_columns)
+        keep_columns: Optional[List[str]] = self.getOrDefault(self.keep_columns)
 
         assert view
         result_df: DataFrame = df.sql_ctx.table(view)

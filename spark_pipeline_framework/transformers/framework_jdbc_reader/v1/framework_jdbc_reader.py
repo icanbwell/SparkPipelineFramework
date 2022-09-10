@@ -78,15 +78,13 @@ class FrameworkJdbcReader(FrameworkTransformer):
     def getDriver(self) -> str:
         return self.getOrDefault(self.driver)
 
-    # noinspection PyPep8Naming
+    # noinspection PyPep8Naming,PyMethodMayBeStatic
     def getFormat(self) -> str:
         return "jdbc"
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getQuery(self) -> str:
         return self.getOrDefault(self.query)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
 
     # noinspection PyPep8Naming
     def getView(self) -> Optional[str]:

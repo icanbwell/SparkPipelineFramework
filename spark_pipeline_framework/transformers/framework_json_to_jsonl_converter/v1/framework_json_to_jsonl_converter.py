@@ -1,7 +1,7 @@
 import os
 from glob import glob
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, cast
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -92,8 +92,8 @@ class FrameworkJsonToJsonlConverter(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(self) -> Union[Path, str]:
-        return self.getOrDefault(self.file_path)
+        return cast(Union[Path, str], self.getOrDefault(self.file_path))
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getOutputFolder(self) -> Union[Path, str]:
-        return self.getOrDefault(self.output_folder)
+        return cast(Union[Path, str], self.getOrDefault(self.output_folder))

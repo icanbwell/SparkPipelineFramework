@@ -7,7 +7,7 @@ from pyspark.ml.param import Param
 from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, trim
-from pyspark.sql.types import DataType
+from pyspark.sql.types import DataType, Row
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
@@ -135,8 +135,10 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         df_reader: DataFrameReader = df.sql_ctx.read
         df_text = df_reader.text(paths=paths)
         if has_header:
-            header = df_text.first()[0]
-            df_text = df_text.filter(~col("value").contains(header))
+            first: Optional[Row] = df_text.first()
+            if first is not None:
+                header = first[0]
+                df_text = df_text.filter(~col("value").contains(header))
         df_text = df_text.select(
             *[
                 trim(col("value").substr(column.start_pos, column.length))

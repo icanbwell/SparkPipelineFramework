@@ -1,11 +1,11 @@
 import re
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any, cast
+from typing import Union, List, Optional, Dict, Any
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
-from pyspark.ml.param.shared import Param
+from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import input_file_name
 from pyspark.sql.readwriter import DataFrameReader
@@ -56,7 +56,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.filepath: Param[str] = Param(self, "filepath", "")
         self._setDefault(filepath=None)
 
-        self.schema: Param[str] = Param(self, "schema", "")
+        self.schema: Param[StructType] = Param(self, "schema", "")
         self._setDefault(schema=None)
 
         self.clean_column_names: Param[bool] = Param(self, "clean_column_names", "")
@@ -206,7 +206,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
-        return cast(StructType, self.getOrDefault(self.schema))
+        return self.getOrDefault(self.schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getCleanColumnNames(self) -> bool:
