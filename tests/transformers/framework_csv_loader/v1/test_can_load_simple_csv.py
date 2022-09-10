@@ -2,7 +2,12 @@ from pathlib import Path
 
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
-from pyspark.sql.types import StructType
+from pyspark.sql.types import StructType, StructField, StringType
+from spark_pipeline_framework.transformers.framework_sql_transformer.v1.framework_sql_transformer import (
+    FrameworkSqlTransformer,
+)
+
+
 from tests.conftest import clean_spark_session
 
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
@@ -191,3 +196,46 @@ def test_can_load_multiline_csv(spark_session: SparkSession) -> None:
     # noinspection SqlDialectInspection
     result: DataFrame = spark_session.sql("SELECT * FROM my_view")
     assert 1 == result.count()
+
+
+def test_can_pipe_delimited_with_schema_csv(spark_session: SparkSession) -> None:
+    # Arrange
+    clean_spark_session(spark_session)
+
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    test_file_path: str = f"{data_dir.joinpath('pipe_delimited.txt')}"
+
+    schema = StructType([])
+
+    df: DataFrame = spark_session.createDataFrame(
+        spark_session.sparkContext.emptyRDD(), schema
+    )
+
+    schema = StructType(
+        [
+            StructField("first", StringType()),
+            StructField("second", StringType()),
+            StructField("third", StringType()),
+            StructField("fourth", StringType()),
+            StructField("fifth", StringType()),
+            StructField("sixth", StringType()),
+            StructField("seventh", StringType()),
+        ]
+    )
+    # Act
+    FrameworkCsvLoader(
+        view="my_view",
+        filepath=test_file_path,
+        delimiter="|",
+        has_header=True,
+        schema=schema,
+    ).transform(df)
+
+    FrameworkSqlTransformer(
+        view="my_view", sql="select * from my_view where first != 'TR'"
+    ).transform(df)
+
+    # noinspection SqlDialectInspection
+    result: DataFrame = spark_session.sql("SELECT * FROM my_view")
+
+    result.show()
