@@ -17,6 +17,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
+    create_empty_dataframe,
 )
 
 
@@ -32,7 +33,19 @@ class FrameworkJsonExporter(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1,
         mode: str = FileWriteModes.MODE_OVERWRITE,
-    ):
+        throw_if_empty: bool = False,
+    ) -> None:
+        """
+        Exports the data frame to JSON
+
+
+        :param view: view to load from parquet
+        :param file_path: where to load from
+        :param name: a name for the transformer step
+        :param parameters: parameters
+        :param progress_logger: the logger to use for logging
+        :param throw_if_empty: throw an error if the passed in data frame is empty
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -57,6 +70,9 @@ class FrameworkJsonExporter(FrameworkTransformer):
         self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
+        self.throw_if_empty: Param[bool] = Param(self, "throw_if_empty", "")
+        self._setDefault(throw_if_empty=throw_if_empty)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -65,6 +81,8 @@ class FrameworkJsonExporter(FrameworkTransformer):
         path: Union[Path, str] = self.getFilePath()
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+        throw_if_empty: bool = self.getThrowIfEmpty()
+
         # limit: int = self.getLimit()
 
         with ProgressLogMetric(
@@ -73,10 +91,16 @@ class FrameworkJsonExporter(FrameworkTransformer):
             try:
                 if view:
                     df_view: DataFrame = df.sql_ctx.table(view)
-                    assert not spark_is_data_frame_empty(df=df_view)
+                    assert not throw_if_empty or not spark_is_data_frame_empty(
+                        df=df_view
+                    )
+                    if spark_is_data_frame_empty(df=df_view):
+                        df_view = create_empty_dataframe(df.sparkSession)
                     df_view.write.mode(self.getMode()).json(path=str(path))
                 else:
-                    assert not spark_is_data_frame_empty(df=df)
+                    assert not throw_if_empty or not spark_is_data_frame_empty(df=df)
+                    if not spark_is_data_frame_empty(df=df):
+                        df = create_empty_dataframe(df.sparkSession)
                     df.write.mode(self.getMode()).json(path=str(path))
 
                 if progress_logger:
@@ -107,3 +131,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
         return self.getOrDefault(self.mode)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getThrowIfEmpty(self) -> bool:
+        return self.getOrDefault(self.throw_if_empty)
