@@ -11,10 +11,10 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType
 
-from spark_pipeline_framework.pipelines.parallel_pipeline_executor.v1.parallel_pipeline_executor import (
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.utilities.parallel_pipeline_executor.v1.parallel_pipeline_executor import (
     ParallelPipelineExecutor,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
 
 @pytest.mark.asyncio

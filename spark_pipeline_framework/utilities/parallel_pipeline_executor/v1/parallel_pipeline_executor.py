@@ -22,7 +22,7 @@ class ParallelPipelineExecutor:
 
     def __init__(
         self,
-        progress_logger: ProgressLogger,
+        progress_logger: Optional[ProgressLogger],
         max_tasks: int = 3,
         parallel_mode: bool = False,
         parameters: Optional[Dict[str, Any]] = None,
@@ -32,12 +32,12 @@ class ParallelPipelineExecutor:
         :param progress_logger: optional parameter which is used for logging progress
         :param max_tasks: maximum tasks to run at one time
         """
-        super(ParallelPipelineExecutor, self).__init__()
+        super().__init__()
         self.logger = get_logger(__name__)
         self.dictionary: OrderedDict[str, List[Transformer]] = collections.OrderedDict()
-        self.max_tasks = max_tasks
-        self.progress_logger = progress_logger
-        self.parallel_mode = parallel_mode
+        self.max_tasks: int = max_tasks
+        self.progress_logger: Optional[ProgressLogger] = progress_logger
+        self.parallel_mode: bool = parallel_mode
         self.parameters = parameters
 
     def append(self, name: str, list_of_stages: List[Transformer]) -> None:
