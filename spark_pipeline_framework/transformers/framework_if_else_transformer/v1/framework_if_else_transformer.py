@@ -44,6 +44,8 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             Union[List[Transformer], Callable[[], List[Transformer]]]
         ] = else_stages
 
+        self.loop_id: Optional[str] = None
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -65,7 +67,17 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
             if progress_logger is not None:
                 progress_logger.start_mlflow_run(run_name=str(stage), is_nested=True)
+            if hasattr(stage, "set_loop_id"):
+                stage.set_loop_id(self.loop_id)
             df = stage.transform(df)
             if progress_logger is not None:
                 progress_logger.end_mlflow_run()
         return df
+
+    def set_loop_id(self, loop_id: str) -> None:
+        """
+        Set when running inside a FrameworkLoopTransformer
+
+        :param loop_id: loop id
+        """
+        self.loop_id = loop_id

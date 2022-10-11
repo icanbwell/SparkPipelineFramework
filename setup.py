@@ -56,7 +56,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "logger>=1.4",
-        "protobuf==3.20.*",
+        "protobuf>=3.20.*",
         "pyspark>=3.1.1",
         "sparkautomapper>=1.0.17",
         "pymysql==1.0.2",
@@ -72,6 +72,7 @@ setup(
         "sqlalchemy>=1.4.37",
         "alembic>=1.8.0",
         "sqlparse>=0.4.2",
+        "bounded-pool-executor>=0.0.3",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
