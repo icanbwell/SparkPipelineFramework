@@ -86,12 +86,6 @@ class DummyDelayTransformer(Transformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
-    @capture_parameters
-    def setParams(self, delay: int) -> None:
-        kwargs = self._input_kwargs
-        self._set(**kwargs)
-
     # noinspection PyMethodMayBeStatic
     def _transform(self, df: DataFrame) -> DataFrame:
         time.sleep(float(self.getDelay()))

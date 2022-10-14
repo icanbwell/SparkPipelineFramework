@@ -81,11 +81,8 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
         self.multiline: Param[bool] = Param(self, "multiline", "")
         self._setDefault(multiline=multiline)
 
-        self._set(
-            delimiter=delimiter,
-            has_header=has_header,
-            clean_column_names=clean_column_names,
-        )
+        kwargs = self._input_kwargs
+        self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDelimiter(self) -> str:

@@ -53,7 +53,8 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         self.driver: Param[str] = Param(self, "driver", "")
         self._setDefault(driver=driver)
 
-        self._set(jdbc_url=jdbc_url, table=table, driver=driver, options=options)
+        kwargs = self._input_kwargs
+        self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getJdbcUrl(self) -> str:

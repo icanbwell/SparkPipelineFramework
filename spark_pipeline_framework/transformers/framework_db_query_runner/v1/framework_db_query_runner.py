@@ -68,8 +68,8 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         # noinspection Mypy
         self._setDefault(db_name=None)
 
-        # noinspection Mypy
-        self._set(**self._input_kwargs)
+        kwargs = self._input_kwargs
+        self.setParams(**kwargs)
 
         super().setStandardParams(
             parameters=parameters, progress_logger=progress_logger
