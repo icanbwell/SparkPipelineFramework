@@ -103,24 +103,24 @@ class FileDownloader:
         (tmpfile, headers) = ThrowOnErrorOpener().retrieve(self.url, tmpfile)
 
         if os.path.isdir(download_to_path):
-            filepath = filename
-            filepath = os.path.join(download_to_path, filepath)
+            file_path = filename
+            file_path = os.path.join(download_to_path, file_path)
         else:
-            filepath = download_to_path or filename
-        if os.path.exists(filepath):
-            filepath = self.rename_filename_if_exists(filepath)
-        shutil.move(tmpfile, filepath)
+            file_path = download_to_path or filename
+        if os.path.exists(file_path):
+            file_path = self.rename_filename_if_exists(file_path)
+        shutil.move(tmpfile, file_path)
 
         if self.extract_archives:
-            filepath = (
+            file_path = (
                 self.extract_zip_files(
-                    filename=filepath,
+                    filename=file_path,
                     path=download_to_path,
                 )
-                or filepath
+                or file_path
             )
 
-        return filepath
+        return file_path
 
     def download_files_to_s3(
         self, filename: str, bucket: str, download_path: str
@@ -145,7 +145,7 @@ class FileDownloader:
         url_segments = url_parse.urlparse(self.download_to_path)
 
         if url_segments.scheme in ["s3", "s3a"]:
-            filepath = os.path.join(
+            file_path = os.path.join(
                 self.url,
                 self.download_files_to_s3(
                     str(filename),
@@ -154,11 +154,11 @@ class FileDownloader:
                 ),
             )
         elif url_segments.scheme in ["file"]:
-            filepath = self.download_files_locally(filename)
+            file_path = self.download_files_locally(filename)
         else:
             raise NotImplementedError
 
-        if filepath:
+        if file_path:
             return filename
 
         return None

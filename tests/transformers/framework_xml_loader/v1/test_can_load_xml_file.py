@@ -26,7 +26,7 @@ def test_can_load_xml_file(spark_session: SparkSession) -> None:
 
     # Act
     FrameworkXmlLoader(
-        view="my_view", filepath=test_file_path, row_tag="book"
+        view="my_view", file_path=test_file_path, row_tag="book"
     ).transform(df)
 
     result: DataFrame = spark_session.sql("SELECT * FROM my_view")
@@ -61,7 +61,7 @@ def test_can_load_xml_file_with_schema(spark_session: SparkSession) -> None:
     )
     # Act
     FrameworkXmlLoader(
-        view="my_view", filepath=test_file_path, row_tag="book", schema=xml_shema
+        view="my_view", file_path=test_file_path, row_tag="book", schema=xml_shema
     ).transform(df)
 
     result: DataFrame = spark_session.sql("SELECT * FROM my_view")

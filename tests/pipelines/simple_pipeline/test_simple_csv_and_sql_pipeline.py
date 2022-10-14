@@ -34,7 +34,7 @@ def test_simple_csv_and_sql_pipeline(spark_session: SparkSession) -> None:
         cast(
             List[Transformer],
             [
-                FrameworkCsvLoader(view="flights", filepath=flights_path),
+                FrameworkCsvLoader(view="flights", file_path=flights_path),
                 FeaturesCarriersV1(parameters=parameters),
             ],
         )

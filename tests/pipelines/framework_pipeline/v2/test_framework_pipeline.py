@@ -39,7 +39,7 @@ class MyUnValidatedPipeline(FrameworkPipeline):
                 [
                     FrameworkCsvLoader(
                         view="flights",
-                        filepath=parameters["flights_path"],
+                        file_path=parameters["flights_path"],
                         parameters=parameters,
                         progress_logger=progress_logger,
                     ),
@@ -68,7 +68,7 @@ class MyValidatedPipeline(FrameworkPipeline):
                 [
                     FrameworkCsvLoader(
                         view="flights",
-                        filepath=parameters["flights_path"],
+                        file_path=parameters["flights_path"],
                         parameters=parameters,
                         progress_logger=progress_logger,
                     ),
@@ -101,7 +101,7 @@ class MyFailFastValidatedPipeline(FrameworkPipeline):
                 [
                     FrameworkCsvLoader(
                         view="flights",
-                        filepath=parameters["flights_path"],
+                        file_path=parameters["flights_path"],
                         parameters=parameters,
                         progress_logger=progress_logger,
                     ),

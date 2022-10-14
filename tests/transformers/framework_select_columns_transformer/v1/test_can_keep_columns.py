@@ -30,7 +30,7 @@ def test_can_keep_columns(spark_session: SparkSession) -> None:
 
     # Act
     FrameworkCsvLoader(
-        view="my_view", filepath=test_file_path, delimiter=","
+        view="my_view", file_path=test_file_path, delimiter=","
     ).transform(df)
 
     FrameworkSelectColumnsTransformer(

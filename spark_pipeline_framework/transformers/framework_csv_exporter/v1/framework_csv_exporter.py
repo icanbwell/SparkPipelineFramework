@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, Callable
 
 from pyspark import keyword_only
 from pyspark.ml.param import Param
@@ -18,7 +18,7 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
     @keyword_only
     def __init__(
         self,
-        file_path: Union[str, Path],
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
         header: bool,
         delimiter: str = ",",
         view: Optional[str] = None,
@@ -26,7 +26,9 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
         mode: str = FileWriteModes.MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1,
+        limit: Optional[int] = None,
+        stream: bool = False,
+        delta_lake_table: Optional[str] = None,
     ):
         super().__init__(
             view=view,
@@ -35,14 +37,22 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
             parameters=parameters,
             progress_logger=progress_logger,
             limit=limit,
+            stream=stream,
+            delta_lake_table=delta_lake_table,
         )
 
-        assert isinstance(file_path, Path) or isinstance(file_path, str)
+        assert (
+            isinstance(file_path, Path)
+            or isinstance(file_path, str)
+            or callable(file_path)
+        ), type(file_path)
         assert file_path
 
         self.logger = get_logger(__name__)
 
-        self.file_path: Param[Union[str, Path]] = Param(self, "file_path", "")
+        self.file_path: Param[
+            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+        ] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
         self.header: Param[bool] = Param(self, "header", "")
@@ -54,7 +64,9 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
         self._set(file_path=file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilePath(self) -> Union[str, Path]:
+    def getFilePath(
+        self,
+    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -69,8 +81,13 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
         return "csv"
 
     def getOptions(self) -> Dict[str, Any]:
+        file_path: Union[
+            Path, str, Callable[[Optional[str]], Union[Path, str]]
+        ] = self.getFilePath()
+        if callable(file_path):
+            file_path = file_path(self.loop_id)
         return {
-            "path": self.getFilePath(),
+            "path": file_path,
             "header": self.getHeader(),
             "delimiter": self.getDelimiter(),
         }

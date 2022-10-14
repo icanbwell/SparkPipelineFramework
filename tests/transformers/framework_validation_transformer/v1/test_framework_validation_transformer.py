@@ -29,7 +29,7 @@ def test_validation_throws_error(spark_session: SparkSession) -> None:
             spark_session.sparkContext.emptyRDD(), schema
         )
 
-        FrameworkCsvLoader(view="my_view", filepath=test_data_file).transform(df)
+        FrameworkCsvLoader(view="my_view", file_path=test_data_file).transform(df)
 
         FrameworkValidationTransformer(
             validation_source_path=str(query_dir),
@@ -53,7 +53,7 @@ def test_validation_records_error(spark_session: SparkSession) -> None:
         spark_session.sparkContext.emptyRDD(), schema
     )
 
-    FrameworkCsvLoader(view="my_view", filepath=test_data_file).transform(df)
+    FrameworkCsvLoader(view="my_view", file_path=test_data_file).transform(df)
 
     FrameworkValidationTransformer(
         validation_source_path=str(query_dir),
@@ -80,7 +80,7 @@ def test_validation_recurses_query_dir(spark_session: SparkSession) -> None:
         spark_session.sparkContext.emptyRDD(), schema
     )
 
-    FrameworkCsvLoader(view="my_view", filepath=test_data_file).transform(df)
+    FrameworkCsvLoader(view="my_view", file_path=test_data_file).transform(df)
 
     FrameworkValidationTransformer(
         validation_source_path=str(query_dir),

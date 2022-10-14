@@ -27,7 +27,7 @@ def test_can_load_fixed_width(spark_session: SparkSession) -> None:
     # Act
     FrameworkFixedWidthLoader(
         view="my_view",
-        filepath=test_file_path,
+        file_path=test_file_path,
         columns=[
             ColumnSpec(column_name="id", start_pos=1, length=3, data_type=StringType()),
             ColumnSpec(

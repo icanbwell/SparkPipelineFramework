@@ -32,19 +32,19 @@ def test_can_save_csv(spark_session: SparkSession) -> None:
     )
 
     FrameworkCsvLoader(
-        view="my_view", filepath=test_file_path, delimiter=","
+        name="1", view="my_view", file_path=test_file_path, delimiter=","
     ).transform(df)
 
     csv_file_path: str = f"file://{data_dir.joinpath('temp/').joinpath(f'test.csv')}"
 
     # Act
     FrameworkCsvExporter(
-        view="my_view", file_path=csv_file_path, header=True, delimiter=","
+        name="2", view="my_view", file_path=csv_file_path, header=True, delimiter=","
     ).transform(df)
 
     # Assert
     FrameworkCsvLoader(
-        view="my_view2", filepath=csv_file_path, delimiter=","
+        name="3", view="my_view2", file_path=csv_file_path, delimiter=","
     ).transform(df)
 
     # noinspection SqlDialectInspection

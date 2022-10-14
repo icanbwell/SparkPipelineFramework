@@ -23,7 +23,7 @@ def test_can_load_simple_json(spark_session: SparkSession) -> None:
     )
 
     # Act
-    FrameworkJsonLoader(view="books", filepath=test_file_path).transform(df)
+    FrameworkJsonLoader(view="books", file_path=test_file_path).transform(df)
 
     # noinspection SqlDialectInspection
     result: DataFrame = spark_session.sql("SELECT * FROM books")
@@ -53,9 +53,9 @@ def test_can_load_simple_json_with_schema(spark_session: SparkSession) -> None:
     )
 
     # Act
-    FrameworkJsonLoader(view="books", filepath=test_file_path).transform(df)
+    FrameworkJsonLoader(view="books", file_path=test_file_path).transform(df)
     FrameworkJsonLoader(
-        view="books_schema", filepath=test_file_path_2, use_schema_from_view="books"
+        view="books_schema", file_path=test_file_path_2, use_schema_from_view="books"
     ).transform(df)
     result: DataFrame = spark_session.sql("SELECT * FROM books")
     result_2: DataFrame = spark_session.sql("SELECT * FROM books_schema")

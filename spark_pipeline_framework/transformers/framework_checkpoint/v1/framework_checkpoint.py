@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, Callable
 
 # noinspection PyProtectedMember
 from pyspark import keyword_only
@@ -27,11 +27,13 @@ class FrameworkCheckpoint(FrameworkTransformer):
     @keyword_only
     def __init__(
         self,
-        file_path: Union[str, Path],
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
         view: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
+        stream: bool = False,
+        delta_lake_table: Optional[str] = None,
     ):
         """
         Saves given view to parquet and reload it.
@@ -56,7 +58,11 @@ class FrameworkCheckpoint(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        assert isinstance(file_path, Path) or isinstance(file_path, str)
+        assert (
+            isinstance(file_path, Path)
+            or isinstance(file_path, str)
+            or callable(file_path)
+        ), type(file_path)
         assert file_path
 
         assert view
@@ -68,12 +74,25 @@ class FrameworkCheckpoint(FrameworkTransformer):
         self.file_path: Param[Union[str, Path]] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
+        self.stream: Param[bool] = Param(self, "stream", "")
+        self._setDefault(stream=stream)
+
+        self.delta_lake_table: Param[Optional[str]] = Param(
+            self, "delta_lake_table", ""
+        )
+        self._setDefault(delta_lake_table=delta_lake_table)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        file_path: Union[str, Path] = self.getFilePath()
+        file_path: Union[
+            Path, str, Callable[[Optional[str]], Union[Path, str]]
+        ] = self.getFilePath()
+        if callable(file_path):
+            file_path = file_path(self.loop_id)
+        stream: bool = self.getStream()
 
         save_transformer = FrameworkParquetExporter(
             view=view,
@@ -81,6 +100,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
             file_path=file_path,
             parameters=self.getParameters(),
             progress_logger=self.getProgressLogger(),
+            stream=stream,
         )
         df = save_transformer.transform(df)
 
@@ -90,6 +110,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
             name=f"{self.getName()}-load",
             parameters=self.getParameters(),
             progress_logger=self.getProgressLogger(),
+            stream=stream,
         )
         df = load_transformer.transform(df)
         return df
@@ -99,5 +120,15 @@ class FrameworkCheckpoint(FrameworkTransformer):
         return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilePath(self) -> Union[str, Path]:
+    def getFilePath(
+        self,
+    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
         return self.getOrDefault(self.file_path)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getStream(self) -> bool:
+        return self.getOrDefault(self.stream)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getDeltaLakeTable(self) -> Optional[str]:
+        return self.getOrDefault(self.delta_lake_table)
