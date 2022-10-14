@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 # noinspection PyProtectedMember
 from mlflow.entities import RunStatus  # type: ignore
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from spark_auto_mapper.automappers.automapper import AutoMapper
@@ -24,7 +24,7 @@ AutoMapperFunction = Callable[[Dict[str, Any]], AutoMapperTypeOrList]
 
 class FrameworkMappingLoader(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: str,

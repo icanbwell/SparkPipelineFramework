@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Union, List, Dict, Any, Optional, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 
 from pyspark.sql.dataframe import DataFrame
@@ -19,7 +18,7 @@ from spark_pipeline_framework.utilities.file_modes import FileReadModes, FileJso
 
 class FrameworkJsonLoader(FrameworkLocalFileLoader):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: str,

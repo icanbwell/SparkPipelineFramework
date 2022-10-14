@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Union, Optional, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -19,7 +18,7 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
     """
 
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],

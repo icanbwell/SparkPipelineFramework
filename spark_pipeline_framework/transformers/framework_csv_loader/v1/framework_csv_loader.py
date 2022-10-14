@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, List, Union, Optional, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql.types import StructType
 
@@ -10,12 +8,13 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import (
     FrameworkLocalFileLoader,
 )
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_modes import FileReadModes
 
 
 class FrameworkCsvLoader(FrameworkLocalFileLoader):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: str,

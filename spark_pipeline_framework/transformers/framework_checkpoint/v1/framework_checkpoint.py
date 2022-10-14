@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -16,6 +14,7 @@ from spark_pipeline_framework.transformers.framework_parquet_loader.v1.framework
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 
 
 class FrameworkCheckpoint(FrameworkTransformer):
@@ -24,7 +23,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
     """
 
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],

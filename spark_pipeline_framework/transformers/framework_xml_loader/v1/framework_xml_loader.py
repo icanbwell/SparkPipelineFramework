@@ -2,7 +2,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Union, Optional, Dict, Any, Callable
 
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
@@ -22,7 +22,7 @@ class FrameworkXmlLoader(FrameworkTransformer):
     """
 
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: str,

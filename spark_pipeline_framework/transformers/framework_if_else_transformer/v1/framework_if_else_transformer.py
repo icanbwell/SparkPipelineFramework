@@ -1,7 +1,6 @@
 from typing import Dict, Any, Optional, Union, List, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -13,7 +12,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 
 class FrameworkIfElseTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         enable: Union[bool, Callable[[DataFrame], bool]],

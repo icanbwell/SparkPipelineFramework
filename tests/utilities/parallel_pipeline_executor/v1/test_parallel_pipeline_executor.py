@@ -2,8 +2,7 @@ import time
 
 import pytest
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.base import Transformer
 from pyspark.ml.feature import SQLTransformer
 from pyspark.ml.param import Param
@@ -78,7 +77,7 @@ class DummyDelayTransformer(Transformer):
     """
 
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(self, delay: int) -> None:
         super(DummyDelayTransformer, self).__init__()
         self.delay: Param[int] = Param(self, "delay", "")
@@ -88,7 +87,7 @@ class DummyDelayTransformer(Transformer):
         self.setParams(**kwargs)
 
     # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
-    @keyword_only
+    @capture_parameters
     def setParams(self, delay: int) -> None:
         kwargs = self._input_kwargs
         self._set(**kwargs)

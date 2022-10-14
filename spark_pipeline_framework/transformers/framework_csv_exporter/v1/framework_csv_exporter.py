@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, Callable
 
-from pyspark import keyword_only
 from pyspark.ml.param import Param
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -11,11 +10,12 @@ from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_
     FrameworkBaseExporter,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 
 
 class FrameworkCsvExporter(FrameworkBaseExporter):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
@@ -30,6 +30,9 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
         stream: bool = False,
         delta_lake_table: Optional[str] = None,
     ):
+        params = {
+            k: v for k, v in locals().items() if k != "self" and not k.startswith("_")
+        }
         super().__init__(
             view=view,
             name=name,
@@ -61,7 +64,8 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
         self.delimiter: Param[str] = Param(self, "delimiter", "")
         self._setDefault(delimiter=delimiter)
 
-        self._set(file_path=file_path)
+        kwargs = self._input_kwargs
+        self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(

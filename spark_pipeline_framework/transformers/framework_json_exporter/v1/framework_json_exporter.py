@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Dict, Any, Union, Optional, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.utils import AnalysisException
@@ -15,6 +13,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
@@ -23,7 +22,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 
 
 class FrameworkJsonExporter(FrameworkTransformer):
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],

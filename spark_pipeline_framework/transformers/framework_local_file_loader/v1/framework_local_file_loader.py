@@ -3,8 +3,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Union, List, Optional, Dict, Any, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import input_file_name
@@ -22,9 +21,7 @@ from spark_pipeline_framework.utilities.file_modes import FileReadModes
 
 class FrameworkLocalFileLoader(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    # keyword_only: A decorator that forces keyword arguments in the wrapped method
-    #     and saves actual input keyword arguments in `_input_kwargs`.
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: str,
