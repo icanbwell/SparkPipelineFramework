@@ -2,6 +2,9 @@ import time
 
 import pytest
 
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.base import Transformer
 from pyspark.ml.feature import SQLTransformer
@@ -71,7 +74,7 @@ async def test_can_run_pipelines_in_parallel(spark_session: SparkSession) -> Non
     assert actual_count == expected_count
 
 
-class DummyDelayTransformer(Transformer):
+class DummyDelayTransformer(FrameworkTransformer):
     """
     dummy
     """
@@ -79,7 +82,7 @@ class DummyDelayTransformer(Transformer):
     # noinspection PyUnusedLocal
     @capture_parameters
     def __init__(self, delay: int) -> None:
-        super(DummyDelayTransformer, self).__init__()
+        super().__init__()
         self.delay: Param[int] = Param(self, "delay", "")
         self._setDefault(delay=delay)
 
@@ -98,4 +101,4 @@ class DummyDelayTransformer(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDelay(self) -> int:
-        return self.getOrDefault(self.delay)  # type: ignore
+        return self.getOrDefault(self.delay)

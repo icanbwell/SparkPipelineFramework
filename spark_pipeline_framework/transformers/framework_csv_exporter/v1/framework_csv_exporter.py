@@ -30,9 +30,6 @@ class FrameworkCsvExporter(FrameworkBaseExporter):
         stream: bool = False,
         delta_lake_table: Optional[str] = None,
     ):
-        params = {
-            k: v for k, v in locals().items() if k != "self" and not k.startswith("_")
-        }
         super().__init__(
             view=view,
             name=name,

@@ -120,7 +120,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
                         df_view = df_view.limit(limit)
                     if stream:
                         df_view.writeStream.format("json").option(
-                            "file_path", str(file_path)
+                            "path", str(file_path)
                         ).start()
                     else:
                         df_view.write.mode(self.getMode()).json(path=str(file_path))
@@ -132,7 +132,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
                         df = df.limit(limit)
                     if stream:
                         df.writeStream.format("json").option(
-                            "file_path", str(file_path)
+                            "path", str(file_path)
                         ).start()
                     else:
                         df.write.mode(self.getMode()).json(path=str(file_path))
