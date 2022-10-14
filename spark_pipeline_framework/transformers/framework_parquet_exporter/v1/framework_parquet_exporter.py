@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Union, Optional, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -19,16 +18,18 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
     """
 
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
-        file_path: Union[str, Path],
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
         view: Optional[str] = None,
         name: Optional[str] = None,
         mode: str = FileWriteModes.MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1,
+        limit: Optional[int] = None,
+        stream: bool = False,
+        delta_lake_table: Optional[str] = None,
     ) -> None:
         """
         Saves given view to parquet
@@ -47,24 +48,40 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
             parameters=parameters,
             progress_logger=progress_logger,
             limit=limit,
+            stream=stream,
+            delta_lake_table=delta_lake_table,
         )
 
-        assert isinstance(file_path, Path) or isinstance(file_path, str)
+        assert (
+            isinstance(file_path, Path)
+            or isinstance(file_path, str)
+            or callable(file_path)
+        ), type(file_path)
         assert file_path
 
         self.logger = get_logger(__name__)
 
-        self.file_path: Param[Union[str, Path]] = Param(self, "file_path", "")
-        self._setDefault(file_path=None)
+        self.file_path: Param[
+            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+        ] = Param(self, "file_path", "")
+        self._setDefault(file_path=file_path)
 
-        self._set(file_path=file_path)
+        kwargs = self._input_kwargs
+        self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilePath(self) -> Union[str, Path]:
+    def getFilePath(
+        self,
+    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
         return self.getOrDefault(self.file_path)
 
     def getFormat(self) -> str:
         return "parquet"
 
     def getOptions(self) -> Dict[str, Any]:
-        return {"path": self.getFilePath()}
+        file_path: Union[
+            Path, str, Callable[[Optional[str]], Union[Path, str]]
+        ] = self.getFilePath()
+        if callable(file_path):
+            file_path = file_path(self.loop_id)
+        return {"path": file_path}

@@ -3,8 +3,7 @@ from glob import glob
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, cast
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -20,7 +19,7 @@ from spark_pipeline_framework.utilities.json_to_jsonl_converter import (
 # noinspection SpellCheckingInspection
 class FrameworkJsonToJsonlConverter(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         file_path: Union[Path, str],

@@ -29,7 +29,7 @@ def test_framework_data_frame_analyzer(spark_session: SparkSession) -> None:
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
     FrameworkCsvLoader(
-        view="my_view", filepath=test_file_path, delimiter=","
+        view="my_view", file_path=test_file_path, delimiter=","
     ).transform(df)
 
     spark_session.table("my_view").show()

@@ -4,7 +4,7 @@ import pymysql
 from pymysql import OperationalError
 from pymysql.connections import Connection
 from pymysql.constants import CLIENT
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 
@@ -20,7 +20,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 
 class FrameworkDBQueryRunner(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         username: str,
@@ -68,8 +68,8 @@ class FrameworkDBQueryRunner(FrameworkTransformer):
         # noinspection Mypy
         self._setDefault(db_name=None)
 
-        # noinspection Mypy
-        self._set(**self._input_kwargs)
+        kwargs = self._input_kwargs
+        self.setParams(**kwargs)
 
         super().setStandardParams(
             parameters=parameters, progress_logger=progress_logger

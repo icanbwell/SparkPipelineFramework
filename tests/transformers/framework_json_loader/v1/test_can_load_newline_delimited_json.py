@@ -23,7 +23,7 @@ def test_can_load_newline_delimited_json(spark_session: SparkSession) -> None:
     )
 
     # Act
-    loader = FrameworkJsonLoader(view="books", filepath=test_file_path, limit=100)
+    loader = FrameworkJsonLoader(view="books", file_path=test_file_path, limit=100)
     loader.transform(df)
 
     # noinspection SqlDialectInspection

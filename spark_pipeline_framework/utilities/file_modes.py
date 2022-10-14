@@ -20,3 +20,8 @@ class FileReadModes:
         MODE_DROP_MALFORMED,
         MODE_FAIL_FAST,
     )
+
+
+class FileJsonTypes:
+    NDJSON = "ndjson"
+    JSON = "json"

@@ -2,8 +2,10 @@ import time
 
 import pytest
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.base import Transformer
 from pyspark.ml.feature import SQLTransformer
 from pyspark.ml.param import Param
@@ -72,26 +74,20 @@ async def test_can_run_pipelines_in_parallel(spark_session: SparkSession) -> Non
     assert actual_count == expected_count
 
 
-class DummyDelayTransformer(Transformer):
+class DummyDelayTransformer(FrameworkTransformer):
     """
     dummy
     """
 
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(self, delay: int) -> None:
-        super(DummyDelayTransformer, self).__init__()
+        super().__init__()
         self.delay: Param[int] = Param(self, "delay", "")
         self._setDefault(delay=delay)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring,PyPep8Naming
-    @keyword_only
-    def setParams(self, delay: int) -> None:
-        kwargs = self._input_kwargs
-        self._set(**kwargs)
 
     # noinspection PyMethodMayBeStatic
     def _transform(self, df: DataFrame) -> DataFrame:
@@ -105,4 +101,4 @@ class DummyDelayTransformer(Transformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getDelay(self) -> int:
-        return self.getOrDefault(self.delay)  # type: ignore
+        return self.getOrDefault(self.delay)

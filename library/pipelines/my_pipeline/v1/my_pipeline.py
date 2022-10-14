@@ -27,7 +27,7 @@ class MyPipeline(FrameworkPipeline):
                 [
                     FrameworkCsvLoader(
                         view="flights",
-                        filepath=parameters["flights_path"],
+                        file_path=parameters["flights_path"],
                         parameters=parameters,
                         progress_logger=progress_logger,
                     ),

@@ -21,7 +21,7 @@ def test_framework_fill_na_transformer(spark_session: SparkSession) -> None:
     view: str = "primary_care_protocol"
     FrameworkCsvLoader(
         view=view,
-        filepath=data_dir.joinpath("primary_care_protocol.csv"),
+        file_path=data_dir.joinpath("primary_care_protocol.csv"),
         clean_column_names=False,
     ).transform(df)
 

@@ -1,9 +1,5 @@
 from typing import Dict, Any, Optional, List, Union
-
-# noinspection PyProtectedMember
-from pyspark import keyword_only
-
-# noinspection PyUnresolvedReferences
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.sql.functions import col
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -16,7 +12,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 
 class FrameworkFilterByColumnTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         # add your parameters here (be sure to add them to setParams below too)

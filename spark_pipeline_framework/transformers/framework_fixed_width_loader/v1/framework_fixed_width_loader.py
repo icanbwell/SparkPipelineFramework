@@ -1,8 +1,8 @@
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any, NamedTuple
+from typing import Union, List, Optional, Dict, Any, NamedTuple, Callable
 
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
@@ -46,11 +46,13 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
     """
 
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: str,
-        filepath: Union[str, List[str], Path],
+        file_path: Union[
+            str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]
+        ],
         columns: List[ColumnSpec],
         has_header: bool = True,
         name: Optional[str] = None,
@@ -61,7 +63,7 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         Initializes the fixed_width_file_loader
 
         :param view: The name of the view that the resultant DataFrame will be stored in
-        :param filepath: The path to the fixed width file to load
+        :param file_path: The path to the fixed width file to load
         :param columns: A list of columns defined using a ColumnSpec that defines the name, start_index, length and DataType for the column
         :param name: sets the name of the transformer as it will appear in logs
         :param parameters:
@@ -70,7 +72,7 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         example:
             FrameworkFixedWidthLoader(
                 view="my_view",
-                filepath=test_file_path,
+                file_path=test_file_path,
 
                 columns=[
                     ColumnSpec(column_name="id", start_pos=1, length=3, data_type=StringType()),
@@ -103,8 +105,10 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.filepath: Param[str] = Param(self, "filepath", "")
-        self._setDefault(filepath=None)
+        self.file_path: Param[
+            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+        ] = Param(self, "file_path", "")
+        self._setDefault(file_path=None)
 
         self.columns: Param[List[ColumnSpec]] = Param(self, "columns", "")
         self._setDefault(columns=None)
@@ -112,20 +116,28 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         self.has_header: Param[bool] = Param(self, "has_header", "")
         self._setDefault(has_header=True)
 
-        if not filepath:
-            raise ValueError("filepath is None or empty")
+        assert (
+            isinstance(file_path, Path)
+            or isinstance(file_path, str)
+            or callable(file_path)
+        ), type(file_path)
+        assert file_path
 
-        self.logger.info(f"Received filepath: {filepath}")
+        self.logger.info(f"Received file_path: {file_path}")
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
-        filepath: Union[str, List[str], Path] = self.getFilepath()
+        file_path: Union[
+            Path, str, Callable[[Optional[str]], Union[Path, str]]
+        ] = self.getFilePath()
+        if callable(file_path):
+            file_path = file_path(self.loop_id)
         columns: List[ColumnSpec] = self.getColumns()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
-        paths = get_absolute_paths(filepath=filepath)
+        paths = get_absolute_paths(file_path=file_path)
         has_header = self.getHasHeader()
 
         if progress_logger:
@@ -159,8 +171,10 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilepath(self) -> Union[str, List[str], Path]:
-        return self.getOrDefault(self.filepath)
+    def getFilePath(
+        self,
+    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getColumns(self) -> List[ColumnSpec]:

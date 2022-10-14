@@ -6,36 +6,36 @@ from pathlib import Path
 from typing import Union, List
 
 
-def get_absolute_paths(filepath: Union[str, List[str], Path]) -> List[str]:
+def get_absolute_paths(file_path: Union[str, List[str], Path]) -> List[str]:
     """
     Abstracts handling of paths so we can use paths on both k8s in AWS as well as local
 
-    :param filepath: the path or paths to format appropriately
+    :param file_path: the path or paths to format appropriately
     :return: a list of paths optimized for local or k8s usages
     """
-    if not filepath:
-        raise ValueError(f"filepath is empty: {filepath}")
+    if not file_path:
+        raise ValueError(f"file_path is empty: {file_path}")
 
-    if isinstance(filepath, str):
-        if filepath.__contains__(":"):
-            return [filepath]
+    if isinstance(file_path, str):
+        if file_path.__contains__(":"):
+            return [file_path]
         else:
             data_dir = Path(__file__).parent.parent.joinpath("./")
-            return [f"file://{data_dir.joinpath(filepath)}"]
-    elif isinstance(filepath, Path):
+            return [f"file://{data_dir.joinpath(file_path)}"]
+    elif isinstance(file_path, Path):
         data_dir = Path(__file__).parent.parent.joinpath("./")
-        return [f"file://{data_dir.joinpath(filepath)}"]
-    elif isinstance(filepath, (list, tuple)):
+        return [f"file://{data_dir.joinpath(file_path)}"]
+    elif isinstance(file_path, (list, tuple)):
         data_dir = Path(__file__).parent.parent.joinpath("./")
         absolute_paths = []
-        for path in filepath:
+        for path in file_path:
             if ":" in path:
                 absolute_paths.append(path)
             else:
                 absolute_paths.append(f"file://{data_dir.joinpath(path)}")
         return absolute_paths
     else:
-        raise TypeError(f"Unknown type '{type(filepath)}' for filepath {filepath}")
+        raise TypeError(f"Unknown type '{type(file_path)}' for file_path {file_path}")
 
 
 def isfile(path: str) -> bool:

@@ -24,7 +24,7 @@ def test_correctly_loads_csv_with_clean_flag_off(spark_session: SparkSession) ->
 
     # Act
     FrameworkJsonLoader(
-        view="books", filepath=test_file_path, clean_column_names=False
+        view="books", file_path=test_file_path, clean_column_names=False
     ).transform(df)
 
     # noinspection SqlDialectInspection

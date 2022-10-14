@@ -31,7 +31,11 @@ class FrameworkTransformer(
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
     ):
-        super(FrameworkTransformer, self).__init__()
+        """
+        Base class for our transformers
+
+        """
+        super().__init__()
 
         if TYPE_CHECKING:
             self._input_kwargs: Dict[str, Any] = {}
@@ -44,6 +48,8 @@ class FrameworkTransformer(
             self, "progress_logger", ""
         )
         self._setDefault(progress_logger=progress_logger)
+
+        self.loop_id: Optional[str] = None
 
         self.parameters: Optional[Dict[str, Any]] = parameters
 
@@ -130,3 +136,11 @@ class FrameworkTransformer(
         # noinspection PyUnresolvedReferences
         # return super(Params, self).getOrDefault(param)  # type: ignore
         return super().getOrDefault(param)  # type: ignore
+
+    def set_loop_id(self, loop_id: str) -> None:
+        """
+        Set when running inside a FrameworkLoopTransformer
+
+        :param loop_id: loop id
+        """
+        self.loop_id = loop_id

@@ -1,10 +1,9 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrameWriter
 from pyspark.sql.dataframe import DataFrame
+from pyspark.sql.streaming import DataStreamWriter
 from pyspark.sql.utils import AnalysisException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -16,11 +15,12 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 
 
 class FrameworkBaseExporter(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: Optional[str] = None,
@@ -28,7 +28,9 @@ class FrameworkBaseExporter(FrameworkTransformer):
         mode: str = FileWriteModes.MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        limit: int = -1,
+        limit: Optional[int] = None,
+        stream: bool = False,
+        delta_lake_table: Optional[str] = None,
     ):
         assert mode in FileWriteModes.MODE_CHOICES
 
@@ -44,8 +46,16 @@ class FrameworkBaseExporter(FrameworkTransformer):
         self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
-        self.limit: Param[int] = Param(self, "limit", "")
+        self.limit: Param[Optional[int]] = Param(self, "limit", "")
         self._setDefault(limit=None)
+
+        self.stream: Param[bool] = Param(self, "stream", "")
+        self._setDefault(stream=stream)
+
+        self.delta_lake_table: Param[Optional[str]] = Param(
+            self, "delta_lake_table", ""
+        )
+        self._setDefault(delta_lake_table=delta_lake_table)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -55,19 +65,24 @@ class FrameworkBaseExporter(FrameworkTransformer):
         name: Optional[str] = self.getName()
         format_: str = self.getFormat()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
-        # limit: int = self.getLimit()
+        stream: bool = self.getStream()
+        limit: Optional[int] = self.getLimit()
 
         with ProgressLogMetric(
             name=f"{name or view}_{format_}_exporter", progress_logger=progress_logger
         ):
             try:
-                writer: DataFrameWriter
+                writer: Union[DataFrameWriter, DataStreamWriter]
                 if view:
-                    writer = df.sql_ctx.table(view).write.format(format_)
-                else:
-                    writer = df.write.format(format_)
+                    df = df.sql_ctx.table(view)
+                if limit is not None and limit >= 0:
+                    df = df.limit(limit)
+                writer = df.write if not stream else df.writeStream
 
-                writer = writer.mode(self.getMode())
+                writer = writer.format(format_)
+
+                if isinstance(writer, DataFrameWriter):
+                    writer = writer.mode(self.getMode())
 
                 for k, v in self.getOptions().items():
                     writer.option(k, v)
@@ -76,7 +91,10 @@ class FrameworkBaseExporter(FrameworkTransformer):
                 if progress_logger:
                     progress_logger.log_params(self.getOptions())
 
-                writer.save()
+                if isinstance(writer, DataStreamWriter):
+                    writer.start()
+                else:
+                    writer.save()
 
             except AnalysisException as e:
                 self.logger.error(f"Failed to write to {format_}")
@@ -92,7 +110,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
         return self.getOrDefault(self.mode)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getLimit(self) -> int:
+    def getLimit(self) -> Optional[int]:
         return self.getOrDefault(self.limit)
 
     # noinspection PyPep8Naming
@@ -102,3 +120,11 @@ class FrameworkBaseExporter(FrameworkTransformer):
     # noinspection PyPep8Naming
     def getOptions(self) -> Dict[str, Any]:
         raise NotImplementedError
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getStream(self) -> bool:
+        return self.getOrDefault(self.stream)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getDeltaLakeTable(self) -> Optional[str]:
+        return self.getOrDefault(self.delta_lake_table)

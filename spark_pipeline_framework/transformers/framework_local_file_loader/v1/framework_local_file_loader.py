@@ -1,14 +1,14 @@
 import re
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any
+from typing import Union, List, Optional, Dict, Any, Callable
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import input_file_name
 from pyspark.sql.readwriter import DataFrameReader
+from pyspark.sql.streaming import DataStreamReader
 from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -21,15 +21,15 @@ from spark_pipeline_framework.utilities.file_modes import FileReadModes
 
 class FrameworkLocalFileLoader(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    # keyword_only: A decorator that forces keyword arguments in the wrapped method
-    #     and saves actual input keyword arguments in `_input_kwargs`.
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: str,
-        filepath: Union[str, List[str], Path],
+        file_path: Union[
+            str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]
+        ],
         delimiter: str = ",",
-        limit: int = -1,
+        limit: Optional[int] = None,
         has_header: bool = True,
         infer_schema: bool = False,
         cache_table: bool = True,
@@ -41,9 +41,34 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         mode: str = FileReadModes.MODE_PERMISSIVE,
+        stream: bool = False,
+        delta_lake_table: Optional[str] = None,
     ) -> None:
+        """
+        Base class that handles loading of files
+
+
+        :param view: view to populate with the data in the file
+        :param file_path: where to store the FHIR resources retrieved.  Can be either a path or a function
+                    that returns path. Function is passed a loop number if inside a loop or else None
+        :param delimiter:
+        :param limit:
+        :param has_header:
+        :param infer_schema:
+        :param cache_table: whether to cache the table in memory after loading it
+        :param schema: schema to use when loading the data
+        :param clean_column_names: whether to remove invalid characters from column names
+                                    (i.e., characters that Spark does not like)
+        :param create_file_path: whether to create the file path if it does not exist
+        :param use_schema_from_view: use schema from this view when loading data
+        :param mode: file loading mode
+        :param stream: whether to stream the data
+        :param delta_lake_table: store data in this delta lake
+        """
         super().__init__(
-            name=name, parameters=parameters, progress_logger=progress_logger
+            name=name,
+            parameters=parameters,
+            progress_logger=progress_logger,
         )
 
         assert mode in FileReadModes.MODE_CHOICES
@@ -53,8 +78,10 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.filepath: Param[str] = Param(self, "filepath", "")
-        self._setDefault(filepath=None)
+        self.file_path: Param[
+            Union[str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]]
+        ] = Param(self, "file_path", "")
+        self._setDefault(file_path=None)
 
         self.schema: Param[StructType] = Param(self, "schema", "")
         self._setDefault(schema=None)
@@ -65,8 +92,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.cache_table: Param[bool] = Param(self, "cache_table", "")
         self._setDefault(cache_table=True)
 
-        self.limit: Param[int] = Param(self, "limit", "")
-        self._setDefault(limit=-1)
+        self.limit: Param[Optional[int]] = Param(self, "limit", "")
+        self._setDefault(limit=None)
 
         self.infer_schema: Param[bool] = Param(self, "infer_schema", "")
         self._setDefault(infer_schema=False)
@@ -83,51 +110,66 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.has_header: Param[bool] = Param(self, "has_header", "")
         self._setDefault(has_header=True)
 
+        self.stream: Param[bool] = Param(self, "stream", "")
+        self._setDefault(stream=False)
+
+        self.delta_lake_table: Param[Optional[str]] = Param(
+            self, "delta_lake_table", ""
+        )
+        self._setDefault(delta_lake_table=None)
+
         self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
-        if not filepath:
-            raise ValueError("filepath is None or empty")
+        if not file_path:
+            raise ValueError("file_path is None or empty")
 
-        self.logger.info(f"Received filepath: {filepath}")
+        self.logger.info(f"Received file_path: {file_path}")
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
-        filepath: Union[str, List[str], Path] = self.getFilepath()
+        file_path: Union[
+            str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]
+        ] = self.getFilepath()
         schema = self.getSchema()
         clean_column_names = self.getCleanColumnNames()
         cache_table = self.getCacheTable()
         infer_schema = self.getInferSchema()
-        limit = self.getLimit()
+        limit: Optional[int] = self.getLimit()
         create_file_path = self.getCreateFilePath()
         use_schema_from_view = self.getUseSchemaFromView()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+        stream: bool = self.getStream()
 
-        if not filepath:
-            raise ValueError(f"filepath is empty: {filepath}")
+        if not file_path:
+            raise ValueError(f"file_path is empty: {file_path}")
 
-        if isinstance(filepath, str):
-            if filepath.__contains__(":"):
-                absolute_paths: List[str] = [filepath]
+        if isinstance(file_path, str):
+            if file_path.__contains__(":"):
+                absolute_paths: List[str] = [file_path]
             else:
                 data_dir = Path(__file__).parent.parent.joinpath("./")
-                absolute_paths = [f"file://{data_dir.joinpath(filepath)}"]
-        elif isinstance(filepath, Path):
+                absolute_paths = [f"file://{data_dir.joinpath(file_path)}"]
+        elif isinstance(file_path, Path):
             data_dir = Path(__file__).parent.parent.joinpath("./")
-            absolute_paths = [f"file://{data_dir.joinpath(filepath)}"]
-        elif isinstance(filepath, (list, tuple)):
+            absolute_paths = [f"file://{data_dir.joinpath(file_path)}"]
+        elif isinstance(file_path, (list, tuple)):
             data_dir = Path(__file__).parent.parent.joinpath("./")
             absolute_paths = []
-            for path in filepath:
+            for path in file_path:
                 if ":" in path:
                     absolute_paths.append(path)
                 else:
                     absolute_paths.append(f"file://{data_dir.joinpath(path)}")
+        elif callable(file_path):
+            absolute_paths = [str(file_path(self.loop_id))]
         else:
-            raise TypeError(f"Unknown type '{type(filepath)}' for filepath {filepath}")
+            raise TypeError(
+                f"Unknown type '{type(file_path)}' for file_path {file_path}"
+            )
 
         if progress_logger:
             progress_logger.write_to_log(
@@ -137,7 +179,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
         self.preprocess(df=df, absolute_paths=absolute_paths)
 
-        df_reader: DataFrameReader = df.sql_ctx.read
+        df_reader: Union[DataFrameReader, DataStreamReader] = (
+            df.sql_ctx.read if not stream else df.sql_ctx.readStream
+        )
         df_reader = df_reader.option("mode", self.getMode())
 
         if schema:
@@ -156,12 +200,14 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         for k, v in self.getReaderOptions().items():
             df_reader = df_reader.option(k, v)
 
+        df2 = (
+            df_reader.load(absolute_paths)
+            if isinstance(df_reader, DataFrameReader)
+            else df_reader.load(absolute_paths[0])
+        )
+
         if create_file_path:
-            df2 = df_reader.load(absolute_paths).withColumn(
-                "file_path", input_file_name()
-            )
-        else:
-            df2 = df_reader.load(absolute_paths)
+            df2 = df2.withColumn("file_path", input_file_name())
 
         if clean_column_names:
             for c in df2.columns:
@@ -201,8 +247,10 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.view)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilepath(self) -> Union[str, List[str], Path]:
-        return self.getOrDefault(self.filepath)
+    def getFilepath(
+        self,
+    ) -> Union[str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]]:
+        return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSchema(self) -> StructType:
@@ -221,7 +269,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         return self.getOrDefault(self.infer_schema)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getLimit(self) -> int:
+    def getLimit(self) -> Optional[int]:
         return self.getOrDefault(self.limit)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -247,3 +295,11 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
         return self.getOrDefault(self.mode)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getStream(self) -> bool:
+        return self.getOrDefault(self.stream)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getDeltaLakeTable(self) -> Optional[str]:
+        return self.getOrDefault(self.delta_lake_table)

@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -14,7 +13,7 @@ from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 
 class FrameworkJdbcExporter(FrameworkBaseExporter):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         jdbc_url: str,
@@ -54,7 +53,8 @@ class FrameworkJdbcExporter(FrameworkBaseExporter):
         self.driver: Param[str] = Param(self, "driver", "")
         self._setDefault(driver=driver)
 
-        self._set(jdbc_url=jdbc_url, table=table, driver=driver, options=options)
+        kwargs = self._input_kwargs
+        self.setParams(**kwargs)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getJdbcUrl(self) -> str:

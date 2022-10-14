@@ -80,7 +80,7 @@ from spark_pipeline_framework.proxy_generator.python_proxy_base import PythonPro
 
 class FeatureTransformer(PythonProxyBase):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(self,
                  name: str = None,
                  parameters: Optional[Dict[str, Any]] = None,

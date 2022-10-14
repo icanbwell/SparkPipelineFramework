@@ -35,7 +35,7 @@ def test_can_save_parquet(spark_session: SparkSession) -> None:
     )
 
     FrameworkCsvLoader(
-        view="my_view", filepath=test_file_path, delimiter=","
+        view="my_view", file_path=test_file_path, delimiter=","
     ).transform(df)
 
     parquet_file_path: str = (

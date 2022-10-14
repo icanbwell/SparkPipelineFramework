@@ -1,7 +1,6 @@
 from typing import Optional, Dict, Any
 
-# noinspection PyProtectedMember
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -10,7 +9,7 @@ from spark_pipeline_framework.proxy_generator.python_proxy_base import PythonPro
 
 class FeatureTransformer(PythonProxyBase):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         name: Optional[str] = None,

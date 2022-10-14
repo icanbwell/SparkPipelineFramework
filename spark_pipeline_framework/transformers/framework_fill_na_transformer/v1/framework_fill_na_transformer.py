@@ -1,6 +1,6 @@
 from typing import List, Optional, Any, Dict, Union
 
-from pyspark import keyword_only
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -23,7 +23,7 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
     """
 
     # noinspection PyUnusedLocal
-    @keyword_only
+    @capture_parameters
     def __init__(
         self,
         view: str,
