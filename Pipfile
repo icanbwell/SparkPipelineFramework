@@ -44,6 +44,7 @@ Deprecated = "==1.2.12"
 sparkdataframecomparer = "==1.0.7"
 black = ">=22.8.0"
 pytest-asyncio = ">=0.19.0"
+vistir="==0.6.1" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
 
 [requires]
 python_version = "3.7"
