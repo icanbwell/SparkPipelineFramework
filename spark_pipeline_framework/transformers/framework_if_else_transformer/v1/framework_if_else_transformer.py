@@ -15,7 +15,11 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
     @capture_parameters
     def __init__(
         self,
+        *,
         enable: Union[bool, Callable[[DataFrame], bool]],
+        enable_if_view_not_empty: Optional[
+            Union[str, Callable[[Optional[str]], str]]
+        ] = None,
         stages: Union[List[Transformer], Callable[[], List[Transformer]]],
         else_stages: Optional[
             Union[List[Transformer], Callable[[], List[Transformer]]]
@@ -38,6 +42,10 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
 
         self.enable: Union[bool, Callable[[DataFrame], bool]] = enable
 
+        self.enable_if_view_not_empty: Optional[
+            Union[str, Callable[[Optional[str]], str]]
+        ] = enable_if_view_not_empty
+
         self.stages: Union[List[Transformer], Callable[[], List[Transformer]]] = stages
         self.else_stages: Optional[
             Union[List[Transformer], Callable[[], List[Transformer]]]
@@ -50,8 +58,18 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
-        enable = self.enable if isinstance(self.enable, bool) else self.enable(df)
-        if enable:
+        enable = self.enable(df) if callable(self.enable) else self.enable
+        view_enable_if_view_not_empty = (
+            self.enable_if_view_not_empty(self.loop_id)
+            if callable(self.enable_if_view_not_empty)
+            else self.enable_if_view_not_empty
+        )
+        enable_if_view_not_empty = (
+            not df.sparkSession.table(view_enable_if_view_not_empty).isEmpty()
+            if view_enable_if_view_not_empty
+            else True
+        )
+        if (enable or enable is None) and enable_if_view_not_empty:
             stages: List[Transformer] = (
                 self.stages if isinstance(self.stages, list) else self.stages()
             )

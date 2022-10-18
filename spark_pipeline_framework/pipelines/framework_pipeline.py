@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -33,6 +33,7 @@ class FrameworkPipeline(Transformer):
         self.steps: List[Union[Transformer, List[Transformer]]] = []
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
+        self.loop_id: Optional[str] = None
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -63,6 +64,8 @@ class FrameworkPipeline(Transformer):
                     f"---- Running pipeline [{pipeline_name}] transformer [{transformer}]  "
                     f"({i} of {count_of_transformers}) ----"
                 )
+                if hasattr(transformer, "set_loop_id"):
+                    transformer.set_loop_id(self.loop_id)
 
                 with ProgressLogMetric(
                     progress_logger=self.progress_logger,
@@ -143,3 +146,11 @@ class FrameworkPipeline(Transformer):
 
     def __str__(self) -> str:
         return json.dumps(self.as_dict(), default=str)
+
+    def set_loop_id(self, loop_id: str) -> None:
+        """
+        Set when running inside a FrameworkLoopTransformer
+
+        :param loop_id: loop id
+        """
+        self.loop_id = loop_id
