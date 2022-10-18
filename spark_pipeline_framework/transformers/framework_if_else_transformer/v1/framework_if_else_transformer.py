@@ -49,12 +49,18 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         enable = self.enable if isinstance(self.enable, bool) else self.enable(df)
         if enable:
             stages: List[Transformer] = (
                 self.stages if isinstance(self.stages, list) else self.stages()
             )
         else:
+            if progress_logger is not None:
+                progress_logger.write_to_log(
+                    self.getName() or "FrameworkIfElseTransformer",
+                    f"Skipping stages because enable {self.enable} did not evaluate to True",
+                )
             stages = (
                 []
                 if self.else_stages is None
@@ -63,7 +69,6 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
                 else self.else_stages()
             )
         for stage in stages:
-            progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
             if progress_logger is not None:
                 progress_logger.start_mlflow_run(run_name=str(stage), is_nested=True)
             if hasattr(stage, "set_loop_id"):
@@ -73,10 +78,14 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
                 progress_logger.end_mlflow_run()
         return df
 
-    def set_loop_id(self, loop_id: str) -> None:
-        """
-        Set when running inside a FrameworkLoopTransformer
-
-        :param loop_id: loop id
-        """
-        self.loop_id = loop_id
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **(super().as_dict()),
+            "enable": self.enable,
+            "stages": [s.as_dict() for s in self.stages]
+            if not callable(self.stages)
+            else str(self.stages),
+            "else_stages": [s.as_dict() for s in self.else_stages]
+            if self.else_stages and not callable(self.else_stages)
+            else str(self.else_stages),
+        }
