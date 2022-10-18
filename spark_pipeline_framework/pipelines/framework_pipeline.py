@@ -15,6 +15,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
+from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
@@ -127,8 +128,13 @@ class FrameworkPipeline(Transformer):
 
     def as_dict(self) -> Dict[str, Any]:
         return {
-            "type": self.__class__.__name__,
-            "params": self.parameters,
+            "short_type": self.__class__.__name__,
+            "type": ClassHelpers.get_full_name_of_instance(self),
+            # self.parameters is a subclass of dict so json.dumps thinks it can't serialize it
+            "params": {
+                k: v if not hasattr(v, "as_dict") else v.as_dict()
+                for k, v in self.parameters.items()
+            },
             "steps": [
                 s.as_dict() if not isinstance(s, list) else [s1.as_dict() for s1 in s]
                 for s in self.steps
