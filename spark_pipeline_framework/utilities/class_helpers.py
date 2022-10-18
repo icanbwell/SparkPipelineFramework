@@ -1,6 +1,6 @@
 from importlib import import_module
 from inspect import signature
-from typing import Type, Dict, Any
+from typing import Any, Dict, Optional, Type
 
 from pyspark.ml.base import Transformer
 
@@ -38,3 +38,22 @@ class ClassHelpers:
         else:
             my_instance = my_class()
         return my_instance
+
+    @staticmethod
+    def get_full_name_of_instance(o: Any) -> str:
+        klass = o.__class__
+        module = str(klass.__module__)
+        if module == "builtins":
+            return str(klass.__qualname__)  # avoid outputs like 'builtins.str'
+        return module + "." + str(klass.__qualname__)
+
+    @staticmethod
+    def get_function_as_text(fn: Any, strip: Optional[str]) -> str:
+        import inspect
+
+        result: str = "\n".join(
+            [line.strip() for line in inspect.getsourcelines(fn)[0]]
+        )
+        if strip and result.startswith(strip):
+            result = result[len(strip) - 1 :]
+        return result

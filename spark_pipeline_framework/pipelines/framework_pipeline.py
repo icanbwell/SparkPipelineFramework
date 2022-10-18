@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Union
 
 from pyspark.ml.base import Transformer
@@ -123,3 +124,16 @@ class FrameworkPipeline(Transformer):
 
     def finalize(self) -> None:
         pass
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "type": self.__class__.__name__,
+            "params": self.parameters,
+            "steps": [
+                s.as_dict() if not isinstance(s, list) else [s1.as_dict() for s1 in s]
+                for s in self.steps
+            ],
+        }
+
+    def __str__(self) -> str:
+        return json.dumps(self.as_dict(), default=str)

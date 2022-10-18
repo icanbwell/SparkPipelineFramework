@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, TypeVar
 
 # noinspection PyPackageRequirements
@@ -15,6 +16,7 @@ from typing_extensions import final
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 
 T = TypeVar("T")
 
@@ -123,13 +125,29 @@ class FrameworkTransformer(
         super()._set(**kwargs)
 
     def __str__(self) -> str:
-        stage_name: str = ""
-        stage_name += f"name={self.getName()} "
-        if hasattr(self, "getView"):
-            # noinspection Mypy
-            stage_name += f"view={self.getView()} "
-        stage_name += "type=" + self.__class__.__name__
-        return stage_name
+        return json.dumps(self.as_dict(), default=str)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.getName(),
+            "short_type": self.__class__.__name__,
+            "type": ClassHelpers.get_full_name_of_instance(self),
+            "params": {
+                k.name: self.getOrDefault(k)
+                if not callable(self.getOrDefault(k))
+                else ClassHelpers.get_function_as_text(
+                    fn=self.getOrDefault(k), strip=f"{k.name}="
+                )
+                for k, v in self._paramMap.items()
+                if k.name not in ["progress_logger"]
+            },
+        }
+
+    def update_from_dict(self, dictionary: Dict[str, Any]) -> "FrameworkTransformer":
+        if dictionary:
+            for key, value in dictionary.items():
+                setattr(self, key, value)
+        return self
 
     # Have to re-declare here because MyPy does not seem to pick up the overload from base class (Params)
     def getOrDefault(self, param: Param[T]) -> T:
