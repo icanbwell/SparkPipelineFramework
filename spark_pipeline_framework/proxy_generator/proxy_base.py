@@ -170,3 +170,14 @@ class ProxyBase(FrameworkTransformer):
             progress_logger=self.getProgressLogger(),
             mapping_file_name=mapping_file_name,
         )
+
+    def as_dict(self) -> Dict[str, Any]:
+        my_transformers: List[Transformer] = self.transformers
+        if len(my_transformers) == 1 and hasattr(my_transformers[0], "as_dict"):
+            return my_transformers[0].as_dict()  # type: ignore
+        else:
+            return {
+                "transformers": [
+                    t.as_dict() for t in my_transformers if hasattr(t, "as_dict")
+                ]
+            }

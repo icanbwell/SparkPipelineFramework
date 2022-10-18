@@ -55,5 +55,5 @@ class ClassHelpers:
             [line.strip() for line in inspect.getsourcelines(fn)[0]]
         )
         if strip and result.startswith(strip):
-            result = result[len(strip) - 1 :]
+            result = result[len(strip) :]
         return result
