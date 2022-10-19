@@ -16,7 +16,7 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
     def __init__(
         self,
         *,
-        enable: Union[bool, Callable[[DataFrame], bool]],
+        enable: Optional[Union[bool, Callable[[DataFrame], bool]]] = None,
         enable_if_view_not_empty: Optional[
             Union[str, Callable[[Optional[str]], str]]
         ] = None,
@@ -40,7 +40,7 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        self.enable: Union[bool, Callable[[DataFrame], bool]] = enable
+        self.enable: Optional[Union[bool, Callable[[DataFrame], bool]]] = enable
 
         self.enable_if_view_not_empty: Optional[
             Union[str, Callable[[Optional[str]], str]]

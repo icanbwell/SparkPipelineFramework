@@ -12,6 +12,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
 
 
 class FrameworkSqlTransformer(FrameworkTransformer):
@@ -22,6 +23,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         sql: Optional[str] = None,
         view: Optional[str] = None,
         log_sql: bool = False,
+        log_result: bool = False,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -53,6 +55,9 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         self.log_sql: Param[bool] = Param(self, "log_sql", "")
         self._setDefault(log_sql=False)
 
+        self.log_result: Param[bool] = Param(self, "log_result", "")
+        self._setDefault(log_result=False)
+
         self.verify_count_remains_same: Param[bool] = Param(
             self, "verify_count_remains_same", ""
         )
@@ -66,6 +71,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         name: Optional[str] = self.getName()
         view: Optional[str] = self.getView()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+        log_result: bool = self.getLogResult()
 
         assert sql_text
         with ProgressLogMetric(
@@ -81,6 +87,15 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                 self.logger.info(f"Error in {name}")
                 self.logger.info(sql_text)
                 raise
+
+            if log_result:
+                limit = 100
+                message = (
+                    (self.getName() or "") + "\n" + get_pretty_data_frame(df, limit)
+                )
+                self.logger.info(message)
+                if progress_logger:
+                    progress_logger.write_to_log(message)
 
             if view:
                 df.createOrReplaceTempView(view)
@@ -99,6 +114,10 @@ class FrameworkSqlTransformer(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getLogSql(self) -> bool:
         return self.getOrDefault(self.log_sql)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getLogResult(self) -> bool:
+        return self.getOrDefault(self.log_result)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getVerifyCountRemainsSame(self) -> bool:
