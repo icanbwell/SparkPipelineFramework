@@ -100,6 +100,7 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
         return {
             **(super().as_dict()),
             "enable": self.enable,
+            "enable_if_view_not_empty": self.enable_if_view_not_empty,
             "stages": [s.as_dict() for s in self.stages]
             if not callable(self.stages)
             else str(self.stages),
