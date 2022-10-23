@@ -14,6 +14,7 @@ def run_if_else(
     enable_if_view_not_empty: Optional[
         Union[str, Callable[[Optional[str]], str]]
     ] = None,
+    enable_sql: Optional[Union[str, Callable[[Optional[str]], str]]] = None,
     stages: Union[List[Transformer], Callable[[], List[Transformer]]],
     else_stages: Optional[
         Union[List[Transformer], Callable[[], List[Transformer]]]
@@ -25,10 +26,12 @@ def run_if_else(
     :param stages: list of transformers or a function that returns a list of transformers
     :param else_stages: list of transformers or a function that returns a list of transformers
     :param enable_if_view_not_empty: enable if this view is not empty
+    :param enable_sql: enable if this sql returns any results
     """
     return FrameworkIfElseTransformer(
         enable=enable,
         enable_if_view_not_empty=enable_if_view_not_empty,
+        enable_sql=enable_sql,
         stages=stages,
         else_stages=else_stages,
     )
