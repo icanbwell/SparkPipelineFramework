@@ -91,7 +91,9 @@ class FrameworkSqlTransformer(FrameworkTransformer):
             if log_result:
                 limit = 100
                 message = (
-                    (self.getName() or "") + "\n" + get_pretty_data_frame(df, limit)
+                    (self.getName() or "")
+                    + "\n"
+                    + get_pretty_data_frame(df, limit, sql_text)
                 )
                 self.logger.info(message)
                 if progress_logger:
