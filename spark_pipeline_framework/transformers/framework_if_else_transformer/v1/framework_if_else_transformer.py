@@ -92,7 +92,8 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             if progress_logger is not None:
                 progress_logger.write_to_log(
                     self.getName() or "FrameworkIfElseTransformer",
-                    f"Skipping stages because enable {self.enable} did not evaluate to True",
+                    f"Skipping stages because enable {self.enable} or "
+                    + f"enable_if_view_not_empty {self.enable_if_view_not_empty} or enable_sql {self.enable_sql} did not evaluate to True",
                 )
             stages = (
                 []
@@ -116,6 +117,7 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             **(super().as_dict()),
             "enable": self.enable,
             "enable_if_view_not_empty": self.enable_if_view_not_empty,
+            "enable_sql": self.enable_sql,
             "stages": [s.as_dict() for s in self.stages]
             if not callable(self.stages)
             else str(self.stages),
