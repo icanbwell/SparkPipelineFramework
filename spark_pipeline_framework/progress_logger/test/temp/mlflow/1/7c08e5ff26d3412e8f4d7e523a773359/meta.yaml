@@ -1,0 +1,17 @@
+artifact_uri: /SparkpipelineFramework/spark_pipeline_framework/progress_logger/test/temp/mlflow_artifacts/7c08e5ff26d3412e8f4d7e523a773359/artifacts
+end_time: 1666739131003
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+run_id: 7c08e5ff26d3412e8f4d7e523a773359
+run_name: '{"name": "FeatureCarrierPythonTransformer", "short_type": "FeatureCarrierPythonTransformer",
+  "type": "library.features.carriers_python.v1.calculate.FeatureCarrierPythonTransformer",
+  "params": {"name": null, "verify_count_remains_same": false}}'
+run_uuid: 7c08e5ff26d3412e8f4d7e523a773359
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1666739130919
+status: 3
+tags: []
+user_id: root

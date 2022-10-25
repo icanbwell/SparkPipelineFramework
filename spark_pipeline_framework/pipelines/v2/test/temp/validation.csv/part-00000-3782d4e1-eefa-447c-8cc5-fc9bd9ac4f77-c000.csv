@@ -1,0 +1,2 @@
+query,IS_FAILED,MESSAGE
+/SparkpipelineFramework/spark_pipeline_framework/pipelines/v2/test/validate.sql,1,EXPECTED 300 FLIGHTS HAS 45448 FLIGHTS

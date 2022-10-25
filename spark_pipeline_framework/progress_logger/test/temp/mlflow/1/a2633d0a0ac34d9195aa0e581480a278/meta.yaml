@@ -1,0 +1,15 @@
+artifact_uri: /SparkpipelineFramework/spark_pipeline_framework/progress_logger/test/temp/mlflow_artifacts/a2633d0a0ac34d9195aa0e581480a278/artifacts
+end_time: 1666739131829
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+run_id: a2633d0a0ac34d9195aa0e581480a278
+run_name: 'AutoMapper: view=my_view_2 for entity=None'
+run_uuid: a2633d0a0ac34d9195aa0e581480a278
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1666739131633
+status: 3
+tags: []
+user_id: root

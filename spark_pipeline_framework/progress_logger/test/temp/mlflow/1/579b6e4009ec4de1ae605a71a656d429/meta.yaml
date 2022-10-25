@@ -1,0 +1,15 @@
+artifact_uri: /SparkpipelineFramework/spark_pipeline_framework/progress_logger/test/temp/mlflow_artifacts/579b6e4009ec4de1ae605a71a656d429/artifacts
+end_time: 1666739132248
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+run_id: 579b6e4009ec4de1ae605a71a656d429
+run_name: fluffy-fox
+run_uuid: 579b6e4009ec4de1ae605a71a656d429
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1666739130218
+status: 3
+tags: []
+user_id: root
