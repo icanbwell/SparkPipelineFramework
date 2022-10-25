@@ -2,6 +2,7 @@ from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
 
+from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -11,6 +12,7 @@ from spark_pipeline_framework.transformers.http_data_sender.v1.http_data_sender 
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
+
 
 def test_http_data_sender(spark_session: SparkSession) -> None:
     # Arrange

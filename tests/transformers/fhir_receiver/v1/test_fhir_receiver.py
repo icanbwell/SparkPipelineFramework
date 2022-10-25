@@ -2,6 +2,7 @@ from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
 
+from mockserver_client.mock_requests_loader import load_mock_fhir_requests_from_folder
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v1.fhir_receiver import (
