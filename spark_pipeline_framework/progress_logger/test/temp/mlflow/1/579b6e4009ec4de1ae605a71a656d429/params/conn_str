@@ -1,1 +1,0 @@
-jdbc:mysql://username:*******@warehouse-mysql.server:3306/schema?rewriteBatchedStatements=true

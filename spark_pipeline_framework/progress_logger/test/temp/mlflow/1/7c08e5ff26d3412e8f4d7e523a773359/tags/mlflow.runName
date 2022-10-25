@@ -1,1 +1,0 @@
-{"name": "FeatureCarrierPythonTransformer", "short_type": "FeatureCarrierPythonTransformer", "type": "library.features.carriers_python.v1.calculate.FeatureCarrierPythonTransformer", "params": {"name": null, "verify_count_remains_same": false}}
