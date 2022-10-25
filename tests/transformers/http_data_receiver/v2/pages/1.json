@@ -1,0 +1,14 @@
+{
+  "request_parameters": {
+    "method": "GET",
+    "querystring": {
+      "page": "1"
+    }
+  },
+  "request_result": {
+    "result": {
+      "page": 1,
+      "total": 2
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import os
-import boto3  # type: ignore
-from botocore.exceptions import ClientError  # type: ignore
+import boto3
+from botocore.exceptions import ClientError
 from smart_open import s3  # type: ignore
 from pathlib import Path
 from typing import Union, List
@@ -8,7 +8,7 @@ from typing import Union, List
 
 def get_absolute_paths(file_path: Union[str, List[str], Path]) -> List[str]:
     """
-    Abstracts handling of paths so we can use paths on both k8s in AWS as well as local
+    Abstracts handling of paths so we can use paths on both k8s in AWS and local
 
     :param file_path: the path or paths to format appropriately
     :return: a list of paths optimized for local or k8s usages

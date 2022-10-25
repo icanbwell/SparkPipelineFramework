@@ -1,0 +1,427 @@
+[
+  {
+    "resourceType": "Organization",
+    "id": "Medstar-Alias-UHG-MDER",
+    "meta": {
+      "source": "http://medstarhealth.org/practice"
+    },
+    "extension": [
+      {
+        "position": {
+          "longitude": -76.61668,
+          "latitude": 39.32792
+        }
+      }
+    ],
+    "identifier": [
+      {
+        "use": "usual",
+        "system": "http://medstarhealth.org",
+        "value": "Medstar-Alias-UHG-MDER"
+      }
+    ],
+    "active": true,
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "prov",
+            "display": "Healthcare Provider"
+          }
+        ],
+        "text": "Healthcare Organization"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "",
+            "display": "Emergency Room"
+          }
+        ],
+        "text": "ER Indicator"
+      }
+    ],
+    "name": "MedStar Medical Group Dermatology at Honeygo",
+    "alias": [
+      "MedStar Medical Group Dermatology at Honeygo"
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "(410) 256-5858"
+      },
+      {
+        "system": "fax",
+        "value": "(866) 733-0434"
+      }
+    ],
+    "address": [
+      {
+        "line": [
+          "5009 Honeygo Center Drive",
+          "Suite 216"
+        ],
+        "city": "Perry Hall",
+        "state": "MD",
+        "postalCode": "21128"
+      }
+    ],
+    "partOf": {
+      "reference": "Organization/MedStar_Medical_Group_Dermatology_at_Honeygo"
+    },
+    "contact": [
+      {
+        "purpose": {
+          "coding": [
+            {
+              "system": "http://medstarhealth.org",
+              "code": "Central Scheduling"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "resourceType": "Organization",
+    "id": "Medstar-Alias-UHG-MMMA",
+    "meta": {
+      "source": "http://medstarhealth.org/practice"
+    },
+    "extension": [
+      {
+        "position": {
+          "longitude": -76.61668,
+          "latitude": 39.32792
+        }
+      }
+    ],
+    "identifier": [
+      {
+        "use": "usual",
+        "system": "http://medstarhealth.org",
+        "value": "Medstar-Alias-UHG-MMMA"
+      }
+    ],
+    "active": true,
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "prov",
+            "display": "Healthcare Provider"
+          }
+        ],
+        "text": "Healthcare Organization"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "",
+            "display": "Emergency Room"
+          }
+        ],
+        "text": "ER Indicator"
+      }
+    ],
+    "name": "MedStar Medical Group Internal Medicine at Honeygo",
+    "alias": [
+      "MedStar Medical Group Internal Medicine at Honeygo"
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "(410) 256-5858"
+      },
+      {
+        "system": "fax",
+        "value": "(866) 733-0434"
+      }
+    ],
+    "address": [
+      {
+        "line": [
+          "5009 Honeygo Center Drive",
+          "Suite 216"
+        ],
+        "city": "Perry Hall",
+        "state": "MD",
+        "postalCode": "21128"
+      }
+    ],
+    "partOf": {
+      "reference": "Organization/MedStar_Medical_Group_Internal_Medicine_at_Honeygo"
+    },
+    "contact": [
+      {
+        "purpose": {
+          "coding": [
+            {
+              "system": "http://medstarhealth.org",
+              "code": "Central Scheduling"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "resourceType": "Organization",
+    "id": "Medstar-Alias-UHG-MMGA",
+    "meta": {
+      "source": "http://medstarhealth.org/practice"
+    },
+    "extension": [
+      {
+        "position": {
+          "longitude": -76.61668,
+          "latitude": 39.32792
+        }
+      }
+    ],
+    "identifier": [
+      {
+        "use": "usual",
+        "system": "http://medstarhealth.org",
+        "value": "Medstar-Alias-UHG-MMGA"
+      }
+    ],
+    "active": true,
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "prov",
+            "display": "Healthcare Provider"
+          }
+        ],
+        "text": "Healthcare Organization"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "",
+            "display": "Emergency Room"
+          }
+        ],
+        "text": "ER Indicator"
+      }
+    ],
+    "name": "MedStar Medical Group Gastroenterology at Honeygo",
+    "alias": [
+      "MedStar Medical Group Gastroenterology at Honeygo"
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "(410) 256-5858"
+      },
+      {
+        "system": "fax",
+        "value": "(410) 529-2431"
+      }
+    ],
+    "address": [
+      {
+        "line": [
+          "5009 Honeygo Center Drive",
+          "Suite 216"
+        ],
+        "city": "Perry Hall",
+        "state": "MD",
+        "postalCode": "21128"
+      }
+    ],
+    "partOf": {
+      "reference": "Organization/MedStar_Medical_Group_Gastroenterology_at_Honeygo"
+    },
+    "contact": [
+      {
+        "purpose": {
+          "coding": [
+            {
+              "system": "http://medstarhealth.org",
+              "code": "Central Scheduling"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "resourceType": "Organization",
+    "id": "Medstar-Alias-GOB-GGHC",
+    "meta": {
+      "source": "http://medstarhealth.org/practice"
+    },
+    "extension": [
+      {
+        "position": {
+          "longitude": -76.61668,
+          "latitude": 39.32792
+        }
+      }
+    ],
+    "identifier": [
+      {
+        "use": "usual",
+        "system": "http://medstarhealth.org",
+        "value": "Medstar-Alias-GOB-GGHC"
+      }
+    ],
+    "active": true,
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "prov",
+            "display": "Healthcare Provider"
+          }
+        ],
+        "text": "Healthcare Organization"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "",
+            "display": "Emergency Room"
+          }
+        ],
+        "text": "ER Indicator"
+      }
+    ],
+    "name": "MedStar Hep C Clinic at Good Samaritan Good Health Center",
+    "alias": [
+      "MedStar Hep C Clinic at Good Samaritan Good Health Center"
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "(443) 444-4663"
+      },
+      {
+        "system": "fax",
+        "value": "(443) 444-4884"
+      }
+    ],
+    "address": [
+      {
+        "line": [
+          "5601 Loch Raven Blvd",
+          "O'neil Building, 2nd FL"
+        ],
+        "city": "Baltimore",
+        "state": "MD",
+        "postalCode": "21239"
+      }
+    ],
+    "partOf": {
+      "reference": "Organization/MedStar_Good_Samaritan_Hospital_Good_Health_Center"
+    },
+    "contact": [
+      {
+        "purpose": {
+          "coding": [
+            {
+              "system": "http://medstarhealth.org",
+              "code": "Central Scheduling"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "resourceType": "Organization",
+    "id": "Medstar-Alias-GOB-GEMC",
+    "meta": {
+      "source": "http://medstarhealth.org/practice"
+    },
+    "extension": [
+      {
+        "position": {
+          "longitude": -76.61668,
+          "latitude": 39.32792
+        }
+      }
+    ],
+    "identifier": [
+      {
+        "use": "usual",
+        "system": "http://medstarhealth.org",
+        "value": "Medstar-Alias-GOB-GEMC"
+      }
+    ],
+    "active": true,
+    "type": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "prov",
+            "display": "Healthcare Provider"
+          }
+        ],
+        "text": "Healthcare Organization"
+      },
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/organization-type",
+            "code": "",
+            "display": "Emergency Room"
+          }
+        ],
+        "text": "ER Indicator"
+      }
+    ],
+    "name": "MedStar Endocrinology at Good Samaritan Good Health Center",
+    "alias": [
+      "MedStar Endocrinology at Good Samaritan Good Health Center"
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "(443) 444-4663"
+      },
+      {
+        "system": "fax",
+        "value": "(443) 444-4884"
+      }
+    ],
+    "address": [
+      {
+        "line": [
+          "5601 Loch Raven Boulevard",
+          "2nd Floor O'Neill Bldg"
+        ],
+        "city": "Baltimore",
+        "state": "MD",
+        "postalCode": "21239"
+      }
+    ],
+    "partOf": {
+      "reference": "Organization/MedStar_Endocrinology_at_Good_Samaritan_Good_Health_Center"
+    },
+    "contact": [
+      {
+        "purpose": {
+          "coding": [
+            {
+              "system": "http://medstarhealth.org",
+              "code": "Central Scheduling"
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

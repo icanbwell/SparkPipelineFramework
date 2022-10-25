@@ -1,0 +1,2 @@
+class AutomapperToFhirTransformerException(Exception):
+    pass
