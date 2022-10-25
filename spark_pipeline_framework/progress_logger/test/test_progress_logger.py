@@ -159,7 +159,7 @@ def test_progress_logger_with_mlflow(
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
-    export_path: str = str(temp_dir.joinpath("ouptput").joinpath("flights.json"))
+    export_path: str = str(temp_dir.joinpath("output").joinpath("flights.json"))
 
     schema = StructType([])
 

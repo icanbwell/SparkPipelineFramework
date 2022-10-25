@@ -1,6 +1,0 @@
-artifact_location: /SparkpipelineFramework/spark_pipeline_framework/progress_logger/test/temp/mlflow_artifacts
-creation_time: 1666739459884
-experiment_id: '2'
-last_update_time: 1666739459884
-lifecycle_stage: active
-name: error_tests
