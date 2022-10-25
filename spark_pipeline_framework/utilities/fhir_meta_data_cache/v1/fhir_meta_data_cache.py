@@ -31,7 +31,9 @@ class FhirMetaDataCache:
                 url.url,
                 request_type=RequestType.GET,
             )
-            result: Dict[str, Any] = http_request.get_result()
+            status: int
+            result: Dict[str, Any]
+            status, result = http_request.get_result()
             if self.progress_logger:
                 self.progress_logger.write_to_log(
                     f"Received metadata from {url.url}: {json.dumps(result, default=str)}"

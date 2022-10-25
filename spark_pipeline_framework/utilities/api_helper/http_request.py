@@ -4,7 +4,7 @@ helper functions to abstract http requests so we have less repetitive boilerplat
 import json
 from enum import Enum
 from os import environ
-from typing import Optional, Dict, Any, List, Callable, Union
+from typing import Optional, Dict, Any, List, Callable, Union, Tuple
 from urllib import parse
 from urllib.parse import SplitResult, SplitResultBytes
 
@@ -59,7 +59,7 @@ class HelixHttpRequest:
         self.retry_on_status: List[int] = retry_on_status
         self.post_as_json_formatted_string: bool = post_as_json_formatted_string
 
-    def get_result(self) -> Dict[str, Any]:
+    def get_result(self) -> Tuple[int, Dict[str, Any]]:
         """
         Gets a single result.  Use get_results() if you're expecting a list
 
@@ -71,13 +71,13 @@ class HelixHttpRequest:
         # assert len(response.content) > 0, "Response from server was empty"
         try:
             result: Dict[str, Any] = response.json()
-            return result
+            return response.status_code, result
         except JSONDecodeError as e:
             raise Exception(
-                f"Response: {response.text} is not in json format from {self.request_type} {self.url}: {e}"
+                f"Response: {response.text} with status {response.status_code} is not in json format from {self.request_type} {self.url}: {e}"
             ) from e
 
-    def get_results(self) -> List[Dict[str, Any]]:
+    def get_results(self) -> Tuple[int, List[Dict[str, Any]]]:
         """
         Gets a result list.  Use get_result() if you're expecting a single result
 
@@ -88,11 +88,15 @@ class HelixHttpRequest:
         # assert len(response.content) > 0, "Response from server was empty"
         try:
             result: List[Dict[str, Any]] = response.json()
-            return result
+            return response.status_code, result
         except JSONDecodeError as e:
             raise Exception(
-                f"Response: {response.text} is not in json format from {self.request_type} {self.url}: {e}"
+                f"Response: {response.text} with status {response.status_code} is not in json format from {self.request_type} {self.url}: {e}"
             ) from e
+
+    def get_text(self) -> Tuple[int, str]:
+        response = self.get_response()
+        return response.status_code, response.text
 
     def get_response(
         self,

@@ -54,7 +54,7 @@ update: down Pipfile.lock setup-pre-commit  ## Updates all the packages using Pi
 
 .PHONY:tests
 tests:
-	docker-compose run --rm --name spf_tests dev pytest tests
+	docker-compose run --rm --name spf_tests dev pytest tests spark_pipeline_framework
 
 .PHONY:proxies
 proxies:

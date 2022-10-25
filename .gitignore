@@ -154,3 +154,7 @@ tests/**/temp*/
 # mlfow files
 /mlruns
 /mlflow_artifacts
+
+/spark_pipeline_framework/**/test/temp/
+/spark_pipeline_framework/**/test/**/temp/
+/spark_pipeline_framework/progress_logger/test/temp/mlflow/

@@ -11,7 +11,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.json_to_jsonl_converter import (
+from spark_pipeline_framework.utilities.json_to_jsonl_converter.json_to_jsonl_converter import (
     convert_json_to_jsonl,
 )
 
