@@ -13,11 +13,6 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
 
-from tests_common.mock_requests_loader import (
-    load_mock_source_api_responses_from_folder,
-    load_mock_source_api_json_responses,
-)
-
 
 def test_http_data_receiver(spark_session: SparkSession) -> None:
     # Arrange

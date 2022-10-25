@@ -11,10 +11,6 @@ from spark_pipeline_framework.transformers.http_data_sender.v1.http_data_sender 
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
-from spark_pipeline_framework_testing.tests_common.mock_requests_loader import (
-    load_mock_source_api_json_responses,
-)
-
 
 def test_http_data_sender(spark_session: SparkSession) -> None:
     # Arrange

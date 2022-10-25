@@ -11,9 +11,6 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
 from mockserver_client.mockserver_client import MockServerFriendlyClient
-from spark_pipeline_framework_testing.tests_common.mock_requests_loader import (
-    load_mock_source_api_json_responses,
-)
 
 slot_practitioner_graph = {
     "resourceType": "GraphDefinition",

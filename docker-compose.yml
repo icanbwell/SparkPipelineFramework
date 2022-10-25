@@ -57,6 +57,14 @@ services:
       - ./mlflow_artifacts/:/opt/project/mlflow_artifacts/
     command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri mysql+pymysql://root:root_password@warehouse:3306/fhir_rpt --default-artifact-root ./opt/project/mlflow_artifacts
 
+  mock-server:
+    image: mockserver/mockserver:mockserver-5.14.0
+    command: -serverPort 1080
+    ports:
+      - '1080:1080'
+    environment:
+      - MOCKSERVER_LIVENESS_HTTP_GET_PATH=/health
+
 volumes:
   mysql_data:
     labels:

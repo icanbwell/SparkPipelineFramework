@@ -13,10 +13,6 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 
-from spark_pipeline_framework_testing.tests_common.mock_requests_loader import (
-    load_mock_fhir_requests_from_folder,
-)
-
 
 def test_fhir_receiver(spark_session: SparkSession) -> None:
     # Arrange
