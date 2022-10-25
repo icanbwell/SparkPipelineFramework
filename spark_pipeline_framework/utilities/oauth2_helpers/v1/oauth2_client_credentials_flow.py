@@ -41,7 +41,9 @@ class OAuth2ClientCredentialsFlow:
             },
             request_type=RequestType.POST,
         )
-        result: Dict[str, Any] = http_request.get_result()
+        status: int
+        result: Dict[str, Any]
+        status, result = http_request.get_result()
         if self.progress_logger:
             self.progress_logger.write_to_log(
                 f"Received from {self.auth_url}: {json.dumps(result)}"

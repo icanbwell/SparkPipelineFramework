@@ -1,3 +1,4 @@
+import json
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
@@ -62,7 +63,7 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    assert result_df.collect()[0][0].asDict() == {
+    assert json.loads(result_df.collect()[0]["response"]) == {
         "token_type": "bearer",
         "access_token": "fake access_token",
         "expires_in": 54000,

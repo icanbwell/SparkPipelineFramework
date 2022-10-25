@@ -1,9 +1,8 @@
-from typing import Dict, Any, Optional, Iterable, List
+from typing import Dict, Any, Optional, Iterable, List, Union, Tuple
 
 from pyspark import RDD
 from pyspark.ml.param import Param
-from pyspark.sql.types import Row
-from pyspark.sql.types import StructType, StringType, StructField
+from pyspark.sql.types import Row, StructType, StructField, StringType, IntegerType
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
@@ -42,6 +41,7 @@ class HttpDataSender(FrameworkTransformer):
         auth_url: Optional[str] = None,
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
+        parse_response_as_json: Optional[bool] = True,
     ):
         """
         Sends data to http server (usually REST API)
@@ -53,6 +53,7 @@ class HttpDataSender(FrameworkTransformer):
         :param auth_url: (Optional) url to use to authenticate with client credentials
         :param client_id: (Optional) client id to use to authenticate with client credentials
         :param client_secret: (Optional) client secret to use to authenticate with client credentials
+        :param parse_response_as_json: (Optional) whether to parse response as json or not (default = True)
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -79,6 +80,11 @@ class HttpDataSender(FrameworkTransformer):
         self.client_secret: Param[Optional[str]] = Param(self, "client_secret", "")
         self._setDefault(client_secret=None)
 
+        self.parse_response_as_json: Param[Optional[bool]] = Param(
+            self, "parse_response_as_json", ""
+        )
+        self._setDefault(parse_response_as_json=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -91,6 +97,9 @@ class HttpDataSender(FrameworkTransformer):
         source_view: str = self.getOrDefault(self.source_view)
         view: Optional[str] = self.getOrDefault(self.view)
         url: Optional[str] = self.getOrDefault(self.url)
+        parse_response_as_json: Optional[bool] = self.getOrDefault(
+            self.parse_response_as_json
+        )
 
         df = df.sparkSession.table(source_view)
 
@@ -121,13 +130,14 @@ class HttpDataSender(FrameworkTransformer):
             # function that is called for each partition
             def send_partition_to_server(
                 partition_index: int, rows: Iterable[Row]
-            ) -> Iterable[List[Dict[str, Any]]]:
+            ) -> Iterable[List[Tuple[str, int, Union[Dict[str, Any], str]]]]:
                 json_data_list: List[Dict[str, Any]] = [r.asDict() for r in rows]
                 logger = get_logger(__name__)
                 if len(json_data_list) == 0:
                     yield []
 
-                responses = []
+                assert url
+                responses: List[Tuple[str, int, Union[Dict[str, Any], str]]] = []
                 json_data: Dict[str, Any]
                 for json_data in json_data_list:
                     headers["Content-Type"] = "application/x-www-form-urlencoded"
@@ -137,19 +147,38 @@ class HttpDataSender(FrameworkTransformer):
                         headers=headers,
                         payload=json_data,
                     )
-                    responses.append(request.get_result())
+                    if parse_response_as_json:
+                        status, result = request.get_result()
+                        responses.append((url, status, result))
+                    else:
+                        result_text: str
+                        status, result_text = request.get_text()
+                        responses.append((url, status, result_text))
                 yield responses
 
-            schema = StructType([StructField("response", StringType())])
             desired_partitions = 1
             # ---- Now process all the results ----
-            rdd: RDD[List[Dict[str, Any]]] = (
+            rdd: RDD[List[Tuple[str, int, Union[Dict[str, Any], str]]]] = (
                 df.repartition(desired_partitions)
                 .rdd.mapPartitionsWithIndex(send_partition_to_server)
                 .cache()
             )
 
-            result_df = rdd.toDF().withColumnRenamed("_1", "result")
+            schema = StructType(
+                [
+                    StructField(
+                        "result",
+                        StructType(
+                            [
+                                StructField("url", StringType()),
+                                StructField("status", IntegerType()),
+                                StructField("response", StringType()),
+                            ]
+                        ),
+                    )
+                ]
+            )
+            result_df = rdd.toDF(schema=schema).selectExpr("result.*")
             if view:
                 result_df.createOrReplaceTempView(view)
 

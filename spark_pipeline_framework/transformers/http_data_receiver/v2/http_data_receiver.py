@@ -163,20 +163,24 @@ class HttpDataReceiver(FrameworkTransformer):
                         progress_logger.write_to_log(
                             f"Calling API: {http_request.to_string()}..."
                         )
-                    response: Dict[str, Any] = http_request.get_result()
+                    status: int
+                    response: Dict[str, Any]
+                    status, response = http_request.get_result()
 
-                    self.logger.info(f"Successfully retrieved: {http_request.url}")
+                    self.logger.info(
+                        f"Successfully retrieved: {http_request.url} with status {status}"
+                    )
                     if self.getLogResponse():
                         self.logger.info(
                             f"Response: {json.dumps(response, default=str)}"
                         )
                     if progress_logger:
                         progress_logger.write_to_log(
-                            f"Successfully retrieved: {http_request.url}"
+                            f"Successfully retrieved: {http_request.url} with status {status}"
                         )
                         if self.getLogResponse():
                             progress_logger.write_to_log(
-                                f"Response: {json.dumps(response, default=str)}"
+                                f"Response [{status}]: {json.dumps(response, default=str)}"
                             )
 
                     next_request_generator = self.getNextRequestGenerator()
