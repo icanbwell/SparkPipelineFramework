@@ -4,6 +4,9 @@ from shutil import rmtree
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.fhir_receiver.v1.fhir_receiver import (
+    FhirReceiver,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
@@ -13,8 +16,6 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 from spark_pipeline_framework_testing.tests_common.mock_requests_loader import (
     load_mock_fhir_requests_from_folder,
 )
-
-from transformers.fhir_receiver.v1.fhir_receiver import FhirReceiver
 
 
 def test_fhir_receiver(spark_session: SparkSession) -> None:

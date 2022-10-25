@@ -4,8 +4,9 @@ from shutil import rmtree
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.nested_field_name_cleaner.nested_field_name_cleaner import \
-    FrameworkNestedFieldNameCleaner
+from spark_pipeline_framework.transformers.nested_field_name_cleaner.nested_field_name_cleaner import (
+    FrameworkNestedFieldNameCleaner,
+)
 
 
 def test_nested_field_name_cleaner(spark_session: SparkSession) -> None:

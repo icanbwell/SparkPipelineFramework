@@ -10,6 +10,9 @@ from botocore.client import BaseClient
 from pyspark.sql import SparkSession, DataFrame
 from requests import Session
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.download_file_transformer.v1.download_file_transformer import (
+    DownloadFileTransformer,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
@@ -20,10 +23,6 @@ def test_download_file_transformer(
     mocked_session: MagicMock, spark_session: SparkSession, s3_mock: BaseClient
 ) -> None:
     # Arrange
-    from transformers.download_file_transformer.v1.download_file_transformer import (
-        DownloadFileTransformer,
-    )
-
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
     temp_folder = data_dir.joinpath("./temp")

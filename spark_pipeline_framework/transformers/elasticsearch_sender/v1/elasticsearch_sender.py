@@ -3,6 +3,12 @@ import math
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
 
+from spark_pipeline_framework.transformers.elasticsearch_sender.v1.elasticsearch_helpers import (
+    send_json_bundle_to_elasticsearch,
+)
+from spark_pipeline_framework.transformers.elasticsearch_sender.v1.elasticsearch_result import (
+    ElasticSearchResult,
+)
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -19,13 +25,6 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
-)
-
-from transformers.elasticsearch_sender.v1.elasticsearch_helpers import (
-    send_json_bundle_to_elasticsearch,
-)
-from transformers.elasticsearch_sender.v1.elasticsearch_result import (
-    ElasticSearchResult,
 )
 
 

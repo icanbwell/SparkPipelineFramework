@@ -4,7 +4,9 @@ from shutil import rmtree
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.column_name_cleaner.column_name_cleaner import FrameworkColumnNameCleaner
+from spark_pipeline_framework.transformers.column_name_cleaner.column_name_cleaner import (
+    FrameworkColumnNameCleaner,
+)
 
 
 def test_column_name_cleaner(spark_session: SparkSession) -> None:

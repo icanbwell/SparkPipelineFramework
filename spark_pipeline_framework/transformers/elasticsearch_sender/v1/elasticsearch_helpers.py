@@ -5,10 +5,12 @@ from typing import Any, Dict, Iterator, List, Optional
 from opensearchpy.helpers import bulk
 from furl import furl
 
-from transformers.elasticsearch_sender.v1.elasticsearch_result import (
+from spark_pipeline_framework.transformers.elasticsearch_sender.v1.elasticsearch_result import (
     ElasticSearchResult,
 )
-from utilities.elastic_search.elastic_search_connection import ElasticSearchConnection
+from spark_pipeline_framework.utilities.elastic_search.elastic_search_connection import (
+    ElasticSearchConnection,
+)
 
 
 def generate_es_bulk(

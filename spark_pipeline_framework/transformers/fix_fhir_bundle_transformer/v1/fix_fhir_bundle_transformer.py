@@ -14,11 +14,12 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_parse_bundles import (
+    extract_resource_from_json,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
-
-from utilities.fhir_helpers.fhir_parse_bundles import extract_resource_from_json
 
 
 class FixFhirBundleTransformer(FrameworkTransformer):

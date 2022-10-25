@@ -10,6 +10,12 @@ from zipfile import is_zipfile, ZipFile
 import boto3
 import requests
 from boto3.s3.transfer import TransferConfig
+
+from spark_pipeline_framework.utilities.api_helper.http_request import (
+    HelixHttpRequest,
+    RequestType,
+)
+from spark_pipeline_framework.utilities.aws.s3 import parse_s3_uri
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -23,9 +29,6 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from urllib3 import Retry
-from utilities.api_helper.http_request import HelixHttpRequest, RequestType
-
-from utilities.aws.s3 import parse_s3_uri
 
 
 class DownloadFileTransformer(FrameworkTransformer):

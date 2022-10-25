@@ -6,7 +6,7 @@ from urllib import parse as url_parse
 from urllib import request as url_request
 from zipfile import ZipFile, is_zipfile
 
-import boto3  # type: ignore
+import boto3
 import requests
 
 

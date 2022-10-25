@@ -9,8 +9,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-
-from utilities.pyspark_helpers.clean_column_name import (
+from spark_pipeline_framework.utilities.pyspark_helpers.clean_column_name import (
     replace_special_characters_in_columns_in_data_frame,
 )
 

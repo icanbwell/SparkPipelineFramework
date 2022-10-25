@@ -5,14 +5,15 @@ from shutil import rmtree
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.http_data_sender.v1.http_data_sender import (
+    HttpDataSender,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
 from spark_pipeline_framework_testing.tests_common.mock_requests_loader import (
     load_mock_source_api_json_responses,
 )
-
-from transformers.http_data_sender.v1.http_data_sender import HttpDataSender
 
 
 def test_http_data_sender(spark_session: SparkSession) -> None:

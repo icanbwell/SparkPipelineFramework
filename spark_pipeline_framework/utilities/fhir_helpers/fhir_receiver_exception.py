@@ -1,6 +1,8 @@
 from typing import Optional
 
-from helix_fhir_client_sdk.dictionary_writer import convert_dict_to_str
+from spark_pipeline_framework.utilities.dictionary_writer.v1.dictionary_writer import (
+    convert_dict_to_str,
+)
 
 
 class FhirReceiverException(Exception):

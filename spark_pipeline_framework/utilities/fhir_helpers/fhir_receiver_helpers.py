@@ -6,7 +6,9 @@ from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 from helix_fhir_client_sdk.filters.sort_field import SortField
 
-from utilities.fhir_helpers.get_fhir_client import get_fhir_client
+from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+    get_fhir_client,
+)
 
 
 def send_fhir_request(

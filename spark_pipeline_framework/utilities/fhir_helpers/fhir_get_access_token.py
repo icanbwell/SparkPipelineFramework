@@ -2,7 +2,10 @@ from logging import Logger
 from typing import Optional, List
 
 from helix_fhir_client_sdk.fhir_client import FhirClient
-from utilities.fhir_helpers.get_fhir_client import get_fhir_client
+
+from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+    get_fhir_client,
+)
 
 
 def fhir_get_access_token(

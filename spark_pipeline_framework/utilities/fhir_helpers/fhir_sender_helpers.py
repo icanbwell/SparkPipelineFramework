@@ -5,7 +5,9 @@ from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 
-from utilities.fhir_helpers.get_fhir_client import get_fhir_client
+from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+    get_fhir_client,
+)
 
 
 def send_json_bundle_to_fhir(

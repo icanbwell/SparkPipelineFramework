@@ -1,6 +1,7 @@
 import json
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from spark_pipeline_framework.utilities.api_helper.http_request import HelixHttpRequest
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -12,9 +13,10 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.oauth2_helpers.v1.oauth2_client_credentials_flow import (
+    OAuth2ClientCredentialsFlow,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import sc
-
-from utilities.api_helper.http_request import HelixHttpRequest
 
 
 class HttpDataReceiver(FrameworkTransformer):
@@ -49,6 +51,9 @@ class HttpDataReceiver(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         log_response: bool = False,
+        auth_url: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive data from an API
@@ -62,7 +67,9 @@ class HttpDataReceiver(FrameworkTransformer):
         :param next_request_generator: implement this function to keep calling the API and adding to response list.
         it supposed to return a HelixHttpRequest to be used to call the API or return None to end the API call loop
         :param response_processor: it can change the result before loading to spark df
-
+        :param auth_url: (Optional) url to use to authenticate with client credentials
+        :param client_id: (Optional) client id to use to authenticate with client credentials
+        :param client_secret: (Optional) client secret to use to authenticate with client credentials
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -102,6 +109,15 @@ class HttpDataReceiver(FrameworkTransformer):
         ] = Param(self, "response_processor", "")
         self._setDefault(response_processor=None)
 
+        self.auth_url: Param[Optional[str]] = Param(self, "auth_url", "")
+        self._setDefault(auth_url=None)
+
+        self.client_id: Param[Optional[str]] = Param(self, "client_id", "")
+        self._setDefault(client_id=None)
+
+        self.client_secret: Param[Optional[str]] = Param(self, "client_secret", "")
+        self._setDefault(client_secret=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -111,11 +127,33 @@ class HttpDataReceiver(FrameworkTransformer):
         one_iteration_only = self.getOneIteration()
         name: Optional[str] = self.getName()
 
+        auth_url: Optional[str] = self.getOrDefault(self.auth_url)
+        client_id: Optional[str] = self.getOrDefault(self.client_id)
+        client_secret: Optional[str] = self.getOrDefault(self.client_secret)
+
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         with ProgressLogMetric(
             name=f"{name}_http_data_receiver", progress_logger=progress_logger
         ):
+            if client_id and auth_url and client_secret and http_request:
+                # first call auth to get a token
+                oauth2_client_credentials_flow: OAuth2ClientCredentialsFlow = (
+                    OAuth2ClientCredentialsFlow(
+                        auth_url=auth_url,
+                        client_id=client_id,
+                        client_secret=client_secret,
+                        progress_logger=progress_logger,
+                    )
+                )
+
+                access_token: Optional[str] = oauth2_client_credentials_flow.get_token()
+
+                if access_token:
+                    if not http_request.headers:
+                        http_request.headers = {}
+                    http_request.headers["Authorization"] = f"Bearer {access_token}"
+
             responses: List[Dict[str, Any]] = []
             try:
                 while True:

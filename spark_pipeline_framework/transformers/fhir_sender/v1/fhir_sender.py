@@ -21,17 +21,19 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
+    fhir_get_access_token,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import (
+    send_fhir_delete,
+    send_json_bundle_to_fhir,
+)
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
 
 # noinspection PyProtectedMember
-from utilities.fhir_helpers.fhir_get_access_token import fhir_get_access_token
-from utilities.fhir_helpers.fhir_sender_helpers import (
-    send_json_bundle_to_fhir,
-    send_fhir_delete,
-)
 
 
 class FhirSender(FrameworkTransformer):

@@ -6,10 +6,12 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, ArrayType
 from spark_fhir_schemas.r4.complex_types.humanname import HumanNameSchema
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.fhir_bundle_splitter.v1.fhir_bundle_splitter import (
+    FhirBundleSplitter,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
-from transformers.fhir_bundle_splitter.v1.fhir_bundle_splitter import FhirBundleSplitter
 
 
 def test_fhir_bundle_splitter_specified_resource_types(

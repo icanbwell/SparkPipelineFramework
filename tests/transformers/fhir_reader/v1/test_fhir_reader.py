@@ -2,11 +2,11 @@ from pathlib import Path
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_fhir_schemas.r4.resources.patient import PatientSchema
+
+from spark_pipeline_framework.transformers.fhir_reader.v1.fhir_reader import FhirReader
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
-
-from transformers.fhir_reader.v1.fhir_reader import FhirReader
 
 
 def test_fhir_reader(spark_session: SparkSession) -> None:

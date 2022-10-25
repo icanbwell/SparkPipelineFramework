@@ -1,5 +1,10 @@
 from typing import Any, Dict, Optional
 
+from spark_pipeline_framework.utilities.athena.athena import Athena
+from spark_pipeline_framework.utilities.athena.athena_source_file_type import (
+    AthenaSourceFileType,
+)
+
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
@@ -12,9 +17,6 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-
-from utilities.athena.athena import Athena
-from utilities.athena.athena_source_file_type import AthenaSourceFileType
 
 
 class AthenaTableCreator(FrameworkTransformer):
