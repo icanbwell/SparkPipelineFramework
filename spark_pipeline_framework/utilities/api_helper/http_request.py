@@ -138,7 +138,7 @@ class HelixHttpRequest:
     def _send_request(
         self, request_function: Callable, arguments: Dict[str, Any]  # type: ignore
     ) -> Response:
-        if environ["LOGLEVEL"] == "DEBUG":
+        if environ.get("LOGLEVEL") == "DEBUG":
             # https://requests.readthedocs.io/en/latest/api/?highlight=debug#api-changes
             from http.client import HTTPConnection
 

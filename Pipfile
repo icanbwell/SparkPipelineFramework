@@ -52,6 +52,7 @@ vistir="==0.6.1" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
 helix-mockserver-client=">=1.0.0"
 "sparkfhirschemas" = "==1.0.14"
 types-boto3 = ">=1.0.2"
+moto = ">=4.0.7"
 
 [requires]
 python_version = "3.7"

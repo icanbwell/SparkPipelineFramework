@@ -65,7 +65,60 @@ services:
     environment:
       - MOCKSERVER_LIVENESS_HTTP_GET_PATH=/health
 
+  fhir:
+    depends_on:
+      - mongo
+    image: imranq2/node-fhir-server-mongo:2.1.203
+    # To use local fhir code, comment above line and uncomment below
+#    build:
+#      dockerfile: Dockerfile
+#      context: ../node-fhir-server-mongo
+    environment:
+      SERVER_PORT: 3000
+      MONGO_DB_NAME: fhir
+      MONGO_URL: mongodb://mongo:27017
+      AUDIT_EVENT_MONGO_DB_NAME: fhir
+      AUDIT_EVENT_MONGO_URL: mongodb://mongo:27017
+      RESOURCE_SERVER: http://fhir:3000/
+      AUTH_SERVER_URI: http://myauthzserver.com
+      CLIENT_ID: client
+      CLIENT_SECRET: secret
+      INTROSPECTION_URL: https://myauthzserver.com/introspect
+      CHECK_ACCESS_TAG_ON_SAVE: 1
+      IS_PRODUCTION: ""
+      RETURN_BUNDLE: "1"
+      VALIDATE_SCHEMA: "1"
+      AUTH_ENABLED: "0"
+      ENABLE_GRAPHQL: "1"
+      LOGLEVEL: "DEBUG"
+      SET_INDEX_HINTS: 0
+      CREATE_INDEX_ON_COLLECTION_CREATION: 1
+      USE_TWO_STEP_SEARCH_OPTIMIZATION: "0"
+      STREAM_RESPONSE: "1"
+      LOG_STREAM_STEPS: "0"
+      PARTITION_RESOURCES: 'AuditEvent'
+      COLLECTIONS_ACCESS_INDEX: "all"
+      USE_ACCESS_INDEX: 1
+    ports:
+      - '3000:3000'
+    command: yarn start
+    healthcheck:
+        test: ["CMD-SHELL", "curl --silent --fail localhost:3000/health || exit 1"]
+
+  mongo:
+#    image: docker.io/bitnami/mongodb:4.4.9
+    image: mongo:5.0.13
+    ports:
+      - '27017:27017'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+
 volumes:
   mysql_data:
     labels:
       - "mlflow"
+  mongo_data:
