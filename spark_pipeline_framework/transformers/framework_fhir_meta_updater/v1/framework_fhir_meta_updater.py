@@ -63,12 +63,12 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         df = df.sparkSession.table(source_view)
 
         # The schema will be:
-        # { "patient":{"id":1}, "url":"https://foo", "client_slug":"aetna"}
+        # { "patient":{"id":1}, "url":"https://foo", "service_slug":"aetna"}
         df = df.withColumn(
             "id",
             substring(
                 regexp_replace(
-                    str=concat(col("client_slug"), lit("_"), col("id")),
+                    str=concat(col("service_slug"), lit("_"), col("id")),
                     pattern=r"[^A-Za-z0-9\-\.]",
                     replacement="-",
                 ),
@@ -89,22 +89,22 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
                 array(
                     struct(
                         lit(owner_codeset).alias("system"),
-                        lit(col("client_slug")).alias("code"),
+                        lit(col("service_slug")).alias("code"),
                     ),
                     struct(
                         lit(access_codeset).alias("system"),
-                        lit(col("client_slug")).alias("code"),
+                        lit(col("service_slug")).alias("code"),
                     ),
                     struct(
                         lit(vendor_codeset).alias("system"),
-                        lit(col("client_slug")).alias("code"),
+                        lit(col("service_slug")).alias("code"),
                     ),
                 ).alias("security"),
             ),
         )
 
         # drop the extra columns
-        df = df.drop("client_source_url", "client_slug")
+        df = df.drop("client_source_url", "service_slug")
         df.createOrReplaceTempView(view)
         return df
 
