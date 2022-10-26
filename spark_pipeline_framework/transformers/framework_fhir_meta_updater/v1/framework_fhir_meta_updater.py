@@ -32,10 +32,18 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
+        slug_column: str,
+        url_column: str,
     ):
-        f"""
+        """
         Used to add/update the meta field with the b.well mandatory stuff
 
+
+        :param resource_type: type of resource to update
+        :param source_view: read from this view
+        :param view: write to this view
+        :param slug_column: use this column to set the security tags
+        :param url_column: column to read the url
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -52,6 +60,12 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         self.source_view: Param[str] = Param(self, "source_view", "")
         self._setDefault(source_view=None)
 
+        self.slug_column: Param[str] = Param(self, "slug_column", "")
+        self._setDefault(slug_column=None)
+
+        self.url_column: Param[str] = Param(self, "url_column", "")
+        self._setDefault(url_column=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -59,16 +73,19 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         view: str = self.getView()
         source_view: str = self.getSourceView()
         resource_type: str = self.getResourceType()
+        slug_column: str = self.getOrDefault(self.slug_column)
+        url_column: str = self.getOrDefault(self.url_column)
 
         df = df.sparkSession.table(source_view)
 
         # The schema will be:
-        # { "patient":{"id":1}, "url":"https://foo", "client_slug":"aetna"}
+        # { "patient":{"id":1}, "url":"https://foo", "service_slug":"aetna"}
+
         df = df.withColumn(
             "id",
             substring(
                 regexp_replace(
-                    str=concat(col("client_slug"), lit("_"), col("id")),
+                    str=concat(col(slug_column), lit("_"), col("id")),
                     pattern=r"[^A-Za-z0-9\-\.]",
                     replacement="-",
                 ),
@@ -83,28 +100,28 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         df = df.withColumn(
             "meta",
             struct(
-                concat(
-                    col("client_source_url"), lit(f"/{resource_type}/"), col("id")
-                ).alias("source"),
+                concat(col(url_column), lit(f"/{resource_type}/"), col("id")).alias(
+                    "source"
+                ),
                 array(
                     struct(
                         lit(owner_codeset).alias("system"),
-                        lit(col("client_slug")).alias("code"),
+                        lit(col(slug_column)).alias("code"),
                     ),
                     struct(
                         lit(access_codeset).alias("system"),
-                        lit(col("client_slug")).alias("code"),
+                        lit(col(slug_column)).alias("code"),
                     ),
                     struct(
                         lit(vendor_codeset).alias("system"),
-                        lit(col("client_slug")).alias("code"),
+                        lit(col(slug_column)).alias("code"),
                     ),
                 ).alias("security"),
             ),
         )
 
         # drop the extra columns
-        df = df.drop("client_source_url", "client_slug")
+        df = df.drop(url_column, slug_column)
         df.createOrReplaceTempView(view)
         return df
 
