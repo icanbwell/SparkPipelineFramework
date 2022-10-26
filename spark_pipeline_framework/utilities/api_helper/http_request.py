@@ -4,7 +4,7 @@ helper functions to abstract http requests so we have less repetitive boilerplat
 import json
 from enum import Enum
 from os import environ
-from typing import Optional, Dict, Any, List, Callable, Union, Tuple
+from typing import Optional, Dict, Any, List, Callable, Union, NamedTuple
 from urllib import parse
 from urllib.parse import SplitResult, SplitResultBytes
 
@@ -12,6 +12,8 @@ import requests
 from requests import Session, JSONDecodeError, HTTPError
 from requests.adapters import HTTPAdapter, Response
 from spark_pipeline_framework.logger.yarn_logger import Logger  # type: ignore
+
+# noinspection PyPackageRequirements
 from urllib3 import Retry
 
 
@@ -21,6 +23,24 @@ class RequestType(Enum):
     POST = "post"
     GET = "get"
     HEAD = "head"
+
+
+class SingleJsonResult(NamedTuple):
+    url: str
+    status: int
+    result: Dict[str, Any]
+
+
+class ListJsonResult(NamedTuple):
+    url: str
+    status: int
+    result: List[Dict[str, Any]]
+
+
+class SingleTextResult(NamedTuple):
+    url: str
+    status: int
+    result: str
 
 
 class HelixHttpRequest:
@@ -39,7 +59,8 @@ class HelixHttpRequest:
     # noinspection PyDefaultArgument
     def __init__(
         self,
-        url: Optional[str],
+        *,
+        url: str,
         request_type: RequestType = RequestType.GET,
         headers: Optional[Dict[str, str]] = {"User-Agent": "Mozilla/5.0"},
         payload: Optional[Dict[str, str]] = None,
@@ -49,7 +70,7 @@ class HelixHttpRequest:
         logger: Optional[Logger] = None,
         post_as_json_formatted_string: bool = False,
     ):
-        self.url: Optional[str] = url
+        self.url: str = url
         self.request_type = request_type
         self.headers: Optional[Dict[str, str]] = headers
         self.payload: Optional[Dict[str, str]] = payload
@@ -59,7 +80,7 @@ class HelixHttpRequest:
         self.retry_on_status: List[int] = retry_on_status
         self.post_as_json_formatted_string: bool = post_as_json_formatted_string
 
-    def get_result(self) -> Tuple[int, Dict[str, Any]]:
+    def get_result(self) -> SingleJsonResult:
         """
         Gets a single result.  Use get_results() if you're expecting a list
 
@@ -71,13 +92,15 @@ class HelixHttpRequest:
         # assert len(response.content) > 0, "Response from server was empty"
         try:
             result: Dict[str, Any] = response.json()
-            return response.status_code, result
+            return SingleJsonResult(
+                url=self.url, status=response.status_code, result=result
+            )
         except JSONDecodeError as e:
             raise Exception(
                 f"Response: {response.text} with status {response.status_code} is not in json format from {self.request_type} {self.url}: {e}"
             ) from e
 
-    def get_results(self) -> Tuple[int, List[Dict[str, Any]]]:
+    def get_results(self) -> ListJsonResult:
         """
         Gets a result list.  Use get_result() if you're expecting a single result
 
@@ -88,15 +111,19 @@ class HelixHttpRequest:
         # assert len(response.content) > 0, "Response from server was empty"
         try:
             result: List[Dict[str, Any]] = response.json()
-            return response.status_code, result
+            return ListJsonResult(
+                url=self.url, status=response.status_code, result=result
+            )
         except JSONDecodeError as e:
             raise Exception(
                 f"Response: {response.text} with status {response.status_code} is not in json format from {self.request_type} {self.url}: {e}"
             ) from e
 
-    def get_text(self) -> Tuple[int, str]:
+    def get_text(self) -> SingleTextResult:
         response = self.get_response()
-        return response.status_code, response.text
+        return SingleTextResult(
+            url=self.url, status=response.status_code, result=response.text
+        )
 
     def get_response(
         self,

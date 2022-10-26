@@ -28,17 +28,15 @@ class FhirMetaDataCache:
         url /= "metadata"
         try:
             http_request = HelixHttpRequest(
-                url.url,
+                url=url.url,
                 request_type=RequestType.GET,
             )
-            status: int
-            result: Dict[str, Any]
-            status, result = http_request.get_result()
+            response = http_request.get_result()
             if self.progress_logger:
                 self.progress_logger.write_to_log(
-                    f"Received metadata from {url.url}: {json.dumps(result, default=str)}"
+                    f"Received metadata from {url.url}: {json.dumps(response.result, default=str)}"
                 )
-            return result
+            return response.result
         except Exception as e:
             if self.progress_logger:
                 self.progress_logger.write_to_log(
