@@ -163,29 +163,29 @@ class HttpDataReceiver(FrameworkTransformer):
                         progress_logger.write_to_log(
                             f"Calling API: {http_request.to_string()}..."
                         )
-                    status: int
-                    response: Dict[str, Any]
-                    status, response = http_request.get_result()
+                    response = http_request.get_result()
 
                     self.logger.info(
-                        f"Successfully retrieved: {http_request.url} with status {status}"
+                        f"Successfully retrieved: {http_request.url} with status {response.status}"
                     )
                     if self.getLogResponse():
                         self.logger.info(
-                            f"Response: {json.dumps(response, default=str)}"
+                            f"Response: {json.dumps(response.result, default=str)}"
                         )
                     if progress_logger:
                         progress_logger.write_to_log(
-                            f"Successfully retrieved: {http_request.url} with status {status}"
+                            f"Successfully retrieved: {http_request.url} with status {response.status}"
                         )
                         if self.getLogResponse():
                             progress_logger.write_to_log(
-                                f"Response [{status}]: {json.dumps(response, default=str)}"
+                                f"Response [{response.status}]: {json.dumps(response.result, default=str)}"
                             )
 
                     next_request_generator = self.getNextRequestGenerator()
                     http_request = (
-                        next_request_generator(http_request, response, progress_logger)
+                        next_request_generator(
+                            http_request, response.result, progress_logger
+                        )
                         if next_request_generator and not one_iteration_only
                         else None
                     )
@@ -193,12 +193,12 @@ class HttpDataReceiver(FrameworkTransformer):
                     response_processor = self.getResponseProcessor()
                     if response_processor:
                         responses = response_processor(
-                            responses, response, progress_logger
+                            responses, response.result, progress_logger
                         )
                     else:
-                        responses.append(response)
+                        responses.append(response.result)
 
-                    if http_request is None or not response:
+                    if http_request is None or not response.result:
                         break
 
                 df2 = df.sql_ctx.read.json(

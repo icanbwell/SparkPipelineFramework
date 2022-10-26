@@ -148,12 +148,15 @@ class HttpDataSender(FrameworkTransformer):
                         payload=json_data,
                     )
                     if parse_response_as_json:
-                        status, result = request.get_result()
-                        responses.append((url, status, result))
+                        response_json = request.get_result()
+                        responses.append(
+                            (url, response_json.status, response_json.result)
+                        )
                     else:
-                        result_text: str
-                        status, result_text = request.get_text()
-                        responses.append((url, status, result_text))
+                        response_text = request.get_text()
+                        responses.append(
+                            (url, response_text.status, response_text.result)
+                        )
                 yield responses
 
             desired_partitions = 1

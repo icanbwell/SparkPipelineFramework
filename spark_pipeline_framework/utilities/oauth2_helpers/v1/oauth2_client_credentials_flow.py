@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.api_helper.http_request import (
@@ -33,7 +33,7 @@ class OAuth2ClientCredentialsFlow:
 
     def get_token(self) -> Optional[str]:
         http_request = HelixHttpRequest(
-            self.auth_url,
+            url=self.auth_url,
             payload={
                 "client_id": self.client_id,
                 "client_secret": self.client_secret,
@@ -41,13 +41,12 @@ class OAuth2ClientCredentialsFlow:
             },
             request_type=RequestType.POST,
         )
-        status: int
-        result: Dict[str, Any]
-        status, result = http_request.get_result()
+
+        response = http_request.get_result()
         if self.progress_logger:
             self.progress_logger.write_to_log(
-                f"Received from {self.auth_url}: {json.dumps(result)}"
+                f"Received from {self.auth_url}: {json.dumps(response.result)}"
             )
-        token = result.get("access_token")
+        token = response.result.get("access_token")
 
         return token
