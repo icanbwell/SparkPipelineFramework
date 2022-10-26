@@ -1,3 +1,4 @@
+import asyncio
 import json
 import math
 from datetime import datetime
@@ -389,7 +390,7 @@ class FhirReceiver(FrameworkTransformer):
                     f"----- Total Batches: {desired_partitions} for {server_url}/{resource_name}  -----"
                 )
 
-                def send_simple_fhir_request(
+                async def send_simple_fhir_request(
                     *,
                     id_: Optional[Union[str, List[str]]],
                     token_: Optional[str],
@@ -399,7 +400,7 @@ class FhirReceiver(FrameworkTransformer):
                 ) -> FhirGetResponse:
                     url = server_url_ or server_url
                     assert url
-                    return send_fhir_request(
+                    return await send_fhir_request(
                         logger=get_logger(__name__),
                         action=action,
                         action_payload=action_payload,
@@ -427,13 +428,13 @@ class FhirReceiver(FrameworkTransformer):
                         else None,
                     )
 
-                def process_batch(
+                async def process_batch(
                     partition_index: int,
                     first_id: Optional[str],
                     last_id: Optional[str],
                     resource_id_with_token_list: List[Dict[str, Optional[str]]],
-                ) -> Iterable[Row]:
-                    result1 = send_simple_fhir_request(
+                ) -> List[Row]:
+                    result1 = await send_simple_fhir_request(
                         id_=[
                             cast(str, r["resource_id"])
                             for r in resource_id_with_token_list
@@ -449,24 +450,29 @@ class FhirReceiver(FrameworkTransformer):
                     is_valid_response: bool = (
                         True if len(responses_from_fhir) > 0 else False
                     )
-                    yield Row(
-                        partition_index=partition_index,
-                        sent=1,
-                        received=len(responses_from_fhir) if is_valid_response else 0,
-                        responses=responses_from_fhir if is_valid_response else [],
-                        first=first_id,
-                        last=last_id,
-                        error_text=error_text,
-                        url=result1.url,
-                        status_code=status_code,
-                    )
+                    return [
+                        Row(
+                            partition_index=partition_index,
+                            sent=1,
+                            received=len(responses_from_fhir)
+                            if is_valid_response
+                            else 0,
+                            responses=responses_from_fhir if is_valid_response else [],
+                            first=first_id,
+                            last=last_id,
+                            error_text=error_text,
+                            url=result1.url,
+                            status_code=status_code,
+                        )
+                    ]
 
-                def process_one_by_one(
+                async def process_one_by_one(
                     partition_index: int,
                     first_id: Optional[str],
                     last_id: Optional[str],
                     resource_id_with_token_list: List[Dict[str, Optional[str]]],
-                ) -> Iterable[Row]:
+                ) -> List[Row]:
+                    result_one_by_one: List[Row] = []
                     for resource1 in resource_id_with_token_list:
                         id_ = resource1["resource_id"]
                         token_ = resource1["access_token"]
@@ -475,7 +481,7 @@ class FhirReceiver(FrameworkTransformer):
                             resource1.get(slug_column) if slug_column else None
                         )
                         resource_type = resource1.get("resourceType")
-                        result1 = send_simple_fhir_request(
+                        result1 = await send_simple_fhir_request(
                             id_=id_,
                             token_=token_,
                             server_url_=url_ or server_url,
@@ -489,24 +495,29 @@ class FhirReceiver(FrameworkTransformer):
                         is_valid_response: bool = (
                             True if len(responses_from_fhir) > 0 else False
                         )
-                        yield Row(
-                            partition_index=partition_index,
-                            sent=1,
-                            received=len(responses_from_fhir)
-                            if is_valid_response
-                            else 0,
-                            responses=responses_from_fhir if is_valid_response else [],
-                            first=first_id,
-                            last=last_id,
-                            error_text=error_text,
-                            url=result1.url,
-                            status_code=status_code,
+                        result_one_by_one.append(
+                            Row(
+                                partition_index=partition_index,
+                                sent=1,
+                                received=len(responses_from_fhir)
+                                if is_valid_response
+                                else 0,
+                                responses=responses_from_fhir
+                                if is_valid_response
+                                else [],
+                                first=first_id,
+                                last=last_id,
+                                error_text=error_text,
+                                url=result1.url,
+                                status_code=status_code,
+                            )
                         )
+                    return result_one_by_one
 
-                def process_with_token(
+                async def process_with_token(
                     partition_index: int,
                     resource_id_with_token_list: List[Dict[str, Optional[str]]],
-                ) -> Iterable[Row]:
+                ) -> List[Row]:
                     try:
                         first_id: Optional[str] = resource_id_with_token_list[0][
                             "resource_id"
@@ -524,29 +535,30 @@ class FhirReceiver(FrameworkTransformer):
                     sent: int = len(resource_id_with_token_list)
 
                     if sent == 0:
-                        yield Row(
-                            partition_index=partition_index,
-                            sent=0,
-                            received=0,
-                            responses=[],
-                            first=None,
-                            last=None,
-                            error_text=None,
-                            url=None,
-                            status_code=None,
-                        )
-                        return
+                        return [
+                            Row(
+                                partition_index=partition_index,
+                                sent=0,
+                                received=0,
+                                responses=[],
+                                first=None,
+                                last=None,
+                                error_text=None,
+                                url=None,
+                                status_code=None,
+                            )
+                        ]
 
                     # if batch and not has_token then send all ids at once as long as the access token is the same
                     if batch_size and batch_size > 1 and not has_token_col:
-                        yield from process_batch(
+                        return await process_batch(
                             partition_index=partition_index,
                             first_id=first_id,
                             last_id=last_id,
                             resource_id_with_token_list=resource_id_with_token_list,
                         )
                     else:  # otherwise send one by one
-                        yield from process_one_by_one(
+                        return await process_one_by_one(
                             partition_index=partition_index,
                             first_id=first_id,
                             last_id=last_id,
@@ -556,7 +568,7 @@ class FhirReceiver(FrameworkTransformer):
                 # function that is called for each partition
                 def send_partition_request_to_server(
                     partition_index: int, rows: Iterable[Row]
-                ) -> Iterable[Row]:
+                ) -> List[Row]:
                     resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
                         {
                             "resource_id": r["id"],
@@ -574,9 +586,11 @@ class FhirReceiver(FrameworkTransformer):
                         else {"resource_id": r["id"], "access_token": auth_access_token}
                         for r in rows
                     ]
-                    yield from process_with_token(
-                        partition_index=partition_index,
-                        resource_id_with_token_list=resource_id_with_token_list,
+                    return asyncio.run(
+                        process_with_token(
+                            partition_index=partition_index,
+                            resource_id_with_token_list=resource_id_with_token_list,
+                        )
                     )
 
                 if has_token_col and not server_url:
@@ -751,7 +765,7 @@ class FhirReceiver(FrameworkTransformer):
                 server_page_number: int = 0
                 assert server_url
                 while True:
-                    result = send_fhir_request(
+                    result = await send_fhir_request(  # type: ignore
                         logger=get_logger(__name__),
                         action=action,
                         action_payload=action_payload,

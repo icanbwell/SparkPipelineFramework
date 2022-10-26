@@ -11,7 +11,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
 )
 
 
-def send_fhir_request(
+async def send_fhir_request(
     logger: Logger,
     action: Optional[str],
     action_payload: Optional[Dict[str, Any]],
@@ -127,4 +127,4 @@ def send_fhir_request(
 
     if extra_context_to_return:
         fhir_client = fhir_client.extra_context_to_return(extra_context_to_return)
-    return fhir_client.get()
+    return await fhir_client.get_async()
