@@ -381,7 +381,8 @@ class FhirReceiver(FrameworkTransformer):
                     id_: Optional[Union[str, List[str]]],
                     token_: Optional[str],
                     server_url_: Optional[str],
-                    client_slug: Optional[str] = None,
+                    service_slug: Optional[str] = None,
+                    resource_type: str,
                 ) -> FhirGetResponse:
                     url = server_url_ or server_url
                     assert url
@@ -393,7 +394,7 @@ class FhirReceiver(FrameworkTransformer):
                         filter_by_resource=filter_by_resource,
                         filter_parameter=filter_parameter,
                         sort_fields=sort_fields,
-                        resource_name=resource_name,
+                        resource_name=resource_type,
                         resource_id=id_,
                         server_url=url,
                         auth_server_url=auth_server_url,
@@ -408,8 +409,8 @@ class FhirReceiver(FrameworkTransformer):
                         accept_type=accept_type,
                         content_type=content_type,
                         accept_encoding=accept_encoding,
-                        extra_context_to_return={"client_slug": client_slug}
-                        if client_slug
+                        extra_context_to_return={"service_slug": service_slug}
+                        if service_slug
                         else None,
                     )
 
@@ -426,6 +427,7 @@ class FhirReceiver(FrameworkTransformer):
                         ],
                         token_=auth_access_token,
                         server_url_=server_url,
+                        resource_type=resource_name,
                     )
                     resp_result: str = result1.responses.replace("\n", "")
                     responses_from_fhir = self.json_str_to_list_str(resp_result)
@@ -456,12 +458,14 @@ class FhirReceiver(FrameworkTransformer):
                         id_ = resource1["resource_id"]
                         token_ = resource1["access_token"]
                         url_ = resource1.get("url")
-                        client_slug = resource1.get("client_slug")
+                        service_slug = resource1.get("service_slug")
+                        resource_type = resource1.get("resourceType")
                         result1 = send_simple_fhir_request(
                             id_=id_,
                             token_=token_,
                             server_url_=url_ or server_url,
-                            client_slug=client_slug,
+                            service_slug=service_slug,
+                            resource_type=resource_type or resource_name,
                         )
                         resp_result: str = result1.responses.replace("\n", "")
                         responses_from_fhir = self.json_str_to_list_str(resp_result)
@@ -543,7 +547,8 @@ class FhirReceiver(FrameworkTransformer):
                             "resource_id": r["id"],
                             "access_token": r["token"],
                             "url": r["url"],
-                            "client_slug": r["client_slug"],
+                            "service_slug": r["service_slug"],
+                            "resourceType": r["resourceType"],
                         }
                         if has_token_col and not server_url
                         else {
@@ -561,7 +566,11 @@ class FhirReceiver(FrameworkTransformer):
 
                 if has_token_col and not server_url:
                     assert all(
-                        [c for c in ["url", "client_slug"] if [c in id_df.columns]]
+                        [
+                            c
+                            for c in ["url", "service_slug", "resourceType"]
+                            if [c in id_df.columns]
+                        ]
                     )
 
                 # run the above function on every partition
