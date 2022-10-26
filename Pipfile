@@ -26,6 +26,7 @@ fastjsonschema= "*"
 "helix.fhir.client.sdk" = ">=1.0.23"
 opensearch-py= "*"
 pyathena = "*"
+spark-nlp = "*"
 
 [dev-packages]
 setuptools=">=61.3.1"
