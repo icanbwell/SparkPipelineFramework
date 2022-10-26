@@ -580,6 +580,8 @@ class FhirReceiver(FrameworkTransformer):
                     )
 
                 if has_token_col and not server_url:
+                    assert slug_column
+                    assert url_column
                     assert all(
                         [
                             c
