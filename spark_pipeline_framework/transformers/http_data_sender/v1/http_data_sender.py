@@ -1,8 +1,8 @@
-from typing import Dict, Any, Optional, Iterable, List, Union, Tuple
+from typing import Any, Dict, Iterable, List, Optional
 
 from pyspark import RDD
 from pyspark.ml.param import Param
-from pyspark.sql.types import Row, StructType, StructField, StringType, IntegerType
+from pyspark.sql.types import Row
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
@@ -130,14 +130,13 @@ class HttpDataSender(FrameworkTransformer):
             # function that is called for each partition
             def send_partition_to_server(
                 partition_index: int, rows: Iterable[Row]
-            ) -> Iterable[List[Tuple[str, int, Union[Dict[str, Any], str]]]]:
+            ) -> Iterable[Row]:
                 json_data_list: List[Dict[str, Any]] = [r.asDict() for r in rows]
                 logger = get_logger(__name__)
                 if len(json_data_list) == 0:
-                    yield []
+                    yield Row(url=None, status=0, result=None)
 
                 assert url
-                responses: List[Tuple[str, int, Union[Dict[str, Any], str]]] = []
                 json_data: Dict[str, Any]
                 for json_data in json_data_list:
                     headers["Content-Type"] = "application/x-www-form-urlencoded"
@@ -149,39 +148,28 @@ class HttpDataSender(FrameworkTransformer):
                     )
                     if parse_response_as_json:
                         response_json = request.get_result()
-                        responses.append(
-                            (url, response_json.status, response_json.result)
+                        yield Row(
+                            url=url,
+                            status=response_json.status,
+                            result=response_json.result,
                         )
                     else:
                         response_text = request.get_text()
-                        responses.append(
-                            (url, response_text.status, response_text.result)
+                        yield Row(
+                            url=url,
+                            status=response_text.status,
+                            result=response_text.result,
                         )
-                yield responses
 
             desired_partitions = 1
             # ---- Now process all the results ----
-            rdd: RDD[List[Tuple[str, int, Union[Dict[str, Any], str]]]] = (
+            rdd: RDD[Row] = (
                 df.repartition(desired_partitions)
                 .rdd.mapPartitionsWithIndex(send_partition_to_server)
                 .cache()
             )
 
-            schema = StructType(
-                [
-                    StructField(
-                        "result",
-                        StructType(
-                            [
-                                StructField("url", StringType()),
-                                StructField("status", IntegerType()),
-                                StructField("response", StringType()),
-                            ]
-                        ),
-                    )
-                ]
-            )
-            result_df = rdd.toDF(schema=schema).selectExpr("result.*")
+            result_df = rdd.toDF()
             if view:
                 result_df.createOrReplaceTempView(view)
 
