@@ -90,6 +90,8 @@ class FhirReceiver(FrameworkTransformer):
         mode: str = FileWriteModes.MODE_OVERWRITE,
         ignore_status_codes: Optional[List[int]] = None,
         verify_counts_match: Optional[bool] = True,
+        slug_column: Optional[str] = None,
+        url_column: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -127,6 +129,8 @@ class FhirReceiver(FrameworkTransformer):
         :param accept_encoding: (Optional) Accept-encoding header to use
         :param ignore_status_codes: (Optional) do not throw an exception for these HTTP status codes
         :param mode: if output files exist, should we overwrite or append
+        :param slug_column: (Optional) use this column to set the security tags
+        :param url_column: (Optional) column to read the url
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -279,6 +283,12 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(verify_counts_match=None)
 
+        self.slug_column: Param[Optional[str]] = Param(self, "slug_column", "")
+        self._setDefault(slug_column=None)
+
+        self.url_column: Param[Optional[str]] = Param(self, "url_column", "")
+        self._setDefault(url_column=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -328,6 +338,9 @@ class FhirReceiver(FrameworkTransformer):
 
         verify_counts_match: Optional[bool] = self.getVerifyCountsMatch()
         mode: str = self.getMode()
+
+        slug_column: Optional[str] = self.getOrDefault(self.slug_column)
+        url_column: Optional[str] = self.getOrDefault(self.url_column)
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -409,8 +422,8 @@ class FhirReceiver(FrameworkTransformer):
                         accept_type=accept_type,
                         content_type=content_type,
                         accept_encoding=accept_encoding,
-                        extra_context_to_return={"service_slug": service_slug}
-                        if service_slug
+                        extra_context_to_return={slug_column: service_slug}
+                        if slug_column and service_slug
                         else None,
                     )
 
@@ -457,8 +470,10 @@ class FhirReceiver(FrameworkTransformer):
                     for resource1 in resource_id_with_token_list:
                         id_ = resource1["resource_id"]
                         token_ = resource1["access_token"]
-                        url_ = resource1.get("url")
-                        service_slug = resource1.get("service_slug")
+                        url_ = resource1.get(url_column) if url_column else None
+                        service_slug = (
+                            resource1.get(slug_column) if slug_column else None
+                        )
                         resource_type = resource1.get("resourceType")
                         result1 = send_simple_fhir_request(
                             id_=id_,
@@ -546,8 +561,8 @@ class FhirReceiver(FrameworkTransformer):
                         {
                             "resource_id": r["id"],
                             "access_token": r["token"],
-                            "url": r["url"],
-                            "service_slug": r["service_slug"],
+                            url_column: r[url_column],  # type: ignore
+                            slug_column: r[slug_column],  # type: ignore
                             "resourceType": r["resourceType"],
                         }
                         if has_token_col and not server_url
@@ -568,7 +583,7 @@ class FhirReceiver(FrameworkTransformer):
                     assert all(
                         [
                             c
-                            for c in ["url", "service_slug", "resourceType"]
+                            for c in [url_column, slug_column, "resourceType"]
                             if [c in id_df.columns]
                         ]
                     )
