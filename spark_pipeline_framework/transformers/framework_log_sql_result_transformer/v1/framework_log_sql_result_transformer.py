@@ -46,6 +46,7 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        name = self.getName()
         sql: Optional[str] = self.getSql()
         view: Optional[str] = self.getOrDefault(self.view)
         limit = self.getLimit()
@@ -61,14 +62,16 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
 
         if not limit or limit < 0:
             limit = 1000
+
         message = (
-            (self.getName() or view or "")
+            (name or view or "")
             + "\n"
             + get_pretty_data_frame(df2, limit, name=sql or view)
         )
         self.logger.info(message)
         if progress_logger:
             progress_logger.write_to_log(message)
+            progress_logger.log_artifact(key=f"{name or view}.csv", contents=message)
 
         return df
 

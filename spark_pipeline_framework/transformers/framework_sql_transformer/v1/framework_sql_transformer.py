@@ -91,13 +91,16 @@ class FrameworkSqlTransformer(FrameworkTransformer):
             if log_result:
                 limit = 100
                 message = (
-                    (self.getName() or "")
+                    (name or view or "")
                     + "\n"
                     + get_pretty_data_frame(df, limit, sql_text)
                 )
                 self.logger.info(message)
                 if progress_logger:
                     progress_logger.write_to_log(message)
+                    progress_logger.log_artifact(
+                        key=f"{name or view}.csv", contents=message
+                    )
 
             if view:
                 df.createOrReplaceTempView(view)
