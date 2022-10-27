@@ -68,6 +68,7 @@ class FhirSender(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         mode: str = FileWriteModes.MODE_OVERWRITE,
         error_view: Optional[str] = None,
+        view: Optional[str] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -88,6 +89,7 @@ class FhirSender(FrameworkTransformer):
         :param mode: if output files exist, should we overwrite or append
         :param error_view: (Optional) log errors into this view (view only exists IF there are errors) and don't throw exceptions.
                             schema: id, resourceType, issue
+        :param view: (Optional) store merge result in this view
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -169,6 +171,9 @@ class FhirSender(FrameworkTransformer):
         self.error_view: Param[Optional[str]] = Param(self, "error_view", "")
         self._setDefault(error_view=None)
 
+        self.view: Param[Optional[str]] = Param(self, "view", "")
+        self._setDefault(view=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -208,6 +213,7 @@ class FhirSender(FrameworkTransformer):
         auth_access_token: Optional[str] = None
 
         error_view: Optional[str] = self.getOrDefault(self.error_view)
+        view: Optional[str] = self.getOrDefault(self.view)
 
         # get access token first so we can reuse it
         if auth_client_id:
@@ -427,6 +433,8 @@ class FhirSender(FrameworkTransformer):
                         self.logger.info(
                             f"Wrote {file_row_count} FHIR {resource_name} responses to {response_path}"
                         )
+                        if view:
+                            result_df.createOrReplaceTempView(view)
 
                         if "issue" in result_df.columns:
                             # if there are any errors then raise exception

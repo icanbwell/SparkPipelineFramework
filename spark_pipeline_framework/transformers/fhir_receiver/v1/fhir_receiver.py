@@ -98,6 +98,7 @@ class FhirReceiver(FrameworkTransformer):
         slug_column: Optional[str] = None,
         url_column: Optional[str] = None,
         error_view: Optional[str] = None,
+        view: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -299,6 +300,9 @@ class FhirReceiver(FrameworkTransformer):
         self.error_view: Param[Optional[str]] = Param(self, "error_view", "")
         self._setDefault(error_view=None)
 
+        self.view: Param[Optional[str]] = Param(self, "view", "")
+        self._setDefault(view=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -353,6 +357,7 @@ class FhirReceiver(FrameworkTransformer):
         url_column: Optional[str] = self.getOrDefault(self.url_column)
 
         error_view: Optional[str] = self.getOrDefault(self.error_view)
+        view: Optional[str] = self.getOrDefault(self.view)
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -821,6 +826,8 @@ class FhirReceiver(FrameworkTransformer):
                             default=str,
                         ),
                     )
+                if view:
+                    result_df.createOrReplaceTempView(view)
             else:  # get all resources
                 if not page_size:
                     page_size = limit
@@ -965,6 +972,8 @@ class FhirReceiver(FrameworkTransformer):
                         ),
                     )
 
+                if view:
+                    list_df.createOrReplaceTempView(view)
                 if error_view:
                     errors_df = sc(df).parallelize(resources).toDF()
                     errors_df.createOrReplaceTempView(error_view)
