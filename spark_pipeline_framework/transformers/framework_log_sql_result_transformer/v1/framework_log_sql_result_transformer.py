@@ -24,7 +24,16 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-    ):
+        log_event: Optional[bool] = None,
+    ) -> None:
+        """
+        Logs the result after running sql or the contents of the view
+
+
+        :param sql: SQL to run
+        :param view: store results of running SQL into this view
+        :param log_event: whether to log an event with progress_logger with the contents of the output view
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -42,14 +51,19 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=limit)
 
+        self.log_event: Param[Optional[bool]] = Param(self, "log_event", "")
+        self._setDefault(log_event=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        name = self.getName()
         sql: Optional[str] = self.getSql()
         view: Optional[str] = self.getOrDefault(self.view)
         limit = self.getLimit()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+        log_event: Optional[bool] = self.getOrDefault(self.log_event)
 
         df2: DataFrame
         if sql:
@@ -61,14 +75,21 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
 
         if not limit or limit < 0:
             limit = 1000
+
         message = (
-            (self.getName() or view or "")
+            (name or view or "")
             + "\n"
             + get_pretty_data_frame(df2, limit, name=sql or view)
         )
         self.logger.info(message)
         if progress_logger:
             progress_logger.write_to_log(message)
+            if log_event:
+                progress_logger.log_event(
+                    event_name=name or view or self.__class__.__name__,
+                    event_text=message,
+                )
+            progress_logger.log_artifact(key=f"{name or view}.csv", contents=message)
 
         return df
 
