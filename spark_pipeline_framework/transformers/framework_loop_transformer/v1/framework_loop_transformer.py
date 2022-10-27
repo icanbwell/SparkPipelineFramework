@@ -77,6 +77,10 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                 progress_logger.write_to_log(
                     f"---- Running loop {current_run_number} ---------"
                 )
+                progress_logger.log_event(
+                    event_name=f"Started Loop for {self.getName()}",
+                    event_text=str(current_run_number),
+                )
             stage: Transformer
             for stage in stages:
                 if progress_logger is not None:

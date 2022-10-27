@@ -40,9 +40,10 @@ class FriendlySparkException(Exception):
                 # This way, we can avoid printing the summary all
                 # the way along the exception "bubbling up"
                 error_text: str = (
-                    (stage_name or "")
-                    + ": "
-                    + FriendlySparkException.exception_summary()
+                    stage_name
+                    or ""
+                    # + ": "
+                    # + FriendlySparkException.exception_summary()
                 )
                 self.message = error_text
 

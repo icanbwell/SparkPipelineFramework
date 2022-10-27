@@ -2,6 +2,7 @@ import asyncio
 import json
 import math
 from datetime import datetime
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union, cast, Callable
 
@@ -39,6 +40,9 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
+    FhirParserException,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
@@ -46,6 +50,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_helpers impor
     send_fhir_request,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
+from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
     sc,
@@ -93,6 +98,8 @@ class FhirReceiver(FrameworkTransformer):
         verify_counts_match: Optional[bool] = True,
         slug_column: Optional[str] = None,
         url_column: Optional[str] = None,
+        error_view: Optional[str] = None,
+        view: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -132,6 +139,7 @@ class FhirReceiver(FrameworkTransformer):
         :param mode: if output files exist, should we overwrite or append
         :param slug_column: (Optional) use this column to set the security tags
         :param url_column: (Optional) column to read the url
+        :param error_view: (Optional) log errors into this view (view only exists IF there are errors) and don't throw exceptions.  schema: url, error_text, status_code
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -290,6 +298,12 @@ class FhirReceiver(FrameworkTransformer):
         self.url_column: Param[Optional[str]] = Param(self, "url_column", "")
         self._setDefault(url_column=None)
 
+        self.error_view: Param[Optional[str]] = Param(self, "error_view", "")
+        self._setDefault(error_view=None)
+
+        self.view: Param[Optional[str]] = Param(self, "view", "")
+        self._setDefault(view=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -342,6 +356,9 @@ class FhirReceiver(FrameworkTransformer):
 
         slug_column: Optional[str] = self.getOrDefault(self.slug_column)
         url_column: Optional[str] = self.getOrDefault(self.url_column)
+
+        error_view: Optional[str] = self.getOrDefault(self.error_view)
+        view: Optional[str] = self.getOrDefault(self.view)
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -444,7 +461,20 @@ class FhirReceiver(FrameworkTransformer):
                         resource_type=resource_name,
                     )
                     resp_result: str = result1.responses.replace("\n", "")
-                    responses_from_fhir = self.json_str_to_list_str(resp_result)
+                    responses_from_fhir = []
+                    try:
+                        responses_from_fhir = self.json_str_to_list_str(resp_result)
+                    except JSONDecodeError as e1:
+                        if error_view:
+                            result1.error = f"{(result1.error or '')}: {str(e1)}"
+                        else:
+                            raise FhirParserException(
+                                url=result1.url,
+                                message="Parsing result as json failed",
+                                json_data=result1.responses,
+                                response_status_code=result1.status,
+                            ) from e1
+
                     error_text = result1.error
                     status_code = result1.status
                     is_valid_response: bool = (
@@ -489,7 +519,20 @@ class FhirReceiver(FrameworkTransformer):
                             resource_type=resource_type or resource_name,
                         )
                         resp_result: str = result1.responses.replace("\n", "")
-                        responses_from_fhir = self.json_str_to_list_str(resp_result)
+                        responses_from_fhir: List[str] = []
+                        try:
+                            responses_from_fhir = self.json_str_to_list_str(resp_result)
+                        except JSONDecodeError as e2:
+                            if error_view:
+                                result1.error = f"{(result1.error or '')}: {str(e2)}"
+                            else:
+                                raise FhirParserException(
+                                    url=result1.url,
+                                    message="Parsing result as json failed",
+                                    json_data=result1.responses,
+                                    response_status_code=result1.status,
+                                ) from e2
+
                         error_text = result1.error
                         status_code = result1.status
                         is_valid_response: bool = (
@@ -627,13 +670,15 @@ class FhirReceiver(FrameworkTransformer):
                     ]
                 )
 
-                # noinspection PyUnresolvedReferences
                 result_with_counts: DataFrame = rdd.toDF(schema).cache()
 
                 # find results that have a status code not in the ignore_status_codes
                 results_with_counts_errored = result_with_counts.where(
-                    (col("status_code").isNotNull())
-                    & (~col("status_code").isin(ignore_status_codes))
+                    (
+                        (col("status_code").isNotNull())
+                        & (~col("status_code").isin(ignore_status_codes))
+                    )
+                    | (col("error_text").isNotNull())
                 )
                 count_bad_requests: int = results_with_counts_errored.count()
 
@@ -668,13 +713,39 @@ class FhirReceiver(FrameworkTransformer):
                         .limit(1)
                         .collect()[0][0]
                     )
-                    raise FhirReceiverException(
-                        url=first_url,
-                        response_text=first_error,
-                        response_status_code=first_error_status_code,
-                        message="Error receiving FHIR",
-                        json_data=first_error,
-                    )
+                    if error_view:
+                        errors_df = results_with_counts_errored.select(
+                            "url", "error_text", "status_code"
+                        )
+                        errors_df.createOrReplaceTempView(error_view)
+                        if progress_logger:
+                            progress_logger.log_event(
+                                event_name="Errors receiving FHIR",
+                                event_text=json.dumps(
+                                    get_pretty_data_frame(
+                                        df=errors_df,
+                                        limit=100,
+                                        name="Errors Receiving FHIR",
+                                    ),
+                                    default=str,
+                                ),
+                            )
+                        # filter out bad records
+                        result_with_counts = result_with_counts.where(
+                            ~(
+                                (col("status_code").isNotNull())
+                                & (~col("status_code").isin(ignore_status_codes))
+                            )
+                            | (col("error_text").isNotNull())
+                        )
+                    else:
+                        raise FhirReceiverException(
+                            url=first_url,
+                            response_text=first_error,
+                            response_status_code=first_error_status_code,
+                            message="Error receiving FHIR",
+                            json_data=first_error,
+                        )
 
                 if expand_fhir_bundle:
                     # noinspection PyUnresolvedReferences
@@ -756,7 +827,21 @@ class FhirReceiver(FrameworkTransformer):
                 self.logger.info(
                     f"Wrote {file_row_count} FHIR {resource_name} resources to {file_path}"
                 )
-
+                if progress_logger:
+                    progress_logger.log_event(
+                        event_name="Finished receiving FHIR",
+                        event_text=json.dumps(
+                            {
+                                "message": f"Wrote {file_row_count} FHIR {resource_name} resources to {file_path} (id view)",
+                                "count": file_row_count,
+                                "resourceType": resource_name,
+                                "path": str(file_path),
+                            },
+                            default=str,
+                        ),
+                    )
+                if view:
+                    result_df.createOrReplaceTempView(view)
             else:  # get all resources
                 if not page_size:
                     page_size = limit
@@ -768,6 +853,7 @@ class FhirReceiver(FrameworkTransformer):
                     additional_parameters1: Optional[List[str]] = additional_parameters
                     auth_access_token1: Optional[str] = auth_access_token
                     resources1: List[str] = resources
+                    errors: List[str] = []
                     assert server_url
                     while True:
                         result = await send_fhir_request(
@@ -798,10 +884,32 @@ class FhirReceiver(FrameworkTransformer):
                             content_type=content_type,
                             accept_encoding=accept_encoding,
                         )
-                        # error = result.error
-                        result_response: List[str] = self.json_str_to_list_str(
-                            result.responses
-                        )
+                        result_response: List[str] = []
+                        try:
+                            result_response = self.json_str_to_list_str(
+                                result.responses
+                            )
+                        except JSONDecodeError as e:
+                            if error_view:
+                                errors.append(
+                                    json.dumps(
+                                        {
+                                            "url": result.url,
+                                            "status_code": result.status,
+                                            "error_text": str(e)
+                                            + " : "
+                                            + result.responses,
+                                        },
+                                        default=str,
+                                    )
+                                )
+                            else:
+                                raise FhirParserException(
+                                    url=result.url,
+                                    message="Parsing result as json failed",
+                                    json_data=result.responses,
+                                    response_status_code=result.status,
+                                ) from e
                         auth_access_token1 = result.access_token
                         if len(result_response) > 0:
                             # get id of last resource
@@ -873,9 +981,41 @@ class FhirReceiver(FrameworkTransformer):
                 resources = asyncio.run(process_by_query())
                 rdd1: RDD[str] = sc(df).parallelize(resources)
 
-                list_df: DataFrame = rdd1.toDF(StringType())
+                list_df: DataFrame = rdd1.toDF(StringType()).cache()
                 list_df.write.mode(mode).text(str(file_path))
                 self.logger.info(f"Wrote FHIR data to {file_path}")
+
+                if progress_logger:
+                    progress_logger.log_event(
+                        event_name="Finished receiving FHIR",
+                        event_text=json.dumps(
+                            {
+                                "message": f"Wrote {list_df.count()} FHIR {resource_name} resources to {file_path} (query)",
+                                "count": list_df.count(),
+                                "resourceType": resource_name,
+                                "path": str(file_path),
+                            },
+                            default=str,
+                        ),
+                    )
+
+                if view:
+                    list_df.createOrReplaceTempView(view)
+                if error_view:
+                    errors_df = sc(df).parallelize(resources).toDF()
+                    errors_df.createOrReplaceTempView(error_view)
+                    if progress_logger:
+                        progress_logger.log_event(
+                            event_name="Errors receiving FHIR",
+                            event_text=json.dumps(
+                                get_pretty_data_frame(
+                                    df=errors_df,
+                                    limit=100,
+                                    name="Errors Receiving FHIR",
+                                ),
+                                default=str,
+                            ),
+                        )
 
         return df
 
