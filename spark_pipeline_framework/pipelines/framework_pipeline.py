@@ -57,11 +57,15 @@ class FrameworkPipeline(Transformer):
         )
         for transformer in self.transformers:
             assert isinstance(transformer, Transformer), type(transformer)
-            # assert isinstance(transformer, FrameworkTransformer), type(transformer)
+            if hasattr(transformer, "getName"):
+                # noinspection Mypy
+                stage_name = transformer.getName()
+            else:
+                stage_name = transformer.__class__.__name__
             try:
                 i += 1
                 logger.info(
-                    f"---- Running pipeline [{pipeline_name}] transformer [{transformer}]  "
+                    f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
                     f"({i} of {count_of_transformers}) ----"
                 )
                 if hasattr(transformer, "set_loop_id"):
@@ -72,15 +76,10 @@ class FrameworkPipeline(Transformer):
                     name=str(transformer) or "unknown",
                 ):
                     self.progress_logger.log_event(
-                        pipeline_name, event_text=f"Running pipeline step {transformer}"
+                        pipeline_name, event_text=f"Running pipeline step {stage_name}"
                     )
                     df = transformer.transform(dataset=df)
             except Exception as e:
-                if hasattr(transformer, "getName"):
-                    # noinspection Mypy
-                    stage_name = transformer.getName()
-                else:
-                    stage_name = transformer.__class__.__name__
                 logger.error(
                     f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
                 )
