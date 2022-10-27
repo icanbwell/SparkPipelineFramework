@@ -1,6 +1,7 @@
 import json
 import math
 from datetime import datetime
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union, cast, Callable
 
@@ -37,6 +38,9 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
+    FhirParserException,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
@@ -443,7 +447,16 @@ class FhirReceiver(FrameworkTransformer):
                         resource_type=resource_name,
                     )
                     resp_result: str = result1.responses.replace("\n", "")
-                    responses_from_fhir = self.json_str_to_list_str(resp_result)
+                    try:
+                        responses_from_fhir = self.json_str_to_list_str(resp_result)
+                    except JSONDecodeError as e1:
+                        raise FhirParserException(
+                            url=result.url,
+                            message="Parsing result as json failed",
+                            json_data=result.responses,
+                            response_status_code=result.status,
+                        ) from e1
+
                     error_text = result1.error
                     status_code = result1.status
                     is_valid_response: bool = (
@@ -483,7 +496,16 @@ class FhirReceiver(FrameworkTransformer):
                             resource_type=resource_type or resource_name,
                         )
                         resp_result: str = result1.responses.replace("\n", "")
-                        responses_from_fhir = self.json_str_to_list_str(resp_result)
+                        try:
+                            responses_from_fhir = self.json_str_to_list_str(resp_result)
+                        except JSONDecodeError as e2:
+                            raise FhirParserException(
+                                url=result.url,
+                                message="Parsing result as json failed",
+                                json_data=result.responses,
+                                response_status_code=result.status,
+                            ) from e2
+
                         error_text = result1.error
                         status_code = result1.status
                         is_valid_response: bool = (
@@ -780,9 +802,18 @@ class FhirReceiver(FrameworkTransformer):
                         accept_encoding=accept_encoding,
                     )
                     # error = result.error
-                    result_response: List[str] = self.json_str_to_list_str(
-                        result.responses
-                    )
+                    try:
+                        result_response: List[str] = self.json_str_to_list_str(
+                            result.responses
+                        )
+                    except JSONDecodeError as e:
+                        raise FhirParserException(
+                            url=result.url,
+                            message="Parsing result as json failed",
+                            json_data=result.responses,
+                            response_status_code=result.status,
+                        ) from e
+
                     auth_access_token = result.access_token
                     if len(result_response) > 0:
                         # get id of last resource
