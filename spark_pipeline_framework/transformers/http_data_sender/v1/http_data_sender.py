@@ -193,6 +193,8 @@ class HttpDataSender(FrameworkTransformer):
                             url=url,
                             status=response_json.status,
                             result=response_json.result,
+                            # headers=json.dumps(headers, default=str),
+                            request_type=RequestType.POST,
                         )
                     else:
                         response_text = request.get_text()
@@ -200,6 +202,8 @@ class HttpDataSender(FrameworkTransformer):
                             url=url,
                             status=response_text.status,
                             result=response_text.result,
+                            # headers=json.dumps(headers, default=str),
+                            request_type=RequestType.POST,
                         )
 
             desired_partitions: int
