@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
+# noinspection PyPackageRequirements
 from mlflow.entities import RunStatus  # type: ignore
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -92,11 +93,15 @@ class FrameworkPipeline(Transformer):
 
             for transformer in self.transformers:
                 assert isinstance(transformer, Transformer), type(transformer)
-                # assert isinstance(transformer, FrameworkTransformer), type(transformer)
+                if hasattr(transformer, "getName"):
+                    # noinspection Mypy
+                    stage_name = transformer.getName()
+                else:
+                    stage_name = transformer.__class__.__name__
                 try:
                     i += 1
                     logger.info(
-                        f"---- Running pipeline [{pipeline_name}] transformer [{transformer}]  "
+                        f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
                         f"({i} of {count_of_transformers}) ----"
                     )
                     self.progress_logger.start_mlflow_run(
@@ -109,23 +114,18 @@ class FrameworkPipeline(Transformer):
                     ):
                         self.progress_logger.log_event(
                             pipeline_name,
-                            event_text=f"Running pipeline step {transformer}",
+                            event_text=f"Running pipeline step {stage_name}",
                         )
                         df = transformer.transform(dataset=df)
                         self.progress_logger.log_event(
                             pipeline_name,
-                            event_text=f"Finished pipeline step {transformer}",
+                            event_text=f"Finished pipeline step {stage_name}",
                         )
                     self.progress_logger.end_mlflow_run()
                 except Exception as e:
-                    if hasattr(transformer, "getName"):
-                        # noinspection Mypy
-                        stage_name = transformer.getName()
-                    else:
-                        stage_name = transformer.__class__.__name__
                     logger.error(
                         f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer "
-                        + "[{stage_name}] threw exception !!!!!!!!!!!!!"
+                        + f"[{stage_name}] threw exception !!!!!!!!!!!!!"
                     )
                     # use exception chaining to add stage name but keep original exception
                     friendly_spark_exception: FriendlySparkException = (
