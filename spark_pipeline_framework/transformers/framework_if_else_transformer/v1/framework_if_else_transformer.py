@@ -74,7 +74,10 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             else self.enable_if_view_not_empty
         )
         enable_if_view_not_empty = (
-            not df.sparkSession.table(view_enable_if_view_not_empty).isEmpty()
+            (
+                df.sparkSession.catalog.tableExists(view_enable_if_view_not_empty)
+                and not df.sparkSession.table(view_enable_if_view_not_empty).isEmpty()
+            )
             if view_enable_if_view_not_empty
             else True
         )
