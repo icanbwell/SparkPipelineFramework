@@ -68,7 +68,7 @@ class HelixHttpRequest:
         backoff_factor: float = 0.1,
         retry_on_status: List[int] = [429, 500, 502, 503, 504],
         logger: Optional[Logger] = None,
-        post_as_json_formatted_string: bool = False,
+        post_as_json_formatted_string: Optional[bool] = None,
     ):
         self.url: str = url
         self.request_type = request_type
@@ -78,7 +78,9 @@ class HelixHttpRequest:
         self.retry_count: int = retry_count
         self.backoff_factor: float = backoff_factor
         self.retry_on_status: List[int] = retry_on_status
-        self.post_as_json_formatted_string: bool = post_as_json_formatted_string
+        self.post_as_json_formatted_string: Optional[
+            bool
+        ] = post_as_json_formatted_string
 
     def get_result(self) -> SingleJsonResult:
         """
@@ -142,7 +144,9 @@ class HelixHttpRequest:
         elif self.request_type == RequestType.POST:
             # https://requests.readthedocs.io/en/master/user/quickstart/#more-complicated-post-requests
             arguments["data"] = (
-                json.dumps(self.payload) if self.post_as_json_formatted_string else self.payload  # type: ignore
+                json.dumps(self.payload)  # type: ignore
+                if self.post_as_json_formatted_string
+                else self.payload
             )
             request_function = session.post
         elif self.request_type == RequestType.HEAD:

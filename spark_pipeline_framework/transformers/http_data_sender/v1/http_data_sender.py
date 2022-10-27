@@ -1,3 +1,5 @@
+import json
+import math
 from typing import Any, Dict, Iterable, List, Optional
 
 from pyspark import RDD
@@ -42,6 +44,10 @@ class HttpDataSender(FrameworkTransformer):
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         parse_response_as_json: Optional[bool] = True,
+        content_type: str = "application/x-www-form-urlencoded",
+        post_as_json_formatted_string: Optional[bool] = None,
+        batch_count: Optional[int] = None,
+        batch_size: Optional[int] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -54,6 +60,9 @@ class HttpDataSender(FrameworkTransformer):
         :param client_id: (Optional) client id to use to authenticate with client credentials
         :param client_secret: (Optional) client secret to use to authenticate with client credentials
         :param parse_response_as_json: (Optional) whether to parse response as json or not (default = True)
+        :param content_type: content_type to use when posting
+        :param batch_count: (Optional) number of batches to create
+        :param batch_size: (Optional) max number of items in a batch
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -80,10 +89,24 @@ class HttpDataSender(FrameworkTransformer):
         self.client_secret: Param[Optional[str]] = Param(self, "client_secret", "")
         self._setDefault(client_secret=None)
 
+        self.content_type: Param[str] = Param(self, "content_type", "")
+        self._setDefault(content_type=None)
+
+        self.batch_count: Param[Optional[int]] = Param(self, "batch_count", "")
+        self._setDefault(batch_count=None)
+
+        self.batch_size: Param[Optional[int]] = Param(self, "batch_size", "")
+        self._setDefault(batch_size=None)
+
         self.parse_response_as_json: Param[Optional[bool]] = Param(
             self, "parse_response_as_json", ""
         )
         self._setDefault(parse_response_as_json=None)
+
+        self.post_as_json_formatted_string: Param[Optional[bool]] = Param(
+            self, "post_as_json_formatted_string", ""
+        )
+        self._setDefault(post_as_json_formatted_string=None)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -99,6 +122,12 @@ class HttpDataSender(FrameworkTransformer):
         url: Optional[str] = self.getOrDefault(self.url)
         parse_response_as_json: Optional[bool] = self.getOrDefault(
             self.parse_response_as_json
+        )
+        content_type: str = self.getOrDefault(self.content_type)
+        batch_count: Optional[int] = self.getOrDefault(self.batch_count)
+        batch_size: Optional[int] = self.getOrDefault(self.batch_size)
+        post_as_json_formatted_string: Optional[bool] = self.getOrDefault(
+            self.post_as_json_formatted_string
         )
 
         df = df.sparkSession.table(source_view)
@@ -121,30 +150,42 @@ class HttpDataSender(FrameworkTransformer):
 
             access_token: Optional[str] = oauth2_client_credentials_flow.get_token()
 
+            if progress_logger:
+                progress_logger.write_to_log(
+                    f"Received token from {auth_url}: {access_token}"
+                )
+
             if access_token:
                 headers = {"Authorization": f"Bearer {access_token}"}
+
+        if progress_logger:
+            progress_logger.write_to_log(
+                f"Using headers: {json.dumps(headers, default=str)}"
+            )
 
         with ProgressLogMetric(
             name=f"{name}_fhir_sender", progress_logger=progress_logger
         ):
             # function that is called for each partition
+            # noinspection PyUnusedLocal
             def send_partition_to_server(
                 partition_index: int, rows: Iterable[Row]
             ) -> Iterable[Row]:
                 json_data_list: List[Dict[str, Any]] = [r.asDict() for r in rows]
-                logger = get_logger(__name__)
+                # logger = get_logger(__name__)
                 if len(json_data_list) == 0:
                     yield Row(url=None, status=0, result=None)
 
                 assert url
                 json_data: Dict[str, Any]
                 for json_data in json_data_list:
-                    headers["Content-Type"] = "application/x-www-form-urlencoded"
+                    headers["Content-Type"] = content_type
                     request: HelixHttpRequest = HelixHttpRequest(
                         request_type=RequestType.POST,
                         url=url,
                         headers=headers,
                         payload=json_data,
+                        post_as_json_formatted_string=post_as_json_formatted_string,
                     )
                     if parse_response_as_json:
                         response_json = request.get_result()
@@ -152,6 +193,8 @@ class HttpDataSender(FrameworkTransformer):
                             url=url,
                             status=response_json.status,
                             result=response_json.result,
+                            # headers=json.dumps(headers, default=str),
+                            request_type=RequestType.POST,
                         )
                     else:
                         response_text = request.get_text()
@@ -159,9 +202,21 @@ class HttpDataSender(FrameworkTransformer):
                             url=url,
                             status=response_text.status,
                             result=response_text.result,
+                            # headers=json.dumps(headers, default=str),
+                            request_type=RequestType.POST,
                         )
 
-            desired_partitions = 1
+            desired_partitions: int
+            if batch_count:
+                desired_partitions = batch_count
+            else:
+                row_count: int = df.count()
+                desired_partitions = (
+                    math.ceil(row_count / batch_size)
+                    if batch_size and batch_size > 0
+                    else row_count
+                )
+
             # ---- Now process all the results ----
             rdd: RDD[Row] = (
                 df.repartition(desired_partitions)
