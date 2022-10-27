@@ -137,7 +137,7 @@ class FhirReceiver(FrameworkTransformer):
         :param mode: if output files exist, should we overwrite or append
         :param slug_column: (Optional) use this column to set the security tags
         :param url_column: (Optional) column to read the url
-        :param error_view: (Optional) log errors into this view and don't throw exceptions.  schema: url, error_text, status_code
+        :param error_view: (Optional) log errors into this view (view only exists IF there are errors) and don't throw exceptions.  schema: url, error_text, status_code
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger

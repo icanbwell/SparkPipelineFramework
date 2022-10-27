@@ -28,6 +28,9 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import 
     send_fhir_delete,
     send_json_bundle_to_fhir,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exception import (
+    FhirSenderValidationException,
+)
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
@@ -64,6 +67,7 @@ class FhirSender(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         mode: str = FileWriteModes.MODE_OVERWRITE,
+        error_view: Optional[str] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -82,6 +86,8 @@ class FhirSender(FrameworkTransformer):
         :param auth_scopes: scopes to request
         :param operation: What FHIR operation to perform (e.g. $merge, delete, etc.)
         :param mode: if output files exist, should we overwrite or append
+        :param error_view: (Optional) log errors into this view (view only exists IF there are errors) and don't throw exceptions.
+                            schema: id, resourceType, issue
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -160,6 +166,9 @@ class FhirSender(FrameworkTransformer):
         self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
+        self.error_view: Param[Optional[str]] = Param(self, "error_view", "")
+        self._setDefault(error_view=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -197,6 +206,8 @@ class FhirSender(FrameworkTransformer):
         auth_login_token: Optional[str] = self.getAuthLoginToken()
         auth_scopes: Optional[List[str]] = self.getAuthScopes()
         auth_access_token: Optional[str] = None
+
+        error_view: Optional[str] = self.getOrDefault(self.error_view)
 
         # get access token first so we can reuse it
         if auth_client_id:
@@ -424,16 +435,25 @@ class FhirSender(FrameworkTransformer):
                             ).first()
                             if first_error_response is not None:
                                 if throw_exception_on_validation_failure:
-                                    raise Exception(
-                                        json.dumps(first_error_response[0], indent=2)
+                                    raise FhirSenderValidationException(
+                                        url=validation_server_url or server_url,
+                                        json_data=json.dumps(
+                                            first_error_response[0],
+                                            indent=2,
+                                            default=str,
+                                        ),
                                     )
                                 else:
                                     self.logger.info(
                                         f"------- Failed validations for {resource_name} ---------"
                                     )
+                                    failed_df = result_df.filter(
+                                        col("issue").isNotNull()
+                                    )
+                                    if error_view:
+                                        failed_df.createOrReplaceTempView(error_view)
                                     failed_validations: List[str] = (
-                                        result_df.filter(col("issue").isNotNull())
-                                        .select("issue")
+                                        failed_df.select("issue")
                                         .rdd.flatMap(lambda x: x)
                                         .collect()
                                     )
