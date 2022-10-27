@@ -153,7 +153,10 @@ class HttpDataSender(FrameworkTransformer):
 
             if progress_logger:
                 progress_logger.write_to_log(
-                    f"Received token from {auth_url}: {access_token}"
+                    entry_name=self.getName(),
+                    message="Received token from {auth_url}: {access_token}",
+                    auth_url=auth_url,
+                    access_token=access_token,
                 )
 
             if access_token:
@@ -161,7 +164,9 @@ class HttpDataSender(FrameworkTransformer):
 
         if progress_logger:
             progress_logger.write_to_log(
-                f"Using headers: {json.dumps(headers, default=str)}"
+                entry_name=self.getName(),
+                message="Using headers: {headers}",
+                headers=json.dumps(headers, default=str),
             )
 
         with ProgressLogMetric(

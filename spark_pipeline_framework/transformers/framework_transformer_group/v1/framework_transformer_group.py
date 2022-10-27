@@ -81,8 +81,9 @@ class FrameworkTransformerGroup(FrameworkTransformer):
         else:
             if progress_logger is not None:
                 progress_logger.write_to_log(
-                    self.getName() or "FrameworkTransformerGroup",
-                    f"Skipping stages because enable {self.enable or self.enable_if_view_not_empty} did not evaluate to True",
+                    entry_name=self.getName() or "FrameworkTransformerGroup",
+                    message="Skipping stages because enable {enable} did not evaluate to True",
+                    enable=self.enable or self.enable_if_view_not_empty,
                 )
         return df
 

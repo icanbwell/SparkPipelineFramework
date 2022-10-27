@@ -59,7 +59,7 @@ class ResourceConverter(FrameworkTransformer):
 
         if progress_logger:
             progress_logger.write_to_log(
-                name="ResourceConverter",
+                entry_name=self.getName(),
                 message="Converting string json to StructType resource...",
             )
 
@@ -81,8 +81,9 @@ class ResourceConverter(FrameworkTransformer):
 
         if progress_logger:
             progress_logger.write_to_log(
-                name="ResourceConverter",
-                message=f"Resources converted: id={resource_id}",
+                entry_name=self.getName(),
+                message="Resources converted: id={resource_id}",
+                resource_id=resource_id,
             )
 
         df_target.createOrReplaceTempView(name=view_target)

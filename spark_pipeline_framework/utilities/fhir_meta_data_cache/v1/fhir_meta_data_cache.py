@@ -34,13 +34,20 @@ class FhirMetaDataCache:
             response = http_request.get_result()
             if self.progress_logger:
                 self.progress_logger.write_to_log(
-                    f"Received metadata from {url.url}: {json.dumps(response.result, default=str)}"
+                    entry_name=self.__class__.__name__,
+                    message="Received metadata from {url}: {response}",
+                    url=url.url,
+                    response=json.dumps(response.result, default=str),
                 )
             return response.result
         except Exception as e:
             if self.progress_logger:
                 self.progress_logger.write_to_log(
-                    f"ERROR receiving metadata from {url.url}: {e} {json.dumps(e, default=str)}"
+                    entry_name=self.__class__.__name__,
+                    message="ERROR receiving metadata from {url}: {error} {error_json}",
+                    url=url.url,
+                    error=str(e),
+                    error_json=json.dumps(e, default=str),
                 )
             # server does not support /metadata
             return None

@@ -83,7 +83,9 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         )
         self.logger.info(message)
         if progress_logger:
-            progress_logger.write_to_log(message)
+            progress_logger.write_to_log(
+                entry_name=name or view, message="{data}", data=message
+            )
             if log_event:
                 progress_logger.log_event(
                     event_name=name or view or self.__class__.__name__,

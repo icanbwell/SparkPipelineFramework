@@ -45,7 +45,10 @@ class OAuth2ClientCredentialsFlow:
         response = http_request.get_result()
         if self.progress_logger:
             self.progress_logger.write_to_log(
-                f"Received from {self.auth_url}: {json.dumps(response.result)}"
+                entry_name=self.__class__.__name__,
+                message="Received from {url}: {response}",
+                url=self.auth_url,
+                response=json.dumps(response.result),
             )
         token = response.result.get("access_token")
 
