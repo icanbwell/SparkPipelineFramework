@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from pyspark import RDD
 from pyspark.ml.param import Param
+from pyspark.sql.functions import col
 from pyspark.sql.types import Row
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
@@ -174,7 +175,9 @@ class HttpDataSender(FrameworkTransformer):
                 json_data_list: List[Dict[str, Any]] = [r.asDict() for r in rows]
                 # logger = get_logger(__name__)
                 if len(json_data_list) == 0:
-                    yield Row(url=None, status=0, result=None)
+                    yield Row(
+                        url=None, status=0, result=None, request_type=None, headers=None
+                    )
 
                 assert url
                 json_data: Dict[str, Any]
@@ -193,8 +196,8 @@ class HttpDataSender(FrameworkTransformer):
                             url=url,
                             status=response_json.status,
                             result=response_json.result,
-                            # headers=json.dumps(headers, default=str),
-                            request_type=RequestType.POST,
+                            headers=json.dumps(headers, default=str),
+                            request_type=str(RequestType.POST),
                         )
                     else:
                         response_text = request.get_text()
@@ -202,8 +205,8 @@ class HttpDataSender(FrameworkTransformer):
                             url=url,
                             status=response_text.status,
                             result=response_text.result,
-                            # headers=json.dumps(headers, default=str),
-                            request_type=RequestType.POST,
+                            headers=json.dumps(headers, default=str),
+                            request_type=str(RequestType.POST),
                         )
 
             desired_partitions: int
@@ -224,7 +227,7 @@ class HttpDataSender(FrameworkTransformer):
                 .cache()
             )
 
-            result_df = rdd.toDF()
+            result_df = rdd.toDF().where(col("url").isNotNull())
             if view:
                 result_df.createOrReplaceTempView(view)
 
