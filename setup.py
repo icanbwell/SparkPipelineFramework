@@ -77,6 +77,7 @@ setup(
         "helix.fhir.client.sdk>=1.0.23",
         "opensearch-py",
         "pyathena",
+        "spark-nlp",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -1,22 +1,30 @@
 # noinspection PyProtectedMember
 
+from pyspark import keyword_only
 from pyspark.ml.functions import vector_to_array
 from pyspark.sql.dataframe import DataFrame
+from sparknlp import EmbeddingsFinisher, DocumentAssembler, Finisher  # type: ignore
+from sparknlp.annotator import (  # type: ignore
+    SentenceEmbeddings,
+    WordEmbeddingsModel,
+    SentenceDetector,
+    Stemmer,
+    ViveknSentimentModel,
+    Tokenizer,
+    Normalizer,
+)
+import pyspark.sql.functions as f
+from pyspark.ml.feature import HashingTF, IDF, CountVectorizer
+from sparknlp.pretrained import PretrainedPipeline  # type: ignore
+from pyspark.ml import Pipeline
 
+from pyspark.ml.param import Param
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from typing import Any, Dict, Optional
-import pyspark.sql.functions as f
-from pyspark.ml.feature import HashingTF, IDF, CountVectorizer
-
-import sparknlp
-from sparknlp.annotator import *
-from sparknlp.base import *
-from sparknlp.pretrained import PretrainedPipeline
-from pyspark.ml import Pipeline
+from typing import Any, Dict, Optional, List
 
 
 class NlpTransformer(FrameworkTransformer):
@@ -54,15 +62,15 @@ class NlpTransformer(FrameworkTransformer):
 
     @keyword_only
     def __init__(
-            self,
-            columns: str,
-            view: str,
-            binarize_tokens: Optional[bool] = True,
-            perform_analysis: Optional[list] = ["all"],
-            # add your parameters here
-            name: Optional[str] = None,
-            parameters: Optional[Dict[str, Any]] = None,
-            progress_logger: Optional[ProgressLogger] = None,
+        self,
+        columns: str,
+        view: str,
+        binarize_tokens: bool = True,
+        perform_analysis: List[str] = ["all"],
+        # add your parameters here
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
     ):
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -84,7 +92,7 @@ class NlpTransformer(FrameworkTransformer):
         self.binarizeTokens: Param[bool] = Param(self, "binarizeTokens", "")
         self._setDefault(binarizeTokens=binarize_tokens)
 
-        self.performAnalysis: Param(list[str]) = Param(self, "performAnalysis", "")
+        self.performAnalysis: Param[List[str]] = Param(self, "performAnalysis", "")
         self._setDefault(performAnalysis=perform_analysis)
 
         kwargs = self._input_kwargs
@@ -120,13 +128,12 @@ class NlpTransformer(FrameworkTransformer):
         else:
             df_nlp = df_nlp.select(columns)
 
-
         final_columns.append(in_col)
 
         ################
         # TOKENIZER PIPELINE
         df_nlp = df_nlp.dropna(subset=[in_col])
-        #create text column with original text, which is necesarry for some pretrained pipelines
+        # create text column with original text, which is necesarry for some pretrained pipelines
         df_nlp = df_nlp.withColumn("text", df_nlp[columns])
         out_col = "ntokens"
         nlp_pipeline = self.prepare_for_nlp(in_col, out_col)
@@ -139,8 +146,11 @@ class NlpTransformer(FrameworkTransformer):
         # SPARK-NLP SENTIMENTIZER
         out_col = "sentiment"
         if out_col in perform_analysis or perform_all:
-            sentiment_pipeline = self.sentiment_vivenk(document_col="document", normalization_col="normalized",
-                                                       output_col=out_col)
+            sentiment_pipeline = self.sentiment_vivenk(
+                document_col="document",
+                normalization_col="normalized",
+                output_col=out_col,
+            )
             sentiment_model = sentiment_pipeline.fit(df_nlp)
             df_nlp = sentiment_model.transform(df_nlp).persist()
             final_columns.append(out_col)
@@ -178,9 +188,8 @@ class NlpTransformer(FrameworkTransformer):
         # do entity recognition
         out_col = "entities"
         if out_col in perform_analysis or "all" in perform_analysis:
-
             ner = self.get_entities()
-            #ner_model = ner.fit(df_nlp)
+            # ner_model = ner.fit(df_nlp)
             df_nlp = ner.transform(df_nlp)
             final_columns.append(out_col)
 
@@ -189,9 +198,13 @@ class NlpTransformer(FrameworkTransformer):
         out_col = "bag_of_words"
         if out_col in perform_analysis or perform_all:
             explode_col = "binarize_bag_of_words"
-            df_nlp = self.do_bag_of_words(df=df_nlp, tokens_col="ntokens", out_col=out_col,
-                                          explode_vector=explode_vector_tf,
-                                          explode_col=explode_col)
+            df_nlp = self.do_bag_of_words(
+                df=df_nlp,
+                tokens_col="ntokens",
+                out_col=out_col,
+                explode_vector=explode_vector_tf,
+                explode_col=explode_col,
+            )
 
             final_columns.append(out_col)
             final_columns.append(explode_col)
@@ -210,8 +223,13 @@ class NlpTransformer(FrameworkTransformer):
             # convert to a list so it will work with our bag of words code
             df_nlp = df_nlp.withColumn(out_col_fwl, f.split(out_col_fw, ","))
             explode_col = "binarize_first_word"
-            df_nlp = self.do_bag_of_words(df=df_nlp, tokens_col=out_col_fwl, out_col=out_col,
-                                          explode_vector=explode_vector_tf, explode_col=explode_col)
+            df_nlp = self.do_bag_of_words(
+                df=df_nlp,
+                tokens_col=out_col_fwl,
+                out_col=out_col,
+                explode_vector=explode_vector_tf,
+                explode_col=explode_col,
+            )
             final_columns.append(out_col)
             final_columns.append(explode_col)
 
@@ -229,13 +247,15 @@ class NlpTransformer(FrameworkTransformer):
     def get_view(self) -> str:
         return self.getOrDefault(self.view)
 
-    def get_binarize_tokens(self) -> Optional[bool]:
+    def get_binarize_tokens(self) -> bool:
         return self.getOrDefault(self.binarizeTokens)
 
-    def get_perform_analysis(self) -> list:
+    def get_perform_analysis(self) -> List[str]:
         return self.getOrDefault(self.performAnalysis)
 
-    def prepare_for_nlp(self, input_col: str = "text", output_col: str = "ntokens") -> Pipeline:
+    def prepare_for_nlp(
+        self, input_col: str = "text", output_col: str = "ntokens"
+    ) -> Pipeline:
         """
         Preforms a multi-step process to generate many of the column entities needed for NLP Analysis.
         DocumentAssembler--> SentenceDetector--> Tokenizer --> Stemmer--> Normalizer--> Finisher
@@ -247,43 +267,46 @@ class NlpTransformer(FrameworkTransformer):
         """
 
         pipeline_list = []
-        document_assembler = DocumentAssembler() \
-            .setInputCol(input_col) \
-            .setOutputCol("document")
+        document_assembler = (
+            DocumentAssembler().setInputCol(input_col).setOutputCol("document")
+        )
         pipeline_list.append(document_assembler)
 
-        sentence_detector = SentenceDetector() \
-            .setInputCols(["document"]) \
-            .setOutputCol("sentence") \
+        sentence_detector = (
+            SentenceDetector()
+            .setInputCols(["document"])
+            .setOutputCol("sentence")
             .setUseAbbreviations(True)
+        )
         pipeline_list.append(sentence_detector)
 
-        tokenizer = Tokenizer() \
-            .setInputCols(["sentence"]) \
-            .setOutputCol("token")
+        tokenizer = Tokenizer().setInputCols(["sentence"]).setOutputCol("token")
         pipeline_list.append(tokenizer)
 
-        stemmer = Stemmer() \
-            .setInputCols(["token"]) \
-            .setOutputCol("stem")
+        stemmer = Stemmer().setInputCols(["token"]).setOutputCol("stem")
         pipeline_list.append(stemmer)
 
-        normalizer = Normalizer() \
-            .setInputCols(["stem"]) \
-            .setOutputCol("normalized")
+        normalizer = Normalizer().setInputCols(["stem"]).setOutputCol("normalized")
         pipeline_list.append(normalizer)
 
-        finisher = Finisher() \
-            .setInputCols(["normalized"]) \
-            .setOutputCols([output_col]) \
-            .setOutputAsArray(True) \
+        finisher = (
+            Finisher()
+            .setInputCols(["normalized"])
+            .setOutputCols([output_col])
+            .setOutputAsArray(True)
             .setCleanAnnotations(False)
+        )
         pipeline_list.append(finisher)
 
         nlp_pipeline = Pipeline(stages=pipeline_list)
         return nlp_pipeline
 
-    def sentiment_vivenk(self, document_col="document", normalization_col="normalized", output_col="final_sentiment") -> Pipeline:
+    def sentiment_vivenk(
+        self,
+        document_col: str = "document",
+        normalization_col: str = "normalized",
+        output_col: str = "final_sentiment",
+    ) -> Pipeline:
         """
         Generates a pipeline that creates sentiment values from documents and normalization columns
 
@@ -293,19 +316,25 @@ class NlpTransformer(FrameworkTransformer):
 
         :rtype: Pipeline
         """
-        vivekn = ViveknSentimentModel.pretrained() \
-            .setInputCols([document_col, normalization_col]) \
+        vivekn = (
+            ViveknSentimentModel.pretrained()
+            .setInputCols([document_col, normalization_col])
             .setOutputCol("result_sentiment")
+        )
 
-        finisher = Finisher() \
-            .setInputCols(["result_sentiment"]) \
-            .setOutputCols(output_col) \
+        finisher = (
+            Finisher()
+            .setInputCols(["result_sentiment"])
+            .setOutputCols(output_col)
             .setCleanAnnotations(False)
+        )
 
         pipeline = Pipeline().setStages([vivekn, finisher])
         return pipeline
 
-    def sentiment_pretrained(self, sentiment_model: str = 'analyze_sentiment') -> PretrainedPipeline:
+    def sentiment_pretrained(
+        self, sentiment_model: str = "analyze_sentiment"
+    ) -> PretrainedPipeline:
         """
         Performs Sentiment Analysis
         :param str sentiment_model: The pretrained model that is used for analysis.
@@ -316,10 +345,15 @@ class NlpTransformer(FrameworkTransformer):
          -- "analyze_sentimentdl_glove_imdb"
          -- "analyze_sentimentdl_use_twitter"
         """
-        pipeline = PretrainedPipeline(sentiment_model, lang='en')
+        pipeline = PretrainedPipeline(sentiment_model, lang="en")
         return pipeline
 
-    def sentence_embeddings(self, document_col="document", token_col="token", output_col="embeddings") -> Pipeline:
+    def sentence_embeddings(
+        self,
+        document_col: str = "document",
+        token_col: str = "token",
+        output_col: str = "embeddings",
+    ) -> Pipeline:
         """
         Generates a pipeline that creates sentence embeddings transformer
 
@@ -330,32 +364,44 @@ class NlpTransformer(FrameworkTransformer):
         :rtype: Pipeline
         """
         pipeline_list = []
-        embeddings = WordEmbeddingsModel.pretrained() \
-            .setInputCols(document_col, token_col) \
+        embeddings = (
+            WordEmbeddingsModel.pretrained()
+            .setInputCols(document_col, token_col)
             .setOutputCol("embeddings0")
+        )
         pipeline_list.append(embeddings)
 
-        embeddings_sentence = SentenceEmbeddings() \
-            .setInputCols([document_col, "embeddings0"]) \
-            .setOutputCol("sentence_embeddings") \
+        embeddings_sentence = (
+            SentenceEmbeddings()
+            .setInputCols([document_col, "embeddings0"])
+            .setOutputCol("sentence_embeddings")
             .setPoolingStrategy("AVERAGE")
+        )
         pipeline_list.append(embeddings_sentence)
 
         # puts embeddings into an anlaysis ready form
-        embeddings_finisher = EmbeddingsFinisher() \
-            .setInputCols("sentence_embeddings") \
-            .setOutputCols(output_col) \
-            .setOutputAsVector(True) \
+        embeddings_finisher = (
+            EmbeddingsFinisher()
+            .setInputCols("sentence_embeddings")
+            .setOutputCols(output_col)
+            .setOutputAsVector(True)
             .setCleanAnnotations(False)
+        )
         pipeline_list.append(embeddings_finisher)
 
-        nlp_pipeline = Pipeline(stages=pipeline_list)  # [embeddings, embeddingsSentence, embeddingsFinisher]
+        nlp_pipeline = Pipeline(
+            stages=pipeline_list
+        )  # [embeddings, embeddingsSentence, embeddingsFinisher]
         return nlp_pipeline
 
-    def do_bag_of_words(self, df, tokens_col: str = "ntokens", out_col: str = "bag_of_words_vectors",
-                        explode_col: str = "binarized_bag_of_words",
-                        explode_vector: bool = True
-                       ) -> DataFrame:
+    def do_bag_of_words(
+        self,
+        df: DataFrame,
+        tokens_col: str = "ntokens",
+        out_col: str = "bag_of_words_vectors",
+        explode_col: str = "binarized_bag_of_words",
+        explode_vector: bool = True,
+    ) -> DataFrame:
         """
         Generates a transformer that creates a bag of words analysis from a list of tokens
 
@@ -373,36 +419,38 @@ class NlpTransformer(FrameworkTransformer):
         model = cv.fit(df)
         df = model.transform(df)
         if explode_vector:
-            df = df.withColumn(explode_col, vector_to_array(out_col))
+            dfx = vector_to_array(df[out_col]).alias("temp")
+            df = df.withColumn(explode_col, dfx["temp"])  # arg-type: ignore
 
         return df
 
     def get_tfidf(
-            self,
-            token_col: str = "ntokens",
-            output_col: str = "tf_idf_features",
+        self,
+        token_col: str = "ntokens",
+        output_col: str = "tf_idf_features",
     ) -> Pipeline:
         """
         Generates a tf-idf analysis.
 
-        :param str tokens_col: Column with array of tokens
-        :param str out_col: Name of vector output column
+        :param str token_col: Column with array of tokens
+        :param str output_col: Name of vector output column
         :rtype: Pipeline
         """
         hashing_output_name = "tf_idf_raw_features"
-        tf_hash = HashingTF() \
-            .setInputCol(token_col) \
-            .setOutputCol(hashing_output_name)  # inputCol=token_col, outputCol=hashing_output_name)\
+        tf_hash = (
+            HashingTF().setInputCol(token_col).setOutputCol(hashing_output_name)
+        )  # inputCol=token_col, outputCol=hashing_output_name)\
 
-        idf = IDF() \
-            .setInputCol(hashing_output_name) \
-            .setOutputCol(output_col)  # . =hashing_output_name, outputCol=output_col)
+        idf = (
+            IDF().setInputCol(hashing_output_name).setOutputCol(output_col)
+        )  # . =hashing_output_name, outputCol=output_col)
         tfidf_pipeline = Pipeline(stages=[tf_hash, idf])
 
         return tfidf_pipeline
 
-
-    def get_entities(self,  entity_pipeline:str = "onto_recognize_entities_sm") -> PretrainedPipeline:
+    def get_entities(
+        self, entity_pipeline: str = "onto_recognize_entities_sm"
+    ) -> PretrainedPipeline:
 
         """
         Creates transformer for pretrained entity recognition pipeline. In a Spark DataFrame environment.
@@ -414,9 +462,8 @@ class NlpTransformer(FrameworkTransformer):
         :param str entity_pipeline: The name of the pretrained pipeline to use
         :rtype PretrainedPipeline
         """
-        #pipeline = PretrainedPipeline("onto_recognize_entities_sm")
+        # pipeline = PretrainedPipeline("onto_recognize_entities_sm")
 
         pipeline = PretrainedPipeline(entity_pipeline)
 
         return pipeline
-
