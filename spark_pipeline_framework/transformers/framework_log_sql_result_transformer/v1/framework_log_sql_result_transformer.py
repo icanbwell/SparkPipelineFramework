@@ -18,7 +18,8 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
     def __init__(
         self,
         # add your parameters here (be sure to add them to setParams below too)
-        sql: str,
+        sql: Optional[str] = None,
+        view: Optional[str] = None,
         limit: Optional[int] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -31,8 +32,13 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.sql: Param[str] = Param(self, "sql", "")
+        self.sql: Param[Optional[str]] = Param(self, "sql", "")
         self._setDefault(sql=sql)
+        self.view: Param[Optional[str]] = Param(self, "view", "")
+        self._setDefault(view=None)
+
+        assert sql or view
+
         self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=limit)
 
@@ -40,15 +46,25 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        sql: str = self.getSql()
+        sql: Optional[str] = self.getSql()
+        view: Optional[str] = self.getOrDefault(self.view)
         limit = self.getLimit()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
-        df2 = df.sql_ctx.sql(sql)
+        df2: DataFrame
+        if sql:
+            df2 = df.sparkSession.sql(sql)
+        elif view:
+            df2 = df.sparkSession.table(view)
+        else:
+            assert False, "Neither sql nor view was specified"
+
         if not limit or limit < 0:
             limit = 1000
         message = (
-            (self.getName() or "") + "\n" + get_pretty_data_frame(df2, limit, name=sql)
+            (self.getName() or view or "")
+            + "\n"
+            + get_pretty_data_frame(df2, limit, name=sql or view)
         )
         self.logger.info(message)
         if progress_logger:
@@ -57,7 +73,7 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getSql(self) -> str:
+    def getSql(self) -> Optional[str]:
         return self.getOrDefault(self.sql)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
