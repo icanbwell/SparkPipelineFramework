@@ -56,7 +56,7 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         self._setDefault(log_event=None)
 
         self.log_limit: Param[Optional[int]] = Param(self, "log_limit", "")
-        self._setDefault(log_limit=False)
+        self._setDefault(log_limit=None)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)

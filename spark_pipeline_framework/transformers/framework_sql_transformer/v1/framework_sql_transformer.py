@@ -72,7 +72,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         self._setDefault(log_result=False)
 
         self.log_limit: Param[Optional[int]] = Param(self, "log_limit", "")
-        self._setDefault(log_limit=False)
+        self._setDefault(log_limit=None)
 
         self.verify_count_remains_same: Param[bool] = Param(
             self, "verify_count_remains_same", ""
