@@ -99,6 +99,12 @@ class FhirReceiver(FrameworkTransformer):
         url_column: Optional[str] = None,
         error_view: Optional[str] = None,
         view: Optional[str] = None,
+        retry_count: Optional[int] = None,
+        exclude_status_codes_from_retry: Optional[List[int]] = None,
+        num_partitions: Optional[int] = None,
+        checkpoint_path: Optional[
+            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+        ] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -303,6 +309,22 @@ class FhirReceiver(FrameworkTransformer):
         self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=None)
 
+        self.retry_count: Param[Optional[int]] = Param(self, "retry_count", "")
+        self._setDefault(retry_count=None)
+
+        self.exclude_status_codes_from_retry: Param[Optional[List[int]]] = Param(
+            self, "exclude_status_codes_from_retry", ""
+        )
+        self._setDefault(exclude_status_codes_from_retry=None)
+
+        self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
+        self._setDefault(num_partitions=None)
+
+        self.checkpoint_path: Param[
+            Optional[Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]]
+        ] = Param(self, "checkpoint_path", "")
+        self._setDefault(checkpoint_path=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -358,6 +380,17 @@ class FhirReceiver(FrameworkTransformer):
 
         error_view: Optional[str] = self.getOrDefault(self.error_view)
         view: Optional[str] = self.getOrDefault(self.view)
+
+        retry_count: Optional[int] = self.getOrDefault(self.retry_count)
+        exclude_status_codes_from_retry: Optional[List[int]] = self.getOrDefault(
+            self.exclude_status_codes_from_retry
+        )
+
+        num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
+
+        checkpoint_path: Optional[
+            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+        ] = self.getOrDefault(self.checkpoint_path)
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -442,6 +475,8 @@ class FhirReceiver(FrameworkTransformer):
                         extra_context_to_return={slug_column: service_slug}
                         if slug_column and service_slug
                         else None,
+                        retry_count=retry_count,
+                        exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                     )
 
                 def process_batch(
@@ -634,11 +669,9 @@ class FhirReceiver(FrameworkTransformer):
                     )
 
                 # run the above function on every partition
-                rdd: RDD[Row] = (
-                    id_df.repartition(desired_partitions)
-                    .rdd.mapPartitionsWithIndex(send_partition_request_to_server)
-                    .cache()
-                )
+                rdd: RDD[Row] = id_df.repartition(
+                    desired_partitions
+                ).rdd.mapPartitionsWithIndex(send_partition_request_to_server)
 
                 schema = StructType(
                     [
@@ -656,7 +689,15 @@ class FhirReceiver(FrameworkTransformer):
                     ]
                 )
 
-                result_with_counts: DataFrame = rdd.toDF(schema).cache()
+                result_with_counts: DataFrame = rdd.toDF(schema)
+                if checkpoint_path:
+                    if callable(checkpoint_path):
+                        checkpoint_path = checkpoint_path(self.loop_id)
+                    checkpoint_file = f"{checkpoint_path}/{resource_name}"
+                    result_with_counts.write.parquet(checkpoint_file)
+                    result_with_counts = df.sparkSession.read.parquet(checkpoint_file)
+                else:
+                    result_with_counts = result_with_counts.cache()
 
                 # find results that have a status code not in the ignore_status_codes
                 results_with_counts_errored = result_with_counts.where(
@@ -803,6 +844,7 @@ class FhirReceiver(FrameworkTransformer):
                     f"Executing requests and writing FHIR {resource_name} resources to {file_path}..."
                 )
                 result_df.write.mode(mode).text(str(file_path))
+                result_df = df.sparkSession.read.text(str(file_path))
                 self.logger.info(
                     f"Received {result_df.count()} FHIR {resource_name} resources."
                 )
@@ -864,6 +906,8 @@ class FhirReceiver(FrameworkTransformer):
                         accept_type=accept_type,
                         content_type=content_type,
                         accept_encoding=accept_encoding,
+                        retry_count=retry_count,
+                        exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                     )
                     # error = result.error
                     try:
@@ -952,10 +996,16 @@ class FhirReceiver(FrameworkTransformer):
                     else:
                         break
 
-                rdd1: RDD[str] = sc(df).parallelize(resources)
+                rdd1: RDD[str] = (
+                    sc(df).parallelize(resources, numSlices=num_partitions)
+                    if num_partitions is not None
+                    else sc(df).parallelize(resources)
+                )
 
-                list_df: DataFrame = rdd1.toDF(StringType()).cache()
+                list_df: DataFrame = rdd1.toDF(StringType())
                 list_df.write.mode(mode).text(str(file_path))
+                list_df = df.sparkSession.read.text(str(file_path))
+
                 self.logger.info(f"Wrote FHIR data to {file_path}")
 
                 if progress_logger:
@@ -975,7 +1025,7 @@ class FhirReceiver(FrameworkTransformer):
                 if view:
                     list_df.createOrReplaceTempView(view)
                 if error_view:
-                    errors_df = sc(df).parallelize(resources).toDF()
+                    errors_df = sc(df).parallelize(errors).toDF().cache()
                     errors_df.createOrReplaceTempView(error_view)
                     if progress_logger:
                         progress_logger.log_event(

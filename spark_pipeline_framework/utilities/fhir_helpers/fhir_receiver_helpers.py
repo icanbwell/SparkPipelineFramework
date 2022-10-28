@@ -39,6 +39,8 @@ def send_fhir_request(
     content_type: Optional[str] = None,
     accept_encoding: Optional[str] = None,
     extra_context_to_return: Optional[Dict[str, Any]] = None,
+    retry_count: Optional[int] = None,
+    exclude_status_codes_from_retry: Optional[List[int]] = None,
 ) -> FhirGetResponse:
     """
     Sends a fhir request to the fhir client sdk
@@ -127,4 +129,13 @@ def send_fhir_request(
 
     if extra_context_to_return:
         fhir_client = fhir_client.extra_context_to_return(extra_context_to_return)
+
+    if retry_count:
+        fhir_client = fhir_client.retry_count(retry_count)
+
+    if exclude_status_codes_from_retry:
+        fhir_client = fhir_client.exclude_status_codes_from_retry(
+            exclude_status_codes_from_retry
+        )
+
     return fhir_client.get()
