@@ -89,7 +89,7 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     assert result_df.count() > 0
 
 
-if __name__ == "__main__":
+def do_nlp_test() -> None:
     print("Building Session")
     import time
 
@@ -114,3 +114,7 @@ if __name__ == "__main__":
     test_can_run_framework_pipeline(spark_session)
     print("TIME ELAPSED: ")
     print(time.time() - begin)
+
+
+if __name__ == "__main__":
+    do_nlp_test()
