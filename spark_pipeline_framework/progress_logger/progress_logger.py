@@ -170,10 +170,10 @@ class ProgressLogger:
     ) -> bool:
         if entry_name:
             self.logger.info(
-                "{entry_name}: " + str(message), {entry_name: entry_name, **kwargs}
+                "{entry_name}: " + str(message), "", {entry_name: entry_name, **kwargs}
             )
         else:
-            self.logger.info(str(message), **kwargs)
+            self.logger.info(str(message), "", **kwargs)
         return True
 
     def write_error_to_log(

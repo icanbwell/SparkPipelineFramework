@@ -163,10 +163,11 @@ class HttpDataSender(FrameworkTransformer):
                 headers = {"Authorization": f"Bearer {access_token}"}
 
         if progress_logger:
+            header_text = json.dumps(headers, default=str)
             progress_logger.write_to_log(
                 entry_name=self.getName(),
-                message="Using headers: {headers}",
-                headers=json.dumps(headers, default=str),
+                message="Using headers: {mac}",
+                mac="foo",
             )
 
         with ProgressLogMetric(
