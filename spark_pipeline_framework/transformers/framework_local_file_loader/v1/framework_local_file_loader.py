@@ -282,7 +282,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getView()
+        return super().getName() or self.getView()
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getReaderFormat(self) -> str:

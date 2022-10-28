@@ -30,6 +30,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         verify_count_remains_same: bool = False,
         mapping_file_name: Optional[str] = None,
         log_event: Optional[bool] = None,
+        log_limit: Optional[int] = None,
     ) -> None:
         """
         Runs the provided SQL
@@ -70,6 +71,9 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         self.log_result: Param[bool] = Param(self, "log_result", "")
         self._setDefault(log_result=False)
 
+        self.log_limit: Param[Optional[int]] = Param(self, "log_limit", "")
+        self._setDefault(log_limit=False)
+
         self.verify_count_remains_same: Param[bool] = Param(
             self, "verify_count_remains_same", ""
         )
@@ -88,6 +92,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         log_result: bool = self.getLogResult()
         log_event: Optional[bool] = self.getOrDefault(self.log_event)
+        log_limit: Optional[int] = self.getOrDefault(self.log_limit)
 
         assert sql_text
         with ProgressLogMetric(
@@ -105,9 +110,11 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                 raise
 
             if log_result:
-                limit = 100
+                limit = log_limit or 10
                 message = (
-                    (name or view or "")
+                    "\n"
+                    + (name or view or "")
+                    + f" (LIMIT {limit})"
                     + "\n"
                     + get_pretty_data_frame(df, limit, sql_text)
                 )
