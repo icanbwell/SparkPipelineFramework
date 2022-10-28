@@ -99,7 +99,9 @@ class ProgressLogger:
                     key=self.__mlflow_clean_string(name), value=time_diff_in_minutes
                 )
             except Exception as e:
-                self.log_event("mlflow log metric error", str({e}))
+                self.log_event(
+                    event_name="mlflow log metric error", event_text=str({e})
+                )
 
     def log_param(self, key: str, value: str) -> None:
         self.write_to_log(entry_name=key, message=value)
@@ -110,7 +112,7 @@ class ProgressLogger:
                     value=self.__mlflow_clean_param_value(value),
                 )
             except Exception as e:
-                self.log_event("mlflow log param error", str({e}))
+                self.log_event(event_name="mlflow log param error", event_text=str({e}))
 
     def log_params(self, params: Dict[str, Any]) -> None:
         if self.mlflow_config is not None:
@@ -163,18 +165,20 @@ class ProgressLogger:
                     mlflow.log_artifact(local_path=str(file_path))
 
         except Exception as e:
-            self.log_event("Error in log_artifact writing to mlflow", str(e))
+            self.log_event(
+                event_name="Error in log_artifact writing to mlflow", event_text=str(e)
+            )
 
     def write_to_log(
         self, *, entry_name: Optional[str], message: str = "", **kwargs: Any
     ) -> bool:
         if entry_name:
             self.logger.info(
-                f"{entry_name}: " + str(message),
-                extra={entry_name: entry_name, **kwargs},
+                (f"{entry_name}: " + str(message)).format(**kwargs),
+                **{entry_name: entry_name, **kwargs},
             )
         else:
-            self.logger.info(str(message), extra=kwargs)
+            self.logger.info(str(message).format(**kwargs), **kwargs)
         return True
 
     def write_error_to_log(
@@ -210,7 +214,8 @@ class ProgressLogger:
         **kwargs: Any,
     ) -> None:
         self.logger.info(
-            event_format_string.format(event_name, current, total), **kwargs
+            event_format_string.format(event_name, current, total),
+            **{"isProgressEvent": True, **kwargs},  # type: ignore
         )
         if self.event_loggers:
             for event_logger in self.event_loggers:
@@ -222,8 +227,10 @@ class ProgressLogger:
                     backoff=backoff,
                 )
 
-    def log_event(self, event_name: str, event_text: str, **kwargs: Any) -> None:
-        self.write_to_log(entry_name=event_name, message=event_text, **kwargs)
+    def log_event(self, *, event_name: str, event_text: str, **kwargs: Any) -> None:
+        self.write_to_log(
+            entry_name=event_name, message=event_text, **{"isEvent": True, **kwargs}
+        )
         if self.event_loggers:
             for event_logger in self.event_loggers:
                 event_logger.log_event(event_name=event_name, event_text=event_text)
