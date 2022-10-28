@@ -699,8 +699,8 @@ class FhirReceiver(FrameworkTransformer):
                             self.getName() or self.__class__.__name__,
                             f"Writing checkpoint to {checkpoint_file}",
                         )
-                    result_with_counts.write.json(checkpoint_file)
-                    result_with_counts = df.sparkSession.read.json(checkpoint_file)
+                    result_with_counts.write.parquet(checkpoint_file)
+                    result_with_counts = df.sparkSession.read.parquet(checkpoint_file)
                 else:
                     result_with_counts = result_with_counts.cache()
 
