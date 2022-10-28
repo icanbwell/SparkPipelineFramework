@@ -78,15 +78,14 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         else:
             assert False, "Neither sql nor view was specified"
 
-        if not limit or limit < 0:
-            limit = 10
+        log_limit = 10 if log_limit is None else log_limit
 
         message = (
             "\n"
             + (name or view or "")
-            + f" (LIMIT {log_limit or limit})"
+            + f" (LIMIT {log_limit})"
             + "\n"
-            + get_pretty_data_frame(df2, log_limit or limit, name=sql or view)
+            + get_pretty_data_frame(df2, log_limit, name=sql or view)
         )
         self.logger.info(message)
         if progress_logger:

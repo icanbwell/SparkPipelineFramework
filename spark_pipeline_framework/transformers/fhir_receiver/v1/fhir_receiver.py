@@ -1,5 +1,6 @@
 import json
 import math
+import uuid
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
@@ -693,7 +694,9 @@ class FhirReceiver(FrameworkTransformer):
                 if checkpoint_path:
                     if callable(checkpoint_path):
                         checkpoint_path = checkpoint_path(self.loop_id)
-                    checkpoint_file = f"{checkpoint_path}/{resource_name}"
+                    checkpoint_file = (
+                        f"{checkpoint_path}/{resource_name}/{uuid.uuid4()}"
+                    )
                     if progress_logger:
                         progress_logger.write_to_log(
                             self.getName() or self.__class__.__name__,
