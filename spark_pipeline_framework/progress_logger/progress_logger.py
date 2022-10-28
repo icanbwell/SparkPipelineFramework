@@ -170,10 +170,11 @@ class ProgressLogger:
     ) -> bool:
         if entry_name:
             self.logger.info(
-                "{entry_name}: " + str(message), "", {entry_name: entry_name, **kwargs}
+                f"{entry_name}: " + str(message),
+                extra={entry_name: entry_name, **kwargs},
             )
         else:
-            self.logger.info(str(message), "", **kwargs)
+            self.logger.info(str(message), extra=kwargs)
         return True
 
     def write_error_to_log(
@@ -181,10 +182,11 @@ class ProgressLogger:
     ) -> bool:
         if entry_name:
             self.logger.error(
-                "{entry_name}: " + str(message), {entry_name: entry_name, **kwargs}
+                f"{entry_name}: " + str(message),
+                extra={entry_name: entry_name, **kwargs},
             )
         else:
-            self.logger.error(str(message), **kwargs)
+            self.logger.error(str(message), extra=kwargs)
         return True
 
     # noinspection PyUnusedLocal
