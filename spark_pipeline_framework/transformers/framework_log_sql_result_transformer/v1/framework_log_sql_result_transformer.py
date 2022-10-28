@@ -74,10 +74,11 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
             assert False, "Neither sql nor view was specified"
 
         if not limit or limit < 0:
-            limit = 1000
+            limit = 10
 
         message = (
             (name or view or "")
+            + f" (LIMIT {limit})"
             + "\n"
             + get_pretty_data_frame(df2, limit, name=sql or view)
         )
