@@ -75,6 +75,7 @@ class SimplePipeline(FrameworkPipeline):
                 List[Transformer],
                 [
                     FrameworkCsvLoader(
+                        name="FrameworkCsvLoader",
                         view="flights",
                         file_path=parameters["flights_path"],
                         parameters=parameters,
@@ -101,7 +102,7 @@ class SimplePipeline(FrameworkPipeline):
                     FrameworkJsonExporter(
                         file_path=parameters["export_path"],
                         view="flights",
-                        name="export flights as json",
+                        name="FrameworkJsonExporter",
                         parameters=parameters,
                         progress_logger=progress_logger,
                     ),
@@ -246,7 +247,9 @@ def test_progress_logger_with_mlflow(
         for run in nested_runs
         if "FrameworkCsvLoader" in run.data.tags.get("mlflow.runName")
     ]
-    assert len(csv_loader_run) == 1
+    assert len(csv_loader_run) == 1, ",".join(
+        [run.data.tags.get("mlflow.runName") for run in nested_runs]
+    )
     assert (
         csv_loader_run[0].data.params.get("data_path") == flights_path
     ), "csv loader run should have 'data_path` param set"

@@ -25,6 +25,7 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         log_event: Optional[bool] = None,
+        log_limit: Optional[int] = None,
     ) -> None:
         """
         Logs the result after running sql or the contents of the view
@@ -54,6 +55,9 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         self.log_event: Param[Optional[bool]] = Param(self, "log_event", "")
         self._setDefault(log_event=None)
 
+        self.log_limit: Param[Optional[int]] = Param(self, "log_limit", "")
+        self._setDefault(log_limit=False)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -64,6 +68,7 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         limit = self.getLimit()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         log_event: Optional[bool] = self.getOrDefault(self.log_event)
+        log_limit: Optional[int] = self.getOrDefault(self.log_limit)
 
         df2: DataFrame
         if sql:
@@ -79,9 +84,9 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         message = (
             "\n"
             + (name or view or "")
-            + f" (LIMIT {limit})"
+            + f" (LIMIT {log_limit or limit})"
             + "\n"
-            + get_pretty_data_frame(df2, limit, name=sql or view)
+            + get_pretty_data_frame(df2, log_limit or limit, name=sql or view)
         )
         self.logger.info(message)
         if progress_logger:
