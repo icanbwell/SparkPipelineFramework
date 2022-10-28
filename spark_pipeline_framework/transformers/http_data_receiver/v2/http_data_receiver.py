@@ -161,7 +161,10 @@ class HttpDataReceiver(FrameworkTransformer):
                     self.logger.debug(f"Calling API: {http_request.to_string()}...")
                     if progress_logger:
                         progress_logger.write_to_log(
-                            f"Calling API: {http_request.to_string()}..."
+                            entry_name=self.__class__.__name__,
+                            message="Calling API: {url}: {request}...",
+                            url=http_request.url,
+                            request=http_request.to_string(),
                         )
                     response = http_request.get_result()
 
@@ -173,12 +176,20 @@ class HttpDataReceiver(FrameworkTransformer):
                             f"Response: {json.dumps(response.result, default=str)}"
                         )
                     if progress_logger:
-                        progress_logger.write_to_log(
-                            f"Successfully retrieved: {http_request.url} with status {response.status}"
-                        )
                         if self.getLogResponse():
                             progress_logger.write_to_log(
-                                f"Response [{response.status}]: {json.dumps(response.result, default=str)}"
+                                entry_name=self.getName(),
+                                message="Response from {url} [{status_code}]: {results}",
+                                url=http_request.url,
+                                status_code=response.status,
+                                results=json.dumps(response.result, default=str),
+                            )
+                        else:
+                            progress_logger.write_to_log(
+                                entry_name=self.getName(),
+                                message="Successfully retrieved: {url} with status {status_code}",
+                                url=http_request.url,
+                                status_code=response.status,
                             )
 
                     next_request_generator = self.getNextRequestGenerator()

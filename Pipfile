@@ -26,6 +26,7 @@ fastjsonschema= "*"
 "helix.fhir.client.sdk" = ">=1.0.23"
 opensearch-py= "*"
 pyathena = "*"
+structlog = ">=22.1.0"
 
 [dev-packages]
 setuptools=">=61.3.1"
@@ -53,6 +54,9 @@ helix-mockserver-client=">=1.0.0"
 "sparkfhirschemas" = "==1.0.14"
 types-boto3 = ">=1.0.2"
 moto = ">=4.0.7"
+pygelf = ">=0.4.2"
+seqlog = ">=0.3.20"
+better-exceptions = ">=0.3.3"
 
 [requires]
 python_version = "3.7"

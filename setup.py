@@ -77,6 +77,7 @@ setup(
         "helix.fhir.client.sdk>=1.0.23",
         "opensearch-py",
         "pyathena",
+        "structlog>=22.1.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

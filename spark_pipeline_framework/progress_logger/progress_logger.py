@@ -4,7 +4,10 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Optional, List, Dict, Any
 
+# noinspection PyPackageRequirements
 import mlflow  # type: ignore
+
+# noinspection PyPackageRequirements
 from mlflow.entities import Experiment, RunStatus  # type: ignore
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
@@ -84,6 +87,7 @@ class ProgressLogger:
             return
         mlflow.start_run(run_name=run_name, nested=is_nested)
 
+    # noinspection PyMethodMayBeStatic
     def end_mlflow_run(self, status: RunStatus = RunStatus.FINISHED) -> None:
         mlflow.end_run(status=RunStatus.to_string(status))
 
@@ -95,10 +99,12 @@ class ProgressLogger:
                     key=self.__mlflow_clean_string(name), value=time_diff_in_minutes
                 )
             except Exception as e:
-                self.log_event("mlflow log metric error", str({e}))
+                self.log_event(
+                    event_name="mlflow log metric error", event_text=str({e})
+                )
 
     def log_param(self, key: str, value: str) -> None:
-        self.write_to_log(name=key, message=value)
+        self.write_to_log(entry_name=key, message=value)
         if self.mlflow_config is not None:
             try:
                 mlflow.log_param(
@@ -106,7 +112,7 @@ class ProgressLogger:
                     value=self.__mlflow_clean_param_value(value),
                 )
             except Exception as e:
-                self.log_event("mlflow log param error", str({e}))
+                self.log_event(event_name="mlflow log param error", event_text=str({e}))
 
     def log_params(self, params: Dict[str, Any]) -> None:
         if self.mlflow_config is not None:
@@ -114,6 +120,7 @@ class ProgressLogger:
             for key, value in params.items():
                 self.log_param(key=key, value=value)
 
+    # noinspection PyMethodMayBeStatic
     def __mlflow_clean_string(self, value: str) -> str:
         """
 
@@ -126,8 +133,10 @@ class ProgressLogger:
         one side effect of this is if the value contains `//` it will be changed to `/` and fail the _validate_metric_name check.
         """
         value = str(value).replace("//", "/")
+        # noinspection RegExpRedundantEscape
         return re.sub(r"[^\w\-\.\s\/]", "-", value)
 
+    # noinspection PyMethodMayBeStatic
     def __mlflow_clean_param_value(self, param_value: str) -> str:
         """
         replace sensitive values in the string with asterisks
@@ -156,13 +165,38 @@ class ProgressLogger:
                     mlflow.log_artifact(local_path=str(file_path))
 
         except Exception as e:
-            self.log_event("Error in log_artifact writing to mlflow", str(e))
+            self.log_event(
+                event_name="Error in log_artifact writing to mlflow", event_text=str(e)
+            )
 
-    def write_to_log(self, name: str, message: str = "") -> bool:
-        self.logger.info(name + ": " + str(message))
+    def write_to_log(
+        self, *, entry_name: Optional[str], message: str = "", **kwargs: Any
+    ) -> bool:
+        if entry_name:
+            self.logger.info(
+                (f"{entry_name}: " + str(message)).format(**kwargs),
+                **{entry_name: entry_name, **kwargs},
+            )
+        else:
+            self.logger.info(str(message).format(**kwargs), **kwargs)
         return True
 
-    def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
+    def write_error_to_log(
+        self, *, entry_name: Optional[str], message: str = "", **kwargs: Any
+    ) -> bool:
+        if entry_name:
+            self.logger.error(
+                f"{entry_name}: " + str(message),
+                extra={entry_name: entry_name, **kwargs},
+            )
+        else:
+            self.logger.error(str(message), extra=kwargs)
+        return True
+
+    # noinspection PyUnusedLocal
+    def log_exception(
+        self, event_name: str, event_text: str, ex: Exception, **kwargs: Any
+    ) -> None:
         self.log_artifact("_exception.txt", str(ex))
         if self.event_loggers:
             for event_logger in self.event_loggers:
@@ -177,8 +211,12 @@ class ProgressLogger:
         total: int,
         event_format_string: str,
         backoff: bool = True,
+        **kwargs: Any,
     ) -> None:
-        self.logger.info(event_format_string.format(event_name, current, total))
+        self.logger.info(
+            event_format_string.format(event_name, current, total),
+            **{"isProgressEvent": True, **kwargs},  # type: ignore
+        )
         if self.event_loggers:
             for event_logger in self.event_loggers:
                 event_logger.log_progress_event(
@@ -189,8 +227,10 @@ class ProgressLogger:
                     backoff=backoff,
                 )
 
-    def log_event(self, event_name: str, event_text: str) -> None:
-        self.write_to_log(name=event_name, message=event_text)
+    def log_event(self, *, event_name: str, event_text: str, **kwargs: Any) -> None:
+        self.write_to_log(
+            entry_name=event_name, message=event_text, **{"isEvent": True, **kwargs}
+        )
         if self.event_loggers:
             for event_logger in self.event_loggers:
                 event_logger.log_event(event_name=event_name, event_text=event_text)

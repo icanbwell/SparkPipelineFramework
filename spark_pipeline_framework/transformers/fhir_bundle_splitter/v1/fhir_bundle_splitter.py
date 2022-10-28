@@ -71,8 +71,9 @@ class FhirBundleSplitter(FrameworkTransformer):
         if resource_types is None:
             if progress_logger:
                 progress_logger.write_to_log(
-                    "WARNING: No resource types as passed so we will analyze the data to find resource types."
-                    "This can be slow."
+                    entry_name="fhir_bundle_splitter",
+                    message="WARNING: No resource types as passed so we will analyze the data to find resource types."
+                    "This can be slow.",
                 )
             resource_types_rows: List[Row] = (
                 df.select("entry.resource.resourceType").distinct().collect()
@@ -88,9 +89,10 @@ class FhirBundleSplitter(FrameworkTransformer):
             resource_types = list(resource_types_set)
             if progress_logger:
                 progress_logger.write_to_log(
-                    "Following resource types were found in the data:"
+                    entry_name="fhir_bundle_splitter",
+                    message="Following resource types were found in the data: {resource_types}",
+                    resource_types=resource_types,
                 )
-                progress_logger.write_to_log(",".join(resource_types))
 
         # now select the columns
         column_specs: List[Column] = [

@@ -88,6 +88,7 @@ class FrameworkPipeline(Transformer):
             self.progress_logger.log_event(
                 event_name=pipeline_name,
                 event_text=f"Starting Pipeline {pipeline_name}",
+                pipeline_name=pipeline_name,
             )
             self.progress_logger.log_params(params=self.__parameters)
 
@@ -105,20 +106,20 @@ class FrameworkPipeline(Transformer):
                         f"({i} of {count_of_transformers}) ----"
                     )
                     self.progress_logger.start_mlflow_run(
-                        run_name=str(transformer), is_nested=True
+                        run_name=str(stage_name), is_nested=True
                     )
 
                     with ProgressLogMetric(
                         progress_logger=self.progress_logger,
-                        name=str(transformer) or "unknown",
+                        name=str(stage_name) or "unknown",
                     ):
                         self.progress_logger.log_event(
-                            pipeline_name,
+                            event_name=pipeline_name,
                             event_text=f"Running pipeline step {stage_name}",
                         )
                         df = transformer.transform(dataset=df)
                         self.progress_logger.log_event(
-                            pipeline_name,
+                            event_name=pipeline_name,
                             event_text=f"Finished pipeline step {stage_name}",
                         )
                     self.progress_logger.end_mlflow_run()
@@ -137,7 +138,7 @@ class FrameworkPipeline(Transformer):
                         else []
                     )
                     for error_message in error_messages:
-                        logger.error(msg=error_message)
+                        logger.error(event=error_message)
 
                     if hasattr(transformer, "getSql"):
                         # noinspection Mypy
