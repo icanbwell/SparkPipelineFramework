@@ -107,7 +107,8 @@ class FrameworkSqlTransformer(FrameworkTransformer):
             if log_result:
                 limit = 10
                 message = (
-                    (name or view or "")
+                    "\n"
+                    + (name or view or "")
                     + f" (LIMIT {limit})"
                     + "\n"
                     + get_pretty_data_frame(df, limit, sql_text)

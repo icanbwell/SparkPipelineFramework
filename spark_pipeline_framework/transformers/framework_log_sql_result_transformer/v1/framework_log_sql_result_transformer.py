@@ -77,7 +77,8 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
             limit = 10
 
         message = (
-            (name or view or "")
+            "\n"
+            + (name or view or "")
             + f" (LIMIT {limit})"
             + "\n"
             + get_pretty_data_frame(df2, limit, name=sql or view)
