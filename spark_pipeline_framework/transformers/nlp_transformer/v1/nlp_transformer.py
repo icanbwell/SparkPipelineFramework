@@ -30,20 +30,26 @@ from typing import Any, Dict, Optional, List
 class NlpTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
     """
-    jar_packages = "mysql:mysql-connector-java:8.X.X,\
-        com.johnsnowlabs.nlp:spark-nlp_2.X:4.X.X" #this is a string that behaves like a list
-
     Must add the following configuration to the initial spark code
+        #this jar-string behaves like a list on the backend
+        jar_packages = "mysql:mysql-connector-java:X.X.X,\
+            com.johnsnowlabs.nlp:spark-nlp_X.X:X.X.X"
+
+        #the following works
+        jar_packages = "mysql:mysql-connector-java:8.0.24,\
+            com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1"
+
+
         spark_session = SparkSession.builder \
-        .appName(XXX) \
-        .master("XXX") \
-        .config("spark.driver.memory", "16G") \
-        .config("spark.driver.maxResultSize", "0") \
-        .config("spark.kryoserializer.buffer.max", "2000M") \
-        .config("spark.jars.packages",
-                jar_packages
-                )
-        .getOrCreate()
+            .appName(XXX) \
+            .master("XXX") \
+            .config("spark.driver.memory", "16G") \
+            .config("spark.driver.maxResultSize", "0") \
+            .config("spark.kryoserializer.buffer.max", "2000M") \
+            .config("spark.jars.packages",
+                    jar_packages
+                    )
+            .getOrCreate()
 
         One may have to add other jar packages, and add them to the jar_packages string (with a "," separating)
 
@@ -419,8 +425,9 @@ class NlpTransformer(FrameworkTransformer):
         model = cv.fit(df)
         df = model.transform(df)
         if explode_vector:
-            dfx = vector_to_array(df[out_col]).alias("temp")
-            df = df.withColumn(explode_col, dfx["temp"])  # arg-type: ignore
+            df = df.withColumn(
+                explode_col, vector_to_array(df[out_col])
+            )  # arg-type: ignore
 
         return df
 
