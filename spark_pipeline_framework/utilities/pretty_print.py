@@ -54,6 +54,9 @@ def get_pretty_data_frame(df: DataFrame, limit: int, name: Optional[str] = None)
     :param name: name to show
     :return:
     """
+    if limit == 0:
+        return ""
+
     rows: List[List[Any]] = [list(row) for row in df.limit(limit).collect()]
 
     return get_pretty_table(rows, df.columns, name=name)

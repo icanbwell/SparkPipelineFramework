@@ -110,13 +110,13 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                 raise
 
             if log_result:
-                limit = log_limit or 10
+                log_limit = 10 if log_limit is None else log_limit
                 message = (
                     "\n"
                     + (name or view or "")
-                    + f" (LIMIT {limit})"
+                    + f" (LIMIT {log_limit})"
                     + "\n"
-                    + get_pretty_data_frame(df, limit, sql_text)
+                    + get_pretty_data_frame(df, log_limit, sql_text)
                 )
                 self.logger.info(message)
                 if progress_logger:
