@@ -694,6 +694,11 @@ class FhirReceiver(FrameworkTransformer):
                     if callable(checkpoint_path):
                         checkpoint_path = checkpoint_path(self.loop_id)
                     checkpoint_file = f"{checkpoint_path}/{resource_name}"
+                    if progress_logger:
+                        progress_logger.write_to_log(
+                            self.getName() or self.__class__.__name__,
+                            f"Writing checkpoint to {checkpoint_file}",
+                        )
                     result_with_counts.write.json(checkpoint_file)
                     result_with_counts = df.sparkSession.read.json(checkpoint_file)
                 else:

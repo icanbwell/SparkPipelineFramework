@@ -144,19 +144,20 @@ class ProgressLogger:
     def log_artifact(
         self, key: str, contents: str, folder_path: Optional[str] = None
     ) -> None:
-        try:
-            with TemporaryDirectory() as temp_dir_name:
-                data_dir: Path = Path(temp_dir_name)
-                file_path: Path = data_dir.joinpath(key)
-                with open(file_path, "w") as file:
-                    file.write(contents)
-                    self.logger.info(f"Wrote sql to {file_path}")
+        if self.mlflow_config is not None:
+            try:
+                with TemporaryDirectory() as temp_dir_name:
+                    data_dir: Path = Path(temp_dir_name)
+                    file_path: Path = data_dir.joinpath(key)
+                    with open(file_path, "w") as file:
+                        file.write(contents)
+                        self.logger.info(f"Wrote sql to {file_path}")
 
-                if self.mlflow_config is not None:
-                    mlflow.log_artifact(local_path=str(file_path))
+                    if self.mlflow_config is not None:
+                        mlflow.log_artifact(local_path=str(file_path))
 
-        except Exception as e:
-            self.log_event("Error in log_artifact writing to mlflow", str(e))
+            except Exception as e:
+                self.log_event("Error in log_artifact writing to mlflow", str(e))
 
     def write_to_log(self, name: str, message: str = "") -> bool:
         self.logger.info(name + ": " + str(message))
