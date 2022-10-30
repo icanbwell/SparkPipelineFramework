@@ -49,7 +49,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
     FhirReceiverException,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_helpers import (
-    send_fhir_request,
+    FhirReceiverHelpers,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -445,30 +445,13 @@ class FhirReceiver(FrameworkTransformer):
                     f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
-                # function that is called for each partition
-                def send_partition_request_to_server(
-                    partition_index: int, rows: Iterable[Row]
-                ) -> Iterable[Row]:
-                    resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
-                        {
-                            "resource_id": r["id"],
-                            "access_token": r["token"],
-                            url_column: r[url_column],  # type: ignore
-                            slug_column: r[slug_column],  # type: ignore
-                            "resourceType": r["resourceType"],
-                        }
-                        if has_token_col and not server_url
-                        else {
-                            "resource_id": r["id"],
-                            "access_token": r["token"],
-                        }
-                        if has_token_col
-                        else {"resource_id": r["id"], "access_token": auth_access_token}
-                        for r in rows
-                    ]
-                    yield from self.process_with_token(
+                # run the above function on every partition
+                rdd: RDD[Row] = id_df.repartition(
+                    desired_partitions
+                ).rdd.mapPartitionsWithIndex(
+                    lambda partition_index, rows: FhirReceiver.send_partition_request_to_server(
                         partition_index=partition_index,
-                        resource_id_with_token_list=resource_id_with_token_list,
+                        rows=rows,
                         batch_size=batch_size,
                         has_token_col=has_token_col,
                         server_url=server_url,
@@ -499,6 +482,7 @@ class FhirReceiver(FrameworkTransformer):
                         error_view=error_view,
                         url_column=url_column,
                     )
+                )
 
                 if has_token_col and not server_url:
                     assert slug_column
@@ -510,12 +494,6 @@ class FhirReceiver(FrameworkTransformer):
                             if [c in id_df.columns]
                         ]
                     )
-
-                # run the above function on every partition
-                rdd: RDD[Row] = id_df.repartition(
-                    desired_partitions
-                ).rdd.mapPartitionsWithIndex(send_partition_request_to_server)
-
                 schema = StructType(
                     [
                         StructField("partition_index", IntegerType(), nullable=False),
@@ -730,7 +708,7 @@ class FhirReceiver(FrameworkTransformer):
                 assert server_url
                 errors: List[str] = []
                 while True:
-                    result = send_fhir_request(
+                    result = FhirReceiverHelpers.send_fhir_request(
                         logger=get_logger(__name__),
                         action=action,
                         action_payload=action_payload,
@@ -893,6 +871,93 @@ class FhirReceiver(FrameworkTransformer):
                         )
 
         return df
+
+    @staticmethod
+    # function that is called for each partition
+    def send_partition_request_to_server(
+        *,
+        partition_index: int,
+        rows: Iterable[Row],
+        batch_size: Optional[int],
+        has_token_col: bool,
+        server_url: Optional[str],
+        log_level: Optional[str],
+        action: Optional[str],
+        action_payload: Optional[Dict[str, Any]],
+        additional_parameters: Optional[List[str]],
+        filter_by_resource: Optional[str],
+        filter_parameter: Optional[str],
+        sort_fields: Optional[List[SortField]],
+        auth_server_url: Optional[str],
+        auth_client_id: Optional[str],
+        auth_client_secret: Optional[str],
+        auth_login_token: Optional[str],
+        auth_scopes: Optional[List[str]],
+        include_only_properties: Optional[List[str]],
+        separate_bundle_resources: bool,
+        expand_fhir_bundle: bool,
+        accept_type: Optional[str],
+        content_type: Optional[str],
+        accept_encoding: Optional[str],
+        slug_column: Optional[str],
+        retry_count: Optional[int],
+        exclude_status_codes_from_retry: Optional[List[int]],
+        limit: Optional[int],
+        auth_access_token: Optional[str],
+        resource_type: str,
+        error_view: Optional[str],
+        url_column: Optional[str],
+    ) -> Iterable[Row]:
+        resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
+            {
+                "resource_id": r["id"],
+                "access_token": r["token"],
+                url_column: r[url_column],  # type: ignore
+                slug_column: r[slug_column],  # type: ignore
+                "resourceType": r["resourceType"],
+            }
+            if has_token_col and not server_url
+            else {
+                "resource_id": r["id"],
+                "access_token": r["token"],
+            }
+            if has_token_col
+            else {"resource_id": r["id"], "access_token": auth_access_token}
+            for r in rows
+        ]
+        yield from FhirReceiver.process_with_token(
+            partition_index=partition_index,
+            resource_id_with_token_list=resource_id_with_token_list,
+            batch_size=batch_size,
+            has_token_col=has_token_col,
+            server_url=server_url,
+            log_level=log_level,
+            action=action,
+            action_payload=action_payload,
+            additional_parameters=additional_parameters,
+            filter_by_resource=filter_by_resource,
+            filter_parameter=filter_parameter,
+            sort_fields=sort_fields,
+            auth_server_url=auth_server_url,
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
+            auth_login_token=auth_login_token,
+            auth_scopes=auth_scopes,
+            include_only_properties=include_only_properties,
+            separate_bundle_resources=separate_bundle_resources,
+            expand_fhir_bundle=expand_fhir_bundle,
+            accept_type=accept_type,
+            content_type=content_type,
+            accept_encoding=accept_encoding,
+            slug_column=slug_column,
+            retry_count=retry_count,
+            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+            limit=limit,
+            auth_access_token=auth_access_token,
+            resource_type=resource_type,
+            error_view=error_view,
+            url_column=url_column,
+        )
 
     @staticmethod
     def process_with_token(
@@ -1255,7 +1320,7 @@ class FhirReceiver(FrameworkTransformer):
     ) -> FhirGetResponse:
         url = server_url_ or server_url
         assert url
-        return send_fhir_request(
+        return FhirReceiverHelpers.send_fhir_request(
             logger=get_logger(__name__),
             action=action,
             action_payload=action_payload,
