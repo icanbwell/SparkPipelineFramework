@@ -145,7 +145,7 @@ class ParallelPipelineExecutor:
                     else:
                         stage_name = stage.__class__.__name__
                     try:
-                        result_df = stage.transform(result_df)
+                        result_df = stage.transform(df)
                     except Exception as e:
                         if len(e.args) >= 1:
                             # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
