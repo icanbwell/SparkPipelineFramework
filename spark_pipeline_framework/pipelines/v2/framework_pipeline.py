@@ -102,7 +102,7 @@ class FrameworkPipeline(Transformer):
                         f"({i} of {count_of_transformers}) ----"
                     )
                     self.progress_logger.start_mlflow_run(
-                        run_name=str(stage_name), is_nested=True
+                        run_name=stage_name, is_nested=True
                     )
 
                     with ProgressLogMetric(

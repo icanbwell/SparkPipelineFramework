@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Union
 
-# noinspection PyProtectedMember
+# noinspection PyProtectedMember,PyPackageRequirements
 from mlflow.entities import RunStatus  # type: ignore
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
@@ -108,12 +108,19 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
             progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
             try:
+                stage_name = automapper.__class__.__name__
+
                 if progress_logger is not None:
                     progress_logger.start_mlflow_run(
-                        run_name=str(automapper), is_nested=True
+                        run_name=stage_name, is_nested=True
                     )
 
-                automapper.transform(df=df)
+                try:
+                    automapper.transform(df=df)
+                except Exception as e:
+                    if len(e.args) >= 1:
+                        e.args = (f"In AutoMapper ({stage_name})", *e.args)
+                    raise e
 
                 if progress_logger is not None:
                     progress_logger.end_mlflow_run()
