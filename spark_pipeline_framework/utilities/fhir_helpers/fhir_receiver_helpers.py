@@ -22,6 +22,7 @@ def send_fhir_request(
     resource_id: Optional[Union[List[str], str]],
     server_url: str,
     include_only_properties: Optional[List[str]],
+    log_level: Optional[str],
     page_number: Optional[int] = None,
     page_size: Optional[int] = None,
     last_updated_after: Optional[datetime] = None,
@@ -41,6 +42,7 @@ def send_fhir_request(
     extra_context_to_return: Optional[Dict[str, Any]] = None,
     retry_count: Optional[int] = None,
     exclude_status_codes_from_retry: Optional[List[int]] = None,
+    limit: Optional[int] = None,
 ) -> FhirGetResponse:
     """
     Sends a fhir request to the fhir client sdk
@@ -73,6 +75,10 @@ def send_fhir_request(
     :param content_type: (Optional) Content-Type header to use
     :param accept_encoding: (Optional) Accept-encoding header to use
     :param extra_context_to_return: a dict to return with every row (separate_bundle_resources is set) or with FhirGetResponse
+    :param retry_count: how many times to retry
+    :param exclude_status_codes_from_retry: do not retry for these status codes
+    :param limit: limit results to this
+    :param log_level:
     :return:
     :rtype:
     """
@@ -86,6 +92,7 @@ def send_fhir_request(
         auth_login_token=auth_login_token,
         auth_access_token=auth_access_token,
         auth_scopes=auth_scopes,
+        log_level=log_level,
     )
     fhir_client = fhir_client.separate_bundle_resources(separate_bundle_resources)
     fhir_client = fhir_client.expand_fhir_bundle(expand_fhir_bundle)
@@ -130,7 +137,7 @@ def send_fhir_request(
     if extra_context_to_return:
         fhir_client = fhir_client.extra_context_to_return(extra_context_to_return)
 
-    if retry_count:
+    if retry_count is not None:
         fhir_client = fhir_client.retry_count(retry_count)
 
     if exclude_status_codes_from_retry:
@@ -138,4 +145,6 @@ def send_fhir_request(
             exclude_status_codes_from_retry
         )
 
+    if limit is not None:
+        fhir_client = fhir_client.limit(limit=limit)
     return fhir_client.get()

@@ -1,5 +1,6 @@
 import json
 import math
+from os import environ
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union, Callable
 
@@ -215,6 +216,8 @@ class FhirSender(FrameworkTransformer):
         error_view: Optional[str] = self.getOrDefault(self.error_view)
         view: Optional[str] = self.getOrDefault(self.view)
 
+        log_level: Optional[str] = environ.get("LOGLEVEL")
+
         # get access token first so we can reuse it
         if auth_client_id:
             auth_access_token = fhir_get_access_token(
@@ -225,6 +228,7 @@ class FhirSender(FrameworkTransformer):
                 auth_client_secret=auth_client_secret,
                 auth_login_token=auth_login_token,
                 auth_scopes=auth_scopes,
+                log_level=log_level,
             )
 
         self.logger.info(
@@ -290,6 +294,7 @@ class FhirSender(FrameworkTransformer):
                                 auth_login_token=auth_login_token,
                                 auth_scopes=auth_scopes,
                                 auth_access_token=auth_access_token,
+                                log_level=log_level,
                             )
                             for item in json_data_list
                         ]
@@ -321,6 +326,7 @@ class FhirSender(FrameworkTransformer):
                                     auth_login_token=auth_login_token,
                                     auth_scopes=auth_scopes,
                                     auth_access_token=auth_access_token1,
+                                    log_level=log_level,
                                 )
                                 if result:
                                     auth_access_token1 = result.access_token
@@ -339,6 +345,7 @@ class FhirSender(FrameworkTransformer):
                                 auth_scopes=auth_scopes,
                                 auth_access_token=auth_access_token,
                                 logger=self.logger,
+                                log_level=log_level,
                             )
                             if result:
                                 responses = result.responses
