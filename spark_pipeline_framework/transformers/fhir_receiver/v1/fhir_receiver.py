@@ -3,12 +3,14 @@ import math
 import uuid
 from datetime import datetime
 from json import JSONDecodeError
+from os import environ
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union, cast, Callable
 
 # noinspection PyPep8Naming
 import pyspark.sql.functions as F
 from furl import furl
+from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 
@@ -393,6 +395,8 @@ class FhirReceiver(FrameworkTransformer):
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = self.getOrDefault(self.checkpoint_path)
 
+        log_level: Optional[str] = environ.get("LOGLEVEL")
+
         # get access token first so we can reuse it
         if auth_client_id and server_url:
             auth_access_token = fhir_get_access_token(
@@ -403,6 +407,7 @@ class FhirReceiver(FrameworkTransformer):
                 auth_client_secret=auth_client_secret,
                 auth_login_token=auth_login_token,
                 auth_scopes=auth_scopes,
+                log_level=log_level,
             )
 
         with ProgressLogMetric(
@@ -427,7 +432,7 @@ class FhirReceiver(FrameworkTransformer):
                 row_count: int = id_df.count()
 
                 self.logger.info(
-                    f"----- Total {row_count} rows to request from {server_url}/{resource_name}  -----"
+                    f"----- Total {row_count} rows to request from {server_url or ''}/{resource_name}  -----"
                 )
                 desired_partitions: int = (
                     math.ceil(row_count / batch_size)
@@ -437,7 +442,7 @@ class FhirReceiver(FrameworkTransformer):
                 if not batch_size:  # if batching is disabled then call one at a time
                     desired_partitions = row_count
                 self.logger.info(
-                    f"----- Total Batches: {desired_partitions} for {server_url}/{resource_name}  -----"
+                    f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
                 def send_simple_fhir_request(
@@ -447,6 +452,7 @@ class FhirReceiver(FrameworkTransformer):
                     server_url_: Optional[str],
                     service_slug: Optional[str] = None,
                     resource_type: str,
+                    log_level1: Optional[str],
                 ) -> FhirGetResponse:
                     url = server_url_ or server_url
                     assert url
@@ -478,6 +484,8 @@ class FhirReceiver(FrameworkTransformer):
                         else None,
                         retry_count=retry_count,
                         exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                        limit=limit,
+                        log_level=log_level1,
                     )
 
                 def process_batch(
@@ -494,6 +502,7 @@ class FhirReceiver(FrameworkTransformer):
                         token_=auth_access_token,
                         server_url_=server_url,
                         resource_type=resource_name,
+                        log_level1=log_level,
                     )
                     resp_result: str = result1.responses.replace("\n", "")
                     responses_from_fhir = []
@@ -541,44 +550,50 @@ class FhirReceiver(FrameworkTransformer):
                             resource1.get(slug_column) if slug_column else None
                         )
                         resource_type = resource1.get("resourceType")
-                        result1 = send_simple_fhir_request(
-                            id_=id_,
-                            token_=token_,
-                            server_url_=url_ or server_url,
-                            service_slug=service_slug,
-                            resource_type=resource_type or resource_name,
-                        )
-                        resp_result: str = result1.responses.replace("\n", "")
                         responses_from_fhir: List[str] = []
                         try:
-                            responses_from_fhir = self.json_str_to_list_str(resp_result)
-                        except JSONDecodeError as e2:
-                            if error_view:
-                                result1.error = f"{(result1.error or '')}: {str(e2)}"
-                            else:
-                                raise FhirParserException(
-                                    url=result.url,
-                                    message="Parsing result as json failed",
-                                    json_data=result.responses,
-                                    response_status_code=result.status,
-                                ) from e2
+                            result1 = send_simple_fhir_request(
+                                id_=id_,
+                                token_=token_,
+                                server_url_=url_ or server_url,
+                                service_slug=service_slug,
+                                resource_type=resource_type or resource_name,
+                                log_level1=log_level,
+                            )
+                            resp_result: str = result1.responses.replace("\n", "")
+                            try:
+                                responses_from_fhir = self.json_str_to_list_str(
+                                    resp_result
+                                )
+                            except JSONDecodeError as e2:
+                                if error_view:
+                                    result1.error = (
+                                        f"{(result1.error or '')}: {str(e2)}"
+                                    )
+                                else:
+                                    raise FhirParserException(
+                                        url=result.url,
+                                        message="Parsing result as json failed",
+                                        json_data=result.responses,
+                                        response_status_code=result.status,
+                                    ) from e2
 
-                        error_text = result1.error
-                        status_code = result1.status
-                        is_valid_response: bool = (
-                            True if len(responses_from_fhir) > 0 else False
-                        )
+                            error_text = result1.error
+                            status_code = result1.status
+                            request_url = result1.url
+                        except FhirSenderException as e1:
+                            error_text = str(e1)
+                            status_code = e1.response_status_code or 0
+                            request_url = e1.url
                         yield Row(
                             partition_index=partition_index,
                             sent=1,
-                            received=len(responses_from_fhir)
-                            if is_valid_response
-                            else 0,
-                            responses=responses_from_fhir if is_valid_response else [],
+                            received=len(responses_from_fhir),
+                            responses=responses_from_fhir,
                             first=first_id,
                             last=last_id,
                             error_text=error_text,
-                            url=result1.url,
+                            url=request_url,
                             status_code=status_code,
                         )
 
@@ -793,10 +808,11 @@ class FhirReceiver(FrameworkTransformer):
                         F.sum("received").alias("received")
                     )
                     # count_received_df.show()
-                    count_sent: int = count_sent_df.collect()[0][0]
-                    count_received: int = count_received_df.collect()[0][0]
+                    count_sent: Optional[int] = count_sent_df.collect()[0][0]
+                    count_received: Optional[int] = count_received_df.collect()[0][0]
                     if (
-                        (count_sent > count_received)
+                        (count_sent is not None and count_received is not None)
+                        and (count_sent > count_received)
                         and error_on_result_count
                         and verify_counts_match
                     ):
@@ -824,11 +840,11 @@ class FhirReceiver(FrameworkTransformer):
                         )
                     elif count_sent == count_received:
                         self.logger.info(
-                            f"Sent ({count_sent}) and Received ({count_received}) counts matched for {server_url}/{resource_name}"
+                            f"Sent ({count_sent}) and Received ({count_received}) counts matched for {server_url or ''}/{resource_name}"
                         )
                     else:
                         self.logger.info(
-                            f"Sent ({count_sent}) and Received ({count_received}) for {server_url}/{resource_name}"
+                            f"Sent ({count_sent}) and Received ({count_received}) for {server_url or ''}/{resource_name}"
                         )
 
                 # turn list of list of string to list of strings
@@ -916,6 +932,7 @@ class FhirReceiver(FrameworkTransformer):
                         accept_encoding=accept_encoding,
                         retry_count=retry_count,
                         exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                        log_level=log_level,
                     )
                     # error = result.error
                     try:
@@ -1163,7 +1180,7 @@ class FhirReceiver(FrameworkTransformer):
     @staticmethod
     def json_str_to_list_str(json_str: str) -> List[str]:
         """
-        at some point helix.fhir.client.sdk changed and now it sends json string instead of list of json strings
+        at some point helix.fhir.client.sdk changed, and now it sends json string instead of list of json strings
         the PR: https://github.com/icanbwell/helix.fhir.client.sdk/pull/5
         this function converts the new returning format to old one
         """

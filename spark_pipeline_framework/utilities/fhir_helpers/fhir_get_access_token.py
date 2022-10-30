@@ -11,6 +11,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
 def fhir_get_access_token(
     logger: Logger,
     server_url: str,
+    log_level: Optional[str],
     auth_server_url: Optional[str] = None,
     auth_client_id: Optional[str] = None,
     auth_client_secret: Optional[str] = None,
@@ -28,6 +29,7 @@ def fhir_get_access_token(
         auth_login_token=auth_login_token,
         auth_access_token=auth_access_token,
         auth_scopes=auth_scopes,
+        log_level=log_level,
     )
 
     return fhir_client.get_access_token()

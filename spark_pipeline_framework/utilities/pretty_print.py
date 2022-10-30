@@ -12,6 +12,7 @@ def get_pretty_table(
 
     :param iterable: iterable to print
     :param header: headers to use
+    :param name:
     :return:
     """
     max_len: List[int] = [len(x) for x in header]
@@ -60,3 +61,19 @@ def get_pretty_data_frame(df: DataFrame, limit: int, name: Optional[str] = None)
     rows: List[List[Any]] = [list(row) for row in df.limit(limit).collect()]
 
     return get_pretty_table(rows, df.columns, name=name)
+
+
+def get_data_frame_as_csv(df: DataFrame, limit: int) -> str:
+    """
+    Returns the dataframe as a string
+
+    :param df:
+    :param limit:
+    :return:
+    """
+    if limit == 0:
+        return ""
+
+    rows: List[List[Any]] = [list(row) for row in df.limit(limit).collect()]
+
+    return get_pretty_table(rows, df.columns)

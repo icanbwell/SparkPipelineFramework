@@ -22,6 +22,7 @@ def send_json_bundle_to_fhir(
     auth_login_token: Optional[str],
     auth_scopes: Optional[List[str]],
     auth_access_token: Optional[str],
+    log_level: Optional[str],
 ) -> Optional[FhirMergeResponse]:
 
     fhir_client: FhirClient = get_fhir_client(
@@ -33,6 +34,7 @@ def send_json_bundle_to_fhir(
         auth_login_token=auth_login_token,
         auth_access_token=auth_access_token,
         auth_scopes=auth_scopes,
+        log_level=log_level,
     )
 
     fhir_client = fhir_client.resource(resource)
@@ -65,6 +67,7 @@ def send_fhir_delete(
     auth_login_token: Optional[str],
     auth_scopes: Optional[List[str]],
     auth_access_token: Optional[str],
+    log_level: Optional[str],
 ) -> Dict[str, Any]:
 
     fhir_client: FhirClient = get_fhir_client(
@@ -76,6 +79,7 @@ def send_fhir_delete(
         auth_login_token=auth_login_token,
         auth_access_token=auth_access_token,
         auth_scopes=auth_scopes,
+        log_level=log_level,
     )
 
     fhir_client = fhir_client.resource(resource)
