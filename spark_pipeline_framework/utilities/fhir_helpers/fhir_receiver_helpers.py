@@ -2,7 +2,9 @@ import json
 from datetime import datetime
 from json import JSONDecodeError
 from logging import Logger
-from typing import Any, Dict, Iterable, List, Optional, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Union, cast, NamedTuple
+
+from furl import furl
 
 # noinspection PyPep8Naming
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
@@ -17,9 +19,17 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+    FhirReceiverException,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
+
+
+class GetBatchResult(NamedTuple):
+    resources: List[str]
+    errors: List[str]
 
 
 class FhirReceiverHelpers:
@@ -656,3 +666,160 @@ class FhirReceiverHelpers:
             return [json.dumps(item) for item in full_json]
         else:
             return [json_str]
+
+    @staticmethod
+    def get_batch_result(
+        *,
+        page_size: Optional[int],
+        limit: Optional[int],
+        server_url: Optional[str],
+        action: Optional[str],
+        action_payload: Optional[Dict[str, Any]],
+        additional_parameters: Optional[List[str]],
+        filter_by_resource: Optional[str],
+        filter_parameter: Optional[str],
+        resource_name: str,
+        include_only_properties: Optional[List[str]],
+        last_updated_after: Optional[datetime],
+        last_updated_before: Optional[datetime],
+        sort_fields: Optional[List[SortField]],
+        auth_server_url: Optional[str],
+        auth_client_id: Optional[str],
+        auth_client_secret: Optional[str],
+        auth_login_token: Optional[str],
+        auth_access_token: Optional[str],
+        auth_scopes: Optional[List[str]],
+        separate_bundle_resources: bool,
+        expand_fhir_bundle: bool,
+        accept_type: Optional[str],
+        content_type: Optional[str],
+        accept_encoding: Optional[str],
+        retry_count: Optional[int],
+        exclude_status_codes_from_retry: Optional[List[int]],
+        log_level: Optional[str],
+        error_view: Optional[str],
+        ignore_status_codes: List[int],
+    ) -> GetBatchResult:
+        resources: List[str] = []
+        errors: List[str] = []
+        if not page_size:
+            page_size = limit
+        # if paging is requested then iterate through the pages until the response is empty
+        page_number: int = 0
+        server_page_number: int = 0
+        assert server_url
+        while True:
+            result = FhirReceiverHelpers.send_fhir_request(
+                logger=get_logger(__name__),
+                action=action,
+                action_payload=action_payload,
+                additional_parameters=additional_parameters,
+                filter_by_resource=filter_by_resource,
+                filter_parameter=filter_parameter,
+                resource_name=resource_name,
+                resource_id=None,
+                server_url=server_url,
+                include_only_properties=include_only_properties,
+                page_number=server_page_number,  # since we're setting id:above we can leave this as 0
+                page_size=page_size,
+                last_updated_after=last_updated_after,
+                last_updated_before=last_updated_before,
+                sort_fields=sort_fields,
+                auth_server_url=auth_server_url,
+                auth_client_id=auth_client_id,
+                auth_client_secret=auth_client_secret,
+                auth_login_token=auth_login_token,
+                auth_access_token=auth_access_token,
+                auth_scopes=auth_scopes,
+                separate_bundle_resources=separate_bundle_resources,
+                expand_fhir_bundle=expand_fhir_bundle,
+                accept_type=accept_type,
+                content_type=content_type,
+                accept_encoding=accept_encoding,
+                retry_count=retry_count,
+                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                log_level=log_level,
+            )
+            result_response: List[str] = []
+            try:
+                result_response = FhirReceiverHelpers.json_str_to_list_str(
+                    result.responses
+                )
+            except JSONDecodeError as e:
+                if error_view:
+                    errors.append(
+                        json.dumps(
+                            {
+                                "url": result.url,
+                                "status_code": result.status,
+                                "error_text": str(e) + " : " + result.responses,
+                            },
+                            default=str,
+                        )
+                    )
+                else:
+                    raise FhirParserException(
+                        url=result.url,
+                        message="Parsing result as json failed",
+                        json_data=result.responses,
+                        response_status_code=result.status,
+                    ) from e
+
+            auth_access_token = result.access_token
+            if len(result_response) > 0:
+                # get id of last resource
+                json_resources: List[Dict[str, Any]] = json.loads(result.responses)
+                if isinstance(json_resources, list):  # normal response
+                    if len(json_resources) > 0:  # received any resources back
+                        last_json_resource = json_resources[-1]
+                        if result.next_url:
+                            # if server has sent back a next url then use that
+                            next_url: Optional[str] = result.next_url
+                            next_uri: furl = furl(next_url)
+                            additional_parameters = [
+                                f"{k}={v}" for k, v in next_uri.args.items()
+                            ]
+                            # remove any entry for id:above
+                            additional_parameters = list(
+                                filter(
+                                    lambda x: not x.startswith("_count")
+                                    and not x.startswith("_element"),
+                                    additional_parameters,
+                                )
+                            )
+                        elif "id" in last_json_resource:
+                            # use id:above to optimize the next query
+                            id_of_last_resource = last_json_resource["id"]
+                            if not additional_parameters:
+                                additional_parameters = []
+                            # remove any entry for id:above
+                            additional_parameters = list(
+                                filter(
+                                    lambda x: not x.startswith("id:above"),
+                                    additional_parameters,
+                                )
+                            )
+                            additional_parameters.append(
+                                f"id:above={id_of_last_resource}"
+                            )
+                        else:
+                            server_page_number += 1
+                        resources = resources + result_response
+                    page_number += 1
+                    if limit and limit > 0:
+                        if not page_size or (page_number * page_size) >= limit:
+                            break
+                else:
+                    # Received an error
+                    if not result.status in ignore_status_codes:
+                        raise FhirReceiverException(
+                            url=result.url,
+                            json_data=result.responses,
+                            response_text=result.responses,
+                            response_status_code=result.status,
+                            message="Error from FHIR server",
+                        )
+            else:
+                break
+
+        return GetBatchResult(resources=resources, errors=errors)
