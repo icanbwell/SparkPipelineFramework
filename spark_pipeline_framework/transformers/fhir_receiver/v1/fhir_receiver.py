@@ -98,6 +98,7 @@ class FhirReceiver(FrameworkTransformer):
         checkpoint_path: Optional[
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = None,
+        use_data_streaming: Optional[bool] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -138,6 +139,7 @@ class FhirReceiver(FrameworkTransformer):
         :param slug_column: (Optional) use this column to set the security tags
         :param url_column: (Optional) column to read the url
         :param error_view: (Optional) log errors into this view (view only exists IF there are errors) and don't throw exceptions.  schema: url, error_text, status_code
+        :param use_data_streaming: (Optional) whether to use data streaming i.e., HTTP chunk transfer encoding
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -318,6 +320,11 @@ class FhirReceiver(FrameworkTransformer):
         ] = Param(self, "checkpoint_path", "")
         self._setDefault(checkpoint_path=None)
 
+        self.use_data_streaming: Param[Optional[bool]] = Param(
+            self, "use_data_streaming", ""
+        )
+        self._setDefault(use_data_streaming=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -386,6 +393,8 @@ class FhirReceiver(FrameworkTransformer):
         ] = self.getOrDefault(self.checkpoint_path)
 
         log_level: Optional[str] = environ.get("LOGLEVEL")
+
+        use_data_streaming: Optional[bool] = self.getOrDefault(self.use_data_streaming)
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -470,6 +479,7 @@ class FhirReceiver(FrameworkTransformer):
                         resource_type=resource_name,
                         error_view=error_view,
                         url_column=url_column,
+                        use_data_streaming=use_data_streaming,
                     )
                 )
 
@@ -719,6 +729,7 @@ class FhirReceiver(FrameworkTransformer):
                     log_level=log_level,
                     error_view=error_view,
                     ignore_status_codes=ignore_status_codes,
+                    use_data_streaming=use_data_streaming,
                 )
                 rdd1: RDD[str] = (
                     sc(df).parallelize(resources, numSlices=num_partitions)
