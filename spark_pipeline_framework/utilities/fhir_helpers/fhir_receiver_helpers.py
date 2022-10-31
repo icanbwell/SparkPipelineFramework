@@ -1,3 +1,4 @@
+import asyncio
 import json
 from datetime import datetime
 from json import JSONDecodeError
@@ -483,40 +484,42 @@ class FhirReceiverHelpers:
     ) -> FhirGetResponse:
         url = server_url_ or server_url
         assert url
-        return FhirReceiverHelpers.send_fhir_request(
-            logger=get_logger(__name__),
-            action=action,
-            action_payload=action_payload,
-            additional_parameters=additional_parameters,
-            filter_by_resource=filter_by_resource,
-            filter_parameter=filter_parameter,
-            sort_fields=sort_fields,
-            resource_name=resource_type,
-            resource_id=id_,
-            server_url=url,
-            auth_server_url=auth_server_url,
-            auth_client_id=auth_client_id,
-            auth_client_secret=auth_client_secret,
-            auth_login_token=auth_login_token,
-            auth_access_token=token_,
-            auth_scopes=auth_scopes,
-            include_only_properties=include_only_properties,
-            separate_bundle_resources=separate_bundle_resources,
-            expand_fhir_bundle=expand_fhir_bundle,
-            accept_type=accept_type,
-            content_type=content_type,
-            accept_encoding=accept_encoding,
-            extra_context_to_return={slug_column: service_slug}
-            if slug_column and service_slug
-            else None,
-            retry_count=retry_count,
-            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-            limit=limit,
-            log_level=log_level,
+        return asyncio.run(
+            FhirReceiverHelpers.send_fhir_request_async(
+                logger=get_logger(__name__),
+                action=action,
+                action_payload=action_payload,
+                additional_parameters=additional_parameters,
+                filter_by_resource=filter_by_resource,
+                filter_parameter=filter_parameter,
+                sort_fields=sort_fields,
+                resource_name=resource_type,
+                resource_id=id_,
+                server_url=url,
+                auth_server_url=auth_server_url,
+                auth_client_id=auth_client_id,
+                auth_client_secret=auth_client_secret,
+                auth_login_token=auth_login_token,
+                auth_access_token=token_,
+                auth_scopes=auth_scopes,
+                include_only_properties=include_only_properties,
+                separate_bundle_resources=separate_bundle_resources,
+                expand_fhir_bundle=expand_fhir_bundle,
+                accept_type=accept_type,
+                content_type=content_type,
+                accept_encoding=accept_encoding,
+                extra_context_to_return={slug_column: service_slug}
+                if slug_column and service_slug
+                else None,
+                retry_count=retry_count,
+                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                limit=limit,
+                log_level=log_level,
+            )
         )
 
     @staticmethod
-    def send_fhir_request(
+    async def send_fhir_request_async(
         logger: Logger,
         action: Optional[str],
         action_payload: Optional[Dict[str, Any]],
@@ -652,7 +655,7 @@ class FhirReceiverHelpers:
 
         if limit is not None:
             fhir_client = fhir_client.limit(limit=limit)
-        return fhir_client.get()
+        return await fhir_client.get_async()
 
     @staticmethod
     def json_str_to_list_str(json_str: str) -> List[str]:
@@ -709,36 +712,38 @@ class FhirReceiverHelpers:
         server_page_number: int = 0
         assert server_url
         while True:
-            result = FhirReceiverHelpers.send_fhir_request(
-                logger=get_logger(__name__),
-                action=action,
-                action_payload=action_payload,
-                additional_parameters=additional_parameters,
-                filter_by_resource=filter_by_resource,
-                filter_parameter=filter_parameter,
-                resource_name=resource_name,
-                resource_id=None,
-                server_url=server_url,
-                include_only_properties=include_only_properties,
-                page_number=server_page_number,  # since we're setting id:above we can leave this as 0
-                page_size=page_size,
-                last_updated_after=last_updated_after,
-                last_updated_before=last_updated_before,
-                sort_fields=sort_fields,
-                auth_server_url=auth_server_url,
-                auth_client_id=auth_client_id,
-                auth_client_secret=auth_client_secret,
-                auth_login_token=auth_login_token,
-                auth_access_token=auth_access_token,
-                auth_scopes=auth_scopes,
-                separate_bundle_resources=separate_bundle_resources,
-                expand_fhir_bundle=expand_fhir_bundle,
-                accept_type=accept_type,
-                content_type=content_type,
-                accept_encoding=accept_encoding,
-                retry_count=retry_count,
-                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                log_level=log_level,
+            result = asyncio.run(
+                FhirReceiverHelpers.send_fhir_request_async(
+                    logger=get_logger(__name__),
+                    action=action,
+                    action_payload=action_payload,
+                    additional_parameters=additional_parameters,
+                    filter_by_resource=filter_by_resource,
+                    filter_parameter=filter_parameter,
+                    resource_name=resource_name,
+                    resource_id=None,
+                    server_url=server_url,
+                    include_only_properties=include_only_properties,
+                    page_number=server_page_number,  # since we're setting id:above we can leave this as 0
+                    page_size=page_size,
+                    last_updated_after=last_updated_after,
+                    last_updated_before=last_updated_before,
+                    sort_fields=sort_fields,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_access_token=auth_access_token,
+                    auth_scopes=auth_scopes,
+                    separate_bundle_resources=separate_bundle_resources,
+                    expand_fhir_bundle=expand_fhir_bundle,
+                    accept_type=accept_type,
+                    content_type=content_type,
+                    accept_encoding=accept_encoding,
+                    retry_count=retry_count,
+                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                    log_level=log_level,
+                )
             )
             result_response: List[str] = []
             try:
