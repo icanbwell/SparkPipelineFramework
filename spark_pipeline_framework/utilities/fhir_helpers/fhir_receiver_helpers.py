@@ -696,6 +696,7 @@ class FhirReceiverHelpers:
         :param exclude_status_codes_from_retry: do not retry for these status codes
         :param limit: limit results to this
         :param log_level:
+        :param use_data_streaming:
         :return:
         :rtype:
         """
@@ -825,7 +826,7 @@ class FhirReceiverHelpers:
         page_number: int = 0
         server_page_number: int = 0
         assert server_url
-        while True:
+        if use_data_streaming:
             result = asyncio.run(
                 FhirReceiverHelpers.send_fhir_request_async(
                     logger=get_logger(__name__),
@@ -838,8 +839,6 @@ class FhirReceiverHelpers:
                     resource_id=None,
                     server_url=server_url,
                     include_only_properties=include_only_properties,
-                    page_number=server_page_number,  # since we're setting id:above we can leave this as 0
-                    page_size=page_size,
                     last_updated_after=last_updated_after,
                     last_updated_before=last_updated_before,
                     sort_fields=sort_fields,
@@ -860,11 +859,8 @@ class FhirReceiverHelpers:
                     use_data_streaming=use_data_streaming,
                 )
             )
-            result_response: List[str] = []
             try:
-                result_response = FhirReceiverHelpers.json_str_to_list_str(
-                    result.responses
-                )
+                resources = FhirReceiverHelpers.json_str_to_list_str(result.responses)
             except JSONDecodeError as e:
                 if error_view:
                     errors.append(
@@ -884,62 +880,122 @@ class FhirReceiverHelpers:
                         json_data=result.responses,
                         response_status_code=result.status,
                     ) from e
-
-            auth_access_token = result.access_token
-            if len(result_response) > 0:
-                # get id of last resource
-                json_resources: List[Dict[str, Any]] = json.loads(result.responses)
-                if isinstance(json_resources, list):  # normal response
-                    if len(json_resources) > 0:  # received any resources back
-                        last_json_resource = json_resources[-1]
-                        if result.next_url:
-                            # if server has sent back a next url then use that
-                            next_url: Optional[str] = result.next_url
-                            next_uri: furl = furl(next_url)
-                            additional_parameters = [
-                                f"{k}={v}" for k, v in next_uri.args.items()
-                            ]
-                            # remove any entry for id:above
-                            additional_parameters = list(
-                                filter(
-                                    lambda x: not x.startswith("_count")
-                                    and not x.startswith("_element"),
-                                    additional_parameters,
-                                )
+        else:
+            while True:
+                result = asyncio.run(
+                    FhirReceiverHelpers.send_fhir_request_async(
+                        logger=get_logger(__name__),
+                        action=action,
+                        action_payload=action_payload,
+                        additional_parameters=additional_parameters,
+                        filter_by_resource=filter_by_resource,
+                        filter_parameter=filter_parameter,
+                        resource_name=resource_name,
+                        resource_id=None,
+                        server_url=server_url,
+                        include_only_properties=include_only_properties,
+                        page_number=server_page_number,  # since we're setting id:above we can leave this as 0
+                        page_size=page_size,
+                        last_updated_after=last_updated_after,
+                        last_updated_before=last_updated_before,
+                        sort_fields=sort_fields,
+                        auth_server_url=auth_server_url,
+                        auth_client_id=auth_client_id,
+                        auth_client_secret=auth_client_secret,
+                        auth_login_token=auth_login_token,
+                        auth_access_token=auth_access_token,
+                        auth_scopes=auth_scopes,
+                        separate_bundle_resources=separate_bundle_resources,
+                        expand_fhir_bundle=expand_fhir_bundle,
+                        accept_type=accept_type,
+                        content_type=content_type,
+                        accept_encoding=accept_encoding,
+                        retry_count=retry_count,
+                        exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                        log_level=log_level,
+                        use_data_streaming=use_data_streaming,
+                    )
+                )
+                result_response: List[str] = []
+                try:
+                    result_response = FhirReceiverHelpers.json_str_to_list_str(
+                        result.responses
+                    )
+                except JSONDecodeError as e:
+                    if error_view:
+                        errors.append(
+                            json.dumps(
+                                {
+                                    "url": result.url,
+                                    "status_code": result.status,
+                                    "error_text": str(e) + " : " + result.responses,
+                                },
+                                default=str,
                             )
-                        elif "id" in last_json_resource:
-                            # use id:above to optimize the next query
-                            id_of_last_resource = last_json_resource["id"]
-                            if not additional_parameters:
-                                additional_parameters = []
-                            # remove any entry for id:above
-                            additional_parameters = list(
-                                filter(
-                                    lambda x: not x.startswith("id:above"),
-                                    additional_parameters,
-                                )
-                            )
-                            additional_parameters.append(
-                                f"id:above={id_of_last_resource}"
-                            )
-                        else:
-                            server_page_number += 1
-                        resources = resources + result_response
-                    page_number += 1
-                    if limit and limit > 0:
-                        if not page_size or (page_number * page_size) >= limit:
-                            break
-                else:
-                    # Received an error
-                    if not result.status in ignore_status_codes:
-                        raise FhirReceiverException(
-                            url=result.url,
-                            json_data=result.responses,
-                            response_text=result.responses,
-                            response_status_code=result.status,
-                            message="Error from FHIR server",
                         )
-            else:
-                break
+                    else:
+                        raise FhirParserException(
+                            url=result.url,
+                            message="Parsing result as json failed",
+                            json_data=result.responses,
+                            response_status_code=result.status,
+                        ) from e
+
+                auth_access_token = result.access_token
+                if len(result_response) > 0:
+                    # get id of last resource
+                    json_resources: List[Dict[str, Any]] = json.loads(result.responses)
+                    if isinstance(json_resources, list):  # normal response
+                        if len(json_resources) > 0:  # received any resources back
+                            last_json_resource = json_resources[-1]
+                            if result.next_url:
+                                # if server has sent back a next url then use that
+                                next_url: Optional[str] = result.next_url
+                                next_uri: furl = furl(next_url)
+                                additional_parameters = [
+                                    f"{k}={v}" for k, v in next_uri.args.items()
+                                ]
+                                # remove any entry for id:above
+                                additional_parameters = list(
+                                    filter(
+                                        lambda x: not x.startswith("_count")
+                                        and not x.startswith("_element"),
+                                        additional_parameters,
+                                    )
+                                )
+                            elif "id" in last_json_resource:
+                                # use id:above to optimize the next query
+                                id_of_last_resource = last_json_resource["id"]
+                                if not additional_parameters:
+                                    additional_parameters = []
+                                # remove any entry for id:above
+                                additional_parameters = list(
+                                    filter(
+                                        lambda x: not x.startswith("id:above"),
+                                        additional_parameters,
+                                    )
+                                )
+                                additional_parameters.append(
+                                    f"id:above={id_of_last_resource}"
+                                )
+                            else:
+                                server_page_number += 1
+                            resources = resources + result_response
+                        page_number += 1
+                        if limit and limit > 0:
+                            if not page_size or (page_number * page_size) >= limit:
+                                break
+                    else:
+                        # Received an error
+                        if not result.status in ignore_status_codes:
+                            raise FhirReceiverException(
+                                url=result.url,
+                                json_data=result.responses,
+                                response_text=result.responses,
+                                response_status_code=result.status,
+                                message="Error from FHIR server",
+                            )
+                else:
+                    break
 
         return GetBatchResult(resources=resources, errors=errors)
