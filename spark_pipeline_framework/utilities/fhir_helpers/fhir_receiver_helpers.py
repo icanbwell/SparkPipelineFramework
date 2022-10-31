@@ -3,11 +3,20 @@ import json
 from datetime import datetime
 from json import JSONDecodeError
 from logging import Logger
-from typing import Any, Dict, Iterable, List, Optional, Union, cast, NamedTuple
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Union,
+    cast,
+    NamedTuple,
+    Coroutine,
+)
 
 from furl import furl
 
-# noinspection PyPep8Naming
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.filters.sort_field import SortField
@@ -26,6 +35,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
+from spark_pipeline_framework.utilities.flattener.flattener import flatten
 
 
 class GetBatchResult(NamedTuple):
@@ -69,7 +79,7 @@ class FhirReceiverHelpers:
         resource_type: str,
         error_view: Optional[str],
         url_column: Optional[str],
-    ) -> Iterable[Row]:
+    ) -> List[Row]:
         resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
             {
                 "resource_id": r["id"],
@@ -87,7 +97,7 @@ class FhirReceiverHelpers:
             else {"resource_id": r["id"], "access_token": auth_access_token}
             for r in rows
         ]
-        yield from FhirReceiverHelpers.process_with_token(
+        result = FhirReceiverHelpers.process_with_token(
             partition_index=partition_index,
             resource_id_with_token_list=resource_id_with_token_list,
             batch_size=batch_size,
@@ -120,6 +130,7 @@ class FhirReceiverHelpers:
             error_view=error_view,
             url_column=url_column,
         )
+        return result
 
     @staticmethod
     def process_with_token(
@@ -155,7 +166,7 @@ class FhirReceiverHelpers:
         resource_type: str,
         error_view: Optional[str],
         url_column: Optional[str],
-    ) -> Iterable[Row]:
+    ) -> List[Row]:
         try:
             first_id: Optional[str] = resource_id_with_token_list[0]["resource_id"]
         except IndexError:
@@ -169,22 +180,23 @@ class FhirReceiverHelpers:
         sent: int = len(resource_id_with_token_list)
 
         if sent == 0:
-            yield Row(
-                partition_index=partition_index,
-                sent=0,
-                received=0,
-                responses=[],
-                first=None,
-                last=None,
-                error_text=None,
-                url=None,
-                status_code=None,
-            )
-            return
+            return [
+                Row(
+                    partition_index=partition_index,
+                    sent=0,
+                    received=0,
+                    responses=[],
+                    first=None,
+                    last=None,
+                    error_text=None,
+                    url=None,
+                    status_code=None,
+                )
+            ]
 
         # if batch and not has_token then send all ids at once as long as the access token is the same
         if batch_size and batch_size > 1 and not has_token_col:
-            yield from FhirReceiverHelpers.process_batch(
+            return FhirReceiverHelpers.process_batch(
                 partition_index=partition_index,
                 first_id=first_id,
                 last_id=last_id,
@@ -217,7 +229,7 @@ class FhirReceiverHelpers:
                 error_view=error_view,
             )
         else:  # otherwise send one by one
-            yield from FhirReceiverHelpers.process_one_by_one(
+            return FhirReceiverHelpers.process_one_by_one(
                 partition_index=partition_index,
                 first_id=first_id,
                 last_id=last_id,
@@ -283,9 +295,9 @@ class FhirReceiverHelpers:
         error_view: Optional[str],
         url_column: Optional[str],
         resource_name: str,
-    ) -> Iterable[Row]:
-        for resource1 in resource_id_with_token_list:
-            yield from FhirReceiverHelpers.process_single_row(
+    ) -> List[Row]:
+        coroutines: List[Coroutine[Any, Any, List[Row]]] = [
+            FhirReceiverHelpers.process_single_row_async(
                 partition_index=partition_index,
                 first_id=first_id,
                 last_id=last_id,
@@ -317,9 +329,18 @@ class FhirReceiverHelpers:
                 resource1=resource1,
                 resource_name=resource_name,
             )
+            for resource1 in resource_id_with_token_list
+        ]
+
+        async def get_functions() -> List[List[Row]]:
+            # noinspection PyTypeChecker
+            return await asyncio.gather(*[asyncio.create_task(c) for c in coroutines])
+
+        result: List[List[Row]] = asyncio.run(get_functions())
+        return flatten(result)
 
     @staticmethod
-    def process_single_row(
+    async def process_single_row_async(
         *,
         partition_index: int,
         first_id: Optional[str],
@@ -351,7 +372,7 @@ class FhirReceiverHelpers:
         url_column: Optional[str],
         resource_name: str,
         resource1: Dict[str, Optional[str]],
-    ) -> Iterable[Row]:
+    ) -> List[Row]:
         id_ = resource1["resource_id"]
         token_ = resource1["access_token"]
         url_ = resource1.get(url_column) if url_column else None
@@ -359,7 +380,7 @@ class FhirReceiverHelpers:
         resource_type = resource1.get("resourceType")
         responses_from_fhir: List[str] = []
         try:
-            result1 = FhirReceiverHelpers.send_simple_fhir_request(
+            result1 = await FhirReceiverHelpers.send_simple_fhir_request_async(
                 id_=id_,
                 token_=token_,
                 server_url_=url_ or server_url,
@@ -412,17 +433,20 @@ class FhirReceiverHelpers:
             error_text = str(e1)
             status_code = e1.response_status_code or 0
             request_url = e1.url
-        yield Row(
-            partition_index=partition_index,
-            sent=1,
-            received=len(responses_from_fhir),
-            responses=responses_from_fhir,
-            first=first_id,
-            last=last_id,
-            error_text=error_text,
-            url=request_url,
-            status_code=status_code,
-        )
+        result = [
+            Row(
+                partition_index=partition_index,
+                sent=1,
+                received=len(responses_from_fhir),
+                responses=responses_from_fhir,
+                first=first_id,
+                last=last_id,
+                error_text=error_text,
+                url=request_url,
+                status_code=status_code,
+            )
+        ]
+        return result
 
     @staticmethod
     def process_batch(
@@ -457,35 +481,37 @@ class FhirReceiverHelpers:
         auth_access_token: Optional[str],
         resource_type: str,
         error_view: Optional[str],
-    ) -> Iterable[Row]:
-        result1 = FhirReceiverHelpers.send_simple_fhir_request(
-            id_=[cast(str, r["resource_id"]) for r in resource_id_with_token_list],
-            token_=auth_access_token,
-            server_url=server_url,
-            server_url_=server_url,
-            resource_type=resource_type,
-            log_level=log_level,
-            action=action,
-            action_payload=action_payload,
-            additional_parameters=additional_parameters,
-            filter_by_resource=filter_by_resource,
-            filter_parameter=filter_parameter,
-            sort_fields=sort_fields,
-            auth_server_url=auth_server_url,
-            auth_client_id=auth_client_id,
-            auth_client_secret=auth_client_secret,
-            auth_login_token=auth_login_token,
-            auth_scopes=auth_scopes,
-            include_only_properties=include_only_properties,
-            separate_bundle_resources=separate_bundle_resources,
-            expand_fhir_bundle=expand_fhir_bundle,
-            accept_type=accept_type,
-            content_type=content_type,
-            accept_encoding=accept_encoding,
-            slug_column=slug_column,
-            retry_count=retry_count,
-            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-            limit=limit,
+    ) -> List[Row]:
+        result1 = asyncio.run(
+            FhirReceiverHelpers.send_simple_fhir_request_async(
+                id_=[cast(str, r["resource_id"]) for r in resource_id_with_token_list],
+                token_=auth_access_token,
+                server_url=server_url,
+                server_url_=server_url,
+                resource_type=resource_type,
+                log_level=log_level,
+                action=action,
+                action_payload=action_payload,
+                additional_parameters=additional_parameters,
+                filter_by_resource=filter_by_resource,
+                filter_parameter=filter_parameter,
+                sort_fields=sort_fields,
+                auth_server_url=auth_server_url,
+                auth_client_id=auth_client_id,
+                auth_client_secret=auth_client_secret,
+                auth_login_token=auth_login_token,
+                auth_scopes=auth_scopes,
+                include_only_properties=include_only_properties,
+                separate_bundle_resources=separate_bundle_resources,
+                expand_fhir_bundle=expand_fhir_bundle,
+                accept_type=accept_type,
+                content_type=content_type,
+                accept_encoding=accept_encoding,
+                slug_column=slug_column,
+                retry_count=retry_count,
+                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                limit=limit,
+            )
         )
         resp_result: str = result1.responses.replace("\n", "")
         responses_from_fhir = []
@@ -505,20 +531,23 @@ class FhirReceiverHelpers:
         error_text = result1.error
         status_code = result1.status
         is_valid_response: bool = True if len(responses_from_fhir) > 0 else False
-        yield Row(
-            partition_index=partition_index,
-            sent=1,
-            received=len(responses_from_fhir) if is_valid_response else 0,
-            responses=responses_from_fhir if is_valid_response else [],
-            first=first_id,
-            last=last_id,
-            error_text=error_text,
-            url=result1.url,
-            status_code=status_code,
-        )
+        result = [
+            Row(
+                partition_index=partition_index,
+                sent=1,
+                received=len(responses_from_fhir) if is_valid_response else 0,
+                responses=responses_from_fhir if is_valid_response else [],
+                first=first_id,
+                last=last_id,
+                error_text=error_text,
+                url=result1.url,
+                status_code=status_code,
+            )
+        ]
+        return result
 
     @staticmethod
-    def send_simple_fhir_request(
+    async def send_simple_fhir_request_async(
         *,
         id_: Optional[Union[str, List[str]]],
         token_: Optional[str],
@@ -551,38 +580,36 @@ class FhirReceiverHelpers:
     ) -> FhirGetResponse:
         url = server_url_ or server_url
         assert url
-        return asyncio.run(
-            FhirReceiverHelpers.send_fhir_request_async(
-                logger=get_logger(__name__),
-                action=action,
-                action_payload=action_payload,
-                additional_parameters=additional_parameters,
-                filter_by_resource=filter_by_resource,
-                filter_parameter=filter_parameter,
-                sort_fields=sort_fields,
-                resource_name=resource_type,
-                resource_id=id_,
-                server_url=url,
-                auth_server_url=auth_server_url,
-                auth_client_id=auth_client_id,
-                auth_client_secret=auth_client_secret,
-                auth_login_token=auth_login_token,
-                auth_access_token=token_,
-                auth_scopes=auth_scopes,
-                include_only_properties=include_only_properties,
-                separate_bundle_resources=separate_bundle_resources,
-                expand_fhir_bundle=expand_fhir_bundle,
-                accept_type=accept_type,
-                content_type=content_type,
-                accept_encoding=accept_encoding,
-                extra_context_to_return={slug_column: service_slug}
-                if slug_column and service_slug
-                else None,
-                retry_count=retry_count,
-                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                limit=limit,
-                log_level=log_level,
-            )
+        return await FhirReceiverHelpers.send_fhir_request_async(
+            logger=get_logger(__name__),
+            action=action,
+            action_payload=action_payload,
+            additional_parameters=additional_parameters,
+            filter_by_resource=filter_by_resource,
+            filter_parameter=filter_parameter,
+            sort_fields=sort_fields,
+            resource_name=resource_type,
+            resource_id=id_,
+            server_url=url,
+            auth_server_url=auth_server_url,
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
+            auth_login_token=auth_login_token,
+            auth_access_token=token_,
+            auth_scopes=auth_scopes,
+            include_only_properties=include_only_properties,
+            separate_bundle_resources=separate_bundle_resources,
+            expand_fhir_bundle=expand_fhir_bundle,
+            accept_type=accept_type,
+            content_type=content_type,
+            accept_encoding=accept_encoding,
+            extra_context_to_return={slug_column: service_slug}
+            if slug_column and service_slug
+            else None,
+            retry_count=retry_count,
+            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+            limit=limit,
+            log_level=log_level,
         )
 
     @staticmethod
