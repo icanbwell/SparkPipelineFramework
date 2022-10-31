@@ -2,24 +2,16 @@ import json
 import math
 import uuid
 from datetime import datetime
-from json import JSONDecodeError
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union, cast, Callable
+from typing import Any, Dict, List, Optional, Union, Callable
 
 # noinspection PyPep8Naming
 import pyspark.sql.functions as F
-from furl import furl
-from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
 from helix_fhir_client_sdk.filters.sort_field import SortField
-from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
-
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
-
 from pyspark.ml.param import Param
 from pyspark.rdd import RDD
 from pyspark.sql.dataframe import DataFrame
-
 from pyspark.sql.functions import col
 from pyspark.sql.functions import explode
 from pyspark.sql.types import (
@@ -39,17 +31,15 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
-)
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
-    FhirParserException,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_helpers import (
-    send_fhir_request,
+    FhirReceiverHelpers,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -372,7 +362,7 @@ class FhirReceiver(FrameworkTransformer):
         content_type: Optional[str] = self.getContentType()
         accept_encoding: Optional[str] = self.getAcceptEncoding()
 
-        ignore_status_codes = self.getIgnoreStatusCodes() or []
+        ignore_status_codes: List[int] = self.getIgnoreStatusCodes() or []
         ignore_status_codes.append(200)
 
         verify_counts_match: Optional[bool] = self.getVerifyCountsMatch()
@@ -413,7 +403,6 @@ class FhirReceiver(FrameworkTransformer):
         with ProgressLogMetric(
             name=f"{name}_fhir_receiver", progress_logger=progress_logger
         ):
-            resources: List[str] = []
             # if we're calling for individual ids
             # noinspection GrazieInspection
             if id_view:
@@ -445,33 +434,27 @@ class FhirReceiver(FrameworkTransformer):
                     f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
-                def send_simple_fhir_request(
-                    *,
-                    id_: Optional[Union[str, List[str]]],
-                    token_: Optional[str],
-                    server_url_: Optional[str],
-                    service_slug: Optional[str] = None,
-                    resource_type: str,
-                    log_level1: Optional[str],
-                ) -> FhirGetResponse:
-                    url = server_url_ or server_url
-                    assert url
-                    return send_fhir_request(
-                        logger=get_logger(__name__),
+                # run the above function on every partition
+                rdd: RDD[Row] = id_df.repartition(
+                    desired_partitions
+                ).rdd.mapPartitionsWithIndex(
+                    lambda partition_index, rows: FhirReceiverHelpers.send_partition_request_to_server(
+                        partition_index=partition_index,
+                        rows=rows,
+                        batch_size=batch_size,
+                        has_token_col=has_token_col,
+                        server_url=server_url,
+                        log_level=log_level,
                         action=action,
                         action_payload=action_payload,
                         additional_parameters=additional_parameters,
                         filter_by_resource=filter_by_resource,
                         filter_parameter=filter_parameter,
                         sort_fields=sort_fields,
-                        resource_name=resource_type,
-                        resource_id=id_,
-                        server_url=url,
                         auth_server_url=auth_server_url,
                         auth_client_id=auth_client_id,
                         auth_client_secret=auth_client_secret,
                         auth_login_token=auth_login_token,
-                        auth_access_token=token_,
                         auth_scopes=auth_scopes,
                         include_only_properties=include_only_properties,
                         separate_bundle_resources=separate_bundle_resources,
@@ -479,199 +462,16 @@ class FhirReceiver(FrameworkTransformer):
                         accept_type=accept_type,
                         content_type=content_type,
                         accept_encoding=accept_encoding,
-                        extra_context_to_return={slug_column: service_slug}
-                        if slug_column and service_slug
-                        else None,
+                        slug_column=slug_column,
                         retry_count=retry_count,
                         exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                         limit=limit,
-                        log_level=log_level1,
-                    )
-
-                def process_batch(
-                    partition_index: int,
-                    first_id: Optional[str],
-                    last_id: Optional[str],
-                    resource_id_with_token_list: List[Dict[str, Optional[str]]],
-                ) -> Iterable[Row]:
-                    result1 = send_simple_fhir_request(
-                        id_=[
-                            cast(str, r["resource_id"])
-                            for r in resource_id_with_token_list
-                        ],
-                        token_=auth_access_token,
-                        server_url_=server_url,
+                        auth_access_token=auth_access_token,
                         resource_type=resource_name,
-                        log_level1=log_level,
+                        error_view=error_view,
+                        url_column=url_column,
                     )
-                    resp_result: str = result1.responses.replace("\n", "")
-                    responses_from_fhir = []
-                    try:
-                        responses_from_fhir = self.json_str_to_list_str(resp_result)
-                    except JSONDecodeError as e1:
-                        if error_view:
-                            result1.error = f"{(result1.error or '')}: {str(e1)}"
-                        else:
-                            raise FhirParserException(
-                                url=result.url,
-                                message="Parsing result as json failed",
-                                json_data=result.responses,
-                                response_status_code=result.status,
-                            ) from e1
-
-                    error_text = result1.error
-                    status_code = result1.status
-                    is_valid_response: bool = (
-                        True if len(responses_from_fhir) > 0 else False
-                    )
-                    yield Row(
-                        partition_index=partition_index,
-                        sent=1,
-                        received=len(responses_from_fhir) if is_valid_response else 0,
-                        responses=responses_from_fhir if is_valid_response else [],
-                        first=first_id,
-                        last=last_id,
-                        error_text=error_text,
-                        url=result1.url,
-                        status_code=status_code,
-                    )
-
-                def process_one_by_one(
-                    partition_index: int,
-                    first_id: Optional[str],
-                    last_id: Optional[str],
-                    resource_id_with_token_list: List[Dict[str, Optional[str]]],
-                ) -> Iterable[Row]:
-                    for resource1 in resource_id_with_token_list:
-                        id_ = resource1["resource_id"]
-                        token_ = resource1["access_token"]
-                        url_ = resource1.get(url_column) if url_column else None
-                        service_slug = (
-                            resource1.get(slug_column) if slug_column else None
-                        )
-                        resource_type = resource1.get("resourceType")
-                        responses_from_fhir: List[str] = []
-                        try:
-                            result1 = send_simple_fhir_request(
-                                id_=id_,
-                                token_=token_,
-                                server_url_=url_ or server_url,
-                                service_slug=service_slug,
-                                resource_type=resource_type or resource_name,
-                                log_level1=log_level,
-                            )
-                            resp_result: str = result1.responses.replace("\n", "")
-                            try:
-                                responses_from_fhir = self.json_str_to_list_str(
-                                    resp_result
-                                )
-                            except JSONDecodeError as e2:
-                                if error_view:
-                                    result1.error = (
-                                        f"{(result1.error or '')}: {str(e2)}"
-                                    )
-                                else:
-                                    raise FhirParserException(
-                                        url=result.url,
-                                        message="Parsing result as json failed",
-                                        json_data=result.responses,
-                                        response_status_code=result.status,
-                                    ) from e2
-
-                            error_text = result1.error
-                            status_code = result1.status
-                            request_url = result1.url
-                        except FhirSenderException as e1:
-                            error_text = str(e1)
-                            status_code = e1.response_status_code or 0
-                            request_url = e1.url
-                        yield Row(
-                            partition_index=partition_index,
-                            sent=1,
-                            received=len(responses_from_fhir),
-                            responses=responses_from_fhir,
-                            first=first_id,
-                            last=last_id,
-                            error_text=error_text,
-                            url=request_url,
-                            status_code=status_code,
-                        )
-
-                def process_with_token(
-                    partition_index: int,
-                    resource_id_with_token_list: List[Dict[str, Optional[str]]],
-                ) -> Iterable[Row]:
-                    try:
-                        first_id: Optional[str] = resource_id_with_token_list[0][
-                            "resource_id"
-                        ]
-                    except IndexError:
-                        first_id = None
-
-                    try:
-                        last_id: Optional[str] = resource_id_with_token_list[-1][
-                            "resource_id"
-                        ]
-                    except IndexError:
-                        last_id = None
-
-                    sent: int = len(resource_id_with_token_list)
-
-                    if sent == 0:
-                        yield Row(
-                            partition_index=partition_index,
-                            sent=0,
-                            received=0,
-                            responses=[],
-                            first=None,
-                            last=None,
-                            error_text=None,
-                            url=None,
-                            status_code=None,
-                        )
-                        return
-
-                    # if batch and not has_token then send all ids at once as long as the access token is the same
-                    if batch_size and batch_size > 1 and not has_token_col:
-                        yield from process_batch(
-                            partition_index=partition_index,
-                            first_id=first_id,
-                            last_id=last_id,
-                            resource_id_with_token_list=resource_id_with_token_list,
-                        )
-                    else:  # otherwise send one by one
-                        yield from process_one_by_one(
-                            partition_index=partition_index,
-                            first_id=first_id,
-                            last_id=last_id,
-                            resource_id_with_token_list=resource_id_with_token_list,
-                        )
-
-                # function that is called for each partition
-                def send_partition_request_to_server(
-                    partition_index: int, rows: Iterable[Row]
-                ) -> Iterable[Row]:
-                    resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
-                        {
-                            "resource_id": r["id"],
-                            "access_token": r["token"],
-                            url_column: r[url_column],  # type: ignore
-                            slug_column: r[slug_column],  # type: ignore
-                            "resourceType": r["resourceType"],
-                        }
-                        if has_token_col and not server_url
-                        else {
-                            "resource_id": r["id"],
-                            "access_token": r["token"],
-                        }
-                        if has_token_col
-                        else {"resource_id": r["id"], "access_token": auth_access_token}
-                        for r in rows
-                    ]
-                    yield from process_with_token(
-                        partition_index=partition_index,
-                        resource_id_with_token_list=resource_id_with_token_list,
-                    )
+                )
 
                 if has_token_col and not server_url:
                     assert slug_column
@@ -683,12 +483,6 @@ class FhirReceiver(FrameworkTransformer):
                             if [c in id_df.columns]
                         ]
                     )
-
-                # run the above function on every partition
-                rdd: RDD[Row] = id_df.repartition(
-                    desired_partitions
-                ).rdd.mapPartitionsWithIndex(send_partition_request_to_server)
-
                 schema = StructType(
                     [
                         StructField("partition_index", IntegerType(), nullable=False),
@@ -895,132 +689,37 @@ class FhirReceiver(FrameworkTransformer):
                 if view:
                     result_df.createOrReplaceTempView(view)
             else:  # get all resources
-                if not page_size:
-                    page_size = limit
-                # if paging is requested then iterate through the pages until the response is empty
-                page_number: int = 0
-                server_page_number: int = 0
-                assert server_url
-                errors: List[str] = []
-                while True:
-                    result = send_fhir_request(
-                        logger=get_logger(__name__),
-                        action=action,
-                        action_payload=action_payload,
-                        additional_parameters=additional_parameters,
-                        filter_by_resource=filter_by_resource,
-                        filter_parameter=filter_parameter,
-                        resource_name=resource_name,
-                        resource_id=None,
-                        server_url=server_url,
-                        include_only_properties=include_only_properties,
-                        page_number=server_page_number,  # since we're setting id:above we can leave this as 0
-                        page_size=page_size,
-                        last_updated_after=last_updated_after,
-                        last_updated_before=last_updated_before,
-                        sort_fields=sort_fields,
-                        auth_server_url=auth_server_url,
-                        auth_client_id=auth_client_id,
-                        auth_client_secret=auth_client_secret,
-                        auth_login_token=auth_login_token,
-                        auth_access_token=auth_access_token,
-                        auth_scopes=auth_scopes,
-                        separate_bundle_resources=separate_bundle_resources,
-                        expand_fhir_bundle=expand_fhir_bundle,
-                        accept_type=accept_type,
-                        content_type=content_type,
-                        accept_encoding=accept_encoding,
-                        retry_count=retry_count,
-                        exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                        log_level=log_level,
-                    )
-                    # error = result.error
-                    try:
-                        result_response: List[str] = self.json_str_to_list_str(
-                            result.responses
-                        )
-                    except JSONDecodeError as e:
-                        if error_view:
-                            errors.append(
-                                json.dumps(
-                                    {
-                                        "url": result.url,
-                                        "status_code": result.status,
-                                        "error_text": str(e) + " : " + result.responses,
-                                    },
-                                    default=str,
-                                )
-                            )
-                        else:
-                            raise FhirParserException(
-                                url=result.url,
-                                message="Parsing result as json failed",
-                                json_data=result.responses,
-                                response_status_code=result.status,
-                            ) from e
-
-                    auth_access_token = result.access_token
-                    if len(result_response) > 0:
-                        # get id of last resource
-                        json_resources: List[Dict[str, Any]] = json.loads(
-                            result.responses
-                        )
-                        if isinstance(json_resources, list):  # normal response
-                            if len(json_resources) > 0:  # received any resources back
-                                last_json_resource = json_resources[-1]
-                                if result.next_url:
-                                    # if server has sent back a next url then use that
-                                    next_url: Optional[str] = result.next_url
-                                    next_uri: furl = furl(next_url)
-                                    additional_parameters = [
-                                        f"{k}={v}" for k, v in next_uri.args.items()
-                                    ]
-                                    # remove any entry for id:above
-                                    additional_parameters = list(
-                                        filter(
-                                            lambda x: not x.startswith("_count")
-                                            and not x.startswith("_element"),
-                                            additional_parameters,
-                                        )
-                                    )
-                                elif "id" in last_json_resource:
-                                    # use id:above to optimize the next query
-                                    id_of_last_resource = last_json_resource["id"]
-                                    if not additional_parameters:
-                                        additional_parameters = []
-                                    # remove any entry for id:above
-                                    additional_parameters = list(
-                                        filter(
-                                            lambda x: not x.startswith("id:above"),
-                                            additional_parameters,
-                                        )
-                                    )
-                                    additional_parameters.append(
-                                        f"id:above={id_of_last_resource}"
-                                    )
-                                else:
-                                    server_page_number += 1
-                                resources = resources + result_response
-                            page_number += 1
-                            if limit and limit > 0:
-                                if not page_size or (page_number * page_size) >= limit:
-                                    break
-                        else:
-                            # Received an error
-                            self.logger.error(
-                                f"Error {result.status} from FHIR server: {result.responses}"
-                            )
-                            if not result.status in ignore_status_codes:
-                                raise FhirReceiverException(
-                                    url=result.url,
-                                    json_data=result.responses,
-                                    response_text=result.responses,
-                                    response_status_code=result.status,
-                                    message="Error from FHIR server",
-                                )
-                    else:
-                        break
-
+                resources, errors = FhirReceiverHelpers.get_batch_result(
+                    page_size=page_size,
+                    limit=limit,
+                    server_url=server_url,
+                    action=action,
+                    action_payload=action_payload,
+                    additional_parameters=additional_parameters,
+                    filter_by_resource=filter_by_resource,
+                    filter_parameter=filter_parameter,
+                    resource_name=resource_name,
+                    include_only_properties=include_only_properties,
+                    last_updated_after=last_updated_after,
+                    last_updated_before=last_updated_before,
+                    sort_fields=sort_fields,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_access_token=auth_access_token,
+                    auth_scopes=auth_scopes,
+                    separate_bundle_resources=separate_bundle_resources,
+                    expand_fhir_bundle=expand_fhir_bundle,
+                    accept_type=accept_type,
+                    content_type=content_type,
+                    accept_encoding=accept_encoding,
+                    retry_count=retry_count,
+                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                    log_level=log_level,
+                    error_view=error_view,
+                    ignore_status_codes=ignore_status_codes,
+                )
                 rdd1: RDD[str] = (
                     sc(df).parallelize(resources, numSlices=num_partitions)
                     if num_partitions is not None
@@ -1176,19 +875,6 @@ class FhirReceiver(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getAcceptEncoding(self) -> Optional[str]:
         return self.getOrDefault(self.accept_encoding)
-
-    @staticmethod
-    def json_str_to_list_str(json_str: str) -> List[str]:
-        """
-        at some point helix.fhir.client.sdk changed, and now it sends json string instead of list of json strings
-        the PR: https://github.com/icanbwell/helix.fhir.client.sdk/pull/5
-        this function converts the new returning format to old one
-        """
-        full_json = json.loads(json_str) if json_str else []
-        if isinstance(full_json, list):
-            return [json.dumps(item) for item in full_json]
-        else:
-            return [json_str]
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
