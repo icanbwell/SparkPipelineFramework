@@ -151,31 +151,6 @@ class NlpTransformer(FrameworkTransformer):
         in_col = columns
         # get data from view
         #
-        spark_session = df.sql_ctx.sparkSession
-        spark_session.conf.set(
-            "spark.jars.packages",
-            "mysql:mysql-connector-java:8.0.24,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1",
-        )
-
-        # spark_session.builder.config("spark.jars.packages", "com.johnsnowlabs.nlp_transformer:spark-nlp_2.12:4.2.1")
-        """
-        
-
-        config = SparkConf().setAll(
-            [
-
-                ("spark.driver.memory", "16G"),
-                ("spark.driver.maxResultSize", "0"),
-                ("spark.kryoserializer.buffer.max", "2000M"),
-                (
-                    "spark.jars.packages",
-                    "mysql:mysql-connector-java:8.0.24,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1",
-                )
-            ]
-        )
-        sc.stop()
-        sc = SparkContext(conf=config)
-        """
         df_nlp: DataFrame = df.sql_ctx.table(view)
         final_columns = []
         explode_vector_tf = True  # need to functionize

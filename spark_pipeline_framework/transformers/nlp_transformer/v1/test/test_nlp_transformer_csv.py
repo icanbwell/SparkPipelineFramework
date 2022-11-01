@@ -97,10 +97,10 @@ def do_nlp_test() -> None:
 
     spark_session = (
         SparkSession.builder.appName("Spark NLP")
-        # .config(
-        #    "spark.jars.packages",
-        #    "mysql:mysql-connector-java:8.0.24,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1",
-        # )
+        .config(
+            "spark.jars.packages",
+            "mysql:mysql-connector-java:8.0.24,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1",
+        )
         .getOrCreate()
     )
 
