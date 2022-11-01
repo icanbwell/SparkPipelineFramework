@@ -31,7 +31,7 @@ class MyCsvPipeline(FrameworkPipeline):
                     progress_logger=progress_logger,
                 ),
                 NlpTransformer(
-                    columns=parameters["columns"],
+                    column=parameters["columns"],
                     view=parameters["view"],
                     binarize_tokens=True,
                     perform_analysis=["all"],
@@ -84,7 +84,7 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     result_df: DataFrame = spark_session.sql("SELECT * FROM nlp_analysis")
     print("Number of Rows: ", result_df.count())
     print("Number of Columns: ", len(result_df.columns))
-    result_df.sample(0.1, 3).show()
+    result_df.show()
 
     assert result_df.count() > 0
 
@@ -96,20 +96,16 @@ def do_nlp_test() -> None:
     begin = time.time()
 
     spark_session = (
-        SparkSession.builder.config(
-            "spark.jars.packages",
-            "mysql:mysql-connector-java:8.0.24,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1",
-        )
-        .appName("Spark NLP")
-        .master("local[*]")
-        .config("spark.driver.memory", "16G")
-        .config("spark.driver.maxResultSize", "0")
-        .config("spark.kryoserializer.buffer.max", "2000M")
+        SparkSession.builder.appName("Spark NLP")
+        # .config(
+        #    "spark.jars.packages",
+        #    "mysql:mysql-connector-java:8.0.24,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1",
+        # )
         .getOrCreate()
     )
 
-    print("Session Build Complete")
-
+    # pipeline_test(spark_session)
+    # pipeline_test = test_can_run_framework_pipeline
     # pipeline_test(spark_session)
     test_can_run_framework_pipeline(spark_session)
     print("TIME ELAPSED: ")

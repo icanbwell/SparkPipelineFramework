@@ -1,4 +1,5 @@
 # noinspection PyProtectedMember
+import time
 
 from pyspark import keyword_only
 from pyspark.ml.functions import vector_to_array
@@ -12,6 +13,11 @@ from sparknlp.annotator import (  # type: ignore
     ViveknSentimentModel,
     Tokenizer,
     Normalizer,
+    SentimentDetector,
+    UniversalSentenceEncoder,
+    ClassifierDLModel,
+    Lemmatizer,
+    SentimentDLModel,
 )
 import pyspark.sql.functions as f
 from pyspark.ml.feature import HashingTF, IDF, CountVectorizer
@@ -69,7 +75,7 @@ class NlpTransformer(FrameworkTransformer):
     @keyword_only
     def __init__(
         self,
-        columns: str,
+        column: str,
         view: str,
         binarize_tokens: bool = True,
         perform_analysis: List[str] = ["all"],
@@ -78,6 +84,26 @@ class NlpTransformer(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
     ):
+        """
+        Perform various NLP tasks in within the SparkPipelineFramework schema.
+
+        :param column: string column of interest to perform NLP analysis
+        :param view: the view to load the data into
+        :param binarize_tokens: an option on whether to include the arrays for binarizing labels, in addition to the vectors.
+        :param perform_analysis: the analysis options that the user wants performed. Here are the options
+            - "all" : default parameter
+            - "character_count"
+            - "word_count"
+            - "embeddings"
+            - "sentiment"
+            - "tf_idf"
+            - "entities"
+            - "bag_of_words"
+            - "first_word"
+        :param name: a name to use when logging information about this transformer
+        :param parameters: the parameter dictionary
+        :param progress_logger: the progress logger
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -86,14 +112,14 @@ class NlpTransformer(FrameworkTransformer):
 
         # add a param
 
-        assert columns
+        assert column
         assert view
 
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=None)
 
         self.columns: Param[str] = Param(self, "columns", "")
-        self._setDefault(columns=columns)
+        self._setDefault(columns=column)
 
         self.binarizeTokens: Param[bool] = Param(self, "binarizeTokens", "")
         self._setDefault(binarizeTokens=binarize_tokens)
@@ -116,14 +142,40 @@ class NlpTransformer(FrameworkTransformer):
         columns = self.get_columns()
         view = self.get_view()
         perform_analysis = self.get_perform_analysis()
+        # if the designation is "all" or the list is empty or non-existent.
+        # perform all is boolean that will compile a dataframe with every analysis for the intended column
         if "all" in perform_analysis or len(perform_analysis) == 0:
             perform_all = True
+        else:
+            perform_all = False
         in_col = columns
         # get data from view
-        # spark_session = df.sql_ctx.sparkSession
+        #
+        spark_session = df.sql_ctx.sparkSession
+        spark_session.conf.set(
+            "spark.jars.packages",
+            "mysql:mysql-connector-java:8.0.24,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1",
+        )
 
         # spark_session.builder.config("spark.jars.packages", "com.johnsnowlabs.nlp_transformer:spark-nlp_2.12:4.2.1")
+        """
+        
 
+        config = SparkConf().setAll(
+            [
+
+                ("spark.driver.memory", "16G"),
+                ("spark.driver.maxResultSize", "0"),
+                ("spark.kryoserializer.buffer.max", "2000M"),
+                (
+                    "spark.jars.packages",
+                    "mysql:mysql-connector-java:8.0.24,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1",
+                )
+            ]
+        )
+        sc.stop()
+        sc = SparkContext(conf=config)
+        """
         df_nlp: DataFrame = df.sql_ctx.table(view)
         final_columns = []
         explode_vector_tf = True  # need to functionize
@@ -135,7 +187,18 @@ class NlpTransformer(FrameworkTransformer):
             df_nlp = df_nlp.select(columns)
 
         final_columns.append(in_col)
+        # FEATURE GEN
+        # get string length
+        out_col = "character_count"
+        if out_col in perform_analysis or perform_all:
+            df_nlp = df_nlp.withColumn(out_col, f.length(in_col))
+            final_columns.append(out_col)
 
+        # get word count
+        out_col = "word_count"
+        if out_col in perform_analysis or perform_all:
+            df_nlp = df_nlp.withColumn(out_col, f.size(f.split(f.col(in_col), " ")))
+            final_columns.append(out_col)
         ################
         # TOKENIZER PIPELINE
         df_nlp = df_nlp.dropna(subset=[in_col])
@@ -160,20 +223,33 @@ class NlpTransformer(FrameworkTransformer):
             sentiment_model = sentiment_pipeline.fit(df_nlp)
             df_nlp = sentiment_model.transform(df_nlp).persist()
             final_columns.append(out_col)
+        ################
+        # SPARK-NLP Emotion Classifier
+        out_col = "emotion_classifier"
 
+        if out_col in perform_analysis or perform_all:
+            begin = time.time()
+            print("Performing Analysis: {}".format(out_col))
+            # emotion_pipeline = self.get_emotions_tfhub(
+            #    document_col="document", output_col=out_col)
+            # emotion_model = emotion_pipeline.fit(df_nlp)
+            # df_nlp = emotion_model.transform(df_nlp).persist()
+            # final_columns.append(out_col)
+            print("--Time Elapsed: ", round(time.time() - begin, 2))
         ############
-        # FEATURE GEN
-        # get string length
-        out_col = "character_count"
+        """
+        ################
+        # SPARK-NLP SENTIMENTIZER
+        out_col = "sentiment_score"
         if out_col in perform_analysis or perform_all:
-            df_nlp = df_nlp.withColumn(out_col, f.length(in_col))
-            final_columns.append(out_col)
+            pretrained_sentiment_pipeline = self.sentiment_pretrained()
+            sentiment_model = pretrained_sentiment_pipeline.fit(df_nlp)
+            df_nlp = sentiment_model.transform(df_nlp)
+            prediction = sentiment_model.transform(df_nlp)
+            prediction.select(out_col + ".metadata").show(truncate=False)
 
-        # get word count
-        out_col = "word_count"
-        if out_col in perform_analysis or perform_all:
-            df_nlp = df_nlp.withColumn(out_col, f.size(f.split(f.col(in_col), " ")))
             final_columns.append(out_col)
+        """
 
         # get embeddings
         out_col = "embeddings"
@@ -327,7 +403,6 @@ class NlpTransformer(FrameworkTransformer):
             .setInputCols([document_col, normalization_col])
             .setOutputCol("result_sentiment")
         )
-
         finisher = (
             Finisher()
             .setInputCols(["result_sentiment"])
@@ -339,10 +414,15 @@ class NlpTransformer(FrameworkTransformer):
         return pipeline
 
     def sentiment_pretrained(
-        self, sentiment_model: str = "analyze_sentiment"
+        self,
+        document_col: str = "documents",
+        output_col: str = "sentiment_score",
+        sentiment_model: str = "analyze_sentimentdl_glove_imdb",
     ) -> PretrainedPipeline:
         """
         Performs Sentiment Analysis
+        :param str document_col: Column with documents typically created with documentAssembler()
+        :param str output_col: Name of sentiment output column
         :param str sentiment_model: The pretrained model that is used for analysis.
         :rtype: PretrainedPipeline
 
@@ -350,9 +430,27 @@ class NlpTransformer(FrameworkTransformer):
          -- "analyze_sentiment"
          -- "analyze_sentimentdl_glove_imdb"
          -- "analyze_sentimentdl_use_twitter"
+         -- "sentimentdl_use_imdb"
+         -- "sentimentdl_use_twitter"
         """
-        pipeline = PretrainedPipeline(sentiment_model, lang="en")
-        return pipeline
+        use = (
+            UniversalSentenceEncoder.pretrained()
+            .setInputCols([document_col])
+            .setOutputCol("sentence_embeddings")
+        )
+
+        sentimentdl = (
+            SentimentDLModel.load("analyze_sentimentdl_use_twitter")
+            .setInputCols(["sentence_embeddings"])
+            .setOutputCol(output_col)
+        )
+
+        nlpPipeline = Pipeline(stages=[use, sentimentdl])
+        # example
+        #        # pipeline = PretrainedPipeline("onto_recognize_entities_sm")
+
+        # pipeline = PretrainedPipeline(sentiment_model)
+        return nlpPipeline
 
     def sentence_embeddings(
         self,
@@ -474,3 +572,35 @@ class NlpTransformer(FrameworkTransformer):
         pipeline = PretrainedPipeline(entity_pipeline)
 
         return pipeline
+
+    def get_emotions_tfhub(
+        self, document_col: str = "document", output_col: str = "emotion_classifier"
+    ) -> Pipeline:
+        """
+        Can classify various emotions in text.
+        - Surprise
+        - Sadness
+        - Fear
+        - Joy
+
+        :param str document_col: contains the DocumentAssembler column name
+        :param str output_col: Name of embeddings output column
+        :rtype Pipeline
+        """
+        universal_sentence_encoder = (
+            UniversalSentenceEncoder.pretrained("tfhub_use", lang="en")
+            .setInputCols([document_col])
+            .setOutputCol("sentence_embeddings")
+        )
+
+        emotion_classifier = (
+            ClassifierDLModel.pretrained("classifierdl_use_emotion", "en")
+            .setInputCols([document_col, "sentence_embeddings"])
+            .setOutputCol(output_col)
+        )
+
+        emotion_classifier_pipeline = Pipeline(
+            stages=[universal_sentence_encoder, emotion_classifier]
+        )
+
+        return emotion_classifier_pipeline
