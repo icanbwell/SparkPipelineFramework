@@ -104,9 +104,6 @@ def do_nlp_test() -> None:
         .getOrCreate()
     )
 
-    # pipeline_test(spark_session)
-    # pipeline_test = test_can_run_framework_pipeline
-    # pipeline_test(spark_session)
     test_can_run_framework_pipeline(spark_session)
     print("TIME ELAPSED: ")
     print(time.time() - begin)
