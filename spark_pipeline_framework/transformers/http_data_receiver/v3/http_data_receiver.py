@@ -26,7 +26,7 @@ class HttpDataReceiver(FrameworkTransformer):
     def __init__(
         self,
         http_request_generator: Callable[
-            [DataFrame, ProgressLogger],
+            [DataFrame, Optional[ProgressLogger]],
             Generator[
                 HelixHttpRequest, None, None
             ]
@@ -67,7 +67,7 @@ class HttpDataReceiver(FrameworkTransformer):
 
         self.http_request_generator: Param[
             Callable[
-                [DataFrame, ProgressLogger],
+                [DataFrame, Optional[ProgressLogger]],
                 Generator[HelixHttpRequest, None, None]
             ]
         ] = Param(self, "http_request_generator", "")
@@ -94,7 +94,7 @@ class HttpDataReceiver(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         http_request_generator: Callable[
-            [DataFrame, ProgressLogger],
+            [DataFrame, Optional[ProgressLogger]],
             Generator[HelixHttpRequest, None, None]
         ] = self.getHttpRequestGenerator()
         view_name = self.getView()
@@ -157,7 +157,10 @@ class HttpDataReceiver(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getHttpRequestGenerator(self) -> Callable[[DataFrame, ProgressLogger], Generator[HelixHttpRequest, None, None]]:
+    def getHttpRequestGenerator(self) -> Callable[
+        [DataFrame, Optional[ProgressLogger]],
+        Generator[HelixHttpRequest, None, None]
+    ]:
         return self.getOrDefault(self.http_request_generator)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
