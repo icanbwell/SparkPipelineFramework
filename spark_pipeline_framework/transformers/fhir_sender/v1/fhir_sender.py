@@ -276,7 +276,7 @@ class FhirSender(FrameworkTransformer):
                         f"for operation {operation} "
                         f"to {server_url}/{resource_name}. [{name}].."
                     )
-
+                    request_id_list: List[str] = []
                     responses: List[Dict[str, Any]] = []
                     if operation == self.FHIR_OPERATION_DELETE:
                         # FHIR doesn't support bulk deletes, so we have to send one at a time
@@ -330,6 +330,8 @@ class FhirSender(FrameworkTransformer):
                                 )
                                 if result:
                                     auth_access_token1 = result.access_token
+                                    if result.request_id:
+                                        request_id_list.append(result.request_id)
                                     responses.extend(result.responses)
                         else:
                             # send a whole batch to the server at once
@@ -347,6 +349,8 @@ class FhirSender(FrameworkTransformer):
                                 logger=self.logger,
                                 log_level=log_level,
                             )
+                            if result and result.request_id:
+                                request_id_list.append(result.request_id)
                             if result:
                                 responses = result.responses
                     # each item in responses is either a json object
@@ -369,9 +373,12 @@ class FhirSender(FrameworkTransformer):
                             errors.append(json.dumps(response["issue"]))
                     print(
                         f"Received response for batch {partition_index}/{desired_partitions} "
+                        f"request_ids:[{', '.join(request_id_list)}] "
                         f"total={len(json_data_list)}, error={error_count}, "
                         f"created={created_count}, updated={updated_count}, deleted={deleted_count} "
-                        f"to {server_url}/{resource_name}. [{name}].."
+                        f"to {server_url}/{resource_name}. "
+                        f"[{name}] "
+                        f"Response={json.dumps(responses, default=str)}"
                     )
                     if progress_logger:
                         progress_logger.log_progress_event(

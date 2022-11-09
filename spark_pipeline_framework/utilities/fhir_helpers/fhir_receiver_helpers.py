@@ -194,6 +194,7 @@ class FhirReceiverHelpers:
                     error_text=None,
                     url=None,
                     status_code=None,
+                    request_id=None,
                 )
             ]
 
@@ -386,38 +387,41 @@ class FhirReceiverHelpers:
         url_ = resource1.get(url_column) if url_column else None
         service_slug = resource1.get(slug_column) if slug_column else None
         resource_type = resource1.get("resourceType")
+        request_id: Optional[str] = None
         responses_from_fhir: List[str] = []
         try:
-            result1 = await FhirReceiverHelpers.send_simple_fhir_request_async(
-                id_=id_,
-                token_=token_,
-                server_url_=url_ or server_url,
-                service_slug=service_slug,
-                resource_type=resource_type or resource_name,
-                log_level=log_level,
-                server_url=server_url,
-                action=action,
-                action_payload=action_payload,
-                additional_parameters=additional_parameters,
-                filter_by_resource=filter_by_resource,
-                filter_parameter=filter_parameter,
-                sort_fields=sort_fields,
-                auth_server_url=auth_server_url,
-                auth_client_id=auth_client_id,
-                auth_client_secret=auth_client_secret,
-                auth_login_token=auth_login_token,
-                auth_scopes=auth_scopes,
-                include_only_properties=include_only_properties,
-                separate_bundle_resources=separate_bundle_resources,
-                expand_fhir_bundle=expand_fhir_bundle,
-                accept_type=accept_type,
-                content_type=content_type,
-                accept_encoding=accept_encoding,
-                slug_column=slug_column,
-                retry_count=retry_count,
-                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                limit=limit,
-                use_data_streaming=use_data_streaming,
+            result1: FhirGetResponse = (
+                await FhirReceiverHelpers.send_simple_fhir_request_async(
+                    id_=id_,
+                    token_=token_,
+                    server_url_=url_ or server_url,
+                    service_slug=service_slug,
+                    resource_type=resource_type or resource_name,
+                    log_level=log_level,
+                    server_url=server_url,
+                    action=action,
+                    action_payload=action_payload,
+                    additional_parameters=additional_parameters,
+                    filter_by_resource=filter_by_resource,
+                    filter_parameter=filter_parameter,
+                    sort_fields=sort_fields,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_scopes=auth_scopes,
+                    include_only_properties=include_only_properties,
+                    separate_bundle_resources=separate_bundle_resources,
+                    expand_fhir_bundle=expand_fhir_bundle,
+                    accept_type=accept_type,
+                    content_type=content_type,
+                    accept_encoding=accept_encoding,
+                    slug_column=slug_column,
+                    retry_count=retry_count,
+                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                    limit=limit,
+                    use_data_streaming=use_data_streaming,
+                )
             )
             resp_result: str = result1.responses.replace("\n", "")
             try:
@@ -433,11 +437,13 @@ class FhirReceiverHelpers:
                         message="Parsing result as json failed",
                         json_data=result1.responses,
                         response_status_code=result1.status,
+                        request_id=result1.request_id,
                     ) from e2
 
             error_text = result1.error
             status_code = result1.status
             request_url = result1.url
+            request_id = result1.request_id
         except FhirSenderException as e1:
             error_text = str(e1)
             status_code = e1.response_status_code or 0
@@ -453,6 +459,7 @@ class FhirReceiverHelpers:
                 error_text=error_text,
                 url=request_url,
                 status_code=status_code,
+                request_id=request_id,
             )
         ]
         return result
@@ -537,10 +544,12 @@ class FhirReceiverHelpers:
                     message="Parsing result as json failed",
                     json_data=result1.responses,
                     response_status_code=result1.status,
+                    request_id=result1.request_id,
                 ) from e1
 
         error_text = result1.error
         status_code = result1.status
+        request_id: Optional[str] = result1.request_id
         is_valid_response: bool = True if len(responses_from_fhir) > 0 else False
         result = [
             Row(
@@ -553,6 +562,7 @@ class FhirReceiverHelpers:
                 error_text=error_text,
                 url=result1.url,
                 status_code=status_code,
+                request_id=request_id,
             )
         ]
         return result
@@ -826,6 +836,7 @@ class FhirReceiverHelpers:
         page_number: int = 0
         server_page_number: int = 0
         assert server_url
+        result: FhirGetResponse
         if use_data_streaming:
             result = asyncio.run(
                 FhirReceiverHelpers.send_fhir_request_async(
@@ -879,6 +890,7 @@ class FhirReceiverHelpers:
                         message="Parsing result as json failed",
                         json_data=result.responses,
                         response_status_code=result.status,
+                        request_id=result.request_id,
                     ) from e
         else:
             while True:
@@ -929,6 +941,7 @@ class FhirReceiverHelpers:
                                     "url": result.url,
                                     "status_code": result.status,
                                     "error_text": str(e) + " : " + result.responses,
+                                    "request_id": result.request_id,
                                 },
                                 default=str,
                             )
@@ -939,6 +952,7 @@ class FhirReceiverHelpers:
                             message="Parsing result as json failed",
                             json_data=result.responses,
                             response_status_code=result.status,
+                            request_id=result.request_id,
                         ) from e
 
                 auth_access_token = result.access_token
@@ -994,6 +1008,7 @@ class FhirReceiverHelpers:
                                 response_text=result.responses,
                                 response_status_code=result.status,
                                 message="Error from FHIR server",
+                                request_id=result.request_id,
                             )
                 else:
                     break
