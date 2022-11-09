@@ -506,6 +506,7 @@ class FhirReceiver(FrameworkTransformer):
                         StructField("error_text", StringType(), nullable=True),
                         StructField("url", StringType(), nullable=True),
                         StructField("status_code", IntegerType(), nullable=True),
+                        StructField("request_id", StringType(), nullable=True),
                     ]
                 )
 
@@ -543,6 +544,7 @@ class FhirReceiver(FrameworkTransformer):
                         "received",
                         "error_text",
                         "status_code",
+                        "request_id",
                     ).show(truncate=False, n=1000000)
                     results_with_counts_errored.select(
                         "partition_index",
@@ -551,6 +553,7 @@ class FhirReceiver(FrameworkTransformer):
                         "error_text",
                         "url",
                         "status_code",
+                        "request_id",
                     ).show(truncate=False, n=1000000)
                     first_error: str = (
                         results_with_counts_errored.select("error_text")
@@ -567,9 +570,14 @@ class FhirReceiver(FrameworkTransformer):
                         .limit(1)
                         .collect()[0][0]
                     )
+                    first_request_id: Optional[str] = (
+                        results_with_counts_errored.select("request_id")
+                        .limit(1)
+                        .collect()[0][0]
+                    )
                     if error_view:
                         errors_df = results_with_counts_errored.select(
-                            "url", "error_text", "status_code"
+                            "url", "error_text", "status_code", "request_id"
                         )
                         errors_df.createOrReplaceTempView(error_view)
                         if progress_logger:
@@ -599,6 +607,7 @@ class FhirReceiver(FrameworkTransformer):
                             response_status_code=first_error_status_code,
                             message="Error receiving FHIR",
                             json_data=first_error,
+                            request_id=first_request_id,
                         )
 
                 if expand_fhir_bundle:
@@ -626,6 +635,7 @@ class FhirReceiver(FrameworkTransformer):
                             "received",
                             "error_text",
                             "url",
+                            "request_id",
                         ).show(truncate=False, n=1000000)
                         first_url = (
                             result_with_counts.select("url").limit(1).collect()[0][0]
@@ -635,12 +645,18 @@ class FhirReceiver(FrameworkTransformer):
                             .limit(1)
                             .collect()[0][0]
                         )
+                        first_request_id = (
+                            result_with_counts.select("request_id")
+                            .limit(1)
+                            .collect()[0][0]
+                        )
                         raise FhirReceiverException(
                             url=first_url,
                             response_text=None,
                             response_status_code=first_error_status_code,
                             message=f"Sent ({count_sent}) and Received ({count_received}) counts did not match",
                             json_data="",
+                            request_id=first_request_id,
                         )
                     elif count_sent == count_received:
                         self.logger.info(
@@ -699,7 +715,7 @@ class FhirReceiver(FrameworkTransformer):
                 if view:
                     result_df.createOrReplaceTempView(view)
             else:  # get all resources
-                resources, errors = FhirReceiverHelpers.get_batch_result(
+                result1 = FhirReceiverHelpers.get_batch_result(
                     page_size=page_size,
                     limit=limit,
                     server_url=server_url,
@@ -731,6 +747,8 @@ class FhirReceiver(FrameworkTransformer):
                     ignore_status_codes=ignore_status_codes,
                     use_data_streaming=use_data_streaming,
                 )
+                resources = result1.resources
+                errors = result1.errors
                 rdd1: RDD[str] = (
                     sc(df).parallelize(resources, numSlices=num_partitions)
                     if num_partitions is not None
