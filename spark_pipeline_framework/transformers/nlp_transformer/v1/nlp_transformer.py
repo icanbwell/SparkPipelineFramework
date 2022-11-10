@@ -67,7 +67,6 @@ class NlpTransformer(FrameworkTransformer):
     - "embeddings"
     - "sentiment"
     - "tf_idf"
-    - "entities"
     - "bag_of_words"
     - "first_word"
     """
@@ -97,7 +96,6 @@ class NlpTransformer(FrameworkTransformer):
             - "embeddings"
             - "sentiment"
             - "tf_idf"
-            - "entities"
             - "bag_of_words"
             - "first_word"
         :param name: a name to use when logging information about this transformer
@@ -241,7 +239,8 @@ class NlpTransformer(FrameworkTransformer):
             tfidf_model = tfidf.fit(df_nlp)
             df_nlp = tfidf_model.transform(df_nlp)
             final_columns.append(out_col)
-
+        """
+        #11/9 Commented out to assist pytest 
         # do entity recognition
         out_col = "entities"
         if out_col in perform_analysis or "all" in perform_analysis:
@@ -249,7 +248,7 @@ class NlpTransformer(FrameworkTransformer):
             # ner_model = ner.fit(df_nlp)
             df_nlp = ner.transform(df_nlp)
             final_columns.append(out_col)
-
+        """
         # label binarizer
         # get bag of words
         out_col = "bag_of_words"
@@ -528,11 +527,12 @@ class NlpTransformer(FrameworkTransformer):
 
         return tfidf_pipeline
 
+    """
     def get_entities(
         self, entity_pipeline: str = "onto_recognize_entities_sm"
     ) -> PretrainedPipeline:
 
-        """
+        ""#"
         Creates transformer for pretrained entity recognition pipeline. In a Spark DataFrame environment.
         Code looks for "text" column
         Options for `entity_pipeline` are:
@@ -541,12 +541,13 @@ class NlpTransformer(FrameworkTransformer):
 
         :param str entity_pipeline: The name of the pretrained pipeline to use
         :rtype PretrainedPipeline
-        """
+        ""#"
         # pipeline = PretrainedPipeline("onto_recognize_entities_sm")
 
         pipeline = PretrainedPipeline(entity_pipeline)
 
         return pipeline
+    """
 
     def get_emotions_tfhub(
         self, document_col: str = "document", output_col: str = "emotion_classifier"

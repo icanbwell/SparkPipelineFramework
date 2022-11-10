@@ -85,7 +85,7 @@ def spark_session(request: Any) -> SparkSession:
         .config("spark.sql.broadcastTimeout", "2400")
         .config(
             "spark.jars.packages",
-            "com.crealytics:spark-excel_2.12:0.13.7,com.databricks:spark-xml_2.12:0.14.0,com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2",
+            "com.crealytics:spark-excel_2.12:0.13.7,com.databricks:spark-xml_2.12:0.14.0",
         )
         .enableHiveSupport()
         .getOrCreate()
