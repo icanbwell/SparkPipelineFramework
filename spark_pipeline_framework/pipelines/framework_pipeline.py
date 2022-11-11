@@ -12,9 +12,6 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.FriendlySparkException import (
-    FriendlySparkException,
-)
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
@@ -57,11 +54,15 @@ class FrameworkPipeline(Transformer):
         )
         for transformer in self.transformers:
             assert isinstance(transformer, Transformer), type(transformer)
-            # assert isinstance(transformer, FrameworkTransformer), type(transformer)
+            if hasattr(transformer, "getName"):
+                # noinspection Mypy
+                stage_name = transformer.getName()
+            else:
+                stage_name = transformer.__class__.__name__
             try:
                 i += 1
                 logger.info(
-                    f"---- Running pipeline [{pipeline_name}] transformer [{transformer}]  "
+                    f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
                     f"({i} of {count_of_transformers}) ----"
                 )
                 if hasattr(transformer, "set_loop_id"):
@@ -69,32 +70,27 @@ class FrameworkPipeline(Transformer):
 
                 with ProgressLogMetric(
                     progress_logger=self.progress_logger,
-                    name=str(transformer) or "unknown",
+                    name=str(stage_name) or "unknown",
                 ):
                     self.progress_logger.log_event(
-                        pipeline_name, event_text=f"Running pipeline step {transformer}"
+                        pipeline_name, event_text=f"Running pipeline step {stage_name}"
                     )
                     df = transformer.transform(dataset=df)
             except Exception as e:
-                if hasattr(transformer, "getName"):
-                    # noinspection Mypy
-                    stage_name = transformer.getName()
-                else:
-                    stage_name = transformer.__class__.__name__
                 logger.error(
                     f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
                 )
                 # use exception chaining to add stage name but keep original exception
-                friendly_spark_exception: FriendlySparkException = (
-                    FriendlySparkException(exception=e, stage_name=stage_name)
-                )
-                error_messages: List[str] = (
-                    friendly_spark_exception.message.split("\n")
-                    if friendly_spark_exception.message
-                    else []
-                )
-                for error_message in error_messages:
-                    logger.error(msg=error_message)
+                # friendly_spark_exception: FriendlySparkException = (
+                #     FriendlySparkException(exception=e, stage_name=stage_name)
+                # )
+                # error_messages: List[str] = (
+                #     friendly_spark_exception.message.split("\n")
+                #     if friendly_spark_exception.message
+                #     else []
+                # )
+                # for error_message in error_messages:
+                #     logger.error(msg=error_message)
 
                 if hasattr(transformer, "getSql"):
                     # noinspection Mypy
@@ -107,7 +103,12 @@ class FrameworkPipeline(Transformer):
                     event_text=f"Exception in Stage={stage_name}",
                     ex=e,
                 )
-                raise friendly_spark_exception from e
+                # if hasattr(e, "message"):
+                #     e.message = f"Exception in stage {stage_name}" + e.message
+                if len(e.args) >= 1:
+                    # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                    e.args = (f"In Stage ({stage_name})", *e.args)
+                raise e
         self.progress_logger.log_event(
             event_name=pipeline_name, event_text=f"Finished Pipeline {pipeline_name}"
         )

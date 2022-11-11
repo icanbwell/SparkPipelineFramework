@@ -57,7 +57,10 @@ class FrameworkTransformerGroup(FrameworkTransformer):
             else self.enable_if_view_not_empty
         )
         enable_if_view_not_empty = (
-            not df.sparkSession.table(view_enable_if_view_not_empty).isEmpty()
+            (
+                df.sparkSession.catalog.tableExists(view_enable_if_view_not_empty)
+                and not df.sparkSession.table(view_enable_if_view_not_empty).isEmpty()
+            )
             if view_enable_if_view_not_empty
             else True
         )
@@ -66,13 +69,25 @@ class FrameworkTransformerGroup(FrameworkTransformer):
                 self.stages if not callable(self.stages) else self.stages()
             )
             for stage in stages:
+                if hasattr(stage, "getName"):
+                    # noinspection Mypy
+                    stage_name = stage.getName()
+                else:
+                    stage_name = stage.__class__.__name__
                 if progress_logger is not None:
                     progress_logger.start_mlflow_run(
-                        run_name=str(stage), is_nested=True
+                        run_name=stage_name, is_nested=True
                     )
                 if hasattr(stage, "set_loop_id"):
                     stage.set_loop_id(self.loop_id)
-                df = stage.transform(df)
+                try:
+                    df = stage.transform(df)
+                except Exception as e:
+                    if len(e.args) >= 1:
+                        # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                        e.args = (f"In Stage ({stage_name})", *e.args)
+                    raise e
+
                 if progress_logger is not None:
                     progress_logger.end_mlflow_run()
         else:

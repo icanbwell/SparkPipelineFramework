@@ -5,7 +5,7 @@ import traceback
 from typing import List, AsyncIterator, Tuple, Any, Dict, Optional, OrderedDict
 
 from bounded_pool_executor import BoundedThreadPoolExecutor
-from pyspark.ml import Pipeline, Transformer
+from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -138,12 +138,35 @@ class ParallelPipelineExecutor:
             if parallel_mode:
                 result_df = ParallelPipelineExecutor._handle_transform_mode(df, stages)
             else:
-                result_df = Pipeline(stages=stages).fit(df).transform(df)
+                for stage in stages:
+                    if hasattr(stage, "getName"):
+                        # noinspection Mypy
+                        stage_name = stage.getName()
+                    else:
+                        stage_name = stage.__class__.__name__
+                    try:
+                        result_df = stage.transform(df)
+                    except Exception as e:
+                        if len(e.args) >= 1:
+                            # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                            e.args = (f"In Stage ({stage_name})", *e.args)
+                        raise e
             return result_df
 
     @staticmethod
     def _handle_transform_mode(df: DataFrame, stages: List[Transformer]) -> DataFrame:
-        new_df = df
-        model = Pipeline(stages=stages).fit(new_df)
-        result_df = model.transform(new_df)
+        result_df = df
+        for stage in stages:
+            if hasattr(stage, "getName"):
+                # noinspection Mypy
+                stage_name = stage.getName()
+            else:
+                stage_name = stage.__class__.__name__
+            try:
+                result_df = stage.transform(result_df)
+            except Exception as e:
+                if len(e.args) >= 1:
+                    # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                    e.args = (f"In Stage ({stage_name})", *e.args)
+                raise e
         return result_df

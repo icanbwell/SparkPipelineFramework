@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, Callable
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
@@ -11,17 +11,17 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 
 
-class FrameworkDropViewsTransformer(FrameworkTransformer):
+class FrameworkRunFunctionTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
     @capture_parameters
     def __init__(
         self,
-        views: List[str],
-        # add your parameters here (be sure to add them to setParams below too)
+        *,
+        fn: Callable[[DataFrame], DataFrame],
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-    ):
+    ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -29,23 +29,19 @@ class FrameworkDropViewsTransformer(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.views: Param[List[str]] = Param(self, "views", "")
-        self._setDefault(views=views)
+        self.fn: Param[Any] = Param(self, "fn", "")
+        self._setDefault(fn=fn)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        views: List[str] = self.getViews()
+        fn: Callable[[DataFrame], DataFrame] = self.getFunction()
 
-        view: str
-        for view in views:
-            if df.sparkSession.catalog.tableExists(tableName=view):
-                self.logger.info(f"Dropping view {view}")
-                df.sparkSession.catalog.dropTempView(viewName=view)
+        df = fn(df)
 
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getViews(self) -> List[str]:
-        return self.getOrDefault(self.views)
+    def getFunction(self) -> Callable[[DataFrame], DataFrame]:
+        return self.getOrDefault(self.fn)  # type: ignore
