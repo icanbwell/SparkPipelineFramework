@@ -23,8 +23,9 @@ def send_json_bundle_to_fhir(
     auth_scopes: Optional[List[str]],
     auth_access_token: Optional[str],
     log_level: Optional[str],
+    retry_count: Optional[int] = None,
+    exclude_status_codes_from_retry: Optional[List[int]] = None,
 ) -> Optional[FhirMergeResponse]:
-
     fhir_client: FhirClient = get_fhir_client(
         logger=logger,
         server_url=server_url,
@@ -40,6 +41,14 @@ def send_json_bundle_to_fhir(
     fhir_client = fhir_client.resource(resource)
     if validation_server_url:
         fhir_client = fhir_client.validation_server_url(validation_server_url)
+
+    if retry_count is not None:
+        fhir_client = fhir_client.retry_count(retry_count)
+
+    if exclude_status_codes_from_retry:
+        fhir_client = fhir_client.exclude_status_codes_from_retry(
+            exclude_status_codes_from_retry
+        )
 
     try:
         logger.debug("----------- Sending data to FHIR -------")
@@ -69,7 +78,6 @@ def send_fhir_delete(
     auth_access_token: Optional[str],
     log_level: Optional[str],
 ) -> Dict[str, Any]:
-
     fhir_client: FhirClient = get_fhir_client(
         logger=logger,
         server_url=server_url,
