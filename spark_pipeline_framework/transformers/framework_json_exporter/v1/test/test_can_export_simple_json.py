@@ -74,13 +74,18 @@ def test_can_export_simple_json_with_schema(spark_session: SparkSession) -> None
     assert result.schema == result_2.schema
 
     FrameworkJsonExporter(
-        view="books_schema", file_path=temp_folder.joinpath("out.json")
+        view="books_schema",
+        file_path=temp_folder.joinpath("out.json"),
+        delta_lake_table="table1",
     ).transform(df)
 
-    FrameworkJsonLoader(
-        view="books_schema", file_path=temp_folder.joinpath("out.json")
-    ).transform(df)
+    df = spark_session.read.format("delta").load(str(temp_folder.joinpath("out.json")))
 
-    result_2 = spark_session.sql("SELECT * FROM books_schema")
+    # FrameworkJsonLoader(
+    #     view="books_schema", file_path=temp_folder.joinpath("out.json")
+    # ).transform(df)
+    #
+    # result_2 = spark_session.sql("SELECT * FROM books_schema")
 
-    assert result_2.count() == 2
+    assert df.count() == 2
+    df.show(truncate=False)
