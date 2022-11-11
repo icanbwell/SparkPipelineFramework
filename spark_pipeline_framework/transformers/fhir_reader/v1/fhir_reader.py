@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Dict, Any, Optional, Union, List, Callable
+from typing import Dict, Any, Optional, Union, List, Callable, cast
 
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, from_json
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
@@ -39,6 +39,7 @@ class FhirReader(FrameworkTransformer):
         multi_line: bool = False,
         autodiscover_multiline: bool = False,
         filter_by_resource_type: Optional[str] = None,
+        delta_lake_table: Optional[str] = None,
     ):
         """
         Reads json files from path and creates columns corresponding to the FHIR schema
@@ -117,6 +118,11 @@ class FhirReader(FrameworkTransformer):
         )
         self._setDefault(filter_by_resource_type=None)
 
+        self.delta_lake_table: Param[Optional[str]] = Param(
+            self, "delta_lake_table", ""
+        )
+        self._setDefault(delta_lake_table=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -168,6 +174,9 @@ class FhirReader(FrameworkTransformer):
 
         filter_by_resource_type: Optional[str] = self.getFilterByResourceType()
         # limit: int = self.getLimit()
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        file_format: str = "delta" if delta_lake_table else "json"
 
         with ProgressLogMetric(
             name=f"{name or view}_fhir_reader", progress_logger=progress_logger
@@ -190,13 +199,22 @@ class FhirReader(FrameworkTransformer):
                 reader = df.sql_ctx.read
                 if bad_records_path:
                     reader = reader.option("badRecordsPath", str(bad_records_path))
-                if schema:
+                if schema and not delta_lake_table:
                     reader = reader.schema(schema)
                 if encoding:
                     reader = reader.option("encoding", encoding)
                 for k, v in self.getReaderOptions().items():
                     reader = reader.option(k, v)
-                df = reader.json(str(file_path))
+                if delta_lake_table:
+                    df = reader.format(file_format).load(str(file_path))
+                    df = df.select(
+                        from_json(col("col"), schema=cast(StructType, schema)).alias(
+                            "resource"
+                        )
+                    )
+                    df = df.selectExpr("resource.*")
+                else:
+                    df = reader.json(str(file_path))
 
                 assert (
                     "_corrupt_record" not in df.columns

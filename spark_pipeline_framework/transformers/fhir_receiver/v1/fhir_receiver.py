@@ -404,8 +404,6 @@ class FhirReceiver(FrameworkTransformer):
 
         delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
 
-        file_format: str = "delta" if delta_lake_table else "json"
-
         # get access token first so we can reuse it
         if auth_client_id and server_url:
             auth_access_token = fhir_get_access_token(
