@@ -703,8 +703,8 @@ class FhirReceiver(FrameworkTransformer):
                     f"Executing requests and writing FHIR {resource_name} resources to {file_path}..."
                 )
                 file_format = "delta" if delta_lake_table else "text"
-                result_df.write.format(file_format).mode(mode).text(str(file_path))
-                result_df = df.sparkSession.read.format(file_format).text(
+                result_df.write.format(file_format).mode(mode).save(str(file_path))
+                result_df = df.sparkSession.read.format(file_format).load(
                     str(file_path)
                 )
                 self.logger.info(
@@ -774,8 +774,9 @@ class FhirReceiver(FrameworkTransformer):
                 )
 
                 list_df: DataFrame = rdd1.toDF(StringType())
-                list_df.write.format(file_format).mode(mode).text(str(file_path))
-                list_df = df.sparkSession.read.format(file_format).text(str(file_path))
+                file_format = "delta" if delta_lake_table else "text"
+                list_df.write.format(file_format).mode(mode).save(str(file_path))
+                list_df = df.sparkSession.read.format(file_format).load(str(file_path))
 
                 self.logger.info(f"Wrote FHIR data to {file_path}")
 
