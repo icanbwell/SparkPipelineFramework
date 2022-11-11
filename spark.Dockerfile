@@ -13,7 +13,7 @@ WORKDIR /spf
 
 RUN pipenv sync --dev --system && pipenv run pip install pyspark==3.3.0
 
-COPY ./jars/* /opt/spark/jars/
+#COPY ./jars/* /opt/spark/jars/
 # COPY ./jars/* /opt/bitnami/spark/jars/
 # COPY ./conf/* /opt/bitnami/spark/conf/
 
