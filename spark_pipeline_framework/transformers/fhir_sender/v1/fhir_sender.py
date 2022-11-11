@@ -37,6 +37,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
 
+
 # noinspection PyProtectedMember
 
 
@@ -190,6 +191,11 @@ class FhirSender(FrameworkTransformer):
         self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
         self._setDefault(num_partitions=None)
 
+        self.ignore_status_codes: Param[Optional[List[int]]] = Param(
+            self, "ignore_status_codes", ""
+        )
+        self._setDefault(ignore_status_codes=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -241,7 +247,7 @@ class FhirSender(FrameworkTransformer):
             self.exclude_status_codes_from_retry
         )
 
-        num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
+        # num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
 
         # get access token first so we can reuse it
         if auth_client_id:
@@ -589,3 +595,7 @@ class FhirSender(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
         return self.getOrDefault(self.mode)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getIgnoreStatusCodes(self) -> Optional[List[int]]:
+        return self.getOrDefault(self.ignore_status_codes)
