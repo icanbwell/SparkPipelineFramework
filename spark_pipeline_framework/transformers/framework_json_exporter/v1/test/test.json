@@ -1,0 +1,12 @@
+[
+  {
+    "title": "A Philosophy of Software Design",
+    "authors": [{"given":  ["John"], "surname":  "Ousterhout"}],
+    "edition": null
+  },
+  {
+    "title":  "Essentials of Programming Languages",
+    "authors": [{"given":  ["Dan", "P."], "surname":  "Friedman"}, {"given":  ["Mitchell"], "surname":  "Wand"}],
+    "edition": 3
+  }
+]
