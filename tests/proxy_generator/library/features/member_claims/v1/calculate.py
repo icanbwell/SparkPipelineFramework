@@ -1,3 +1,4 @@
+import abc
 from typing import Optional, Dict, Any
 
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
@@ -24,5 +25,6 @@ class FeatureTransformer(PythonProxyBase):
             verify_count_remains_same=verify_count_remains_same,
         )
 
+    @abc.abstractmethod
     def _transform(self, df: DataFrame) -> DataFrame:
         pass

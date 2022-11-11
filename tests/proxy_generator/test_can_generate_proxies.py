@@ -37,7 +37,7 @@ def test_can_generate_proxies() -> None:
     )
     assert path.exists(data_source_path)
 
-    assert path.exists
+    assert path.exists  # type: ignore
     (
         path.join(
             temp_library_folder,

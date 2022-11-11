@@ -37,6 +37,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
 
+
 # noinspection PyProtectedMember
 
 
@@ -70,6 +71,10 @@ class FhirSender(FrameworkTransformer):
         mode: str = FileWriteModes.MODE_OVERWRITE,
         error_view: Optional[str] = None,
         view: Optional[str] = None,
+        ignore_status_codes: Optional[List[int]] = None,
+        retry_count: Optional[int] = None,
+        exclude_status_codes_from_retry: Optional[List[int]] = None,
+        num_partitions: Optional[int] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -175,6 +180,22 @@ class FhirSender(FrameworkTransformer):
         self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=None)
 
+        self.retry_count: Param[Optional[int]] = Param(self, "retry_count", "")
+        self._setDefault(retry_count=None)
+
+        self.exclude_status_codes_from_retry: Param[Optional[List[int]]] = Param(
+            self, "exclude_status_codes_from_retry", ""
+        )
+        self._setDefault(exclude_status_codes_from_retry=None)
+
+        self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
+        self._setDefault(num_partitions=None)
+
+        self.ignore_status_codes: Param[Optional[List[int]]] = Param(
+            self, "ignore_status_codes", ""
+        )
+        self._setDefault(ignore_status_codes=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -217,6 +238,16 @@ class FhirSender(FrameworkTransformer):
         view: Optional[str] = self.getOrDefault(self.view)
 
         log_level: Optional[str] = environ.get("LOGLEVEL")
+
+        ignore_status_codes: List[int] = self.getIgnoreStatusCodes() or []
+        ignore_status_codes.append(200)
+
+        retry_count: Optional[int] = self.getOrDefault(self.retry_count)
+        exclude_status_codes_from_retry: Optional[List[int]] = self.getOrDefault(
+            self.exclude_status_codes_from_retry
+        )
+
+        # num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
 
         # get access token first so we can reuse it
         if auth_client_id:
@@ -327,6 +358,8 @@ class FhirSender(FrameworkTransformer):
                                     auth_scopes=auth_scopes,
                                     auth_access_token=auth_access_token1,
                                     log_level=log_level,
+                                    retry_count=retry_count,
+                                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                                 )
                                 if result:
                                     auth_access_token1 = result.access_token
@@ -348,6 +381,8 @@ class FhirSender(FrameworkTransformer):
                                 auth_access_token=auth_access_token,
                                 logger=self.logger,
                                 log_level=log_level,
+                                retry_count=retry_count,
+                                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                             )
                             if result and result.request_id:
                                 request_id_list.append(result.request_id)
@@ -560,3 +595,7 @@ class FhirSender(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:
         return self.getOrDefault(self.mode)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getIgnoreStatusCodes(self) -> Optional[List[int]]:
+        return self.getOrDefault(self.ignore_status_codes)
