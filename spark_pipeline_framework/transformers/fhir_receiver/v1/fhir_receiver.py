@@ -99,6 +99,7 @@ class FhirReceiver(FrameworkTransformer):
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = None,
         use_data_streaming: Optional[bool] = None,
+        delta_lake_table: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -325,6 +326,11 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(use_data_streaming=None)
 
+        self.delta_lake_table: Param[Optional[str]] = Param(
+            self, "delta_lake_table", ""
+        )
+        self._setDefault(delta_lake_table=delta_lake_table)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -395,6 +401,10 @@ class FhirReceiver(FrameworkTransformer):
         log_level: Optional[str] = environ.get("LOGLEVEL")
 
         use_data_streaming: Optional[bool] = self.getOrDefault(self.use_data_streaming)
+
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        file_format: str = "delta" if delta_lake_table else "json"
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -522,8 +532,13 @@ class FhirReceiver(FrameworkTransformer):
                             self.getName() or self.__class__.__name__,
                             f"Writing checkpoint to {checkpoint_file}",
                         )
-                    result_with_counts.write.parquet(checkpoint_file)
-                    result_with_counts = df.sparkSession.read.parquet(checkpoint_file)
+                    checkpoint_file_format = "delta" if delta_lake_table else "parquet"
+                    result_with_counts.write.format(checkpoint_file_format).save(
+                        checkpoint_file
+                    )
+                    result_with_counts = df.sparkSession.read.format(
+                        checkpoint_file_format
+                    ).load(checkpoint_file)
                 else:
                     result_with_counts = result_with_counts.cache()
 
@@ -687,15 +702,18 @@ class FhirReceiver(FrameworkTransformer):
                 self.logger.info(
                     f"Executing requests and writing FHIR {resource_name} resources to {file_path}..."
                 )
-                result_df.write.mode(mode).text(str(file_path))
-                result_df = df.sparkSession.read.text(str(file_path))
+                file_format = "delta" if delta_lake_table else "text"
+                result_df.write.format(file_format).mode(mode).text(str(file_path))
+                result_df = df.sparkSession.read.format(file_format).text(
+                    str(file_path)
+                )
                 self.logger.info(
                     f"Received {result_df.count()} FHIR {resource_name} resources."
                 )
                 self.logger.info(
                     f"Reading from disk and counting rows for {resource_name}..."
                 )
-                file_row_count: int = df.sql_ctx.read.text(str(file_path)).count()
+                file_row_count: int = result_df.count()
                 self.logger.info(
                     f"Wrote {file_row_count} FHIR {resource_name} resources to {file_path}"
                 )
@@ -756,8 +774,8 @@ class FhirReceiver(FrameworkTransformer):
                 )
 
                 list_df: DataFrame = rdd1.toDF(StringType())
-                list_df.write.mode(mode).text(str(file_path))
-                list_df = df.sparkSession.read.text(str(file_path))
+                list_df.write.format(file_format).mode(mode).text(str(file_path))
+                list_df = df.sparkSession.read.format(file_format).text(str(file_path))
 
                 self.logger.info(f"Wrote FHIR data to {file_path}")
 
