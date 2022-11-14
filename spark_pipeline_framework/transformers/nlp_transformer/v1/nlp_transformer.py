@@ -52,6 +52,8 @@ class NlpTransformer(FrameworkTransformer):
         :param column: string column of interest to perform NLP analysis
         :param view: the view to load the data into
         :param binarize_tokens: bool whether to include the arrays for binarizing labels in addition to the vectors.
+        :param tfidf_n_features: set N most used features in text for tf-idf analysis. Default: use all features
+        :param condense_output_columns: remove all non-final columns used in data processing. Default True
         :param perform_analysis: the analysis options that the user wants to be performed. Here are the options
             - "all" : default parameter
             - "character_count"
@@ -61,8 +63,6 @@ class NlpTransformer(FrameworkTransformer):
             - "tf_idf"
             - "bag_of_words"
             - "first_word"
-        :param tfidf_n_features: set N most used features in text for tf-idf analysis. Default: use all features
-        :param condense_output_columns: remove all non-final columns used in data processing. Default True
         :param name: a name to use when logging information about this transformer
         :param parameters: the parameter dictionary
         :param progress_logger: the progress logger
