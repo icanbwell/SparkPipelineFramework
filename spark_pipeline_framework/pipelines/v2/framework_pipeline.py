@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
+# noinspection PyPackageRequirements
 from mlflow.entities import RunStatus  # type: ignore
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -17,9 +18,6 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 from spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer import (
     pipeline_validation_df_name,
-)
-from spark_pipeline_framework.utilities.FriendlySparkException import (
-    FriendlySparkException,
 )
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
@@ -92,52 +90,51 @@ class FrameworkPipeline(Transformer):
 
             for transformer in self.transformers:
                 assert isinstance(transformer, Transformer), type(transformer)
-                # assert isinstance(transformer, FrameworkTransformer), type(transformer)
+                if hasattr(transformer, "getName"):
+                    # noinspection Mypy
+                    stage_name = transformer.getName()
+                else:
+                    stage_name = transformer.__class__.__name__
                 try:
                     i += 1
                     logger.info(
-                        f"---- Running pipeline [{pipeline_name}] transformer [{transformer}]  "
+                        f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
                         f"({i} of {count_of_transformers}) ----"
                     )
                     self.progress_logger.start_mlflow_run(
-                        run_name=str(transformer), is_nested=True
+                        run_name=stage_name, is_nested=True
                     )
 
                     with ProgressLogMetric(
                         progress_logger=self.progress_logger,
-                        name=str(transformer) or "unknown",
+                        name=str(stage_name) or "unknown",
                     ):
                         self.progress_logger.log_event(
                             pipeline_name,
-                            event_text=f"Running pipeline step {transformer}",
+                            event_text=f"Running pipeline step {stage_name}",
                         )
                         df = transformer.transform(dataset=df)
                         self.progress_logger.log_event(
                             pipeline_name,
-                            event_text=f"Finished pipeline step {transformer}",
+                            event_text=f"Finished pipeline step {stage_name}",
                         )
                     self.progress_logger.end_mlflow_run()
                 except Exception as e:
-                    if hasattr(transformer, "getName"):
-                        # noinspection Mypy
-                        stage_name = transformer.getName()
-                    else:
-                        stage_name = transformer.__class__.__name__
                     logger.error(
                         f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer "
-                        + "[{stage_name}] threw exception !!!!!!!!!!!!!"
+                        + f"[{stage_name}] threw exception !!!!!!!!!!!!!"
                     )
                     # use exception chaining to add stage name but keep original exception
-                    friendly_spark_exception: FriendlySparkException = (
-                        FriendlySparkException(exception=e, stage_name=stage_name)
-                    )
-                    error_messages: List[str] = (
-                        friendly_spark_exception.message.split("\n")
-                        if friendly_spark_exception.message
-                        else []
-                    )
-                    for error_message in error_messages:
-                        logger.error(msg=error_message)
+                    # friendly_spark_exception: FriendlySparkException = (
+                    #     FriendlySparkException(exception=e, stage_name=stage_name)
+                    # )
+                    # error_messages: List[str] = (
+                    #     friendly_spark_exception.message.split("\n")
+                    #     if friendly_spark_exception.message
+                    #     else []
+                    # )
+                    # for error_message in error_messages:
+                    #     logger.error(msg=error_message)
 
                     if hasattr(transformer, "getSql"):
                         # noinspection Mypy
@@ -145,13 +142,17 @@ class FrameworkPipeline(Transformer):
                     logger.error(
                         "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                     )
+                    if len(e.args) >= 1:
+                        # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                        e.args = (f"In Stage ({stage_name})", *e.args)
                     self.progress_logger.log_exception(
                         event_name=pipeline_name,
-                        event_text=f"Exception in Stage={stage_name} -- {'-'.join(error_messages)}",
+                        event_text=str(e),
                         ex=e,
                     )
                     self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)
-                    raise friendly_spark_exception from e
+
+                    raise e
 
             self.progress_logger.log_event(
                 event_name=pipeline_name,

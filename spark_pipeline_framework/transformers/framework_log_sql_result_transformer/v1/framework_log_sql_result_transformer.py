@@ -18,12 +18,23 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
     def __init__(
         self,
         # add your parameters here (be sure to add them to setParams below too)
-        sql: str,
+        sql: Optional[str] = None,
+        view: Optional[str] = None,
         limit: Optional[int] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-    ):
+        log_event: Optional[bool] = None,
+        log_limit: Optional[int] = None,
+    ) -> None:
+        """
+        Logs the result after running sql or the contents of the view
+
+
+        :param sql: SQL to run
+        :param view: store results of running SQL into this view
+        :param log_event: whether to log an event with progress_logger with the contents of the output view
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -31,33 +42,65 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.sql: Param[str] = Param(self, "sql", "")
+        self.sql: Param[Optional[str]] = Param(self, "sql", "")
         self._setDefault(sql=sql)
+        self.view: Param[Optional[str]] = Param(self, "view", "")
+        self._setDefault(view=None)
+
+        assert sql or view
+
         self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=limit)
+
+        self.log_event: Param[Optional[bool]] = Param(self, "log_event", "")
+        self._setDefault(log_event=None)
+
+        self.log_limit: Param[Optional[int]] = Param(self, "log_limit", "")
+        self._setDefault(log_limit=None)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        sql: str = self.getSql()
+        name = self.getName()
+        sql: Optional[str] = self.getSql()
+        view: Optional[str] = self.getOrDefault(self.view)
         limit = self.getLimit()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+        log_event: Optional[bool] = self.getOrDefault(self.log_event)
+        log_limit: Optional[int] = self.getOrDefault(self.log_limit)
 
-        df2 = df.sql_ctx.sql(sql)
-        if not limit or limit < 0:
-            limit = 1000
+        df2: DataFrame
+        if sql:
+            df2 = df.sparkSession.sql(sql)
+        elif view:
+            df2 = df.sparkSession.table(view)
+        else:
+            assert False, "Neither sql nor view was specified"
+
+        log_limit = 10 if log_limit is None else log_limit
+
         message = (
-            (self.getName() or "") + "\n" + get_pretty_data_frame(df2, limit, name=sql)
+            "\n"
+            + (name or view or "")
+            + f" (LIMIT {log_limit})"
+            + "\n"
+            + get_pretty_data_frame(df2, log_limit, name=sql or view)
         )
         self.logger.info(message)
         if progress_logger:
             progress_logger.write_to_log(message)
+            if log_event:
+                progress_logger.log_event(
+                    event_name=name or view or self.__class__.__name__,
+                    event_text=message,
+                )
+            progress_logger.log_artifact(key=f"{name or view}.csv", contents=message)
 
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getSql(self) -> str:
+    def getSql(self) -> Optional[str]:
         return self.getOrDefault(self.sql)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

@@ -38,13 +38,11 @@ class FrameworkDropViewsTransformer(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         views: List[str] = self.getViews()
 
-        table_names: List[str] = df.sql_ctx.tableNames()
-
         view: str
         for view in views:
-            if view in table_names:
+            if df.sparkSession.catalog.tableExists(tableName=view):
                 self.logger.info(f"Dropping view {view}")
-                df.sql_ctx.dropTempTable(tableName=view)
+                df.sparkSession.catalog.dropTempView(viewName=view)
 
         return df
 

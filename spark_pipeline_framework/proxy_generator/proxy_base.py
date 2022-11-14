@@ -130,9 +130,14 @@ class ProxyBase(FrameworkTransformer):
         i: int = 0
         count: int = len(self.my_transformers)
         for transformer in self.my_transformers:
+            if hasattr(transformer, "getName"):
+                # noinspection Mypy
+                stage_name = transformer.getName()
+            else:
+                stage_name = transformer.__class__.__name__
             i += 1
             self.logger.info(
-                f"---- Running mapping transformer {i} of {count} [{transformer}]  "
+                f"---- Running mapping transformer {i} of {count} [{stage_name}]  "
             )
 
             df = transformer.transform(df)
