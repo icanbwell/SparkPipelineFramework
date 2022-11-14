@@ -4,14 +4,18 @@ from typing import Dict, Any
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
+from spark_pipeline_framework.transformers.nlp_transformer.v1.nlp_transformer import (
+    NlpTransformer,
+)
+
+from spark_pipeline_framework.transformers.framework_drop_duplicates_transformer.v1.framework_drop_duplicates_transformer import (
+    FrameworkDropDuplicatesTransformer,
+)
 
 from spark_pipeline_framework.pipelines.framework_pipeline import FrameworkPipeline
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
     FrameworkCsvLoader,
-)
-from spark_pipeline_framework.transformers.nlp_transformer.v1.nlp_transformer import (
-    NlpTransformer,
 )
 
 
@@ -23,17 +27,15 @@ class MyPipeline(FrameworkPipeline):
         self.transformers = self.create_steps(
             [  # type: ignore
                 FrameworkCsvLoader(
-                    view=parameters["view"],
-                    file_path=parameters["analysis_path"],
-                    progress_logger=progress_logger,
+                    view=parameters["view"], file_path=parameters["analysis_path"]
+                ),
+                FrameworkDropDuplicatesTransformer(
+                    columns=[parameters["column"]], view=parameters["view"]
                 ),
                 NlpTransformer(
-                    column=parameters["columns"],
+                    column=parameters["column"],
                     view=parameters["view"],
-                    binarize_tokens=True,
-                    perform_analysis=["all"],
                     parameters=parameters,
-                    progress_logger=progress_logger,
                 ),
             ]
         )
@@ -55,12 +57,14 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     # Act
     parameters = {
         "analysis_path": analysis_path,
-        "columns": "challenge_name",
+        "column": "challenge_name",
         "path_to_csv": analysis_path,
         "view": "nlp_analysis",
         "binarize_tokens": False,
         "table_name": "my_NLP_table",
         "file_path": analysis_path,
+        "condense_output_columns": False,
+        "perform_analysis": ["all"],
     }
     with ProgressLogger() as progress_logger:
         pipeline: MyPipeline = MyPipeline(
@@ -76,7 +80,6 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     assert result_df.count() > 0
 
 
-"""
 def do_nlp_test() -> None:
     print("Building Session")
     import time
@@ -99,4 +102,3 @@ def do_nlp_test() -> None:
 
 if __name__ == "__main__":
     do_nlp_test()
-"""
