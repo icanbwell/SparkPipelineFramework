@@ -13,7 +13,6 @@ WORKDIR /spf
 
 RUN pipenv sync --dev --system && pipenv run pip install pyspark==3.3.0
 
-#COPY ./jars/* /opt/spark/jars/
 # COPY ./jars/* /opt/bitnami/spark/jars/
 # COPY ./conf/* /opt/bitnami/spark/conf/
 
@@ -27,6 +26,3 @@ RUN mv /opt/minimal_entrypoint.sh /opt/entrypoint.sh
 RUN mkdir -p /fhir && chmod 777 /fhir
 RUN mkdir -p /.local/share/virtualenvs && chmod 777 /.local/share/virtualenvs
 # USER 1001
-
-# RUN spark-submit --packages com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2
-# RUN spark-shell --jar spark-nlp-assembly-4.2.2
