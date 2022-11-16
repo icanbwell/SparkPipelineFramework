@@ -33,7 +33,7 @@ from typing import Any, Dict, Optional, List
 
 class NlpTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    @keyword_only
+    @keyword_only  # @capture_parameters
     def __init__(
         self,
         column: str,
@@ -52,7 +52,8 @@ class NlpTransformer(FrameworkTransformer):
         :param column: string column of interest to perform NLP analysis
         :param view: the view to load the data into
         :param binarize_tokens: bool whether to include the arrays for binarizing labels in addition to the vectors.
-        :param tfidf_n_features: set N most used features in text for tf-idf analysis. Default: use all features
+            Default: True
+        :param tfidf_n_features: set N most used features in text for tf-idf analysis. Default: None (use all features)
         :param condense_output_columns: remove all non-final columns used in data processing. Default True
         :param perform_analysis: the analysis options that the user wants to be performed. Here are the options
             - "all" : default parameter
@@ -71,10 +72,15 @@ class NlpTransformer(FrameworkTransformer):
         # SETUP HELP
         Must add the following configuration to the initial spark code
         #this jar-string behaves like a list on the backend
-        jar_packages = "mysql:mysql-connector-java:X.X.X,\
-            com.johnsnowlabs.nlp:spark-nlp_X.X:X.X.X"
+        One may have to add other jar packages, and add them to the jar_packages string (with a "," separating)
 
-        #the following works
+        # jar_packages = "mysql:mysql-connector-java:X.X.X,\
+        #    com.johnsnowlabs.nlp:spark-nlp_X.X:X.X.X,\
+             com.someOtherJarY:X.X.X"
+
+        # the following works as of November 2022
+
+
         jar_packages = "mysql:mysql-connector-java:8.0.24,\
             com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1"
 
@@ -90,7 +96,20 @@ class NlpTransformer(FrameworkTransformer):
                     )
             .getOrCreate()
 
-        One may have to add other jar packages, and add them to the jar_packages string (with a "," separating)
+        Above are the recommended options by John Snow Labs.
+        The following works without some of the options as the least intrusive possible code
+
+        spark_session = SparkSession.builder \
+            .appName(XXX) \
+            .master("XXX") \
+            .config("spark.jars.packages",
+                    jar_packages
+                    )
+            .getOrCreate()
+
+
+
+        # About `perform_analysis`
 
         For parameter "perform_analysis" the default is all the analysis will be performed, but can select custom option
         Options for parameter: `perform_analysis`

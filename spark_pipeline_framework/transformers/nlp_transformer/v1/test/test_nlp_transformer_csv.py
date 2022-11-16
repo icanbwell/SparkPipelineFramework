@@ -80,6 +80,47 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     assert result_df.count() > 0
 
 
+def test_can_run_framework_solo_transformer(spark_session: SparkSession) -> None:
+    # Arrange
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    analysis_path: str = f"file://{data_dir.joinpath('challenge_info_small.csv')}"
+
+    schema = StructType([])
+
+    df: DataFrame = spark_session.createDataFrame(
+        spark_session.sparkContext.emptyRDD(), schema
+    )
+
+    spark_session.sql("DROP TABLE IF EXISTS default.nlp_analysis")
+
+    FrameworkCsvLoader(view="nlp_analysis", file_path=analysis_path).transform(
+        dataset=df
+    )
+
+    parameters = {
+        "analysis_path": analysis_path,
+        "columns": "challenge_name",
+        "path_to_csv": analysis_path,
+        "view": "nlp_analysis",
+        "binarize_tokens": False,
+        "table_name": "my_NLP_table",
+        "file_path": analysis_path,
+    }
+
+    NlpTransformer(
+        column="challenge_name",
+        view="nlp_analysis",
+        binarize_tokens=True,
+        perform_analysis=["all"],
+        parameters=parameters,
+    ).transformers[0].transform(dataset=df)
+
+    result_df: DataFrame = spark_session.sql("SELECT * FROM nlp_analysis")
+    result_df.show()
+
+    assert result_df.count() > 0
+
+
 def do_nlp_test() -> None:
     print("Building Session")
     import time
@@ -95,7 +136,8 @@ def do_nlp_test() -> None:
         .getOrCreate()
     )
 
-    test_can_run_framework_pipeline(spark_session)
+    # test_can_run_framework_pipeline(spark_session)
+    test_can_run_framework_solo_transformer(spark_session)
     print("TIME ELAPSED: ")
     print(time.time() - begin)
 
