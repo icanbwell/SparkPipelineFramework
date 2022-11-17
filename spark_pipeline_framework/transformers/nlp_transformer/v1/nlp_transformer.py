@@ -210,7 +210,7 @@ class NlpTransformer(FrameworkTransformer):
         # create text column with original text, which is necessary for some pretrained pipelines
         df_nlp = df_nlp.withColumn("text", df_nlp[columns])
         out_col = "ntokens"
-        nlp_pipeline = self.prepare_for_nlp(in_col, out_col)
+        nlp_pipeline = self.do_prepare_for_nlp(in_col, out_col)
         nlp_model = nlp_pipeline.fit(df_nlp)
         df_nlp = nlp_model.transform(df_nlp)
         final_columns.append(out_col)
@@ -220,7 +220,7 @@ class NlpTransformer(FrameworkTransformer):
         # SPARK-NLP SENTIMENTIZER
         out_col = "sentiment"
         if out_col in perform_analysis or perform_all:
-            sentiment_pipeline = self.sentiment_vivenk(
+            sentiment_pipeline = self.get_sentiment_vivenk(
                 document_col="document",
                 normalization_col="normalized",
                 output_col=out_col,
@@ -260,7 +260,7 @@ class NlpTransformer(FrameworkTransformer):
         # get embeddings
         out_col = "embeddings"
         if out_col in perform_analysis or perform_all:
-            embeddings_pipeline = self.sentence_embeddings()
+            embeddings_pipeline = self.get_sentence_embeddings_pipeline()
             embeddings_model = embeddings_pipeline.fit(df_nlp)
             df_nlp = embeddings_model.transform(df_nlp)
             final_columns.append(out_col)
@@ -349,7 +349,7 @@ class NlpTransformer(FrameworkTransformer):
         # df_result.createOrReplaceTempView(view)
         return df_nlp
 
-    def prepare_for_nlp(
+    def do_prepare_for_nlp(
         self, input_col: str = "text", output_col: str = "ntokens"
     ) -> Pipeline:
         """
@@ -415,7 +415,7 @@ class NlpTransformer(FrameworkTransformer):
         nlp_pipeline = Pipeline(stages=pipeline_list)
         return nlp_pipeline
 
-    def sentiment_vivenk(
+    def get_sentiment_vivenk(
         self,
         document_col: str = "document",
         normalization_col: str = "normalized",
@@ -486,7 +486,7 @@ class NlpTransformer(FrameworkTransformer):
         return nlpPipeline
     """
 
-    def sentence_embeddings(
+    def get_sentence_embeddings_pipeline(
         self,
         document_col: str = "document",
         token_col: str = "token",
