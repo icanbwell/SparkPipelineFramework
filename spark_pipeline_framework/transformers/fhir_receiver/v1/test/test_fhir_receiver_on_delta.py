@@ -1,12 +1,9 @@
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
-from typing import cast
 
 from mockserver_client.mock_requests_loader import load_mock_fhir_requests_from_folder
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.functions import col, from_json
-from pyspark.sql.types import StructType
 from spark_fhir_schemas.r4.resources.patient import PatientSchema
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -20,7 +17,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
-def test_fhir_receiver(spark_session: SparkSession) -> None:
+def test_fhir_receiver_on_delta(spark_session: SparkSession) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -63,13 +60,14 @@ def test_fhir_receiver(spark_session: SparkSession) -> None:
             file_path=patient_json_path,
             progress_logger=progress_logger,
             delta_lake_table="table",
+            schema=PatientSchema.get_schema(),
         ).transform(df)
 
     # Assert
     json_df: DataFrame = df.sql_ctx.read.format("delta").load(str(patient_json_path))
-    schema: StructType = cast(StructType, PatientSchema.get_schema())
-    json_df = json_df.select(from_json(col("col"), schema=schema).alias("resource"))
-    json_df = json_df.selectExpr("resource.*")
+    # schema: StructType = cast(StructType, PatientSchema.get_schema())
+    # json_df = json_df.select(from_json(col("col"), schema=schema).alias("resource"))
+    # json_df = json_df.selectExpr("resource.*")
     json_df.show()
     json_df.printSchema()
 
