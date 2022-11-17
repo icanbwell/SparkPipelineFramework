@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Dict, Any, Optional, Union, List, Callable, cast
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from pyspark.sql.functions import col, from_json
+from pyspark.sql.functions import col
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
@@ -207,12 +207,6 @@ class FhirReader(FrameworkTransformer):
                     reader = reader.option(k, v)
                 if delta_lake_table:
                     df = reader.format(file_format).load(str(file_path))
-                    df = df.select(
-                        from_json(col("col"), schema=cast(StructType, schema)).alias(
-                            "resource"
-                        )
-                    )
-                    df = df.selectExpr("resource.*")
                 else:
                     df = reader.json(str(file_path))
 
