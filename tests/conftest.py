@@ -83,13 +83,14 @@ def spark_session(request: Any) -> SparkSession:
         .config("spark.sql.shuffle.partitions", "2")
         .config("spark.default.parallelism", "4")
         .config("spark.sql.broadcastTimeout", "2400")
+        .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config(
             "spark.sql.catalog.spark_catalog",
             "org.apache.spark.sql.delta.catalog.DeltaCatalog",
         )
         .config(
             "spark.jars.packages",
-            "com.crealytics:spark-excel_2.12:0.13.7,com.databricks:spark-xml_2.12:0.14.0",
+            "com.crealytics:spark-excel_2.12:0.13.7,com.databricks:spark-xml_2.12:0.14.0,io.delta:delta-core_2.12:2.1.0",
         )
         .enableHiveSupport()
         .getOrCreate()

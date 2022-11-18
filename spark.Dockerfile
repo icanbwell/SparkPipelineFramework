@@ -8,6 +8,12 @@ ENV CLASSPATH=/spf/jars:$CLASSPATH
 # remove the older version of entrypoints with apt-get because that is how it was installed
 RUN apt-get remove python3-entrypoints -y
 
+# run this to install any needed jars by Spark
+COPY ./test.py ./
+RUN /opt/spark/bin/spark-submit --master local[*] test.py
+
+COPY ./conf/* /opt/spark/conf/
+
 COPY Pipfile* /spf/
 WORKDIR /spf
 
