@@ -75,6 +75,7 @@ class FhirSender(FrameworkTransformer):
         retry_count: Optional[int] = None,
         exclude_status_codes_from_retry: Optional[List[int]] = None,
         num_partitions: Optional[int] = None,
+        delta_lake_table: Optional[str] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -93,9 +94,11 @@ class FhirSender(FrameworkTransformer):
         :param auth_scopes: scopes to request
         :param operation: What FHIR operation to perform (e.g. $merge, delete, etc.)
         :param mode: if output files exist, should we overwrite or append
-        :param error_view: (Optional) log errors into this view (view only exists IF there are errors) and don't throw exceptions.
+        :param error_view: (Optional) log errors into this view (view only exists IF there are errors)
+                            and don't throw exceptions.
                             schema: id, resourceType, issue
         :param view: (Optional) store merge result in this view
+        :param delta_lake_table: use delta lake format
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -196,6 +199,11 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(ignore_status_codes=None)
 
+        self.delta_lake_table: Param[Optional[str]] = Param(
+            self, "delta_lake_table", ""
+        )
+        self._setDefault(delta_lake_table=delta_lake_table)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -220,6 +228,8 @@ class FhirSender(FrameworkTransformer):
         ] = self.getThrowExceptionOnValidationFailure()
         operation: str = self.getOperation()
         mode: str = self.getMode()
+
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
 
         if not batch_size or batch_size == 0:
             batch_size = 30
@@ -271,9 +281,14 @@ class FhirSender(FrameworkTransformer):
             # read all the files at path into a dataframe
             path_to_files: str = str(file_path)
             try:
-                json_df: DataFrame = df.sql_ctx.read.text(
-                    path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
-                )
+                if delta_lake_table:
+                    json_df: DataFrame = df.sql_ctx.read.format("delta").load(
+                        path_to_files
+                    )
+                else:
+                    json_df = df.sql_ctx.read.text(
+                        path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
+                    )
             except AnalysisException as e:
                 if str(e).startswith("Path does not exist:"):
                     if progress_logger:
@@ -297,7 +312,7 @@ class FhirSender(FrameworkTransformer):
                 def send_partition_to_server(
                     partition_index: int, rows: Iterable[Row]
                 ) -> Iterable[List[Dict[str, Any]]]:
-                    json_data_list: List[str] = [r["value"] for r in rows]
+                    json_data_list: List[Row] = list(rows)
                     logger = get_logger(__name__)
                     if len(json_data_list) == 0:
                         yield []
@@ -310,10 +325,13 @@ class FhirSender(FrameworkTransformer):
                     request_id_list: List[str] = []
                     responses: List[Dict[str, Any]] = []
                     if operation == self.FHIR_OPERATION_DELETE:
+                        item: Row
                         # FHIR doesn't support bulk deletes, so we have to send one at a time
                         responses = [
                             send_fhir_delete(
-                                obj_id=json.loads(item)[
+                                obj_id=(
+                                    item if "id" in item else json.loads(item["value"])
+                                )[
                                     "id"
                                 ],  # parse the JSON and extract the id
                                 server_url=server_url,
@@ -334,19 +352,23 @@ class FhirSender(FrameworkTransformer):
                             # ensure we call one at a time. Partitioning does not guarantee that each
                             #   partition will have exactly the batch size
                             auth_access_token1: Optional[str] = auth_access_token
-                            item: str
                             i: int = 0
                             count: int = len(json_data_list)
                             for item in json_data_list:
                                 i += 1
                                 print(
-                                    f"Sending {i} of {count} from partition {partition_index} for {resource_name}: {item}"
+                                    f"Sending {i} of {count} from partition {partition_index} "
+                                    f"for {resource_name}: {item}"
                                 )
                                 current_bundle: List[Dict[str, Any]]
                                 result: Optional[
                                     FhirMergeResponse
                                 ] = send_json_bundle_to_fhir(
-                                    json_data_list=[item],
+                                    json_data_list=[
+                                        json.dumps(item.asDict())
+                                        if "id" in item
+                                        else item["value"]
+                                    ],
                                     server_url=server_url,
                                     validation_server_url=validation_server_url,
                                     resource=resource_name,
@@ -369,7 +391,12 @@ class FhirSender(FrameworkTransformer):
                         else:
                             # send a whole batch to the server at once
                             result = send_json_bundle_to_fhir(
-                                json_data_list=json_data_list,
+                                json_data_list=[
+                                    json.dumps(item.asDict())
+                                    if "id" in item
+                                    else item["value"]
+                                    for item in json_data_list
+                                ],
                                 server_url=server_url,
                                 validation_server_url=validation_server_url,
                                 resource=resource_name,

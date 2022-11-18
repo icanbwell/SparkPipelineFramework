@@ -137,7 +137,7 @@ class FhirReader(FrameworkTransformer):
             return
 
         assert absolute_paths
-        text_df: DataFrame = df.sql_ctx.read.text(absolute_paths)
+        text_df: DataFrame = df.sparkSession.read.text(absolute_paths)
         # read the first line of the file
         first_line: str = text_df.select("value").limit(1).collect()[0][0]
         if (
@@ -196,7 +196,7 @@ class FhirReader(FrameworkTransformer):
                 # DROPMALFORMED : ignores the whole corrupted records.
                 # FAILFAST : throws an exception when it meets corrupted records.
                 # https://docs.databricks.com/spark/latest/spark-sql/handling-bad-records.html
-                reader = df.sql_ctx.read
+                reader = df.sparkSession.read
                 if bad_records_path:
                     reader = reader.option("badRecordsPath", str(bad_records_path))
                 if schema and not delta_lake_table:
@@ -233,13 +233,13 @@ class FhirReader(FrameworkTransformer):
                 self.logger.exception(f"File read failed from {file_path}")
                 if create_empty_view_if_file_path_not_found and view:
                     if schema:
-                        df = df.sql_ctx.createDataFrame(
-                            df.sql_ctx.sparkSession.sparkContext.emptyRDD(), schema
+                        df = df.sparkSession.createDataFrame(
+                            df.sparkSession.sparkContext.emptyRDD(), schema
                         )
                         df.createOrReplaceTempView(view)
                     else:
-                        df = df.sql_ctx.createDataFrame(
-                            df.sql_ctx.sparkSession.sparkContext.emptyRDD()
+                        df = df.sparkSession.createDataFrame(
+                            df.sparkSession.sparkContext.emptyRDD()
                         )
                         df.createOrReplaceTempView(view)
                 else:
