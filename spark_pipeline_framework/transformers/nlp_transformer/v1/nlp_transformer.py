@@ -1,5 +1,4 @@
 # noinspection PyProtectedMember
-from pyspark import keyword_only
 from pyspark.ml.functions import vector_to_array
 from pyspark.sql.dataframe import DataFrame
 from sparknlp import EmbeddingsFinisher, DocumentAssembler, Finisher  # type: ignore
@@ -29,11 +28,12 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from typing import Any, Dict, Optional, List
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 
 
 class NlpTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    @keyword_only  # @capture_parameters
+    @capture_parameters  # @keyword_only
     def __init__(
         self,
         column: str,
@@ -59,7 +59,7 @@ class NlpTransformer(FrameworkTransformer):
             - "all" : default parameter
             - "character_count"
             - "word_count"
-            - "embeddings"
+            - "sentence_embeddings"
             - "sentiment"
             - "tf_idf"
             - "bag_of_words"
@@ -116,7 +116,7 @@ class NlpTransformer(FrameworkTransformer):
         - "all" : default parameter
         - "character_count"
         - "word_count"
-        - "embeddings"
+        - "sentence_embeddings"
         - "sentiment"
         - "tf_idf"
         - "bag_of_words"
@@ -138,8 +138,8 @@ class NlpTransformer(FrameworkTransformer):
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.columns: Param[str] = Param(self, "columns", "")
-        self._setDefault(columns=column)
+        self.column: Param[str] = Param(self, "column", "")
+        self._setDefault(column=column)
 
         self.binarize_tokens: Param[bool] = Param(self, "binarize_tokens", "")
         self._setDefault(binarize_tokens=binarize_tokens)
@@ -167,7 +167,7 @@ class NlpTransformer(FrameworkTransformer):
         :param DataFrame df: Dataframe for NLP Transformation
         """
         # get needed parameters
-        columns = self.get_columns()
+        column = self.get_column()
         view = self.get_view()
         perform_analysis = self.get_perform_analysis()
         tfidf_n_features = self.get_tfidf_n_features()
@@ -178,7 +178,7 @@ class NlpTransformer(FrameworkTransformer):
             perform_all = True
         else:
             perform_all = False
-        in_col = columns
+        in_col = column
         # get data from view
         #
         df_nlp: DataFrame = df.sql_ctx.table(view)
@@ -186,10 +186,10 @@ class NlpTransformer(FrameworkTransformer):
         explode_vector_tf = True  # need to make into function
 
         if "id" in df_nlp.columns:
-            df_nlp = df_nlp.select("id", columns)
+            df_nlp = df_nlp.select("id", column)
             final_columns.append("id")
         else:
-            df_nlp = df_nlp.select(columns)
+            df_nlp = df_nlp.select(column)
 
         final_columns.append(in_col)
         # FEATURE GEN
@@ -208,7 +208,7 @@ class NlpTransformer(FrameworkTransformer):
         # TOKENIZER PIPELINE
         df_nlp = df_nlp.dropna(subset=[in_col])
         # create text column with original text, which is necessary for some pretrained pipelines
-        df_nlp = df_nlp.withColumn("text", df_nlp[columns])
+        df_nlp = df_nlp.withColumn("text", df_nlp[column])
         out_col = "ntokens"
         nlp_pipeline = self.do_prepare_for_nlp(in_col, out_col)
         nlp_model = nlp_pipeline.fit(df_nlp)
@@ -258,7 +258,7 @@ class NlpTransformer(FrameworkTransformer):
         """
 
         # get embeddings
-        out_col = "embeddings"
+        out_col = "sentence_embeddings"
         if out_col in perform_analysis or perform_all:
             embeddings_pipeline = self.get_sentence_embeddings_pipeline()
             embeddings_model = embeddings_pipeline.fit(df_nlp)
@@ -490,7 +490,7 @@ class NlpTransformer(FrameworkTransformer):
         self,
         document_col: str = "document",
         token_col: str = "token",
-        output_col: str = "embeddings",
+        output_col: str = "sentence_embeddings",
     ) -> Pipeline:
         """
         Generates a pipeline that creates sentence embeddings transformer
@@ -512,7 +512,7 @@ class NlpTransformer(FrameworkTransformer):
         embeddings_sentence = (
             SentenceEmbeddings()
             .setInputCols([document_col, "embeddings0"])
-            .setOutputCol("sentence_embeddings")
+            .setOutputCol("sentence_embeddings0")
             .setPoolingStrategy("AVERAGE")
         )
         pipeline_list.append(embeddings_sentence)
@@ -520,7 +520,7 @@ class NlpTransformer(FrameworkTransformer):
         # puts embeddings into an analysis ready form
         embeddings_finisher = (
             EmbeddingsFinisher()
-            .setInputCols("sentence_embeddings")
+            .setInputCols("sentence_embeddings0")
             .setOutputCols(output_col)
             .setOutputAsVector(True)
             .setCleanAnnotations(False)
@@ -641,8 +641,8 @@ class NlpTransformer(FrameworkTransformer):
         return emotion_classifier_pipeline
 
     # parameter getters
-    def get_columns(self) -> str:
-        return self.getOrDefault(self.columns)
+    def get_column(self) -> str:
+        return self.getOrDefault(self.column)
 
     def get_view(self) -> str:
         return self.getOrDefault(self.view)
