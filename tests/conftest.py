@@ -90,7 +90,7 @@ def spark_session(request: Any) -> SparkSession:
         )
         .config(
             "spark.jars.packages",
-            "com.crealytics:spark-excel_2.12:0.13.7,com.databricks:spark-xml_2.12:0.14.0,io.delta:delta-core_2.12:2.1.0",
+            "com.crealytics:spark-excel_2.12:0.13.7,com.databricks:spark-xml_2.12:0.14.0,io.delta:delta-core_2.12:2.1.0,org.apache.spark:spark-hadoop-cloud_2.12:3.3.0",
         )
         .enableHiveSupport()
         .getOrCreate()
