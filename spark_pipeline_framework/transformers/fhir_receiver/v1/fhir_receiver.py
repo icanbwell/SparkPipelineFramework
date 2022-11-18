@@ -727,8 +727,8 @@ class FhirReceiver(FrameworkTransformer):
                         str(file_path)
                     )
                 else:
-                    result_df.write.format("json").mode(mode).save(str(file_path))
-                    result_df = df.sparkSession.read.format("json").load(str(file_path))
+                    result_df.write.format("text").mode(mode).save(str(file_path))
+                    result_df = df.sparkSession.read.format("text").load(str(file_path))
 
                 self.logger.info(
                     f"Received {result_df.count()} FHIR {resource_name} resources."
