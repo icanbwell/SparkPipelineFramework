@@ -358,14 +358,16 @@ class FhirSender(FrameworkTransformer):
                                 i += 1
                                 print(
                                     f"Sending {i} of {count} from partition {partition_index} "
-                                    f"for {resource_name}: {item}"
+                                    f"for {resource_name}: {json.dumps(item.asDict(recursive=True), default=str)}"
                                 )
                                 current_bundle: List[Dict[str, Any]]
                                 result: Optional[
                                     FhirMergeResponse
                                 ] = send_json_bundle_to_fhir(
                                     json_data_list=[
-                                        json.dumps(item.asDict())
+                                        json.dumps(
+                                            item.asDict(recursive=True), default=str
+                                        )
                                         if "id" in item
                                         else item["value"]
                                     ],
@@ -392,7 +394,7 @@ class FhirSender(FrameworkTransformer):
                             # send a whole batch to the server at once
                             result = send_json_bundle_to_fhir(
                                 json_data_list=[
-                                    json.dumps(item.asDict())
+                                    json.dumps(item.asDict(recursive=True))
                                     if "id" in item
                                     else item["value"]
                                     for item in json_data_list
