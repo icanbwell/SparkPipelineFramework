@@ -1,7 +1,4 @@
 # noinspection PyProtectedMember
-import time
-
-from pyspark import keyword_only
 from pyspark.ml.functions import vector_to_array
 from pyspark.sql.dataframe import DataFrame
 from sparknlp import EmbeddingsFinisher, DocumentAssembler, Finisher  # type: ignore
@@ -31,17 +28,59 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from typing import Any, Dict, Optional, List
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 
 
 class NlpTransformer(FrameworkTransformer):
     # noinspection PyUnusedLocal
-    """
-    Must add the following configuration to the initial spark code
-        #this jar-string behaves like a list on the backend
-        jar_packages = "mysql:mysql-connector-java:X.X.X,\
-            com.johnsnowlabs.nlp:spark-nlp_X.X:X.X.X"
+    @capture_parameters  # @keyword_only
+    def __init__(
+        self,
+        column: str,
+        view: str,
+        binarize_tokens: bool = True,
+        tfidf_n_features: Optional[int] = None,
+        condense_output_columns: bool = True,
+        perform_analysis: List[str] = ["all"],
+        # add your parameters here
+        name: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        progress_logger: Optional[ProgressLogger] = None,
+    ):
+        """
 
-        #the following works
+        :param column: string column of interest to perform NLP analysis
+        :param view: the view to load the data into
+        :param binarize_tokens: bool whether to include the arrays for binarizing labels in addition to the vectors.
+            Default: True
+        :param tfidf_n_features: set N most used features in text for tf-idf analysis. Default: None (use all features)
+        :param condense_output_columns: remove all non-final columns used in data processing. Default True
+        :param perform_analysis: the analysis options that the user wants to be performed. Here are the options
+            - "all" : default parameter
+            - "character_count"
+            - "word_count"
+            - "sentence_embeddings"
+            - "sentiment"
+            - "tf_idf"
+            - "bag_of_words"
+            - "first_word"
+        :param name: a name to use when logging information about this transformer
+        :param parameters: the parameter dictionary
+        :param progress_logger: the progress logger
+
+
+        # SETUP HELP
+        Must add the following configuration to the initial spark code
+        #this jar-string behaves like a list on the backend
+        One may have to add other jar packages, and add them to the jar_packages string (with a "," separating)
+
+        # jar_packages = "mysql:mysql-connector-java:X.X.X,\
+        #    com.johnsnowlabs.nlp:spark-nlp_X.X:X.X.X,\
+             com.someOtherJarY:X.X.X"
+
+        # the following works as of November 2022
+
+
         jar_packages = "mysql:mysql-connector-java:8.0.24,\
             com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.1"
 
@@ -57,50 +96,33 @@ class NlpTransformer(FrameworkTransformer):
                     )
             .getOrCreate()
 
-        One may have to add other jar packages, and add them to the jar_packages string (with a "," separating)
+        Above are the recommended options by John Snow Labs.
+        The following works without some of the options as the least intrusive possible code
 
-    For parameter "perform_analysis" the default is all of the analysis will be performed, but the user may select custom options.
-    Options for parameter: `perform_analysis`
-    - "all" : default parameter
-    - "character_count"
-    - "word_count"
-    - "embeddings"
-    - "sentiment"
-    - "tf_idf"
-    - "bag_of_words"
-    - "first_word"
-    """
+        spark_session = SparkSession.builder \
+            .appName(XXX) \
+            .master("XXX") \
+            .config("spark.jars.packages",
+                    jar_packages
+                    )
+            .getOrCreate()
 
-    @keyword_only
-    def __init__(
-        self,
-        column: str,
-        view: str,
-        binarize_tokens: bool = True,
-        perform_analysis: List[str] = ["all"],
-        # add your parameters here
-        name: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        progress_logger: Optional[ProgressLogger] = None,
-    ):
-        """
-        Perform various NLP tasks in within the SparkPipelineFramework schema.
 
-        :param column: string column of interest to perform NLP analysis
-        :param view: the view to load the data into
-        :param binarize_tokens: an option on whether to include the arrays for binarizing labels, in addition to the vectors.
-        :param perform_analysis: the analysis options that the user wants performed. Here are the options
-            - "all" : default parameter
-            - "character_count"
-            - "word_count"
-            - "embeddings"
-            - "sentiment"
-            - "tf_idf"
-            - "bag_of_words"
-            - "first_word"
-        :param name: a name to use when logging information about this transformer
-        :param parameters: the parameter dictionary
-        :param progress_logger: the progress logger
+
+        # About `perform_analysis`
+
+        For parameter "perform_analysis" the default is all the analysis will be performed, but can select custom option
+        Options for parameter: `perform_analysis`
+        - "all" : default parameter
+        - "character_count"
+        - "word_count"
+        - "sentence_embeddings"
+        - "sentiment"
+        - "tf_idf"
+        - "bag_of_words"
+        - "bag_of_words_stem"
+        - "first_word"
+
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -116,14 +138,22 @@ class NlpTransformer(FrameworkTransformer):
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.columns: Param[str] = Param(self, "columns", "")
-        self._setDefault(columns=column)
+        self.column: Param[str] = Param(self, "column", "")
+        self._setDefault(column=column)
 
-        self.binarizeTokens: Param[bool] = Param(self, "binarizeTokens", "")
-        self._setDefault(binarizeTokens=binarize_tokens)
+        self.binarize_tokens: Param[bool] = Param(self, "binarize_tokens", "")
+        self._setDefault(binarize_tokens=binarize_tokens)
 
-        self.performAnalysis: Param[List[str]] = Param(self, "performAnalysis", "")
-        self._setDefault(performAnalysis=perform_analysis)
+        self.perform_analysis: Param[List[str]] = Param(self, "perform_analysis", "")
+        self._setDefault(perform_analysis=perform_analysis)
+
+        self.tfidf_n_features: Param[int] = Param(self, "tfidf_n_features", "")
+        self._setDefault(tfidf_n_features=tfidf_n_features)
+
+        self.condense_output_columns: Param[bool] = Param(
+            self, "condense_output_columns", ""
+        )
+        self._setDefault(condense_output_columns=condense_output_columns)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -137,27 +167,29 @@ class NlpTransformer(FrameworkTransformer):
         :param DataFrame df: Dataframe for NLP Transformation
         """
         # get needed parameters
-        columns = self.get_columns()
+        column = self.get_column()
         view = self.get_view()
         perform_analysis = self.get_perform_analysis()
+        tfidf_n_features = self.get_tfidf_n_features()
+        condense_output_columns = self.get_condense_output_columns()
         # if the designation is "all" or the list is empty or non-existent.
         # perform all is boolean that will compile a dataframe with every analysis for the intended column
         if "all" in perform_analysis or len(perform_analysis) == 0:
             perform_all = True
         else:
             perform_all = False
-        in_col = columns
+        in_col = column
         # get data from view
         #
         df_nlp: DataFrame = df.sql_ctx.table(view)
         final_columns = []
-        explode_vector_tf = True  # need to functionize
+        explode_vector_tf = True  # need to make into function
 
         if "id" in df_nlp.columns:
-            df_nlp = df_nlp.select("id", columns)
+            df_nlp = df_nlp.select("id", column)
             final_columns.append("id")
         else:
-            df_nlp = df_nlp.select(columns)
+            df_nlp = df_nlp.select(column)
 
         final_columns.append(in_col)
         # FEATURE GEN
@@ -175,10 +207,10 @@ class NlpTransformer(FrameworkTransformer):
         ################
         # TOKENIZER PIPELINE
         df_nlp = df_nlp.dropna(subset=[in_col])
-        # create text column with original text, which is necesarry for some pretrained pipelines
-        df_nlp = df_nlp.withColumn("text", df_nlp[columns])
+        # create text column with original text, which is necessary for some pretrained pipelines
+        df_nlp = df_nlp.withColumn("text", df_nlp[column])
         out_col = "ntokens"
-        nlp_pipeline = self.prepare_for_nlp(in_col, out_col)
+        nlp_pipeline = self.do_prepare_for_nlp(in_col, out_col)
         nlp_model = nlp_pipeline.fit(df_nlp)
         df_nlp = nlp_model.transform(df_nlp)
         final_columns.append(out_col)
@@ -188,7 +220,7 @@ class NlpTransformer(FrameworkTransformer):
         # SPARK-NLP SENTIMENTIZER
         out_col = "sentiment"
         if out_col in perform_analysis or perform_all:
-            sentiment_pipeline = self.sentiment_vivenk(
+            sentiment_pipeline = self.get_sentiment_vivenk(
                 document_col="document",
                 normalization_col="normalized",
                 output_col=out_col,
@@ -196,21 +228,22 @@ class NlpTransformer(FrameworkTransformer):
             sentiment_model = sentiment_pipeline.fit(df_nlp)
             df_nlp = sentiment_model.transform(df_nlp).persist()
             final_columns.append(out_col)
+        """
         ################
         # SPARK-NLP Emotion Classifier
         out_col = "emotion_classifier"
 
         if out_col in perform_analysis or perform_all:
             begin = time.time()
-            print("Performing Analysis: {}".format(out_col))
+            # print("Performing Analysis: {}".format(out_col))
             # emotion_pipeline = self.get_emotions_tfhub(
             #    document_col="document", output_col=out_col)
             # emotion_model = emotion_pipeline.fit(df_nlp)
             # df_nlp = emotion_model.transform(df_nlp).persist()
             # final_columns.append(out_col)
-            print("--Time Elapsed: ", round(time.time() - begin, 2))
+            # print("--Time Elapsed: ", round(time.time() - begin, 2))
         ############
-        """
+
         ################
         # SPARK-NLP SENTIMENTIZER
         out_col = "sentiment_score"
@@ -225,9 +258,9 @@ class NlpTransformer(FrameworkTransformer):
         """
 
         # get embeddings
-        out_col = "embeddings"
+        out_col = "sentence_embeddings"
         if out_col in perform_analysis or perform_all:
-            embeddings_pipeline = self.sentence_embeddings()
+            embeddings_pipeline = self.get_sentence_embeddings_pipeline()
             embeddings_model = embeddings_pipeline.fit(df_nlp)
             df_nlp = embeddings_model.transform(df_nlp)
             final_columns.append(out_col)
@@ -235,7 +268,9 @@ class NlpTransformer(FrameworkTransformer):
         # get tfidf
         out_col = "tf_idf"
         if out_col in perform_analysis or perform_all:
-            tfidf = self.get_tfidf(output_col=out_col)
+            tfidf = self.get_tfidf(
+                output_col=out_col, tfidf_n_features=tfidf_n_features
+            )
             tfidf_model = tfidf.fit(df_nlp)
             df_nlp = tfidf_model.transform(df_nlp)
             final_columns.append(out_col)
@@ -265,6 +300,19 @@ class NlpTransformer(FrameworkTransformer):
             final_columns.append(out_col)
             final_columns.append(explode_col)
 
+        out_col = "bag_of_words_stem"
+        if out_col in perform_analysis or perform_all:
+            explode_col = "binarize_bag_of_words_stem"
+            df_nlp = self.do_bag_of_words(
+                df=df_nlp,
+                tokens_col="ntokens_stem",
+                out_col=out_col,
+                explode_vector=explode_vector_tf,
+                explode_col=explode_col,
+            )
+
+            final_columns.append(out_col)
+            final_columns.append(explode_col)
         # first word binarizer
 
         # first word
@@ -276,7 +324,7 @@ class NlpTransformer(FrameworkTransformer):
 
             # get first word from token list
             df_nlp = df_nlp.withColumn(out_col_fw, df_nlp[in_col_t].getItem(0))
-            # convert to a list so it will work with our bag of words code
+            # convert to a list, then it will work with our bag of words codes
             df_nlp = df_nlp.withColumn(out_col_fwl, f.split(out_col_fw, ","))
             explode_col = "binarize_first_word"
             df_nlp = self.do_bag_of_words(
@@ -291,29 +339,21 @@ class NlpTransformer(FrameworkTransformer):
 
         ##################
         # finalizing output
-        df_nlp = df_nlp.select(final_columns)
+        if condense_output_columns:
+            print("##########")
+            print("Condensing Output")
+            df_nlp = df_nlp.select(final_columns)
+            print("##########")
 
         df_nlp.createOrReplaceTempView(view)  # loading to view
         # df_result.createOrReplaceTempView(view)
         return df_nlp
 
-    def get_columns(self) -> str:
-        return self.getOrDefault(self.columns)
-
-    def get_view(self) -> str:
-        return self.getOrDefault(self.view)
-
-    def get_binarize_tokens(self) -> bool:
-        return self.getOrDefault(self.binarizeTokens)
-
-    def get_perform_analysis(self) -> List[str]:
-        return self.getOrDefault(self.performAnalysis)
-
-    def prepare_for_nlp(
+    def do_prepare_for_nlp(
         self, input_col: str = "text", output_col: str = "ntokens"
     ) -> Pipeline:
         """
-        Preforms a multi-step process to generate many of the column entities needed for NLP Analysis.
+        Preforms a multistep process to generate many of the column entities needed for NLP Analysis.
         DocumentAssembler--> SentenceDetector--> Tokenizer --> Stemmer--> Normalizer--> Finisher
 
         :param str input_col: Text column that is the target of the analysis
@@ -345,19 +385,37 @@ class NlpTransformer(FrameworkTransformer):
         normalizer = Normalizer().setInputCols(["stem"]).setOutputCol("normalized")
         pipeline_list.append(normalizer)
 
+        normalizer_token = (
+            Normalizer()
+            .setInputCols(["token"])
+            .setOutputCol("normalized_token")
+            .setLowercase(True)
+        )
+        pipeline_list.append(normalizer_token)
+
+        output_col_stem = output_col + "_stem"
         finisher = (
             Finisher()
             .setInputCols(["normalized"])
-            .setOutputCols([output_col])
+            .setOutputCols([output_col_stem])
             .setOutputAsArray(True)
             .setCleanAnnotations(False)
         )
         pipeline_list.append(finisher)
 
+        finished_token = (
+            Finisher()
+            .setInputCols(["normalized_token"])
+            .setOutputCols([output_col])
+            .setOutputAsArray(True)
+            .setCleanAnnotations(False)
+        )
+        pipeline_list.append(finished_token)
+
         nlp_pipeline = Pipeline(stages=pipeline_list)
         return nlp_pipeline
 
-    def sentiment_vivenk(
+    def get_sentiment_vivenk(
         self,
         document_col: str = "document",
         normalization_col: str = "normalized",
@@ -387,13 +445,14 @@ class NlpTransformer(FrameworkTransformer):
         pipeline = Pipeline().setStages([vivekn, finisher])
         return pipeline
 
+    """
     def sentiment_pretrained(
-        self,
-        document_col: str = "documents",
-        output_col: str = "sentiment_score",
-        sentiment_model: str = "analyze_sentimentdl_glove_imdb",
+            self,
+            document_col: str = "documents",
+            output_col: str = "sentiment_score",
+            sentiment_model: str = "analyze_sentimentdl_glove_imdb",
     ) -> PretrainedPipeline:
-        """
+        #""
         Performs Sentiment Analysis
         :param str document_col: Column with documents typically created with documentAssembler()
         :param str output_col: Name of sentiment output column
@@ -406,7 +465,7 @@ class NlpTransformer(FrameworkTransformer):
          -- "analyze_sentimentdl_use_twitter"
          -- "sentimentdl_use_imdb"
          -- "sentimentdl_use_twitter"
-        """
+        #""
         use = (
             UniversalSentenceEncoder.pretrained()
             .setInputCols([document_col])
@@ -425,12 +484,13 @@ class NlpTransformer(FrameworkTransformer):
 
         # pipeline = PretrainedPipeline(sentiment_model)
         return nlpPipeline
+    """
 
-    def sentence_embeddings(
+    def get_sentence_embeddings_pipeline(
         self,
         document_col: str = "document",
         token_col: str = "token",
-        output_col: str = "embeddings",
+        output_col: str = "sentence_embeddings",
     ) -> Pipeline:
         """
         Generates a pipeline that creates sentence embeddings transformer
@@ -452,15 +512,15 @@ class NlpTransformer(FrameworkTransformer):
         embeddings_sentence = (
             SentenceEmbeddings()
             .setInputCols([document_col, "embeddings0"])
-            .setOutputCol("sentence_embeddings")
+            .setOutputCol("sentence_embeddings0")
             .setPoolingStrategy("AVERAGE")
         )
         pipeline_list.append(embeddings_sentence)
 
-        # puts embeddings into an anlaysis ready form
+        # puts embeddings into an analysis ready form
         embeddings_finisher = (
             EmbeddingsFinisher()
-            .setInputCols("sentence_embeddings")
+            .setInputCols("sentence_embeddings0")
             .setOutputCols(output_col)
             .setOutputAsVector(True)
             .setCleanAnnotations(False)
@@ -507,22 +567,21 @@ class NlpTransformer(FrameworkTransformer):
         self,
         token_col: str = "ntokens",
         output_col: str = "tf_idf_features",
+        tfidf_n_features: Optional[int] = None,
     ) -> Pipeline:
         """
         Generates a tf-idf analysis.
 
         :param str token_col: Column with array of tokens
         :param str output_col: Name of vector output column
+        :param str tfidf_n_features: set N most used features in text for tf-idf analysis. Default: use all features
         :rtype: Pipeline
         """
         hashing_output_name = "tf_idf_raw_features"
-        tf_hash = (
-            HashingTF().setInputCol(token_col).setOutputCol(hashing_output_name)
-        )  # inputCol=token_col, outputCol=hashing_output_name)\
-
-        idf = (
-            IDF().setInputCol(hashing_output_name).setOutputCol(output_col)
-        )  # . =hashing_output_name, outputCol=output_col)
+        tf_hash = HashingTF().setInputCol(token_col).setOutputCol(hashing_output_name)
+        if tfidf_n_features:
+            tf_hash.setNumFeatures(tfidf_n_features)
+        idf = IDF().setInputCol(hashing_output_name).setOutputCol(output_col)
         tfidf_pipeline = Pipeline(stages=[tf_hash, idf])
 
         return tfidf_pipeline
@@ -580,3 +639,22 @@ class NlpTransformer(FrameworkTransformer):
         )
 
         return emotion_classifier_pipeline
+
+    # parameter getters
+    def get_column(self) -> str:
+        return self.getOrDefault(self.column)
+
+    def get_view(self) -> str:
+        return self.getOrDefault(self.view)
+
+    def get_binarize_tokens(self) -> bool:
+        return self.getOrDefault(self.binarize_tokens)
+
+    def get_perform_analysis(self) -> List[str]:
+        return self.getOrDefault(self.perform_analysis)
+
+    def get_tfidf_n_features(self) -> int:
+        return self.getOrDefault(self.tfidf_n_features)
+
+    def get_condense_output_columns(self) -> bool:
+        return self.getOrDefault(self.condense_output_columns)
