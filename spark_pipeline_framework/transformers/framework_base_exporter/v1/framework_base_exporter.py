@@ -68,6 +68,10 @@ class FrameworkBaseExporter(FrameworkTransformer):
         stream: bool = self.getStream()
         limit: Optional[int] = self.getLimit()
 
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        format_ = "delta" if delta_lake_table else format_
+
         with ProgressLogMetric(
             name=f"{name or view}_{format_}_exporter", progress_logger=progress_logger
         ):
