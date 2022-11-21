@@ -93,6 +93,8 @@ class FrameworkCheckpoint(FrameworkTransformer):
             file_path = file_path(self.loop_id)
         stream: bool = self.getStream()
 
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
         save_transformer = FrameworkParquetExporter(
             view=view,
             name=f"{self.getName()}-save",
@@ -100,6 +102,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
             parameters=self.getParameters(),
             progress_logger=self.getProgressLogger(),
             stream=stream,
+            delta_lake_table=delta_lake_table,
         )
         df = save_transformer.transform(df)
 
@@ -110,6 +113,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
             parameters=self.getParameters(),
             progress_logger=self.getProgressLogger(),
             stream=stream,
+            delta_lake_table=delta_lake_table,
         )
         df = load_transformer.transform(df)
         return df

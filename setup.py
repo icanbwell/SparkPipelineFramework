@@ -77,6 +77,7 @@ setup(
         "helix.fhir.client.sdk>=1.0.29",
         "opensearch-py",
         "pyathena",
+        "delta-spark>=2.1.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

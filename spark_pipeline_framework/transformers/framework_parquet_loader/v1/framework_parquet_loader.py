@@ -104,6 +104,10 @@ class FrameworkParquetLoader(FrameworkTransformer):
         limit: Optional[int] = self.getLimit()
         stream: bool = self.getStream()
 
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        format_ = "delta" if delta_lake_table else "parquet"
+
         if progress_logger:
             progress_logger.write_to_log(
                 f"Loading parquet file for view {view}: {file_path}"
@@ -123,11 +127,11 @@ class FrameworkParquetLoader(FrameworkTransformer):
                 if merge_schema is True:
                     final_df = (
                         df_reader.option("mergeSchema", "true")
-                        .format("parquet")
+                        .format(format_)
                         .load(path=str(file_path))
                     )
                 else:
-                    final_df = df_reader.format("parquet").load(path=str(file_path))
+                    final_df = df_reader.format(format_).load(path=str(file_path))
 
                 assert (
                     "_corrupt_record" not in final_df.columns

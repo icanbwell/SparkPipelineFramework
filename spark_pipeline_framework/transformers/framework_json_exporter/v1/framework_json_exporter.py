@@ -104,6 +104,9 @@ class FrameworkJsonExporter(FrameworkTransformer):
         throw_if_empty: bool = self.getThrowIfEmpty()
         stream: bool = self.getStream()
         limit: Optional[int] = self.getLimit()
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        file_format: str = "delta" if delta_lake_table else "json"
 
         with ProgressLogMetric(
             name=f"{name or view}_fhir_exporter", progress_logger=progress_logger
@@ -119,11 +122,13 @@ class FrameworkJsonExporter(FrameworkTransformer):
                     if limit is not None and limit >= 0:
                         df_view = df_view.limit(limit)
                     if stream:
-                        df_view.writeStream.format("json").option(
+                        df_view.writeStream.format(file_format).option(
                             "path", str(file_path)
                         ).start()
                     else:
-                        df_view.write.mode(self.getMode()).json(path=str(file_path))
+                        df_view.write.format(file_format).mode(self.getMode()).save(
+                            path=str(file_path)
+                        )
                 else:
                     assert not throw_if_empty or not spark_is_data_frame_empty(df=df)
                     if not spark_is_data_frame_empty(df=df):
@@ -131,11 +136,13 @@ class FrameworkJsonExporter(FrameworkTransformer):
                     if limit is not None and limit >= 0:
                         df = df.limit(limit)
                     if stream:
-                        df.writeStream.format("json").option(
+                        df.writeStream.format(file_format).option(
                             "path", str(file_path)
                         ).start()
                     else:
-                        df.write.mode(self.getMode()).json(path=str(file_path))
+                        df.write.format(file_format).mode(self.getMode()).save(
+                            path=str(file_path)
+                        )
 
                 if progress_logger:
                     progress_logger.log_param("data_export_path", str(file_path))
@@ -144,7 +151,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
                     )
 
             except AnalysisException as e:
-                self.logger.error(f"[{name or view}]File write failed to {file_path}")
+                self.logger.error(f"[{name or view}] File write failed to {file_path}")
                 raise e
         return df
 

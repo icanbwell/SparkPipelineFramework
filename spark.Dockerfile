@@ -1,4 +1,4 @@
-FROM imranq2/helix.spark:3.3.0.16-slim
+FROM imranq2/helix.spark:3.3.0.18-slim
 # https://github.com/icanbwell/helix.spark
 USER root
 
@@ -13,8 +13,14 @@ WORKDIR /spf
 
 RUN pipenv sync --dev --system && pipenv run pip install pyspark==3.3.0
 
-# COPY ./jars/* /opt/bitnami/spark/jars/
-# COPY ./conf/* /opt/bitnami/spark/conf/
+COPY ./conf/* /opt/spark/conf/
+# run this to install any needed jars by Spark
+COPY ./test.py ./
+RUN /opt/spark/bin/spark-submit --master local[*] test.py
+
+# copy any jars
+#COPY ./jars/* /opt/spark/jars/
+#COPY ./conf/* /opt/spark/conf/
 
 COPY . /spf
 
