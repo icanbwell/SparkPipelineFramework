@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any, Optional, Union, List, Callable
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from pyspark.sql.functions import col
 
@@ -39,6 +39,7 @@ class FhirReader(FrameworkTransformer):
         multi_line: bool = False,
         autodiscover_multiline: bool = False,
         filter_by_resource_type: Optional[str] = None,
+        delta_lake_table: Optional[str] = None,
     ):
         """
         Reads json files from path and creates columns corresponding to the FHIR schema
@@ -117,6 +118,11 @@ class FhirReader(FrameworkTransformer):
         )
         self._setDefault(filter_by_resource_type=None)
 
+        self.delta_lake_table: Param[Optional[str]] = Param(
+            self, "delta_lake_table", ""
+        )
+        self._setDefault(delta_lake_table=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -131,7 +137,7 @@ class FhirReader(FrameworkTransformer):
             return
 
         assert absolute_paths
-        text_df: DataFrame = df.sql_ctx.read.text(absolute_paths)
+        text_df: DataFrame = df.sparkSession.read.text(absolute_paths)
         # read the first line of the file
         first_line: str = text_df.select("value").limit(1).collect()[0][0]
         if (
@@ -168,6 +174,9 @@ class FhirReader(FrameworkTransformer):
 
         filter_by_resource_type: Optional[str] = self.getFilterByResourceType()
         # limit: int = self.getLimit()
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        file_format: str = "delta" if delta_lake_table else "json"
 
         with ProgressLogMetric(
             name=f"{name or view}_fhir_reader", progress_logger=progress_logger
@@ -187,16 +196,19 @@ class FhirReader(FrameworkTransformer):
                 # DROPMALFORMED : ignores the whole corrupted records.
                 # FAILFAST : throws an exception when it meets corrupted records.
                 # https://docs.databricks.com/spark/latest/spark-sql/handling-bad-records.html
-                reader = df.sql_ctx.read
+                reader = df.sparkSession.read
                 if bad_records_path:
                     reader = reader.option("badRecordsPath", str(bad_records_path))
-                if schema:
+                if schema and not delta_lake_table:
                     reader = reader.schema(schema)
                 if encoding:
                     reader = reader.option("encoding", encoding)
                 for k, v in self.getReaderOptions().items():
                     reader = reader.option(k, v)
-                df = reader.json(str(file_path))
+                if delta_lake_table:
+                    df = reader.format(file_format).load(str(file_path))
+                else:
+                    df = reader.json(str(file_path))
 
                 assert (
                     "_corrupt_record" not in df.columns
@@ -221,13 +233,13 @@ class FhirReader(FrameworkTransformer):
                 self.logger.exception(f"File read failed from {file_path}")
                 if create_empty_view_if_file_path_not_found and view:
                     if schema:
-                        df = df.sql_ctx.createDataFrame(
-                            df.sql_ctx.sparkSession.sparkContext.emptyRDD(), schema
+                        df = df.sparkSession.createDataFrame(
+                            df.sparkSession.sparkContext.emptyRDD(), schema
                         )
                         df.createOrReplaceTempView(view)
                     else:
-                        df = df.sql_ctx.createDataFrame(
-                            df.sql_ctx.sparkSession.sparkContext.emptyRDD()
+                        df = df.sparkSession.createDataFrame(
+                            df.sparkSession.sparkContext.emptyRDD()
                         )
                         df.createOrReplaceTempView(view)
                 else:

@@ -144,6 +144,10 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         stream: bool = self.getStream()
 
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        file_format: str = "delta" if delta_lake_table else "json"
+
         if not file_path:
             raise ValueError(f"file_path is empty: {file_path}")
 
@@ -195,7 +199,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             df_reader = df_reader.option("inferSchema", "false")
 
         df2: DataFrame
-        df_reader = df_reader.format(self.getReaderFormat())
+        file_format = "delta" if delta_lake_table else self.getReaderFormat()
+        df_reader = df_reader.format(file_format)
 
         for k, v in self.getReaderOptions().items():
             df_reader = df_reader.option(k, v)
