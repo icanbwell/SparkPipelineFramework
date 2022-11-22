@@ -98,7 +98,7 @@ def test_can_run_framework_solo_transformer(spark_session: SparkSession) -> None
 
     parameters = {
         "analysis_path": analysis_path,
-        "columns": "challenge_name",
+        "column": "challenge_name",
         "path_to_csv": analysis_path,
         "view": "nlp_analysis",
         "table_name": "my_NLP_table",
