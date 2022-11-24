@@ -36,6 +36,7 @@ class HttpDataReceiver(FrameworkTransformer):
                 [
                     List[Dict[str, Any]],
                     Union[List[Dict[str, Any]], Dict[str, Any]],
+                    HelixHttpRequest,
                     Optional[ProgressLogger],
                 ],
                 List[Dict[str, Any]],
@@ -80,7 +81,12 @@ class HttpDataReceiver(FrameworkTransformer):
         self.response_processor: Param[
             Optional[
                 Callable[
-                    [List[Dict[str, Any]], Dict[str, Any], Optional[ProgressLogger]],
+                    [
+                        List[Dict[str, Any]],
+                        Dict[str, Any],
+                        HelixHttpRequest,
+                        Optional[ProgressLogger],
+                    ],
                     List[Dict[str, Any]],
                 ]
             ]
@@ -133,7 +139,7 @@ class HttpDataReceiver(FrameworkTransformer):
                     response_processor = self.getResponseProcessor()
                     if response_processor:
                         responses = response_processor(
-                            responses, response.result, progress_logger
+                            responses, response.result, http_request, progress_logger
                         )
                     else:
                         responses.append(response.result)
@@ -171,7 +177,12 @@ class HttpDataReceiver(FrameworkTransformer):
         self,
     ) -> Optional[
         Callable[
-            [List[Dict[str, Any]], Dict[str, Any], Optional[ProgressLogger]],
+            [
+                List[Dict[str, Any]],
+                Dict[str, Any],
+                HelixHttpRequest,
+                Optional[ProgressLogger],
+            ],
             List[Dict[str, Any]],
         ]
     ]:
