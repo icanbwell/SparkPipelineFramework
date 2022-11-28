@@ -66,6 +66,9 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         self.url_column: Param[str] = Param(self, "url_column", "")
         self._setDefault(url_column=None)
 
+        self.connection_type: Param[str] = Param(self, "connection_type", "")
+        self._setDefault(connection_type=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -75,6 +78,7 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         resource_type: str = self.getResourceType()
         slug_column: str = self.getOrDefault(self.slug_column)
         url_column: str = self.getOrDefault(self.url_column)
+        connection_type: str = self.getOrDefault(self.connection_type)
 
         df = df.sparkSession.table(source_view)
 
@@ -96,6 +100,7 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         owner_codeset: str = "https://www.icanbwell.com/owner"
         access_codeset: str = "https://www.icanbwell.com/access"
         vendor_codeset: str = "https://www.icanbwell.com/vendor"
+        connection_type_codeset: str = "https://www.icanbwell.com/connectionType"
 
         df = df.withColumn(
             "meta",
@@ -115,6 +120,10 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
                     struct(
                         lit(vendor_codeset).alias("system"),
                         lit(col(slug_column)).alias("code"),
+                    ),
+                    struct(
+                        lit(connection_type_codeset).alias("system"),
+                        lit(lit(f"/{connection_type}/")).alias("code"),
                     ),
                 ).alias("security"),
             ),
