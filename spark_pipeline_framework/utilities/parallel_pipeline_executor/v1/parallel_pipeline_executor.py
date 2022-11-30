@@ -69,7 +69,7 @@ class ParallelPipelineExecutor:
             (name, stages) for name, stages in self.dictionary.items()
         ]
 
-        if number_of_concurrent_tasks > 0:
+        if number_of_concurrent_tasks > 1:
             # https://docs.python.org/3.7/library/concurrent.futures.html
             with BoundedThreadPoolExecutor(
                 max_workers=number_of_concurrent_tasks
