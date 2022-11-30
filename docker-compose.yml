@@ -13,6 +13,7 @@ services:
       - AWS_SESSION_TOKEN
     volumes:
       - ./:/SparkpipelineFramework/
+      - ~/.local/share/virtualenvs:/root/.local/share/virtualenvs:rw
     container_name: spf_dev
     working_dir: /SparkpipelineFramework
 
