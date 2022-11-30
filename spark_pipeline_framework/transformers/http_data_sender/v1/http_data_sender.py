@@ -112,6 +112,11 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(post_as_json_formatted_string=None)
 
+        self.cache_storage_level: Param[Optional[StorageLevel]] = Param(
+            self, "cache_storage_level", ""
+        )
+        self._setDefault(cache_storage_level=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -231,12 +236,13 @@ class HttpDataSender(FrameworkTransformer):
                 desired_partitions
             ).rdd.mapPartitionsWithIndex(send_partition_to_server)
 
-            result_df: DataFrame = rdd.toDF()
-            result_df = (
-                result_df.cache()
+            rdd = (
+                rdd.cache()
                 if cache_storage_level is None
-                else result_df.persist(storageLevel=cache_storage_level)
+                else rdd.persist(storageLevel=cache_storage_level)
             )
+
+            result_df: DataFrame = rdd.toDF()
 
             result_df = result_df.where(col("url").isNotNull())
             if view:
