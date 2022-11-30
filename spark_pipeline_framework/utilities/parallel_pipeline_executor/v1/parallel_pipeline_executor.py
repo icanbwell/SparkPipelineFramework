@@ -65,32 +65,41 @@ class ParallelPipelineExecutor:
         """
         number_of_concurrent_tasks = min(self.max_tasks, len(self.dictionary))
 
-        items = [(name, stages) for name, stages in self.dictionary.items()]
+        items: List[Tuple[str, List[Transformer]]] = [
+            (name, stages) for name, stages in self.dictionary.items()
+        ]
 
-        # https://docs.python.org/3.7/library/concurrent.futures.html
-        with BoundedThreadPoolExecutor(
-            max_workers=number_of_concurrent_tasks
-        ) as executor:
-            track_futures = {
-                executor.submit(
-                    self._run_pipeline_transform_async,
-                    name=item[0],
-                    stages=item[1],
-                    df=df,
-                    spark_session=spark_session,
-                    progress_logger=self.progress_logger,
-                )
-                for item in items
-            }
-            for future_item in concurrent.futures.as_completed(track_futures):
-                try:
-                    name, df = future_item.result()
-                    yield name, df
-                except Exception as e:
-                    self.logger.info("ERROR transform_async {0}".format(str(e)))
-                    err = traceback.format_exc()
-                    self.logger.info("TRACEBACK: {0}".format(err))
-                    raise
+        if number_of_concurrent_tasks > 0:
+            # https://docs.python.org/3.7/library/concurrent.futures.html
+            with BoundedThreadPoolExecutor(
+                max_workers=number_of_concurrent_tasks
+            ) as executor:
+                track_futures = {
+                    executor.submit(
+                        self._run_pipeline_transform_async,
+                        name=item[0],
+                        stages=item[1],
+                        df=df,
+                        spark_session=spark_session,
+                        progress_logger=self.progress_logger,
+                    )
+                    for item in items
+                }
+                for future_item in concurrent.futures.as_completed(track_futures):
+                    try:
+                        name, df = future_item.result()
+                        yield name, df
+                    except Exception as e:
+                        self.logger.info("ERROR transform_async {0}".format(str(e)))
+                        err = traceback.format_exc()
+                        self.logger.info("TRACEBACK: {0}".format(err))
+                        raise
+        else:
+            item: Tuple[str, List[Transformer]]
+            for item in items:
+                transformer_name: str = item[0]
+                for transformer in item[1]:
+                    yield transformer_name, transformer.transform(df)
 
     def _run_pipeline_transform_async(
         self,
