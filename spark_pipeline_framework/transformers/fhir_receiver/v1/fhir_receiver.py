@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Union, Callable, cast
 # noinspection PyPep8Naming
 import pyspark.sql.functions as F
 from helix_fhir_client_sdk.filters.sort_field import SortField
+from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.rdd import RDD
 from pyspark.sql.dataframe import DataFrame
@@ -102,6 +103,7 @@ class FhirReceiver(FrameworkTransformer):
         use_data_streaming: Optional[bool] = None,
         delta_lake_table: Optional[str] = None,
         schema: Optional[Union[StructType, DataType]] = None,
+        cache_storage_level: Optional[StorageLevel] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -132,7 +134,8 @@ class FhirReceiver(FrameworkTransformer):
         :param last_updated_after: (Optional) Only get records newer than this
         :param last_updated_before: (Optional) Only get records older than this
         :param sort_fields: sort by fields in the resource
-        :param separate_bundle_resources: True means we group the response by FHIR resources (check helix.fhir.client.sdk/tests/test_fhir_client_bundle.py)
+        :param separate_bundle_resources: True means we group the response by FHIR resources
+                                            (check helix.fhir.client.sdk/tests/test_fhir_client_bundle.py)
         :param error_on_result_count: Throw exception when the response from FHIR count does not match the request count
         :param accept_type: (Optional) Accept header to use
         :param content_type: (Optional) Content-Type header to use
@@ -141,10 +144,13 @@ class FhirReceiver(FrameworkTransformer):
         :param mode: if output files exist, should we overwrite or append
         :param slug_column: (Optional) use this column to set the security tags
         :param url_column: (Optional) column to read the url
-        :param error_view: (Optional) log errors into this view (view only exists IF there are errors) and don't throw exceptions.  schema: url, error_text, status_code
+        :param error_view: (Optional) log errors into this view (view only exists IF there are errors) and
+                            don't throw exceptions.  schema: url, error_text, status_code
         :param use_data_streaming: (Optional) whether to use data streaming i.e., HTTP chunk transfer encoding
         :param delta_lake_table: whether to use delta lake for reading and writing files
         :param schema: the schema to apply after we receive the data
+        :param cache_storage_level: (Optional) how to store the cache:
+                                    https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -343,6 +349,11 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(schema=None)
 
+        self.cache_storage_level: Param[Optional[StorageLevel]] = Param(
+            self, "cache_storage_level", ""
+        )
+        self._setDefault(cache_storage_level=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -417,6 +428,10 @@ class FhirReceiver(FrameworkTransformer):
         delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
 
         schema: Optional[Union[StructType, DataType]] = self.getOrDefault(self.schema)
+
+        cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
+            self.cache_storage_level
+        )
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -532,7 +547,7 @@ class FhirReceiver(FrameworkTransformer):
                     ]
                 )
 
-                result_with_counts: DataFrame = rdd.toDF(response_schema)
+                result_with_counts_and_responses: DataFrame = rdd.toDF(response_schema)
                 if checkpoint_path:
                     if callable(checkpoint_path):
                         checkpoint_path = checkpoint_path(self.loop_id)
@@ -545,15 +560,37 @@ class FhirReceiver(FrameworkTransformer):
                             f"Writing checkpoint to {checkpoint_file}",
                         )
                     checkpoint_file_format = "delta" if delta_lake_table else "parquet"
-                    result_with_counts.write.format(checkpoint_file_format).save(
-                        checkpoint_file
-                    )
-                    result_with_counts = df.sparkSession.read.format(
+                    result_with_counts_and_responses.write.format(
+                        checkpoint_file_format
+                    ).save(checkpoint_file)
+                    result_with_counts_and_responses = df.sparkSession.read.format(
                         checkpoint_file_format
                     ).load(checkpoint_file)
                 else:
-                    result_with_counts = result_with_counts.cache()
+                    if cache_storage_level is None:
+                        result_with_counts_and_responses = (
+                            result_with_counts_and_responses.cache()
+                        )
+                    else:
+                        result_with_counts_and_responses = (
+                            result_with_counts_and_responses.persist(
+                                storageLevel=cache_storage_level
+                            )
+                        )
 
+                # don't need the large responses column to figure out if we had errors or not
+                result_with_counts: DataFrame = result_with_counts_and_responses.select(
+                    "partition_index",
+                    "sent",
+                    "received",
+                    "first",
+                    "last",
+                    "error_text",
+                    "url",
+                    "status_code",
+                    "request_id",
+                )
+                result_with_counts = result_with_counts.cache()
                 # find results that have a status code not in the ignore_status_codes
                 results_with_counts_errored = result_with_counts.where(
                     (
@@ -687,11 +724,13 @@ class FhirReceiver(FrameworkTransformer):
                         )
                     elif count_sent == count_received:
                         self.logger.info(
-                            f"Sent ({count_sent}) and Received ({count_received}) counts matched for {server_url or ''}/{resource_name}"
+                            f"Sent ({count_sent}) and Received ({count_received}) counts matched "
+                            + f"for {server_url or ''}/{resource_name}"
                         )
                     else:
                         self.logger.info(
-                            f"Sent ({count_sent}) and Received ({count_received}) for {server_url or ''}/{resource_name}"
+                            f"Sent ({count_sent}) and Received ({count_received}) for "
+                            + f"{server_url or ''}/{resource_name}"
                         )
 
                 # turn list of list of string to list of strings
@@ -700,9 +739,9 @@ class FhirReceiver(FrameworkTransformer):
                 # noinspection PyUnresolvedReferences
                 # result_df: DataFrame = rdd1.toDF(StringType())
                 result_df: DataFrame = (
-                    result_with_counts.select(explode(col("responses")))
+                    result_with_counts_and_responses.select(explode(col("responses")))
                     if expand_fhir_bundle
-                    else result_with_counts.select(
+                    else result_with_counts_and_responses.select(
                         # col("responses")[0]["id"].alias("id"),
                         col("responses")[0].alias("bundle")
                     )
@@ -745,7 +784,8 @@ class FhirReceiver(FrameworkTransformer):
                         event_name="Finished receiving FHIR",
                         event_text=json.dumps(
                             {
-                                "message": f"Wrote {file_row_count} FHIR {resource_name} resources to {file_path} (id view)",
+                                "message": f"Wrote {file_row_count} FHIR {resource_name} resources "
+                                + f"to {file_path} (id view)",
                                 "count": file_row_count,
                                 "resourceType": resource_name,
                                 "path": str(file_path),
@@ -808,7 +848,8 @@ class FhirReceiver(FrameworkTransformer):
                         event_name="Finished receiving FHIR",
                         event_text=json.dumps(
                             {
-                                "message": f"Wrote {list_df.count()} FHIR {resource_name} resources to {file_path} (query)",
+                                "message": f"Wrote {list_df.count()} FHIR {resource_name} resources to "
+                                + f"{file_path} (query)",
                                 "count": list_df.count(),
                                 "resourceType": resource_name,
                                 "path": str(file_path),
