@@ -607,7 +607,7 @@ class FhirReceiver(FrameworkTransformer):
                             "url", "error_text", "status_code", "request_id"
                         )
                         errors_df.createOrReplaceTempView(error_view)
-                        if progress_logger:
+                        if progress_logger and not spark_is_data_frame_empty(errors_df):
                             progress_logger.log_event(
                                 event_name="Errors receiving FHIR",
                                 event_text=json.dumps(
@@ -822,7 +822,7 @@ class FhirReceiver(FrameworkTransformer):
                 if error_view:
                     errors_df = sc(df).parallelize(errors).toDF().cache()
                     errors_df.createOrReplaceTempView(error_view)
-                    if progress_logger:
+                    if progress_logger and not spark_is_data_frame_empty(errors_df):
                         progress_logger.log_event(
                             event_name="Errors receiving FHIR",
                             event_text=json.dumps(
