@@ -13,8 +13,8 @@ WORKDIR /spf
 
 RUN pipenv sync --dev --system && pipenv run pip install pyspark==3.3.0
 
-COPY ./jars/* /opt/spark/jars/
-COPY ./conf/* /opt/spark/conf/
+#COPY ./jars/* /opt/spark/jars/
+#COPY ./conf/* /opt/spark/conf/
 # run this to install any needed jars by Spark
 COPY ./test.py ./
 RUN /opt/spark/bin/spark-submit --master local[*] test.py
