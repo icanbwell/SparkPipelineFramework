@@ -80,22 +80,25 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
 
         log_limit = 10 if log_limit is None else log_limit
 
-        message = (
-            "\n"
-            + (name or view or "")
-            + f" (LIMIT {log_limit})"
-            + "\n"
-            + get_pretty_data_frame(df2, log_limit, name=sql or view)
-        )
-        self.logger.info(message)
-        if progress_logger:
-            progress_logger.write_to_log(message)
-            if log_event:
-                progress_logger.log_event(
-                    event_name=name or view or self.__class__.__name__,
-                    event_text=message,
+        if log_limit and log_limit > 0:
+            message = (
+                "\n"
+                + (name or view or "")
+                + f" (LIMIT {log_limit})"
+                + "\n"
+                + get_pretty_data_frame(df2, log_limit, name=sql or view)
+            )
+            self.logger.info(message)
+            if progress_logger:
+                progress_logger.write_to_log(message)
+                if log_event:
+                    progress_logger.log_event(
+                        event_name=name or view or self.__class__.__name__,
+                        event_text=message,
+                    )
+                progress_logger.log_artifact(
+                    key=f"{name or view}.csv", contents=message
                 )
-            progress_logger.log_artifact(key=f"{name or view}.csv", contents=message)
 
         return df
 

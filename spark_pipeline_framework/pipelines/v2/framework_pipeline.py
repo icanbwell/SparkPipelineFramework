@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any, Dict, List, Optional, Union
 
 # noinspection PyPackageRequirements
@@ -34,6 +35,7 @@ class FrameworkPipeline(Transformer):
         vendor_name: Optional[str] = None,
         data_lake_path: Optional[str] = None,
         validation_output_path: Optional[str] = None,
+        log_level: Optional[Union[int, str]] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -60,6 +62,9 @@ class FrameworkPipeline(Transformer):
 
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
+        self.log_level: Optional[Union[int, str]] = log_level or os.environ.get(
+            "LOGLEVEL"
+        )
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -116,6 +121,14 @@ class FrameworkPipeline(Transformer):
                             event_text=f"Running pipeline step {stage_name}",
                         )
                         df = transformer.transform(dataset=df)
+                        if self.log_level and self.log_level == "DEBUG":
+                            print(
+                                f"------------  Start Execution Plan for stage {stage_name} -----------"
+                            )
+                            df.explain(extended="cost")
+                            print(
+                                f"------------  End Execution Plan for stage {stage_name} -----------"
+                            )
                         self.progress_logger.log_event(
                             pipeline_name,
                             event_text=f"Finished pipeline step {stage_name}",

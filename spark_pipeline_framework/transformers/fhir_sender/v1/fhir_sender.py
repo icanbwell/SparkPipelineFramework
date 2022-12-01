@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union, Callable
 
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
+from pyspark import StorageLevel
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
@@ -76,6 +77,7 @@ class FhirSender(FrameworkTransformer):
         exclude_status_codes_from_retry: Optional[List[int]] = None,
         num_partitions: Optional[int] = None,
         delta_lake_table: Optional[str] = None,
+        cache_storage_level: Optional[StorageLevel] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -99,6 +101,8 @@ class FhirSender(FrameworkTransformer):
                             schema: id, resourceType, issue
         :param view: (Optional) store merge result in this view
         :param delta_lake_table: use delta lake format
+        :param cache_storage_level: (Optional) how to store the cache:
+                                    https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -204,6 +208,11 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(delta_lake_table=delta_lake_table)
 
+        self.cache_storage_level: Param[Optional[StorageLevel]] = Param(
+            self, "cache_storage_level", ""
+        )
+        self._setDefault(cache_storage_level=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -230,6 +239,10 @@ class FhirSender(FrameworkTransformer):
         mode: str = self.getMode()
 
         delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
+            self.cache_storage_level
+        )
 
         if not batch_size or batch_size == 0:
             batch_size = 30
@@ -465,10 +478,15 @@ class FhirSender(FrameworkTransformer):
                     yield responses
 
                 # ---- Now process all the results ----
-                rdd: RDD[Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]] = (
-                    json_df.repartition(desired_partitions)
-                    .rdd.mapPartitionsWithIndex(send_partition_to_server)
-                    .cache()
+                rdd: RDD[
+                    Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
+                ] = json_df.repartition(desired_partitions).rdd.mapPartitionsWithIndex(
+                    send_partition_to_server
+                )
+                rdd = (
+                    rdd.cache()
+                    if cache_storage_level is None
+                    else rdd.persist(storageLevel=cache_storage_level)
                 )
 
                 # turn list of list of string to list of strings

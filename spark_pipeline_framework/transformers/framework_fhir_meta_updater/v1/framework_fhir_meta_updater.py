@@ -34,6 +34,7 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         slug_column: str,
         url_column: str,
+        connection_type: str,
     ):
         """
         Used to add/update the meta field with the b.well mandatory stuff
@@ -123,7 +124,7 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
                     ),
                     struct(
                         lit(connection_type_codeset).alias("system"),
-                        lit(lit(f"/{connection_type}/")).alias("code"),
+                        lit(f"{connection_type}").alias("code"),
                     ),
                 ).alias("security"),
             ),

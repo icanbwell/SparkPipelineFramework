@@ -2,7 +2,7 @@ import json
 import math
 from typing import Any, Dict, Iterable, List, Optional
 
-from pyspark import RDD
+from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.functions import col
 from pyspark.sql.types import Row
@@ -49,6 +49,7 @@ class HttpDataSender(FrameworkTransformer):
         post_as_json_formatted_string: Optional[bool] = None,
         batch_count: Optional[int] = None,
         batch_size: Optional[int] = None,
+        cache_storage_level: Optional[StorageLevel] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -64,6 +65,8 @@ class HttpDataSender(FrameworkTransformer):
         :param content_type: content_type to use when posting
         :param batch_count: (Optional) number of batches to create
         :param batch_size: (Optional) max number of items in a batch
+        :param cache_storage_level: (Optional) how to store the cache:
+                                    https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -109,6 +112,11 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(post_as_json_formatted_string=None)
 
+        self.cache_storage_level: Param[Optional[StorageLevel]] = Param(
+            self, "cache_storage_level", ""
+        )
+        self._setDefault(cache_storage_level=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -129,6 +137,9 @@ class HttpDataSender(FrameworkTransformer):
         batch_size: Optional[int] = self.getOrDefault(self.batch_size)
         post_as_json_formatted_string: Optional[bool] = self.getOrDefault(
             self.post_as_json_formatted_string
+        )
+        cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
+            self.cache_storage_level
         )
 
         df = df.sparkSession.table(source_view)
@@ -221,13 +232,19 @@ class HttpDataSender(FrameworkTransformer):
                 )
 
             # ---- Now process all the results ----
-            rdd: RDD[Row] = (
-                df.repartition(desired_partitions)
-                .rdd.mapPartitionsWithIndex(send_partition_to_server)
-                .cache()
+            rdd: RDD[Row] = df.repartition(
+                desired_partitions
+            ).rdd.mapPartitionsWithIndex(send_partition_to_server)
+
+            rdd = (
+                rdd.cache()
+                if cache_storage_level is None
+                else rdd.persist(storageLevel=cache_storage_level)
             )
 
-            result_df = rdd.toDF().where(col("url").isNotNull())
+            result_df: DataFrame = rdd.toDF()
+
+            result_df = result_df.where(col("url").isNotNull())
             if view:
                 result_df.createOrReplaceTempView(view)
 

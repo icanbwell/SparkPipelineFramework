@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any, Dict, List, Union, Optional
 
 from pyspark.ml.base import Transformer
@@ -18,7 +19,10 @@ from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 class FrameworkPipeline(Transformer):
     def __init__(
-        self, parameters: Dict[str, Any], progress_logger: ProgressLogger
+        self,
+        parameters: Dict[str, Any],
+        progress_logger: ProgressLogger,
+        log_level: Optional[Union[int, str]] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -31,6 +35,9 @@ class FrameworkPipeline(Transformer):
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
         self.loop_id: Optional[str] = None
+        self.log_level: Optional[Union[int, str]] = log_level or os.environ.get(
+            "LOGLEVEL"
+        )
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -76,6 +83,15 @@ class FrameworkPipeline(Transformer):
                         pipeline_name, event_text=f"Running pipeline step {stage_name}"
                     )
                     df = transformer.transform(dataset=df)
+                    if self.log_level and self.log_level == "DEBUG":
+                        print(
+                            f"------------  Start Execution Plan for stage {stage_name} -----------"
+                        )
+                        df.explain(extended="cost")
+                        print(
+                            f"------------  End Execution Plan for stage {stage_name} -----------"
+                        )
+
             except Exception as e:
                 logger.error(
                     f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"

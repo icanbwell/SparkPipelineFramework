@@ -11,6 +11,9 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    create_empty_dataframe,
+)
 
 
 class FrameworkLoopTransformer(FrameworkTransformer):
@@ -96,6 +99,10 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     stage.set_loop_id(str(current_run_number))
 
                 try:
+                    # use a new df everytime to avoid keeping data in memory too long
+                    df.unpersist(blocking=True)
+                    df = create_empty_dataframe(df.sparkSession)
+
                     df = stage.transform(df)
                 except Exception as e:
                     if len(e.args) >= 1:
@@ -104,6 +111,14 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     raise e
                 if progress_logger is not None:
                     progress_logger.end_mlflow_run()
+            if progress_logger is not None:
+                progress_logger.write_to_log(
+                    f"---- Finished loop {current_run_number} for {self.getName()} ---------"
+                )
+                progress_logger.log_event(
+                    event_name=f"Finished Loop for {self.getName()}",
+                    event_text=str(current_run_number),
+                )
             time_elapsed: float = time.time() - start_time
             if (
                 (
