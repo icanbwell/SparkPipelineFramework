@@ -76,6 +76,15 @@ def spark_session(request: Any) -> SparkSession:
 
     master = "local[2]"
 
+    jars = [
+        "mysql:mysql-connector-java:8.0.24",
+        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0",
+        "io.delta:delta-core_2.12:2.1.0",
+        "com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2",
+        "org.apache.spark:spark-hadoop-cloud_2.12:3.3.1",
+        "com.amazonaws:aws-java-sdk-bundle:1.12.339",
+    ]
+
     session = (
         SparkSession.builder.appName("pytest-pyspark-local-testing")
         .master(master)
@@ -88,10 +97,7 @@ def spark_session(request: Any) -> SparkSession:
             "spark.sql.catalog.spark_catalog",
             "org.apache.spark.sql.delta.catalog.DeltaCatalog",
         )
-        .config(
-            "spark.jars.packages",
-            "com.crealytics:spark-excel_2.12:0.13.7,com.databricks:spark-xml_2.12:0.14.0,io.delta:delta-core_2.12:2.1.0,org.apache.spark:spark-hadoop-cloud_2.12:3.3.1",
-        )
+        .config("spark.jars.packages", ",".join(jars))
         .enableHiveSupport()
         .getOrCreate()
     )
