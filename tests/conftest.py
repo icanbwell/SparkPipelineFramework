@@ -83,6 +83,7 @@ def spark_session(request: Any) -> SparkSession:
         "com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2",
         "org.apache.spark:spark-hadoop-cloud_2.12:3.3.1",
         "com.amazonaws:aws-java-sdk-bundle:1.12.339",
+        "com.databricks:spark-xml_2.12:0.15.0",
     ]
 
     session = (

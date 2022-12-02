@@ -17,7 +17,7 @@ RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run 
 #COPY ./conf/* /opt/spark/conf/
 # run this to install any needed jars by Spark
 COPY ./test.py ./
-RUN /opt/spark/bin/spark-submit --packages com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2 --master local[*] test.py
+RUN /opt/spark/bin/spark-submit --packages com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2,com.databricks:spark-xml_2.12:0.15.0 --master local[*] test.py
 
 COPY . /spf
 
