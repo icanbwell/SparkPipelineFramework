@@ -1,4 +1,4 @@
-FROM imranq2/helix.spark:3.3.0.18-slim
+FROM imranq2/helix.spark:3.3.0.19-slim
 # https://github.com/icanbwell/helix.spark
 USER root
 
@@ -11,16 +11,13 @@ RUN apt-get remove python3-entrypoints -y
 COPY Pipfile* /spf/
 WORKDIR /spf
 
-RUN pipenv sync --dev --system && pipenv run pip install pyspark==3.3.0
+RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0
 
-COPY ./conf/* /opt/spark/conf/
-# run this to install any needed jars by Spark
-COPY ./test.py ./
-RUN /opt/spark/bin/spark-submit --master local[*] test.py
-
-# copy any jars
 #COPY ./jars/* /opt/spark/jars/
 #COPY ./conf/* /opt/spark/conf/
+# run this to install any needed jars by Spark
+COPY ./test.py ./
+RUN /opt/spark/bin/spark-submit --packages com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2,com.databricks:spark-xml_2.12:0.15.0 --master local[*] test.py
 
 COPY . /spf
 
@@ -32,3 +29,6 @@ RUN mv /opt/minimal_entrypoint.sh /opt/entrypoint.sh
 RUN mkdir -p /fhir && chmod 777 /fhir
 RUN mkdir -p /.local/share/virtualenvs && chmod 777 /.local/share/virtualenvs
 # USER 1001
+
+# RUN spark-submit --packages com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2
+# RUN spark-shell --jar spark-nlp-assembly-4.2.2

@@ -26,6 +26,8 @@ fastjsonschema= "*"
 "helix.fhir.client.sdk" = ">=1.0.29"
 opensearch-py= "*"
 pyathena = "*"
+spark-nlp = "==4.2.2"
+tensorflow = "*"
 delta-spark=">=2.1.0"
 
 [dev-packages]
@@ -51,7 +53,7 @@ sparkdataframecomparer = "==1.0.7"
 pytest-asyncio = ">=0.19.0"
 vistir="==0.6.1" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
 helix-mockserver-client=">=1.0.0"
-"sparkfhirschemas" = "==1.0.14"
+sparkfhirschemas = "==1.0.14"
 types-boto3 = ">=1.0.2"
 moto = ">=4.0.9"
 
