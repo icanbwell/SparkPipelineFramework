@@ -61,6 +61,8 @@ class FrameworkXmlLoader(FrameworkTransformer):
         self.row_tag: Param[str] = Param(self, "row_tag", "")
         self._setDefault(row_tag=None)
 
+        assert row_tag, f"row_tag must be set"
+
         self.schema: Param[StructType] = Param(self, "schema", "")
         self._setDefault(schema=None)
 
