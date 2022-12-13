@@ -183,7 +183,9 @@ class HttpDataSender(FrameworkTransformer):
             def send_partition_to_server(
                 partition_index: int, rows: Iterable[Row]
             ) -> Iterable[Row]:
-                json_data_list: List[Dict[str, Any]] = [r.asDict() for r in rows]
+                json_data_list: List[Dict[str, Any]] = [
+                    r.asDict(recursive=True) for r in rows
+                ]
                 # logger = get_logger(__name__)
                 if len(json_data_list) == 0:
                     yield Row(
