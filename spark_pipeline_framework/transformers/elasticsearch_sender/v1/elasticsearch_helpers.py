@@ -74,7 +74,7 @@ def send_json_bundle_to_elasticsearch(
     )
     success: int
     failed: int
-    success, failed = bulk(  # type: ignore
+    success, failed = bulk(
         client=es_client, actions=payload, index=index, stats_only=True
     )
     full_uri: furl = furl(server_url)
