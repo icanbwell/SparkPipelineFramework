@@ -3,10 +3,10 @@ from pathlib import Path
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
 
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.transformers.framework_json_loader.v1.framework_json_loader import (
     FrameworkJsonLoader,
 )
-from tests.conftest import clean_spark_session
 
 
 def test_correctly_loads_csv_with_clean_flag_off(spark_session: SparkSession) -> None:

@@ -5,14 +5,13 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
     FrameworkCsvLoader,
 )
 from spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer import (
     FrameworkValidationTransformer,
 )
-
-from tests.conftest import clean_spark_session
 
 
 def test_validation_throws_error(spark_session: SparkSession) -> None:
