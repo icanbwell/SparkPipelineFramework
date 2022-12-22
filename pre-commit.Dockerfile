@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM imranq2/helix.spark:3.3.0.19-precommit-slim
 
 RUN apt-get update && \
     apt-get install -y git && \

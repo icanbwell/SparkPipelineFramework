@@ -3,12 +3,12 @@ from pathlib import Path
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType
+
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.transformers.framework_sql_transformer.v1.framework_sql_transformer import (
     FrameworkSqlTransformer,
 )
 
-
-from tests.conftest import clean_spark_session
 
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
     FrameworkCsvLoader,

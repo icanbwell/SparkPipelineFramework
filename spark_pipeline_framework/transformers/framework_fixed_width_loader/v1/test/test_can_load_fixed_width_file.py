@@ -4,11 +4,11 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, IntegerType, StringType
 
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.transformers.framework_fixed_width_loader.v1.framework_fixed_width_loader import (
     FrameworkFixedWidthLoader,
     ColumnSpec,
 )
-from tests.conftest import clean_spark_session
 
 
 def test_can_load_fixed_width(spark_session: SparkSession) -> None:

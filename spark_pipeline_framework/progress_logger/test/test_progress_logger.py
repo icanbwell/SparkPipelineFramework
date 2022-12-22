@@ -10,6 +10,8 @@ import pytest
 from mlflow.entities import Run, RunStatus  # type: ignore
 from pyspark.ml import Transformer
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
+
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 
 from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
@@ -48,8 +50,6 @@ from spark_pipeline_framework.pipelines.v2.framework_pipeline import FrameworkPi
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-
-from tests.conftest import clean_spark_session
 
 
 class SimplePipeline(FrameworkPipeline):

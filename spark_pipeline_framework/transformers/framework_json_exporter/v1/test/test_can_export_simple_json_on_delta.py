@@ -5,13 +5,13 @@ from pathlib import Path
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
 
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
     FrameworkJsonExporter,
 )
 from spark_pipeline_framework.transformers.framework_json_loader.v1.framework_json_loader import (
     FrameworkJsonLoader,
 )
-from tests.conftest import clean_spark_session
 
 
 def test_can_export_simple_json_with_schema_on_delta(

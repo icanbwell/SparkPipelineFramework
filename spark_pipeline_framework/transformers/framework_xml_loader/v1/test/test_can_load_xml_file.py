@@ -4,8 +4,7 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType
 
-from tests.conftest import clean_spark_session
-
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.transformers.framework_xml_loader.v1.framework_xml_loader import (
     FrameworkXmlLoader,
 )

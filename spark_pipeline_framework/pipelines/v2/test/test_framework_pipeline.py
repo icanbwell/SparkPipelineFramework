@@ -8,8 +8,8 @@ from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
-from tests.conftest import clean_spark_session
 
+from create_spark_session import clean_spark_session
 from library.features.carriers_python.v1.features_carriers_python_v1 import (
     FeaturesCarriersPythonV1,
 )

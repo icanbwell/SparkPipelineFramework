@@ -7,10 +7,10 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.transformers.framework_json_to_jsonl_converter.v1.framework_json_to_jsonl_converter import (
     FrameworkJsonToJsonlConverter,
 )
-from tests.conftest import clean_spark_session
 
 
 # noinspection SqlNoDataSourceInspection

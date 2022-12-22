@@ -4,10 +4,10 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
 
+from create_spark_session import clean_spark_session
 from spark_pipeline_framework.transformers.framework_select_columns_transformer.v1.framework_select_columns_transformer import (
     FrameworkSelectColumnsTransformer,
 )
-from tests.conftest import clean_spark_session
 
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
     FrameworkCsvLoader,
