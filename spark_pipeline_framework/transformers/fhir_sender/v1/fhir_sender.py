@@ -316,7 +316,9 @@ class FhirSender(FrameworkTransformer):
                     f" with batch_size {batch_size}  -----"
                 )
                 assert batch_size and batch_size > 0
-                desired_partitions: int = num_partitions or math.ceil(row_count / batch_size)
+                desired_partitions: int = num_partitions or math.ceil(
+                    row_count / batch_size
+                )
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
                 )
