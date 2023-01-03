@@ -59,7 +59,9 @@ class FhirSender(FrameworkTransformer):
         auth_client_secret: Optional[str] = None,
         auth_login_token: Optional[str] = None,
         auth_scopes: Optional[List[str]] = None,
-        operation: str = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
+        operation: Union[
+            FhirSenderOperation, str
+        ] = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -169,7 +171,9 @@ class FhirSender(FrameworkTransformer):
         self.auth_scopes: Param[List[str]] = Param(self, "auth_scopes", "")
         self._setDefault(auth_scopes=None)
 
-        self.operation: Param[str] = Param(self, "operation", "")
+        self.operation: Param[Union[FhirSenderOperation, str]] = Param(
+            self, "operation", ""
+        )
         self._setDefault(operation=operation)
 
         self.mode: Param[str] = Param(self, "mode", "")
@@ -229,7 +233,7 @@ class FhirSender(FrameworkTransformer):
         throw_exception_on_validation_failure: Optional[
             bool
         ] = self.getThrowExceptionOnValidationFailure()
-        operation: str = self.getOperation()
+        operation: Union[FhirSenderOperation, str] = self.getOrDefault(self.operation)
         mode: str = self.getMode()
 
         delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
@@ -493,10 +497,6 @@ class FhirSender(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getAuthScopes(self) -> Optional[List[str]]:
         return self.getOrDefault(self.auth_scopes)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getOperation(self) -> str:
-        return self.getOrDefault(self.operation)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMode(self) -> str:

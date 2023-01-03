@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from pyspark.sql.types import Row
@@ -22,7 +22,7 @@ class FhirSenderProcessor:
         partition_index: int,
         rows: Iterable[Row],
         desired_partitions: int,
-        operation: str,
+        operation: Union[FhirSenderOperation, str],
         server_url: str,
         resource_name: str,
         name: Optional[str],
@@ -58,9 +58,8 @@ class FhirSenderProcessor:
         )
         request_id_list: List[str] = []
         responses: List[Dict[str, Any]] = []
-        if (
-            FhirSenderOperation.from_str(operation)
-            == FhirSenderOperation.FHIR_OPERATION_DELETE
+        if FhirSenderOperation.operation_equals(
+            operation, FhirSenderOperation.FHIR_OPERATION_DELETE
         ):
             item: Row
             # FHIR doesn't support bulk deletes, so we have to send one at a time
@@ -82,9 +81,8 @@ class FhirSenderProcessor:
                 )
                 for item in json_data_list
             ]
-        elif (
-            FhirSenderOperation.from_str(operation)
-            == FhirSenderOperation.FHIR_OPERATION_MERGE
+        elif FhirSenderOperation.operation_equals(
+            operation, FhirSenderOperation.FHIR_OPERATION_MERGE
         ):
             if batch_size == 1:
                 # ensure we call one at a time. Partitioning does not guarantee that each

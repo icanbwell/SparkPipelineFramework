@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Union
 
 
 class FhirSenderOperation(Enum):
@@ -14,3 +15,12 @@ class FhirSenderOperation(Enum):
         if text.upper() == "$MERGE":
             return FhirSenderOperation.FHIR_OPERATION_MERGE
         raise NotImplementedError(f"{text} is not delete or $merge")
+
+    @staticmethod
+    def operation_equals(
+        source: Union["FhirSenderOperation", str], target: "FhirSenderOperation"
+    ) -> bool:
+        if isinstance(source, FhirSenderOperation):
+            return source == target
+        else:
+            return FhirSenderOperation.from_str(source) == target

@@ -6,6 +6,9 @@ from shutil import rmtree
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender import FhirSender
+from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
+    FhirSenderOperation,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
@@ -43,7 +46,7 @@ def test_send_delete(spark_session: SparkSession) -> None:
             file_path=to_delete_files_dir,
             response_path=delete_response_files_dir,
             progress_logger=progress_logger,
-            operation=FhirSender.FHIR_OPERATION_DELETE,
+            operation=FhirSenderOperation.FHIR_OPERATION_DELETE,
         ).transform(df)
 
     # Assert
