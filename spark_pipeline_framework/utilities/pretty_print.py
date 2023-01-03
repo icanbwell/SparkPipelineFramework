@@ -1,4 +1,4 @@
-from typing import Iterable, List, Any, Optional
+from typing import Iterable, List, Any, Optional, cast
 
 from pyspark.sql import DataFrame
 
@@ -51,7 +51,9 @@ def get_pretty_table(
     return output
 
 
-def get_pretty_data_frame(df: DataFrame, limit: int, name: Optional[str] = None) -> str:
+def get_pretty_data_frame_old(
+    df: DataFrame, limit: int, name: Optional[str] = None
+) -> str:
     """
     Returns the dataframe as a string
 
@@ -66,6 +68,42 @@ def get_pretty_data_frame(df: DataFrame, limit: int, name: Optional[str] = None)
     rows: List[List[Any]] = [list(row) for row in df.limit(limit).collect()]
 
     return get_pretty_table(rows, df.columns, name=name)
+
+
+def get_show_string(
+    df: DataFrame, n: int = 20, truncate: bool = True, vertical: bool = False
+) -> str:
+    """
+    Returns dataframe as a string
+    Based on https://spark.apache.org/docs/latest/api/python/_modules/pyspark/sql/dataframe.html#DataFrame.show
+    """
+    if isinstance(truncate, bool) and truncate:
+        # noinspection PyProtectedMember
+        return cast(str, df._jdf.showString(n, 20, vertical))
+    else:
+        # noinspection PyProtectedMember
+        return cast(str, df._jdf.showString(n, int(truncate), vertical))
+
+
+def get_pretty_data_frame(df: DataFrame, limit: int, name: Optional[str] = None) -> str:
+    """
+    Returns the dataframe as a string
+
+    :param df:
+    :param limit:
+    :param name: name to show
+    :return:
+    """
+    if limit == 0:
+        return ""
+
+    output: str = ""
+    if name:
+        output += "-" * 100 + "\n"
+        output += name + "\n"
+
+    output += get_show_string(df, truncate=False)
+    return output
 
 
 def get_data_frame_as_csv(df: DataFrame, limit: int) -> str:

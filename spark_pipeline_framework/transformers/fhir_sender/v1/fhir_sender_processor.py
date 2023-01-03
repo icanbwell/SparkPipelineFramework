@@ -58,7 +58,10 @@ class FhirSenderProcessor:
         )
         request_id_list: List[str] = []
         responses: List[Dict[str, Any]] = []
-        if FhirSenderOperation[operation] == FhirSenderOperation.FHIR_OPERATION_DELETE:
+        if (
+            FhirSenderOperation.from_str(operation)
+            == FhirSenderOperation.FHIR_OPERATION_DELETE
+        ):
             item: Row
             # FHIR doesn't support bulk deletes, so we have to send one at a time
             responses = [
@@ -79,7 +82,10 @@ class FhirSenderProcessor:
                 )
                 for item in json_data_list
             ]
-        elif FhirSenderOperation[operation] == FhirSenderOperation.FHIR_OPERATION_MERGE:
+        elif (
+            FhirSenderOperation.from_str(operation)
+            == FhirSenderOperation.FHIR_OPERATION_MERGE
+        ):
             if batch_size == 1:
                 # ensure we call one at a time. Partitioning does not guarantee that each
                 #   partition will have exactly the batch size
