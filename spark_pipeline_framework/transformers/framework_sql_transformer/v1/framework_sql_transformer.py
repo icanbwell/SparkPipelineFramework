@@ -110,7 +110,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         log_event: Optional[bool] = self.getOrDefault(self.log_event)
         log_event_level: Optional[LogLevel] = self.getOrDefault(self.log_event_level)
         log_limit: Optional[int] = self.getOrDefault(self.log_limit)
-        desired_partitions: Optional[int] = self.getDesiredPartitions()
+        desired_partitions: Optional[int] = self.getOrDefault(self.desired_partitions)
 
         assert sql_text
         with ProgressLogMetric(
