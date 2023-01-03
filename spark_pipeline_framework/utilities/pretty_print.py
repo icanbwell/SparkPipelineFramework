@@ -21,18 +21,22 @@ def get_pretty_table(
         output += "-" * (sum(max_len) + 1) + "\n"
         output += name + "\n"
     row: List[Any]
+    # first write out the correct number of - at the top
     for row in iterable:
         row = [row] if type(row) not in (list, tuple) else row
         for index, col in enumerate(row):
             if max_len[index] < len(str(col)):
                 max_len[index] = len(str(col))
     output += "-" * (sum(max_len) + 1) + "\n"
+    # Then write out the headers
     output += (
         "|"
         + "".join([h + " " * (l - len(h)) + "|" for h, l in zip(header, max_len)])
         + "\n"
     )
+    # Then write the dashes under the headers
     output += "-" * (sum(max_len) + 1) + "\n"
+    # Then write out the contents of each row
     for row in iterable:
         row = [row] if type(row) not in (list, tuple) else row
         output += (
@@ -42,6 +46,7 @@ def get_pretty_table(
             )
             + "\n"
         )
+    # Finally write out the - at the bottom
     output += "-" * (sum(max_len) + 1) + "\n"
     return output
 
