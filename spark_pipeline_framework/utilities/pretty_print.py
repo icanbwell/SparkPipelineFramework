@@ -102,7 +102,7 @@ def get_pretty_data_frame(df: DataFrame, limit: int, name: Optional[str] = None)
         output += "-" * 100 + "\n"
         output += name + "\n"
 
-    output += get_show_string(df, truncate=False)
+    output += get_show_string(df, n=limit, truncate=False)
     return output
 
 
