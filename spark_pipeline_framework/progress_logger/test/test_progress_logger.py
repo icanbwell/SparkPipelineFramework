@@ -13,6 +13,7 @@ from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from create_spark_session import clean_spark_session
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
+from spark_pipeline_framework.logger.log_level import LogLevel
 
 from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
     FrameworkJsonExporter,
@@ -359,13 +360,13 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
         # log a param with the same key and different values and
         # verify we get other params logged and notification of failure
         params = {"bar": "foo", "foo": "foo", "log": "this"}
-        progress_logger.log_params(params=params)
+        progress_logger.log_params(params=params, log_level=LogLevel.INFO)
 
         # test with different data types to see if we get an error when logging
-        progress_logger.log_param("page_size", 200)  # type: ignore
-        progress_logger.log_param("catalog_entry_name", None)  # type: ignore
+        progress_logger.log_param("page_size", 200, log_level=LogLevel.INFO)  # type: ignore
+        progress_logger.log_param("catalog_entry_name", None, log_level=LogLevel.INFO)  # type: ignore
 
-        progress_logger.log_metric(name=200, time_diff_in_minutes=1)  # type: ignore
+        progress_logger.log_metric(name=200, time_diff_in_minutes=1, log_level=LogLevel.INFO)  # type: ignore
 
     # assert that there are all the params logged except for the one causing the error
     experiment = mlflow.get_experiment_by_name(name=experiment_name)

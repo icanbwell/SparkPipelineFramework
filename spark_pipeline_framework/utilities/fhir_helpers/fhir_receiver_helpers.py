@@ -81,6 +81,14 @@ class FhirReceiverHelpers:
         url_column: Optional[str],
         use_data_streaming: Optional[bool],
     ) -> List[Row]:
+        """
+        This function processes a partition
+
+        This has to be a static function to avoid creating a closure around a class
+        https://spark.apache.org/docs/latest/rdd-programming-guide.html#passing-functions-to-spark
+
+
+        """
         resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
             {
                 "resource_id": r["id"],

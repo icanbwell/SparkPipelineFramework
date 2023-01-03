@@ -91,7 +91,12 @@ class ProgressLogger:
     def end_mlflow_run(self, status: RunStatus = RunStatus.FINISHED) -> None:
         mlflow.end_run(status=RunStatus.to_string(status))
 
-    def log_metric(self, name: str, time_diff_in_minutes: float) -> None:
+    def log_metric(
+        self,
+        name: str,
+        time_diff_in_minutes: float,
+        log_level: LogLevel = LogLevel.TRACE,
+    ) -> None:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
         if self.mlflow_config is not None:
             try:
@@ -99,9 +104,11 @@ class ProgressLogger:
                     key=self.__mlflow_clean_string(name), value=time_diff_in_minutes
                 )
             except Exception as e:
-                self.log_event("mlflow log metric error", str({e}))
+                self.log_event("mlflow log metric error", str({e}), log_level=log_level)
 
-    def log_param(self, key: str, value: str) -> None:
+    def log_param(
+        self, key: str, value: str, log_level: LogLevel = LogLevel.TRACE
+    ) -> None:
         self.write_to_log(name=key, message=value)
         if self.mlflow_config is not None:
             try:
@@ -110,13 +117,15 @@ class ProgressLogger:
                     value=self.__mlflow_clean_param_value(value),
                 )
             except Exception as e:
-                self.log_event("mlflow log param error", str({e}))
+                self.log_event("mlflow log param error", str({e}), log_level=log_level)
 
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(
+        self, params: Dict[str, Any], log_level: LogLevel = LogLevel.TRACE
+    ) -> None:
         if self.mlflow_config is not None:
             # intentionally not using mlflow.log_params due to issues with its SqlAlchemy implementation
             for key, value in params.items():
-                self.log_param(key=key, value=value)
+                self.log_param(key=key, value=value, log_level=log_level)
 
     def __mlflow_clean_string(self, value: str) -> str:
         """

@@ -2,33 +2,35 @@ import json
 import math
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Union, Callable
 
-from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from pyspark import StorageLevel
-
-# noinspection PyProtectedMember
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.rdd import RDD
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col
 from pyspark.sql.types import Row
 from pyspark.sql.utils import AnalysisException
+
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
+    FhirSenderOperation,
+)
+from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_processor import (
+    FhirSenderProcessor,
+)
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+
+# noinspection PyProtectedMember
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
-)
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import (
-    send_fhir_delete,
-    send_json_bundle_to_fhir,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exception import (
     FhirSenderValidationException,
@@ -39,15 +41,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-# noinspection PyProtectedMember
-
-
 class FhirSender(FrameworkTransformer):
-    FHIR_OPERATION_DELETE = "delete"
-    FHIR_OPERATION_MERGE = "$merge"
-
-    FHIR_OPERATIONS = [FHIR_OPERATION_DELETE, FHIR_OPERATION_MERGE]
-
     # noinspection PyUnusedLocal
     @capture_parameters
     def __init__(
@@ -65,7 +59,7 @@ class FhirSender(FrameworkTransformer):
         auth_client_secret: Optional[str] = None,
         auth_login_token: Optional[str] = None,
         auth_scopes: Optional[List[str]] = None,
-        operation: str = FHIR_OPERATION_MERGE,
+        operation: str = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -323,167 +317,30 @@ class FhirSender(FrameworkTransformer):
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
                 )
 
-                # function that is called for each partition
-                def send_partition_to_server(
-                    partition_index: int, rows: Iterable[Row]
-                ) -> Iterable[List[Dict[str, Any]]]:
-                    json_data_list: List[Row] = list(rows)
-                    logger = get_logger(__name__)
-                    if len(json_data_list) == 0:
-                        yield []
-                    print(
-                        f"Sending batch {partition_index}/{desired_partitions} "
-                        f"containing {len(json_data_list)} rows "
-                        f"for operation {operation} "
-                        f"to {server_url}/{resource_name}. [{name}].."
-                    )
-                    request_id_list: List[str] = []
-                    responses: List[Dict[str, Any]] = []
-                    if operation == self.FHIR_OPERATION_DELETE:
-                        item: Row
-                        # FHIR doesn't support bulk deletes, so we have to send one at a time
-                        responses = [
-                            send_fhir_delete(
-                                obj_id=(
-                                    item if "id" in item else json.loads(item["value"])
-                                )[
-                                    "id"
-                                ],  # parse the JSON and extract the id
-                                server_url=server_url,
-                                resource=resource_name,
-                                logger=self.logger,
-                                auth_server_url=auth_server_url,
-                                auth_client_id=auth_client_id,
-                                auth_client_secret=auth_client_secret,
-                                auth_login_token=auth_login_token,
-                                auth_scopes=auth_scopes,
-                                auth_access_token=auth_access_token,
-                                log_level=log_level,
-                            )
-                            for item in json_data_list
-                        ]
-                    elif operation == self.FHIR_OPERATION_MERGE:
-                        if batch_size == 1:
-                            # ensure we call one at a time. Partitioning does not guarantee that each
-                            #   partition will have exactly the batch size
-                            auth_access_token1: Optional[str] = auth_access_token
-                            i: int = 0
-                            count: int = len(json_data_list)
-                            for item in json_data_list:
-                                i += 1
-                                print(
-                                    f"Sending {i} of {count} from partition {partition_index} "
-                                    f"for {resource_name}: {json.dumps(item.asDict(recursive=True), default=str)}"
-                                )
-                                current_bundle: List[Dict[str, Any]]
-                                result: Optional[
-                                    FhirMergeResponse
-                                ] = send_json_bundle_to_fhir(
-                                    json_data_list=[
-                                        json.dumps(
-                                            item.asDict(recursive=True), default=str
-                                        )
-                                        if "id" in item
-                                        else item["value"]
-                                    ],
-                                    server_url=server_url,
-                                    validation_server_url=validation_server_url,
-                                    resource=resource_name,
-                                    logger=self.logger,
-                                    auth_server_url=auth_server_url,
-                                    auth_client_id=auth_client_id,
-                                    auth_client_secret=auth_client_secret,
-                                    auth_login_token=auth_login_token,
-                                    auth_scopes=auth_scopes,
-                                    auth_access_token=auth_access_token1,
-                                    log_level=log_level,
-                                    retry_count=retry_count,
-                                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                                )
-                                if result:
-                                    auth_access_token1 = result.access_token
-                                    if result.request_id:
-                                        request_id_list.append(result.request_id)
-                                    responses.extend(result.responses)
-                        else:
-                            # send a whole batch to the server at once
-                            result = send_json_bundle_to_fhir(
-                                json_data_list=[
-                                    json.dumps(item.asDict(recursive=True))
-                                    if "id" in item
-                                    else item["value"]
-                                    for item in json_data_list
-                                ],
-                                server_url=server_url,
-                                validation_server_url=validation_server_url,
-                                resource=resource_name,
-                                auth_server_url=auth_server_url,
-                                auth_client_id=auth_client_id,
-                                auth_client_secret=auth_client_secret,
-                                auth_login_token=auth_login_token,
-                                auth_scopes=auth_scopes,
-                                auth_access_token=auth_access_token,
-                                logger=self.logger,
-                                log_level=log_level,
-                                retry_count=retry_count,
-                                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                            )
-                            if result and result.request_id:
-                                request_id_list.append(result.request_id)
-                            if result:
-                                responses = result.responses
-                    # each item in responses is either a json object
-                    #   or a list of json objects
-                    error_count: int = 0
-                    updated_count: int = 0
-                    created_count: int = 0
-                    deleted_count: int = 0
-                    errors: List[str] = []
-                    response: Dict[str, Any]
-                    for response in responses:
-                        if "updated" in response and response["updated"] is True:
-                            updated_count += 1
-                        if "created" in response and response["created"] is True:
-                            created_count += 1
-                        if "deleted" in response and response["deleted"] is True:
-                            deleted_count += 1
-                        if "issue" in response and response["issue"] is not None:
-                            error_count += 1
-                            errors.append(json.dumps(response["issue"]))
-                    print(
-                        f"Received response for batch {partition_index}/{desired_partitions} "
-                        f"request_ids:[{', '.join(request_id_list)}] "
-                        f"total={len(json_data_list)}, error={error_count}, "
-                        f"created={created_count}, updated={updated_count}, deleted={deleted_count} "
-                        f"to {server_url}/{resource_name}. "
-                        f"[{name}] "
-                        f"Response={json.dumps(responses, default=str)}"
-                    )
-                    if progress_logger:
-                        progress_logger.log_progress_event(
-                            event_name="FhirSender",
-                            current=partition_index,
-                            total=desired_partitions,
-                            event_format_string="{0}: {1}/{2} "
-                            + f"{resource_name} "
-                            + "completed",
-                        )
-                    if len(errors) > 0:
-                        logger.error(
-                            f"---- errors for {partition_index}/{desired_partitions} "
-                            f"to {server_url}/{resource_name} -----"
-                        )
-                        for error in errors:
-                            logger.error(error)
-                        logger.error("---- end errors -----")
-
-                    yield responses
-
                 # ---- Now process all the results ----
                 rdd: RDD[
                     Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
                 ] = json_df.repartition(desired_partitions).rdd.mapPartitionsWithIndex(
-                    send_partition_to_server
+                    lambda partition_index, rows: FhirSenderProcessor.send_partition_to_server(
+                        partition_index=partition_index,
+                        rows=rows,
+                        desired_partitions=desired_partitions,
+                        operation=operation,
+                        server_url=server_url,
+                        resource_name=resource_name,
+                        name=name,
+                        auth_server_url=auth_server_url,
+                        auth_client_id=auth_client_id,
+                        auth_client_secret=auth_client_secret,
+                        auth_login_token=auth_login_token,
+                        auth_scopes=auth_scopes,
+                        auth_access_token=auth_access_token,
+                        log_level=log_level,
+                        batch_size=batch_size,
+                        validation_server_url=validation_server_url,
+                        retry_count=retry_count,
+                        exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                    )
                 )
                 rdd = (
                     rdd.cache()
