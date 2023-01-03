@@ -33,6 +33,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         log_event: Optional[bool] = None,
         log_event_level: Optional[LogLevel] = None,
         log_limit: Optional[int] = None,
+        desired_partitions: Optional[int] = None,
     ) -> None:
         """
         Runs the provided SQL
@@ -43,8 +44,10 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         :param log_sql: whether to log the SQL to progress_logger
         :param log_result: whether to log the result to progress_logger
         :param verify_count_remains_same: whether to confirm the count of the rows remains the same after running SQL
-        :param log_event: whether to log an event at TRACE level with progress_logger with the contents of the output view
+        :param log_event: whether to log an event at TRACE level with progress_logger with the contents of
+                            the output view
         :param log_event_level: the level to use for logging the event
+        :param desired_partitions: (Optional) Repartition the data after executing the sql
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -90,6 +93,11 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         )
         self._setDefault(log_event_level=None)
 
+        self.desired_partitions: Param[Optional[int]] = Param(
+            self, "desired_partitions", ""
+        )
+        self._setDefault(desired_partitions=desired_partitions)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -102,6 +110,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         log_event: Optional[bool] = self.getOrDefault(self.log_event)
         log_event_level: Optional[LogLevel] = self.getOrDefault(self.log_event_level)
         log_limit: Optional[int] = self.getOrDefault(self.log_limit)
+        desired_partitions: Optional[int] = self.getDesiredPartitions()
 
         assert sql_text
         with ProgressLogMetric(
@@ -117,6 +126,11 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                 self.logger.info(f"Error in {name}")
                 self.logger.info(sql_text)
                 raise
+
+            if desired_partitions is not None:
+                num_partitions: int = df.rdd.getNumPartitions()
+                if num_partitions != desired_partitions:
+                    df = df.repartition(desired_partitions)
 
             if log_result:
                 log_limit = 10 if log_limit is None else log_limit
