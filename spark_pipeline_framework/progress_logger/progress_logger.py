@@ -167,7 +167,9 @@ class ProgressLogger:
     def write_to_log(
         self, name: str, message: str = "", log_level: LogLevel = LogLevel.INFO
     ) -> bool:
-        if log_level == LogLevel.INFO:
+        if log_level == LogLevel.ERROR:
+            self.logger.error(name + ": " + str(message))
+        elif log_level == LogLevel.INFO:
             self.logger.info(name + ": " + str(message))
         else:
             self.logger.debug(name + ": " + str(message))
@@ -192,7 +194,9 @@ class ProgressLogger:
     ) -> None:
         self.logger.info(event_format_string.format(event_name, current, total))
         if not self.system_log_level or self.system_log_level == "INFO":
-            if log_level == LogLevel.INFO:  # log only INFO messages
+            if (
+                log_level == LogLevel.INFO or log_level == LogLevel.ERROR
+            ):  # log only INFO messages
                 if self.event_loggers:
                     for event_logger in self.event_loggers:
                         event_logger.log_progress_event(
@@ -218,7 +222,9 @@ class ProgressLogger:
     ) -> None:
         self.write_to_log(name=event_name, message=event_text)
         if not self.system_log_level or self.system_log_level == "INFO":
-            if log_level == LogLevel.INFO:  # log only INFO messages
+            if (
+                log_level == LogLevel.INFO or log_level == LogLevel.ERROR
+            ):  # log only INFO messages
                 if self.event_loggers:
                     for event_logger in self.event_loggers:
                         event_logger.log_event(
