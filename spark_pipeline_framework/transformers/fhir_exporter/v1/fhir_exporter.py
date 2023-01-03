@@ -103,12 +103,13 @@ class FhirExporter(FrameworkTransformer):
             name=f"{name or view}_fhir_exporter", progress_logger=progress_logger
         ):
             try:
+                mode = self.getMode()
                 if view:
                     df_view: DataFrame = df.sql_ctx.table(view)
                     if not spark_is_data_frame_empty(df=df_view):
                         self.logger.info(f"---- Reading from view {view} ------")
                         assert not spark_is_data_frame_empty(df=df_view), view
-                        df_view.write.format(file_format).mode(self.getMode()).save(
+                        df_view.write.format(file_format).mode(mode).save(
                             path=str(file_path)
                         )
                     else:
@@ -118,7 +119,7 @@ class FhirExporter(FrameworkTransformer):
                         )
                 else:
                     assert not spark_is_data_frame_empty(df=df)
-                    df.write.format(file_format).mode(self.getMode()).option(
+                    df.write.format(file_format).mode(mode).option(
                         "ignoreNullFields", True
                     ).save(path=str(file_path))
 
