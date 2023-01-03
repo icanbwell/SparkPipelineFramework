@@ -86,7 +86,8 @@ class FrameworkBaseExporter(FrameworkTransformer):
                 writer = writer.format(format_)
 
                 if isinstance(writer, DataFrameWriter):
-                    writer = writer.mode(self.getMode())
+                    mode = self.getMode()
+                    writer = writer.mode(mode)
 
                 for k, v in self.getOptions().items():
                     writer.option(k, v)

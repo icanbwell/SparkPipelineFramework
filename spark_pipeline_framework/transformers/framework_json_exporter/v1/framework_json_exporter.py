@@ -112,6 +112,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
             name=f"{name or view}_fhir_exporter", progress_logger=progress_logger
         ):
             try:
+                mode = self.getMode()
                 if view:
                     df_view: DataFrame = df.sql_ctx.table(view)
                     assert not throw_if_empty or not spark_is_data_frame_empty(
@@ -126,7 +127,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
                             "path", str(file_path)
                         ).start()
                     else:
-                        df_view.write.format(file_format).mode(self.getMode()).save(
+                        df_view.write.format(file_format).mode(mode).save(
                             path=str(file_path)
                         )
                 else:
@@ -140,7 +141,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
                             "path", str(file_path)
                         ).start()
                     else:
-                        df.write.format(file_format).mode(self.getMode()).save(
+                        df.write.format(file_format).mode(mode).save(
                             path=str(file_path)
                         )
 
