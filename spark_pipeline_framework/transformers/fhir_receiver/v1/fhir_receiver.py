@@ -25,6 +25,7 @@ from pyspark.sql.types import (
     DataType,
 )
 
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
@@ -655,6 +656,7 @@ class FhirReceiver(FrameworkTransformer):
                                     ),
                                     default=str,
                                 ),
+                                log_level=LogLevel.INFO,
                             )
                         # filter out bad records
                         result_with_counts = result_with_counts.where(
@@ -874,6 +876,7 @@ class FhirReceiver(FrameworkTransformer):
                                 ),
                                 default=str,
                             ),
+                            log_level=LogLevel.INFO,
                         )
 
         return df

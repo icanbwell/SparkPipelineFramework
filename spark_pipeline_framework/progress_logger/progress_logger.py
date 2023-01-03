@@ -1,13 +1,18 @@
 import re
+from os import environ
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Optional, List, Dict, Any
 
+# noinspection PyPackageRequirements
 import mlflow  # type: ignore
+
+# noinspection PyPackageRequirements
 from mlflow.entities import Experiment, RunStatus  # type: ignore
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
 
@@ -36,6 +41,12 @@ class ProgressLogger:
         self.logger = get_logger(__name__)
         self.event_loggers: Optional[List[EventLogger]] = event_loggers
         self.mlflow_config: Optional[MlFlowConfig] = mlflow_config
+        system_log_level_text: Optional[str] = environ.get("LOGLEVEL")
+        self.system_log_level: Optional[LogLevel] = (
+            LogLevel.from_str(system_log_level_text)
+            if system_log_level_text is not None
+            else None
+        )
 
     def __enter__(self) -> "ProgressLogger":
         if self.mlflow_config is None:
@@ -84,10 +95,16 @@ class ProgressLogger:
             return
         mlflow.start_run(run_name=run_name, nested=is_nested)
 
+    # noinspection PyMethodMayBeStatic
     def end_mlflow_run(self, status: RunStatus = RunStatus.FINISHED) -> None:
         mlflow.end_run(status=RunStatus.to_string(status))
 
-    def log_metric(self, name: str, time_diff_in_minutes: float) -> None:
+    def log_metric(
+        self,
+        name: str,
+        time_diff_in_minutes: float,
+        log_level: LogLevel = LogLevel.TRACE,
+    ) -> None:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
         if self.mlflow_config is not None:
             try:
@@ -95,9 +112,11 @@ class ProgressLogger:
                     key=self.__mlflow_clean_string(name), value=time_diff_in_minutes
                 )
             except Exception as e:
-                self.log_event("mlflow log metric error", str({e}))
+                self.log_event("mlflow log metric error", str({e}), log_level=log_level)
 
-    def log_param(self, key: str, value: str) -> None:
+    def log_param(
+        self, key: str, value: str, log_level: LogLevel = LogLevel.TRACE
+    ) -> None:
         self.write_to_log(name=key, message=value)
         if self.mlflow_config is not None:
             try:
@@ -106,15 +125,18 @@ class ProgressLogger:
                     value=self.__mlflow_clean_param_value(value),
                 )
             except Exception as e:
-                self.log_event("mlflow log param error", str({e}))
+                self.log_event("mlflow log param error", str({e}), log_level=log_level)
 
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(
+        self, params: Dict[str, Any], log_level: LogLevel = LogLevel.TRACE
+    ) -> None:
         if self.mlflow_config is not None:
             # intentionally not using mlflow.log_params due to issues with its SqlAlchemy implementation
             for key, value in params.items():
-                self.log_param(key=key, value=value)
+                self.log_param(key=key, value=value, log_level=log_level)
 
-    def __mlflow_clean_string(self, value: str) -> str:
+    @staticmethod
+    def __mlflow_clean_string(value: str) -> str:
         """
 
         MLFlow keys may only contain alphanumerics, underscores (_),
@@ -122,13 +144,17 @@ class ProgressLogger:
 
 
         mlflow run metric names through https://docs.python.org/3/library/os.path.html#os.path.normpath when validating
-        metric names (https://github.com/mlflow/mlflow/blob/217799b10780b22f787137f80f5cf5c2b5cf85b1/mlflow/utils/validation.py#L95).
-        one side effect of this is if the value contains `//` it will be changed to `/` and fail the _validate_metric_name check.
+        metric names
+        (https://github.com/mlflow/mlflow/blob/217799b10780b22f787137f80f5cf5c2b5cf85b1/mlflow/utils/validation.py#L95).
+        one side effect of this is if the value contains `//` it will be changed to `/`
+        and fail the _validate_metric_name check.
         """
         value = str(value).replace("//", "/")
+        # noinspection RegExpRedundantEscape
         return re.sub(r"[^\w\-\.\s\/]", "-", value)
 
-    def __mlflow_clean_param_value(self, param_value: str) -> str:
+    @staticmethod
+    def __mlflow_clean_param_value(param_value: str) -> str:
         """
         replace sensitive values in the string with asterisks
         """
@@ -159,8 +185,15 @@ class ProgressLogger:
             except Exception as e:
                 self.log_event("Error in log_artifact writing to mlflow", str(e))
 
-    def write_to_log(self, name: str, message: str = "") -> bool:
-        self.logger.info(name + ": " + str(message))
+    def write_to_log(
+        self, name: str, message: str = "", log_level: LogLevel = LogLevel.INFO
+    ) -> bool:
+        if log_level == LogLevel.ERROR:
+            self.logger.error(name + ": " + str(message))
+        elif log_level == LogLevel.INFO:
+            self.logger.info(name + ": " + str(message))
+        else:
+            self.logger.debug(name + ": " + str(message))
         return True
 
     def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
@@ -178,20 +211,47 @@ class ProgressLogger:
         total: int,
         event_format_string: str,
         backoff: bool = True,
+        log_level: LogLevel = LogLevel.TRACE,
     ) -> None:
         self.logger.info(event_format_string.format(event_name, current, total))
-        if self.event_loggers:
-            for event_logger in self.event_loggers:
-                event_logger.log_progress_event(
-                    event_name=event_name,
-                    current=current,
-                    total=total,
-                    event_format_string=event_format_string,
-                    backoff=backoff,
-                )
+        if not self.system_log_level or self.system_log_level == LogLevel.INFO:
+            if (
+                log_level == LogLevel.INFO or log_level == LogLevel.ERROR
+            ):  # log only INFO messages
+                if self.event_loggers:
+                    for event_logger in self.event_loggers:
+                        event_logger.log_progress_event(
+                            event_name=event_name,
+                            current=current,
+                            total=total,
+                            event_format_string=event_format_string,
+                            backoff=backoff,
+                        )
+        else:  # LOGLEVEL is lower than INFO
+            if self.event_loggers:
+                for event_logger in self.event_loggers:
+                    event_logger.log_progress_event(
+                        event_name=event_name,
+                        current=current,
+                        total=total,
+                        event_format_string=event_format_string,
+                        backoff=backoff,
+                    )
 
-    def log_event(self, event_name: str, event_text: str) -> None:
+    def log_event(
+        self, event_name: str, event_text: str, log_level: LogLevel = LogLevel.TRACE
+    ) -> None:
         self.write_to_log(name=event_name, message=event_text)
-        if self.event_loggers:
-            for event_logger in self.event_loggers:
-                event_logger.log_event(event_name=event_name, event_text=event_text)
+        if not self.system_log_level or self.system_log_level == LogLevel.INFO:
+            if (
+                log_level == LogLevel.INFO or log_level == LogLevel.ERROR
+            ):  # log only INFO messages
+                if self.event_loggers:
+                    for event_logger in self.event_loggers:
+                        event_logger.log_event(
+                            event_name=event_name, event_text=event_text
+                        )
+        else:
+            if self.event_loggers:
+                for event_logger in self.event_loggers:
+                    event_logger.log_event(event_name=event_name, event_text=event_text)

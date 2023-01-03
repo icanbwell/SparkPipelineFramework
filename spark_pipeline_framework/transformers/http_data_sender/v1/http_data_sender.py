@@ -1,25 +1,25 @@
 import json
 import math
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Optional
 
 from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
+from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col
 from pyspark.sql.types import Row
+
+from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
-from spark_pipeline_framework.utilities.api_helper.http_request import (
-    HelixHttpRequest,
-    RequestType,
-)
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
-from pyspark.sql.dataframe import DataFrame
-from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.transformers.http_data_sender.v1.http_data_sender_processor import (
+    HttpDataSenderProcessor,
+)
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.oauth2_helpers.v1.oauth2_client_credentials_flow import (
     OAuth2ClientCredentialsFlow,
 )
@@ -178,50 +178,6 @@ class HttpDataSender(FrameworkTransformer):
         with ProgressLogMetric(
             name=f"{name}_fhir_sender", progress_logger=progress_logger
         ):
-            # function that is called for each partition
-            # noinspection PyUnusedLocal
-            def send_partition_to_server(
-                partition_index: int, rows: Iterable[Row]
-            ) -> Iterable[Row]:
-                json_data_list: List[Dict[str, Any]] = [
-                    r.asDict(recursive=True) for r in rows
-                ]
-                # logger = get_logger(__name__)
-                if len(json_data_list) == 0:
-                    yield Row(
-                        url=None, status=0, result=None, request_type=None, headers=None
-                    )
-
-                assert url
-                json_data: Dict[str, Any]
-                for json_data in json_data_list:
-                    headers["Content-Type"] = content_type
-                    request: HelixHttpRequest = HelixHttpRequest(
-                        request_type=RequestType.POST,
-                        url=url,
-                        headers=headers,
-                        payload=json_data,
-                        post_as_json_formatted_string=post_as_json_formatted_string,
-                    )
-                    if parse_response_as_json:
-                        response_json = request.get_result()
-                        yield Row(
-                            url=url,
-                            status=response_json.status,
-                            result=response_json.result,
-                            headers=json.dumps(headers, default=str),
-                            request_type=str(RequestType.POST),
-                        )
-                    else:
-                        response_text = request.get_text()
-                        yield Row(
-                            url=url,
-                            status=response_text.status,
-                            result=response_text.result,
-                            headers=json.dumps(headers, default=str),
-                            request_type=str(RequestType.POST),
-                        )
-
             desired_partitions: int
             if batch_count:
                 desired_partitions = batch_count
@@ -236,7 +192,17 @@ class HttpDataSender(FrameworkTransformer):
             # ---- Now process all the results ----
             rdd: RDD[Row] = df.repartition(
                 desired_partitions
-            ).rdd.mapPartitionsWithIndex(send_partition_to_server)
+            ).rdd.mapPartitionsWithIndex(
+                lambda partition_index, rows: HttpDataSenderProcessor.send_partition_to_server(
+                    partition_index=partition_index,
+                    rows=rows,
+                    url=url,
+                    content_type=content_type,
+                    headers=headers,
+                    post_as_json_formatted_string=post_as_json_formatted_string,
+                    parse_response_as_json=parse_response_as_json,
+                )
+            )
 
             rdd = (
                 rdd.cache()

@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Union, Optional
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
@@ -57,7 +58,9 @@ class FrameworkPipeline(Transformer):
         i: int = 0
         pipeline_name: str = self.__class__.__name__
         self.progress_logger.log_event(
-            event_name=pipeline_name, event_text=f"Starting Pipeline {pipeline_name}"
+            event_name=pipeline_name,
+            event_text=f"Starting Pipeline {pipeline_name}",
+            log_level=LogLevel.INFO,
         )
         for transformer in self.transformers:
             assert isinstance(transformer, Transformer), type(transformer)
@@ -126,7 +129,9 @@ class FrameworkPipeline(Transformer):
                     e.args = (f"In Stage ({stage_name})", *e.args)
                 raise e
         self.progress_logger.log_event(
-            event_name=pipeline_name, event_text=f"Finished Pipeline {pipeline_name}"
+            event_name=pipeline_name,
+            event_text=f"Finished Pipeline {pipeline_name}",
+            log_level=LogLevel.INFO,
         )
         return df
 

@@ -186,7 +186,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         df_reader: Union[DataFrameReader, DataStreamReader] = (
             df.sql_ctx.read if not stream else df.sql_ctx.readStream
         )
-        df_reader = df_reader.option("mode", self.getMode())
+        mode = self.getMode()
+        df_reader = df_reader.option("mode", mode)
 
         if schema:
             df_reader = df_reader.schema(schema)
