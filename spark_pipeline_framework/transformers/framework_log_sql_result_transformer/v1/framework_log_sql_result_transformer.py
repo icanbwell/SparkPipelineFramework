@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional
 
+from spark_pipeline_framework.logger.log_level import LogLevel
+
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
@@ -25,6 +27,7 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         log_event: Optional[bool] = None,
+        log_event_level: Optional[LogLevel] = None,
         log_limit: Optional[int] = None,
     ) -> None:
         """
@@ -33,7 +36,8 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
 
         :param sql: SQL to run
         :param view: store results of running SQL into this view
-        :param log_event: whether to log an event with progress_logger with the contents of the output view
+        :param log_event: whether to log an event at TRACE level with progress_logger with the contents of the output view
+        :param log_event_level: the level to use for logging the event
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -55,6 +59,11 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         self.log_event: Param[Optional[bool]] = Param(self, "log_event", "")
         self._setDefault(log_event=None)
 
+        self.log_event_level: Param[Optional[LogLevel]] = Param(
+            self, "log_event_level", ""
+        )
+        self._setDefault(log_event_level=None)
+
         self.log_limit: Param[Optional[int]] = Param(self, "log_limit", "")
         self._setDefault(log_limit=None)
 
@@ -68,6 +77,7 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
         limit = self.getLimit()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         log_event: Optional[bool] = self.getOrDefault(self.log_event)
+        log_event_level: Optional[LogLevel] = self.getOrDefault(self.log_event_level)
         log_limit: Optional[int] = self.getOrDefault(self.log_limit)
 
         df2: DataFrame
@@ -91,11 +101,18 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
             self.logger.info(message)
             if progress_logger:
                 progress_logger.write_to_log(message)
-                if log_event:
-                    progress_logger.log_event(
-                        event_name=name or view or self.__class__.__name__,
-                        event_text=message,
-                    )
+                if log_event or log_event_level:
+                    if log_event_level:
+                        progress_logger.log_event(
+                            event_name=name or view or self.__class__.__name__,
+                            event_text=message,
+                            log_level=log_event_level,
+                        )
+                    else:
+                        progress_logger.log_event(
+                            event_name=name or view or self.__class__.__name__,
+                            event_text=message,
+                        )
                 progress_logger.log_artifact(
                     key=f"{name or view}.csv", contents=message
                 )

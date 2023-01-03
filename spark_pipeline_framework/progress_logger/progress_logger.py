@@ -1,4 +1,5 @@
 import re
+from os import environ
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -8,6 +9,7 @@ import mlflow  # type: ignore
 from mlflow.entities import Experiment, RunStatus  # type: ignore
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
 
@@ -36,6 +38,7 @@ class ProgressLogger:
         self.logger = get_logger(__name__)
         self.event_loggers: Optional[List[EventLogger]] = event_loggers
         self.mlflow_config: Optional[MlFlowConfig] = mlflow_config
+        self.system_log_level: Optional[str] = environ.get("LOGLEVEL")
 
     def __enter__(self) -> "ProgressLogger":
         if self.mlflow_config is None:
@@ -84,6 +87,7 @@ class ProgressLogger:
             return
         mlflow.start_run(run_name=run_name, nested=is_nested)
 
+    # noinspection PyMethodMayBeStatic
     def end_mlflow_run(self, status: RunStatus = RunStatus.FINISHED) -> None:
         mlflow.end_run(status=RunStatus.to_string(status))
 
@@ -126,6 +130,7 @@ class ProgressLogger:
         one side effect of this is if the value contains `//` it will be changed to `/` and fail the _validate_metric_name check.
         """
         value = str(value).replace("//", "/")
+        # noinspection RegExpRedundantEscape
         return re.sub(r"[^\w\-\.\s\/]", "-", value)
 
     def __mlflow_clean_param_value(self, param_value: str) -> str:
@@ -159,8 +164,13 @@ class ProgressLogger:
             except Exception as e:
                 self.log_event("Error in log_artifact writing to mlflow", str(e))
 
-    def write_to_log(self, name: str, message: str = "") -> bool:
-        self.logger.info(name + ": " + str(message))
+    def write_to_log(
+        self, name: str, message: str = "", log_level: LogLevel = LogLevel.INFO
+    ) -> bool:
+        if log_level == LogLevel.INFO:
+            self.logger.info(name + ": " + str(message))
+        else:
+            self.logger.debug(name + ": " + str(message))
         return True
 
     def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
@@ -178,20 +188,43 @@ class ProgressLogger:
         total: int,
         event_format_string: str,
         backoff: bool = True,
+        log_level: LogLevel = LogLevel.TRACE,
     ) -> None:
         self.logger.info(event_format_string.format(event_name, current, total))
-        if self.event_loggers:
-            for event_logger in self.event_loggers:
-                event_logger.log_progress_event(
-                    event_name=event_name,
-                    current=current,
-                    total=total,
-                    event_format_string=event_format_string,
-                    backoff=backoff,
-                )
+        if not self.system_log_level or self.system_log_level == "INFO":
+            if log_level == LogLevel.INFO:  # log only INFO messages
+                if self.event_loggers:
+                    for event_logger in self.event_loggers:
+                        event_logger.log_progress_event(
+                            event_name=event_name,
+                            current=current,
+                            total=total,
+                            event_format_string=event_format_string,
+                            backoff=backoff,
+                        )
+        else:  # LOGLEVEL is lower than INFO
+            if self.event_loggers:
+                for event_logger in self.event_loggers:
+                    event_logger.log_progress_event(
+                        event_name=event_name,
+                        current=current,
+                        total=total,
+                        event_format_string=event_format_string,
+                        backoff=backoff,
+                    )
 
-    def log_event(self, event_name: str, event_text: str) -> None:
+    def log_event(
+        self, event_name: str, event_text: str, log_level: LogLevel = LogLevel.TRACE
+    ) -> None:
         self.write_to_log(name=event_name, message=event_text)
-        if self.event_loggers:
-            for event_logger in self.event_loggers:
-                event_logger.log_event(event_name=event_name, event_text=event_text)
+        if not self.system_log_level or self.system_log_level == "INFO":
+            if log_level == LogLevel.INFO:  # log only INFO messages
+                if self.event_loggers:
+                    for event_logger in self.event_loggers:
+                        event_logger.log_event(
+                            event_name=event_name, event_text=event_text
+                        )
+        else:
+            if self.event_loggers:
+                for event_logger in self.event_loggers:
+                    event_logger.log_event(event_name=event_name, event_text=event_text)

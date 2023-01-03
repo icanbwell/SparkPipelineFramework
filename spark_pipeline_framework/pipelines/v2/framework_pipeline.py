@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional, Union
 from mlflow.entities import RunStatus  # type: ignore
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
+
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter import (
     FrameworkCsvExporter,
 )
@@ -92,6 +94,7 @@ class FrameworkPipeline(Transformer):
             self.progress_logger.log_event(
                 event_name=pipeline_name,
                 event_text=f"Starting Pipeline {pipeline_name}",
+                log_level=LogLevel.INFO,
             )
             self.progress_logger.log_params(params=self.__parameters)
 
@@ -172,6 +175,7 @@ class FrameworkPipeline(Transformer):
             self.progress_logger.log_event(
                 event_name=pipeline_name,
                 event_text=f"Finished Pipeline {pipeline_name}",
+                log_level=LogLevel.INFO,
             )
             return df
         finally:
