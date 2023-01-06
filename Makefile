@@ -71,3 +71,13 @@ sphinx-html:
 .PHONY:pipenv-setup
 pipenv-setup:devdocker ## Brings up the bash shell in dev docker
 	docker-compose run --rm --name spark_pipeline_framework dev pipenv-setup sync --pipfile
+
+.PHONY:show_dependency_graph
+show_dependency_graph:
+	docker-compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install --skip-lock && pipenv graph --reverse"
+	docker-compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install -d && pipenv graph"
+
+.PHONY:clear_pipenv_cache
+clear_pipenv_cache:
+#	pipenv cache can become bloated: https://github.com/pypa/pipenv/issues/3655
+	docker-compose run --rm --name helix_pipenv dev sh -c "pipenv --clear"

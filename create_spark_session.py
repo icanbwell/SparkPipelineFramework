@@ -88,6 +88,7 @@ def create_spark_session(request: Any) -> SparkSession:
             "org.apache.spark.sql.delta.catalog.DeltaCatalog",
         )
         .config("spark.jars.packages", ",".join(jars))
+        .config("spark.sql.execution.arrow.pyspark.enabled", "true")
         .enableHiveSupport()
         .getOrCreate()
     )
