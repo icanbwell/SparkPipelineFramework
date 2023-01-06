@@ -27,6 +27,7 @@ from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
@@ -54,6 +55,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         auth_scopes: Optional[List[str]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         send_to_fhir: Optional[bool] = True,
+        mode: str = FileWriteModes.MODE_ERROR,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -127,6 +129,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self.send_to_fhir: Param[Optional[bool]] = Param(self, "send_to_fhir", "")
         self._setDefault(send_to_fhir=send_to_fhir)
 
+        self.mode: Param[str] = Param(self, "mode", "")
+        self._setDefault(mode=mode)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -151,6 +156,8 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         auth_login_token: Optional[str] = self.getAuthLoginToken()
         auth_scopes: Optional[List[str]] = self.getAuthScopes()
         send_to_fhir: Optional[bool] = self.getSendToFhir()
+
+        mode: str = self.getOrDefault(self.mode)
 
         self.logger.info(f"Calling {fhir_server_url} with client_id={auth_client_id}")
 
@@ -190,6 +197,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                         parameters=parameters,
                         progress_logger=progress_logger,
                         name=f"{name}_fhir_exporter",
+                        mode=mode,
                     ).transform(df)
                     if fhir_resource_path.startswith("s3") and athena_schema:
                         # create table in Athena
@@ -224,6 +232,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             auth_login_token=auth_login_token,
                             auth_scopes=auth_scopes,
                             name=f"{name}_fhir_sender",
+                            mode=mode,
                         ).transform(df)
         return df
 
