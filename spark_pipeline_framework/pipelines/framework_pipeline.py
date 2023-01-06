@@ -23,6 +23,7 @@ class FrameworkPipeline(Transformer):
         self,
         parameters: Dict[str, Any],
         progress_logger: ProgressLogger,
+        run_id: Optional[str] = None,
         log_level: Optional[Union[int, str]] = None,
     ) -> None:
         """
@@ -32,6 +33,7 @@ class FrameworkPipeline(Transformer):
         """
         super(FrameworkPipeline, self).__init__()
         self.transformers: List[Transformer] = []
+        self._run_id: Optional[str] = run_id
         self.steps: List[Union[Transformer, List[Transformer]]] = []
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
@@ -59,7 +61,9 @@ class FrameworkPipeline(Transformer):
         pipeline_name: str = self.__class__.__name__
         self.progress_logger.log_event(
             event_name=pipeline_name,
-            event_text=f"Starting Pipeline {pipeline_name}",
+            event_text=f"Starting Pipeline {pipeline_name}" + f"_{self._run_id}"
+            if self.run_id
+            else "",
             log_level=LogLevel.INFO,
         )
         for transformer in self.transformers:
