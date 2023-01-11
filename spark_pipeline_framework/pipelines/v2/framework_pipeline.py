@@ -38,6 +38,8 @@ class FrameworkPipeline(Transformer):
         data_lake_path: Optional[str] = None,
         validation_output_path: Optional[str] = None,
         log_level: Optional[Union[int, str]] = None,
+        name: Optional[str] = None,
+        loop_id: Optional[str] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -67,6 +69,8 @@ class FrameworkPipeline(Transformer):
         self.log_level: Optional[Union[int, str]] = log_level or os.environ.get(
             "LOGLEVEL"
         )
+        self.loop_id: Optional[str] = loop_id
+        self.name: Optional[str] = name
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -89,7 +93,7 @@ class FrameworkPipeline(Transformer):
             logger = get_logger(__name__)
             count_of_transformers: int = len(self.transformers)
             i: int = 0
-            pipeline_name: str = self.__class__.__name__
+            pipeline_name: str = self.name or self.__class__.__name__
 
             self.progress_logger.log_event(
                 event_name=pipeline_name,
@@ -117,6 +121,9 @@ class FrameworkPipeline(Transformer):
                         run_name=stage_name, is_nested=True
                     )
 
+                    if hasattr(transformer, "set_loop_id"):
+                        transformer.set_loop_id(self.loop_id)
+
                     with ProgressLogMetric(
                         progress_logger=self.progress_logger,
                         name=str(stage_name) or "unknown",
@@ -125,6 +132,7 @@ class FrameworkPipeline(Transformer):
                             pipeline_name,
                             event_text=f"Running pipeline step {stage_name}",
                         )
+
                         df = transformer.transform(dataset=df)
                         if self.log_level and self.log_level == "DEBUG":
                             print(
@@ -236,3 +244,11 @@ class FrameworkPipeline(Transformer):
 
     def __str__(self) -> str:
         return json.dumps(self.as_dict(), default=str)
+
+    def set_loop_id(self, loop_id: str) -> None:
+        """
+        Set when running inside a FrameworkLoopTransformer
+
+        :param loop_id: loop id
+        """
+        self.loop_id = loop_id
