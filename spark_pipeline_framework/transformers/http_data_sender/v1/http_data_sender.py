@@ -196,6 +196,7 @@ class HttpDataSender(FrameworkTransformer):
             ).rdd.mapPartitionsWithIndex(
                 lambda partition_index, rows: HttpDataSenderProcessor.send_partition_to_server(
                     partition_index=partition_index,
+                    desired_partitions=desired_partitions,
                     rows=rows,
                     url=url,
                     content_type=content_type,
