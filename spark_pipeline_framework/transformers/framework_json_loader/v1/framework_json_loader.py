@@ -1,19 +1,19 @@
 from pathlib import Path
-from typing import Union, List, Dict, Any, Optional, Callable
+from typing import Union, List, Dict, Any, Optional
 
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
-
 from pyspark.sql.dataframe import DataFrame
-
 from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-
 from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import (
     FrameworkLocalFileLoader,
 )
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_modes import FileReadModes, FileJsonTypes
+from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
+    GetFilePathFunction,
+)
 
 
 class FrameworkJsonLoader(FrameworkLocalFileLoader):
@@ -22,9 +22,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
     def __init__(
         self,
         view: str,
-        file_path: Union[
-            str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]
-        ],
+        file_path: Union[str, List[str], Path, GetFilePathFunction],
         clean_column_names: bool = False,
         name: Optional[str] = None,
         progress_logger: Optional[ProgressLogger] = None,

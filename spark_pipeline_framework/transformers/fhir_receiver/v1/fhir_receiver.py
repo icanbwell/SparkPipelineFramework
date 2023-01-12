@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Callable, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 # noinspection PyPep8Naming
 import pyspark.sql.functions as F
@@ -45,6 +45,9 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_helpers impor
     FhirReceiverHelpers,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
+from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
+    GetFilePathFunction,
+)
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
@@ -60,7 +63,7 @@ class FhirReceiver(FrameworkTransformer):
         *,
         server_url: Optional[str] = None,
         resource: str,
-        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
+        file_path: Union[Path, str, GetFilePathFunction],
         id_view: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -98,9 +101,7 @@ class FhirReceiver(FrameworkTransformer):
         retry_count: Optional[int] = None,
         exclude_status_codes_from_retry: Optional[List[int]] = None,
         num_partitions: Optional[int] = None,
-        checkpoint_path: Optional[
-            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
-        ] = None,
+        checkpoint_path: Optional[Union[Path, str, GetFilePathFunction]] = None,
         use_data_streaming: Optional[bool] = None,
         delta_lake_table: Optional[str] = None,
         schema: Optional[Union[StructType, DataType]] = None,
@@ -209,9 +210,9 @@ class FhirReceiver(FrameworkTransformer):
         self.id_view: Param[Optional[str]] = Param(self, "id_view", "")
         self._setDefault(id_view=None)
 
-        self.file_path: Param[
-            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
-        ] = Param(self, "file_path", "")
+        self.file_path: Param[Union[Path, str, GetFilePathFunction]] = Param(
+            self, "file_path", ""
+        )
         self._setDefault(file_path=None)
 
         self.limit: Param[Optional[int]] = Param(self, "limit", "")
@@ -328,7 +329,7 @@ class FhirReceiver(FrameworkTransformer):
         self._setDefault(num_partitions=None)
 
         self.checkpoint_path: Param[
-            Optional[Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]]
+            Optional[Union[Path, str, GetFilePathFunction]]
         ] = Param(self, "checkpoint_path", "")
         self._setDefault(checkpoint_path=None)
 
@@ -365,11 +366,6 @@ class FhirReceiver(FrameworkTransformer):
         filter_parameter: Optional[str] = self.getFilterParameter()
         additional_parameters: Optional[List[str]] = self.getAdditionalParameters()
         id_view: Optional[str] = self.getIdView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
-        if callable(file_path):
-            file_path = file_path(self.loop_id)
         name: Optional[str] = self.getName()
         action: Optional[str] = self.getAction()
         action_payload: Optional[Dict[str, Any]] = self.getActionPayload()
@@ -417,10 +413,19 @@ class FhirReceiver(FrameworkTransformer):
         )
 
         num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
+        file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
+        if callable(file_path):
+            file_path = file_path(
+                view=view, resource_name=resource_name, loop_id=self.loop_id
+            )
 
         checkpoint_path: Optional[
-            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+            Union[Path, str, GetFilePathFunction]
         ] = self.getOrDefault(self.checkpoint_path)
+        if callable(checkpoint_path):
+            checkpoint_path = checkpoint_path(
+                view=view, resource_name=resource_name, loop_id=self.loop_id
+            )
 
         log_level: Optional[str] = environ.get("LOGLEVEL")
 
@@ -908,7 +913,7 @@ class FhirReceiver(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(
         self,
-    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
+    ) -> Union[Path, str, GetFilePathFunction]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

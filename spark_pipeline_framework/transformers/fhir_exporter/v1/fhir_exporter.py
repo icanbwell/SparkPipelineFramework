@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, Callable
+from typing import Any, Dict, Optional, Union
 
-# noinspection PyProtectedMember
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.utils import AnalysisException
+
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
@@ -14,10 +13,16 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+
+# noinspection PyProtectedMember
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
+from spark_pipeline_framework.utilities.file_modes import FileWriteModes
+from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
+    GetFilePathFunction,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
-from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 
 
 class FhirExporter(FrameworkTransformer):
@@ -25,7 +30,7 @@ class FhirExporter(FrameworkTransformer):
     @capture_parameters
     def __init__(
         self,
-        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
+        file_path: Union[Path, str, GetFilePathFunction],
         view: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -61,9 +66,9 @@ class FhirExporter(FrameworkTransformer):
         self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.file_path: Param[
-            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
-        ] = Param(self, "file_path", "")
+        self.file_path: Param[Union[Path, str, GetFilePathFunction]] = Param(
+            self, "file_path", ""
+        )
         self._setDefault(file_path=None)
 
         self.limit: Param[int] = Param(self, "limit", "")
@@ -82,11 +87,9 @@ class FhirExporter(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
         if callable(file_path):
-            file_path = file_path(self.loop_id)
+            file_path = file_path(loop_id=self.loop_id)
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         # limit: int = self.getLimit()
@@ -142,7 +145,7 @@ class FhirExporter(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(
         self,
-    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
+    ) -> Union[Path, str, GetFilePathFunction]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
