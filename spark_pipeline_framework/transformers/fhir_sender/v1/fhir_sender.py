@@ -2,7 +2,7 @@ import json
 import math
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Union
 
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
@@ -36,6 +36,9 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exce
     FhirSenderValidationException,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
+from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
+    GetFilePathFunction,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
@@ -47,8 +50,8 @@ class FhirSender(FrameworkTransformer):
     def __init__(
         self,
         server_url: str,
-        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
-        response_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
+        file_path: Union[Path, str, GetFilePathFunction],
+        response_path: Union[Path, str, GetFilePathFunction],
         resource: str,
         batch_size: Optional[int] = 30,
         limit: int = -1,
@@ -121,14 +124,14 @@ class FhirSender(FrameworkTransformer):
         self.server_url: Param[str] = Param(self, "server_url", "")
         self._setDefault(server_url=None)
 
-        self.file_path: Param[
-            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
-        ] = Param(self, "file_path", "")
+        self.file_path: Param[Union[Path, str, GetFilePathFunction]] = Param(
+            self, "file_path", ""
+        )
         self._setDefault(file_path=None)
 
-        self.response_path: Param[
-            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
-        ] = Param(self, "response_path", "")
+        self.response_path: Param[Union[Path, str, GetFilePathFunction]] = Param(
+            self, "response_path", ""
+        )
         self._setDefault(response_path=None)
 
         self.resource: Param[str] = Param(self, "resource", "")
@@ -215,16 +218,6 @@ class FhirSender(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
-        if callable(file_path):
-            file_path = file_path(self.loop_id)
-        response_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getResponsePath()
-        if callable(response_path):
-            response_path = response_path(self.loop_id)
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         resource_name: str = self.getResource()
@@ -269,6 +262,17 @@ class FhirSender(FrameworkTransformer):
         )
 
         num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
+
+        file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
+        if callable(file_path):
+            file_path = file_path(
+                view=view, resource_name=resource_name, loop_id=self.loop_id
+            )
+        response_path: Union[Path, str, GetFilePathFunction] = self.getResponsePath()
+        if callable(response_path):
+            response_path = response_path(
+                view=view, resource_name=resource_name, loop_id=self.loop_id
+            )
 
         # get access token first so we can reuse it
         if auth_client_id:
@@ -445,13 +449,13 @@ class FhirSender(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(
         self,
-    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
+    ) -> Union[Path, str, GetFilePathFunction]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getResponsePath(
         self,
-    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
+    ) -> Union[Path, str, GetFilePathFunction]:
         return self.getOrDefault(self.response_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
