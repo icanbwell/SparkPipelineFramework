@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import Protocol
 from requests import Response
 
@@ -20,5 +20,5 @@ class ProcessResponseFunction(Protocol):
         response: Response,
         request: HelixHttpRequest,
         progress_logger: Optional[ProgressLogger]
-    ) -> List[Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         ...

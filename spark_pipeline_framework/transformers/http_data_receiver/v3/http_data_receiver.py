@@ -81,7 +81,7 @@ class HttpDataReceiver(FrameworkTransformer):
         self.error_view: Param[Optional[str]] = Param(self, "error_view", "")
         self._setDefault(error_view=None)
 
-        self.throw_exception_on_api_failure: Param[Optional[bool]] = Param(
+        self.throw_exception_on_api_failure: Param[bool] = Param(
             self, "throw_exception_on_api_failure", ""
         )
         self._setDefault(throw_exception_on_api_failure=throw_exception_on_api_failure)
@@ -91,9 +91,7 @@ class HttpDataReceiver(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         http_request_generator: GetRequestFunction = self.getHttpRequestGenerator()
-        throw_exception_on_api_failure: Optional[
-            bool
-        ] = self.getThrowExceptionOnApiFailure()
+        throw_exception_on_api_failure: bool = self.getThrowExceptionOnApiFailure()
         error_view: Optional[str] = self.getOrDefault(self.error_view)
         view_name = self.getView()
         name: Optional[str] = self.getName()
@@ -137,11 +135,11 @@ class HttpDataReceiver(FrameworkTransformer):
 
                     if response_processor:
                         success_responses, error_responses = response_processor(
-                            success_responses,
-                            error_responses,
-                            response,
-                            http_request,
-                            progress_logger,
+                            success_responses=success_responses,
+                            error_responses=error_responses,
+                            response=response,
+                            request=http_request,
+                            progress_logger=progress_logger,
                         )
                     else:
                         if response.ok:
@@ -206,5 +204,5 @@ class HttpDataReceiver(FrameworkTransformer):
         return self.getOrDefault(self.log_response)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getThrowExceptionOnApiFailure(self) -> Optional[bool]:
+    def getThrowExceptionOnApiFailure(self) -> bool:
         return self.getOrDefault(self.throw_exception_on_api_failure)

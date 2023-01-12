@@ -70,7 +70,7 @@ class HelixHttpRequest:
         retry_on_status: List[int] = [429, 500, 502, 503, 504],
         logger: Optional[Logger] = None,
         post_as_json_formatted_string: Optional[bool] = None,
-        raise_error: bool = True
+        raise_error: bool = True,
     ):
         self.url: str = url
         self.request_type = request_type
@@ -85,7 +85,7 @@ class HelixHttpRequest:
         ] = post_as_json_formatted_string
         self.raise_error = raise_error
 
-    def set_raise_error(self, flag: bool):
+    def set_raise_error(self, flag: bool) -> None:
         self.raise_error = flag
 
     def get_result(self) -> SingleJsonResult:
