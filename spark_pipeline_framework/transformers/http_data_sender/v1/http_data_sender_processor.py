@@ -16,7 +16,6 @@ class HttpDataSenderProcessor:
     def send_partition_to_server(
         *,
         partition_index: int,
-        desired_partitions: int,
         rows: Iterable[Row],
         url: Optional[str],
         content_type: str,
@@ -42,8 +41,7 @@ class HttpDataSenderProcessor:
 
         assert url
         print(
-            f"Sending batch {partition_index}/{desired_partitions} "
-            f"containing {len(json_data_list)} rows "
+            f"----- Sending batch {partition_index} containing {len(json_data_list)} rows -----"
         )
         json_data: Dict[str, Any]
         for json_data in json_data_list:
