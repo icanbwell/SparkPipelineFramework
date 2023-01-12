@@ -1,4 +1,5 @@
-from typing import Optional, Protocol, Generator
+from typing import Optional, Generator
+from typing_extensions import Protocol
 
 from pyspark.sql import DataFrame
 

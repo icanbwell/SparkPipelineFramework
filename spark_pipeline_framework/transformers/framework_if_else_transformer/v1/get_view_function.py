@@ -1,4 +1,5 @@
-from typing import Protocol, Optional
+from typing import Optional
+from typing_extensions import Protocol
 
 
 class GetViewFunction(Protocol):

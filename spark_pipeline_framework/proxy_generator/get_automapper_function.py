@@ -1,4 +1,5 @@
-from typing import Protocol, Dict, Any, Union, List
+from typing import Dict, Any, Union, List
+from typing_extensions import Protocol
 
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 

@@ -1,4 +1,5 @@
-from typing import Optional, Protocol, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union
+from typing_extensions import Protocol
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.api_helper.http_request import HelixHttpRequest

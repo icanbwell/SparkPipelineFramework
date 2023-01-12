@@ -1,4 +1,5 @@
-from typing import Protocol, Optional, List
+from typing import Optional, List
+from typing_extensions import Protocol
 
 from pyspark.ml import Transformer
 
