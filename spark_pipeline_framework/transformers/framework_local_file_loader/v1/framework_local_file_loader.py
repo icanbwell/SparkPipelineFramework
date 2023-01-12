@@ -1,9 +1,8 @@
 import re
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any, Callable
+from typing import Union, List, Optional, Dict, Any
 
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import input_file_name
@@ -16,7 +15,11 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_modes import FileReadModes
+from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
+    GetFilePathFunction,
+)
 
 
 class FrameworkLocalFileLoader(FrameworkTransformer):
@@ -25,9 +28,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
     def __init__(
         self,
         view: str,
-        file_path: Union[
-            str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]
-        ],
+        file_path: Union[str, List[str], Path, GetFilePathFunction],
         delimiter: str = ",",
         limit: Optional[int] = None,
         has_header: bool = True,
@@ -78,9 +79,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.file_path: Param[
-            Union[str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]]
-        ] = Param(self, "file_path", "")
+        self.file_path: Param[Union[str, List[str], Path, GetFilePathFunction]] = Param(
+            self, "file_path", ""
+        )
         self._setDefault(file_path=None)
 
         self.schema: Param[StructType] = Param(self, "schema", "")
@@ -131,9 +132,9 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
-        file_path: Union[
-            str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilepath()
+        file_path: Union[str, List[str], Path, GetFilePathFunction] = self.getFilepath()
+        if callable(file_path):
+            file_path = file_path(view=view, resource_name="", loop_id=self.loop_id)
         schema = self.getSchema()
         clean_column_names = self.getCleanColumnNames()
         cache_table = self.getCacheTable()
@@ -255,7 +256,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilepath(
         self,
-    ) -> Union[str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]]:
+    ) -> Union[str, List[str], Path, GetFilePathFunction]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

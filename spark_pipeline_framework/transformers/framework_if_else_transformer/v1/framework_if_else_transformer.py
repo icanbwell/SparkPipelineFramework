@@ -1,5 +1,17 @@
-from typing import Dict, Any, Optional, Union, List, Callable
+from typing import Dict, Any, Optional, Union, List, cast
 
+from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.get_enable_function import (
+    GetEnableFunction,
+)
+from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.get_sql_function import (
+    GetSqlFunction,
+)
+from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.get_transformers_function import (
+    GetTransformersFunction,
+)
+from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.get_view_function import (
+    GetViewFunction,
+)
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -16,15 +28,11 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
     def __init__(
         self,
         *,
-        enable: Optional[Union[bool, Callable[[DataFrame], bool]]] = None,
-        enable_if_view_not_empty: Optional[
-            Union[str, Callable[[Optional[str]], str]]
-        ] = None,
-        enable_sql: Optional[Union[str, Callable[[Optional[str]], str]]] = None,
-        stages: Union[List[Transformer], Callable[[], List[Transformer]]],
-        else_stages: Optional[
-            Union[List[Transformer], Callable[[], List[Transformer]]]
-        ] = None,
+        enable: Optional[Union[bool, GetEnableFunction]] = None,
+        enable_if_view_not_empty: Optional[Union[str, GetViewFunction]] = None,
+        enable_sql: Optional[Union[str, GetSqlFunction]] = None,
+        stages: Union[List[Transformer], GetTransformersFunction],
+        else_stages: Optional[Union[List[Transformer], GetTransformersFunction]] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -45,19 +53,17 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        self.enable: Optional[Union[bool, Callable[[DataFrame], bool]]] = enable
+        self.enable: Optional[Union[bool, GetEnableFunction]] = enable
 
         self.enable_if_view_not_empty: Optional[
-            Union[str, Callable[[Optional[str]], str]]
+            Union[str, GetViewFunction]
         ] = enable_if_view_not_empty
 
-        self.enable_sql: Optional[
-            Union[str, Callable[[Optional[str]], str]]
-        ] = enable_sql
+        self.enable_sql: Optional[Union[str, GetSqlFunction]] = enable_sql
 
-        self.stages: Union[List[Transformer], Callable[[], List[Transformer]]] = stages
+        self.stages: Union[List[Transformer], GetTransformersFunction] = stages
         self.else_stages: Optional[
-            Union[List[Transformer], Callable[[], List[Transformer]]]
+            Union[List[Transformer], GetTransformersFunction]
         ] = else_stages
 
         self.loop_id: Optional[str] = None
@@ -67,9 +73,9 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
-        enable = self.enable(df) if callable(self.enable) else self.enable
+        enable = self.enable(df=df) if callable(self.enable) else self.enable
         view_enable_if_view_not_empty = (
-            self.enable_if_view_not_empty(self.loop_id)
+            self.enable_if_view_not_empty(loop_id=self.loop_id)
             if callable(self.enable_if_view_not_empty)
             else self.enable_if_view_not_empty
         )
@@ -81,10 +87,10 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             if view_enable_if_view_not_empty
             else True
         )
-        enable_sql = (
-            self.enable_sql(self.loop_id)
-            if callable(self.enable_sql)
-            else self.enable_sql
+        enable_sql: Optional[str] = (
+            self.enable_sql(loop_id=self.loop_id)
+            if self.enable_sql and callable(self.enable_sql)
+            else cast(Optional[str], self.enable_sql)
         )
         enable_if_sql = df.sparkSession.sql(enable_sql) if enable_sql else True
         if (enable or enable is None) and enable_if_view_not_empty and enable_if_sql:
@@ -96,7 +102,8 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
                 progress_logger.write_to_log(
                     self.getName() or "FrameworkIfElseTransformer",
                     f"Skipping stages because enable {self.enable} or "
-                    + f"enable_if_view_not_empty {self.enable_if_view_not_empty} or enable_sql {self.enable_sql} did not evaluate to True",
+                    + f"enable_if_view_not_empty {self.enable_if_view_not_empty} or "
+                    + f"enable_sql {self.enable_sql} did not evaluate to True",
                 )
             stages = (
                 []

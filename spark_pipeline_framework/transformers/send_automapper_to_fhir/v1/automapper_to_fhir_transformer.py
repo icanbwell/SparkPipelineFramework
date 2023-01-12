@@ -1,6 +1,13 @@
 import json
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
+from pyspark.ml import Transformer
+from pyspark.ml.param import Param
+from pyspark.sql.dataframe import DataFrame
+
+from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.proxy_generator.proxy_base import ProxyBase
 from spark_pipeline_framework.transformers.athena_table_creator.v1.athena_table_creator import (
     AthenaTableCreator,
 )
@@ -8,6 +15,12 @@ from spark_pipeline_framework.transformers.fhir_exporter.v1.fhir_exporter import
     FhirExporter,
 )
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender import FhirSender
+from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
+    FrameworkMappingLoader,
+)
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 from spark_pipeline_framework.transformers.send_automapper_to_fhir.exceptions.automapper_to_fhir_transformer_exception import (
     AutomapperToFhirTransformerException,
 )
@@ -15,19 +28,10 @@ from spark_pipeline_framework.utilities.athena.athena_source_file_type import (
     AthenaSourceFileType,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
-from pyspark.ml import Transformer
-from pyspark.ml.param import Param
-from pyspark.sql.dataframe import DataFrame
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.proxy_generator.proxy_base import ProxyBase
-from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
-    FrameworkMappingLoader,
-)
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
-    FrameworkTransformer,
-)
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
+from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
+    GetFilePathFunction,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
@@ -40,8 +44,8 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self,
         # add your parameters here (be sure to add them to setParams below too)
         transformer: ProxyBase,
-        func_get_path: Callable[[str, str, Optional[str]], str],
-        func_get_response_path: Callable[[str, str, Optional[str]], str],
+        func_get_path: GetFilePathFunction,
+        func_get_response_path: GetFilePathFunction,
         fhir_server_url: str,
         source_entity_name: str,
         fhir_validation_url: Optional[str] = None,
@@ -84,14 +88,14 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self.transformer: Param[ProxyBase] = Param(self, "transformer", "")
         self._setDefault(transformer=transformer)
 
-        self.func_get_path: Param[Callable[[str, str, Optional[str]], str]] = Param(
+        self.func_get_path: Param[GetFilePathFunction] = Param(
             self, "func_get_path", ""
         )
         self._setDefault(func_get_path=func_get_path)
 
-        self.func_get_response_path: Param[
-            Callable[[str, str, Optional[str]], str]
-        ] = Param(self, "func_get_response_path", "")
+        self.func_get_response_path: Param[GetFilePathFunction] = Param(
+            self, "func_get_response_path", ""
+        )
         self._setDefault(func_get_response_path=func_get_response_path)
 
         self.fhir_server_url: Param[str] = Param(self, "fhir_server_url", "")
@@ -138,10 +142,8 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         transformer: ProxyBase = self.getTransformer()
-        func_get_path: Callable[[str, str, Optional[str]], str] = self.getFuncGetPath()
-        func_get_response_path: Callable[
-            [str, str, Optional[str]], str
-        ] = self.getFuncGetResponsePath()
+        func_get_path: GetFilePathFunction = self.getFuncGetPath()
+        func_get_response_path: GetFilePathFunction = self.getFuncGetResponsePath()
         fhir_server_url: str = self.getFhirServerUrl()
         fhir_validation_url: Optional[str] = self.getFhirValidationServerUrl()
         name: Optional[str] = self.getName()
@@ -188,10 +190,10 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                     # noinspection PyPep8Naming
                     resourceType: str = first_row["resourceType"]
                     fhir_resource_path: str = func_get_path(
-                        view, resourceType, self.loop_id
+                        view=view, resource_name=resourceType, loop_id=self.loop_id
                     )
                     fhir_resource_response_path: str = func_get_response_path(
-                        view, resourceType, self.loop_id
+                        view=view, resource_name=resourceType, loop_id=self.loop_id
                     )
                     # export as FHIR to local fhir_resource_path
                     FhirExporter(
@@ -244,11 +246,13 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         return self.getOrDefault(self.transformer)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFuncGetPath(self) -> Callable[[str, str, Optional[str]], str]:
+    def getFuncGetPath(self) -> GetFilePathFunction:
         return self.getOrDefault(self.func_get_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFuncGetResponsePath(self) -> Callable[[str, str, Optional[str]], str]:
+    def getFuncGetResponsePath(
+        self,
+    ) -> GetFilePathFunction:
         return self.getOrDefault(self.func_get_response_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
