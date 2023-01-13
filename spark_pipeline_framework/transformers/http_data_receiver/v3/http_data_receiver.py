@@ -39,7 +39,7 @@ class HttpDataReceiver(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         log_response: bool = False,
         error_view: Optional[str] = None,
-        throw_exception_on_api_failure: bool = True,
+        raise_error: bool = True,
     ) -> None:
         """
         Transformer to call and receive data from an API
@@ -52,9 +52,10 @@ class HttpDataReceiver(FrameworkTransformer):
         :param progress_logger: progress logger
         it supposed to return a HelixHttpRequest to be used to call the API or return None to end the API call loop
         :param response_processor: it can change the result before loading to spark df
-        :param error_view: (Optional) log errors into this view (view only exists IF there are errors)
-                            and don't throw exceptions.
-                            schema: request, response
+        :param error_view: (Optional) log the details of the api failure into `error_view` view (view only exists IF there are
+        errors) and don't throw exceptions. default schema: request, response. pipeline owner can change the schema in
+        response processor
+        :param raise_error: (Optional) Raise error in case of api failure
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -81,17 +82,15 @@ class HttpDataReceiver(FrameworkTransformer):
         self.error_view: Param[Optional[str]] = Param(self, "error_view", "")
         self._setDefault(error_view=None)
 
-        self.throw_exception_on_api_failure: Param[bool] = Param(
-            self, "throw_exception_on_api_failure", ""
-        )
-        self._setDefault(throw_exception_on_api_failure=throw_exception_on_api_failure)
+        self.raise_error: Param[bool] = Param(self, "raise_error", "")
+        self._setDefault(raise_error=raise_error)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         http_request_generator: GetRequestFunction = self.getHttpRequestGenerator()
-        throw_exception_on_api_failure: bool = self.getThrowExceptionOnApiFailure()
+        raise_error: bool = self.getRaiseError()
         error_view: Optional[str] = self.getOrDefault(self.error_view)
         view_name = self.getView()
         name: Optional[str] = self.getName()
@@ -108,7 +107,7 @@ class HttpDataReceiver(FrameworkTransformer):
                     df=df, progress_logger=progress_logger
                 ):
                     # Added the statement so the error is not immediately raised
-                    http_request.set_raise_error(throw_exception_on_api_failure)
+                    http_request.set_raise_error(raise_error)
                     self.logger.debug(f"Calling API: {http_request.to_string()}...")
                     if progress_logger:
                         progress_logger.write_to_log(
@@ -117,13 +116,13 @@ class HttpDataReceiver(FrameworkTransformer):
                     response = http_request.get_response()
 
                     self.logger.info(
-                        f"Api completed: {http_request.url} with status {response.status_code}"
+                        f"Api processed: {http_request.url} with status {response.status_code}"
                     )
                     if self.getLogResponse():
                         self.logger.info(f"Response: {response.text}")
                     if progress_logger:
                         progress_logger.write_to_log(
-                            f"Api completed: {http_request.url} with status {response.status_code}"
+                            f"Api processed: {http_request.url} with status {response.status_code}"
                         )
                         if self.getLogResponse():
                             progress_logger.write_to_log(
@@ -204,5 +203,5 @@ class HttpDataReceiver(FrameworkTransformer):
         return self.getOrDefault(self.log_response)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getThrowExceptionOnApiFailure(self) -> bool:
-        return self.getOrDefault(self.throw_exception_on_api_failure)
+    def getRaiseError(self) -> bool:
+        return self.getOrDefault(self.raise_error)

@@ -162,10 +162,10 @@ class HelixHttpRequest:
         arguments = {k: v for k, v in arguments.items() if v is not None}
 
         response = self._send_request(request_function, arguments=arguments)  # type: ignore
-        try:
-            response.raise_for_status()
-        except HTTPError as e:
-            if self.raise_error:
+        if self.raise_error:
+            try:
+                response.raise_for_status()
+            except HTTPError as e:
                 raise Exception(
                     f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {e.response.status_code}: {e.response.content}. Error= {e}"
                 ) from e
