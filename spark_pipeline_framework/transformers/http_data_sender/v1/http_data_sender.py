@@ -188,6 +188,7 @@ class HttpDataSender(FrameworkTransformer):
                     if batch_size and batch_size > 0
                     else row_count
                 )
+            self.logger.info(f"Total Batches: {desired_partitions}")
 
             # ---- Now process all the results ----
             rdd: RDD[Row] = df.repartition(
