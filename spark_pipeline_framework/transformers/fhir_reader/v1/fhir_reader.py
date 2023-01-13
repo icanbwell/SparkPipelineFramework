@@ -34,7 +34,7 @@ class FhirReader(FrameworkTransformer):
         schema: Optional[Union[StructType, DataType]] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        bad_records_path: Optional[GetFilePathFunction] = None,
+        bad_records_path: Optional[Union[Path, str, GetFilePathFunction]] = None,
         create_empty_view_if_file_path_not_found: Optional[bool] = False,
         limit: int = -1,
         encoding: Optional[str] = None,
@@ -42,6 +42,7 @@ class FhirReader(FrameworkTransformer):
         autodiscover_multiline: bool = False,
         filter_by_resource_type: Optional[str] = None,
         delta_lake_table: Optional[str] = None,
+        resource_name: Optional[str] = None,
     ):
         """
         Reads json files from path and creates columns corresponding to the FHIR schema
@@ -125,6 +126,9 @@ class FhirReader(FrameworkTransformer):
         )
         self._setDefault(delta_lake_table=None)
 
+        self.resource_name: Param[str] = Param(self, "resource_name", "")
+        self._setDefault(resource_name=resource_name)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -153,9 +157,12 @@ class FhirReader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
+        resource_name: str = self.getOrDefault(self.resource_name)
         file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
         if callable(file_path):
-            file_path = file_path(loop_id=self.loop_id)
+            file_path = file_path(
+                view=view, resource_name=resource_name, loop_id=self.loop_id
+            )
         name: Optional[str] = self.getName()
         schema: Optional[Union[StructType, DataType]] = self.getSchema()
         bad_records_path: Optional[
@@ -163,7 +170,7 @@ class FhirReader(FrameworkTransformer):
         ] = self.getBadRecordsPath()
         if callable(bad_records_path):
             bad_records_path = bad_records_path(
-                view=view, resource_name="", loop_id=self.loop_id
+                view=view, resource_name=resource_name, loop_id=self.loop_id
             )
         create_empty_view_if_file_path_not_found: Optional[
             bool
