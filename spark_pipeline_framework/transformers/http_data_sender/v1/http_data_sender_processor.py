@@ -32,17 +32,14 @@ class HttpDataSenderProcessor:
 
         """
         json_data_list: List[Dict[str, Any]] = [r.asDict(recursive=True) for r in rows]
-        # logger = get_logger(__name__)
-        if len(json_data_list) == 0:
-            print(
-                f"----- Batch with partition index {partition_index} contains {len(json_data_list)} rows -----"
-            )
-            yield Row(url=None, status=0, result=None, request_type=None, headers=None)
-
-        assert url
         print(
             f"----- Sending batch {partition_index} containing {len(json_data_list)} rows -----"
         )
+        # logger = get_logger(__name__)
+        if len(json_data_list) == 0:
+            yield Row(url=None, status=0, result=None, request_type=None, headers=None)
+
+        assert url
         json_data: Dict[str, Any]
         for json_data in json_data_list:
             headers["Content-Type"] = content_type
