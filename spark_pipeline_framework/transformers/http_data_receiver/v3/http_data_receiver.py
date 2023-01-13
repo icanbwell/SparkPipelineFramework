@@ -52,9 +52,7 @@ class HttpDataReceiver(FrameworkTransformer):
         :param progress_logger: progress logger
         it supposed to return a HelixHttpRequest to be used to call the API or return None to end the API call loop
         :param response_processor: it can change the result before loading to spark df
-        :param error_view: (Optional) log the details of the api failure into `error_view` view (view only exists IF there are
-        errors) and don't throw exceptions. default schema: request, response. pipeline owner can change the schema in
-        response processor
+        :param error_view: (Optional) log the details of the api failure into `error_view` view.
         :param raise_error: (Optional) Raise error in case of api failure
         """
         super().__init__(
