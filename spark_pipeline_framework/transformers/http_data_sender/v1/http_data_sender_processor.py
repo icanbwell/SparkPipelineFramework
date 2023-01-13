@@ -21,7 +21,7 @@ class HttpDataSenderProcessor:
         content_type: str,
         headers: Dict[str, Any],
         post_as_json_formatted_string: Optional[bool],
-        parse_response_as_json: Optional[bool]
+        parse_response_as_json: Optional[bool],
     ) -> Iterable[Row]:
         """
         This function processes a partition
