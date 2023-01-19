@@ -1,7 +1,8 @@
 from logging import Logger
 from pathlib import Path
-from typing import Union, List, Optional, Dict, Any, NamedTuple
+from typing import Union, List, Optional, Dict, Any, NamedTuple, Callable
 
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
@@ -9,15 +10,13 @@ from pyspark.sql.functions import col, trim
 from pyspark.sql.types import DataType, Row
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_helpers import get_absolute_paths
-from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
-    GetFilePathFunction,
-)
 
 
 class ColumnSpec(NamedTuple):
@@ -51,7 +50,9 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
     def __init__(
         self,
         view: str,
-        file_path: Union[str, List[str], Path, GetFilePathFunction],
+        file_path: Union[
+            str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]
+        ],
         columns: List[ColumnSpec],
         has_header: bool = True,
         name: Optional[str] = None,
@@ -104,9 +105,9 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=None)
 
-        self.file_path: Param[Union[Path, str, GetFilePathFunction]] = Param(
-            self, "file_path", ""
-        )
+        self.file_path: Param[
+            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+        ] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
         self.columns: Param[List[ColumnSpec]] = Param(self, "columns", "")
@@ -129,9 +130,11 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
-        file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
+        file_path: Union[
+            Path, str, Callable[[Optional[str]], Union[Path, str]]
+        ] = self.getFilePath()
         if callable(file_path):
-            file_path = file_path(view=view, loop_id=self.loop_id)
+            file_path = file_path(self.loop_id)
         columns: List[ColumnSpec] = self.getColumns()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         paths = get_absolute_paths(file_path=file_path)
@@ -170,7 +173,7 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(
         self,
-    ) -> Union[Path, str, GetFilePathFunction]:
+    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
