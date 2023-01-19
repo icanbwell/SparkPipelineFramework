@@ -14,6 +14,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 
+# noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
@@ -37,7 +38,6 @@ class FhirExporter(FrameworkTransformer):
         limit: int = -1,
         mode: str = FileWriteModes.MODE_ERROR,
         delta_lake_table: Optional[str] = None,
-        resource_name: Optional[str] = None,
     ):
         """
         Converts a dataframe to FHIR JSON
@@ -46,7 +46,6 @@ class FhirExporter(FrameworkTransformer):
         :param view: where to read the source data frame
         :param mode: file write mode
         :param delta_lake_table: use delta lake format
-        :param resource_name: name of resource
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -78,9 +77,6 @@ class FhirExporter(FrameworkTransformer):
         self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
-        self.resource_name: Param[str] = Param(self, "resource_name", "")
-        self._setDefault(resource_name=resource_name)
-
         self.delta_lake_table: Param[Optional[str]] = Param(
             self, "delta_lake_table", ""
         )
@@ -91,12 +87,9 @@ class FhirExporter(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
-        resource_name: str = self.getOrDefault(self.resource_name)
         file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
         if callable(file_path):
-            file_path = file_path(
-                view=view, resource_name=resource_name, loop_id=self.loop_id
-            )
+            file_path = file_path(loop_id=self.loop_id)
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         # limit: int = self.getLimit()
