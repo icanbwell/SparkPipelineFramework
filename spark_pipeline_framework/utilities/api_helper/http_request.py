@@ -54,7 +54,6 @@ class HelixHttpRequest:
     :param backoff_factor: {backoff factor} * (2 ** ({number of total retries} - 1))
     :param retry_on_status: A set of integer HTTP status codes that we should force a retry on
     :param post_as_json_formatted_string: If true will set the post data to a json string
-    :param raise_error: Raise error when request is not successful
     """
 
     # noinspection PyDefaultArgument
@@ -70,7 +69,6 @@ class HelixHttpRequest:
         retry_on_status: List[int] = [429, 500, 502, 503, 504],
         logger: Optional[Logger] = None,
         post_as_json_formatted_string: Optional[bool] = None,
-        raise_error: bool = True,
     ):
         self.url: str = url
         self.request_type = request_type
@@ -83,10 +81,6 @@ class HelixHttpRequest:
         self.post_as_json_formatted_string: Optional[
             bool
         ] = post_as_json_formatted_string
-        self.raise_error = raise_error
-
-    def set_raise_error(self, flag: bool) -> None:
-        self.raise_error = flag
 
     def get_result(self) -> SingleJsonResult:
         """
@@ -162,13 +156,12 @@ class HelixHttpRequest:
         arguments = {k: v for k, v in arguments.items() if v is not None}
 
         response = self._send_request(request_function, arguments=arguments)  # type: ignore
-        if self.raise_error:
-            try:
-                response.raise_for_status()
-            except HTTPError as e:
-                raise Exception(
-                    f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {e.response.status_code}: {e.response.content}. Error= {e}"
-                ) from e
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            raise Exception(
+                f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {e.response.status_code}: {e.response.content}. Error= {e}"
+            ) from e
 
         return response
 
