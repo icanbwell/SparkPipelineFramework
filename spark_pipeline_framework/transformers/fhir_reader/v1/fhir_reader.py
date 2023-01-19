@@ -34,7 +34,7 @@ class FhirReader(FrameworkTransformer):
         schema: Optional[Union[StructType, DataType]] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        bad_records_path: Optional[Union[Path, str, GetFilePathFunction]] = None,
+        bad_records_path: Optional[GetFilePathFunction] = None,
         create_empty_view_if_file_path_not_found: Optional[bool] = False,
         limit: int = -1,
         encoding: Optional[str] = None,
