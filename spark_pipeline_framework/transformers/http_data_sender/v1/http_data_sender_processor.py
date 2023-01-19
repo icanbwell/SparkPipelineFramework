@@ -21,7 +21,7 @@ class HttpDataSenderProcessor:
         content_type: str,
         headers: Dict[str, Any],
         post_as_json_formatted_string: Optional[bool],
-        parse_response_as_json: Optional[bool],
+        parse_response_as_json: Optional[bool]
     ) -> Iterable[Row]:
         """
         This function processes a partition
@@ -32,9 +32,6 @@ class HttpDataSenderProcessor:
 
         """
         json_data_list: List[Dict[str, Any]] = [r.asDict(recursive=True) for r in rows]
-        print(
-            f"----- Sending batch {partition_index} containing {len(json_data_list)} rows -----"
-        )
         # logger = get_logger(__name__)
         if len(json_data_list) == 0:
             yield Row(url=None, status=0, result=None, request_type=None, headers=None)
