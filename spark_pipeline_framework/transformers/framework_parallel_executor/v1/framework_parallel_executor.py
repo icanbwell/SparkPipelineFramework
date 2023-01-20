@@ -1,27 +1,16 @@
 import asyncio
 import json
-from typing import Dict, Any, Optional, Union, List
-
-from pyspark.ml import Transformer
-from pyspark.sql.dataframe import DataFrame
-
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.get_enable_function import (
-    GetEnableFunction,
-)
-from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.get_transformers_function import (
-    GetTransformersFunction,
-)
-from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.get_view_function import (
-    GetViewFunction,
-)
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
-    FrameworkTransformer,
-)
+from typing import Dict, Any, Optional, Union, List, Callable
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
+from pyspark.ml import Transformer
+from pyspark.sql.dataframe import DataFrame
+from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
+    FrameworkTransformer,
+)
 from spark_pipeline_framework.utilities.parallel_pipeline_executor.v1.parallel_pipeline_executor import (
     ParallelPipelineExecutor,
 )
@@ -36,9 +25,11 @@ class FrameworkParallelExecutor(FrameworkTransformer):
     def __init__(
         self,
         *,
-        enable: Union[bool, GetEnableFunction] = True,
-        enable_if_view_not_empty: Optional[Union[str, GetViewFunction]] = None,
-        stages: Union[List[Transformer], GetTransformersFunction],
+        enable: Union[bool, Callable[[DataFrame], bool]] = True,
+        enable_if_view_not_empty: Optional[
+            Union[str, Callable[[Optional[str]], str]]
+        ] = None,
+        stages: Union[List[Transformer], Callable[[], List[Transformer]]],
         max_parallel_tasks: int = 5,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -59,12 +50,12 @@ class FrameworkParallelExecutor(FrameworkTransformer):
 
         self.max_parallel_tasks: int = max_parallel_tasks
 
-        self.stages: Union[List[Transformer], GetTransformersFunction] = stages
+        self.stages: Union[List[Transformer], Callable[[], List[Transformer]]] = stages
 
-        self.enable: Union[bool, GetEnableFunction] = enable
+        self.enable: Union[bool, Callable[[DataFrame], bool]] = enable
 
         self.enable_if_view_not_empty: Optional[
-            Union[str, GetViewFunction]
+            Union[str, Callable[[Optional[str]], str]]
         ] = enable_if_view_not_empty
 
         kwargs = self._input_kwargs
@@ -79,9 +70,9 @@ class FrameworkParallelExecutor(FrameworkTransformer):
                 + f" ---------"
             )
 
-        enable = self.enable(df=df) if callable(self.enable) else self.enable
+        enable = self.enable(df) if callable(self.enable) else self.enable
         view_enable_if_view_not_empty = (
-            self.enable_if_view_not_empty(loop_id=self.loop_id)
+            self.enable_if_view_not_empty(self.loop_id)
             if callable(self.enable_if_view_not_empty)
             else self.enable_if_view_not_empty
         )

@@ -1,47 +1,53 @@
 import os
-import random
 import string
 from pathlib import Path
+import random
 from shutil import rmtree
-from typing import Dict, Any, List, cast
+from typing import Dict, Any, Callable, Union, List, cast
 
 import mlflow  # type: ignore
 import pytest
 from mlflow.entities import Run, RunStatus  # type: ignore
 from pyspark.ml import Transformer
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StructType
+from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from create_spark_session import clean_spark_session
-from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
-from library.features.carriers_python.v1.features_carriers_python_v1 import (
-    FeaturesCarriersPythonV1,
-)
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.log_level import LogLevel
-from spark_pipeline_framework.pipelines.v2.framework_pipeline import FrameworkPipeline
+
+from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
+    FrameworkJsonExporter,
+)
+
+from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
+    FrameworkMappingLoader,
+)
+
+from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
+    get_python_function_from_location,
+)
+
+from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.framework_if_else_transformer import (
+    FrameworkIfElseTransformer,
+)
+
 from spark_pipeline_framework.progress_logger.progress_logger import (
     ProgressLogger,
     MlFlowConfig,
 )
-from spark_pipeline_framework.proxy_generator.get_automapper_function import (
-    GetAutoMapperFunction,
+
+from library.features.carriers_python.v1.features_carriers_python_v1 import (
+    FeaturesCarriersPythonV1,
 )
-from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
-    get_python_function_from_location,
-)
+
+from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StructType
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
     FrameworkCsvLoader,
 )
-from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.framework_if_else_transformer import (
-    FrameworkIfElseTransformer,
-)
-from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
-    FrameworkJsonExporter,
-)
-from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
-    FrameworkMappingLoader,
-)
+
+from spark_pipeline_framework.pipelines.v2.framework_pipeline import FrameworkPipeline
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
@@ -57,7 +63,9 @@ class SimplePipeline(FrameworkPipeline):
             vendor_name="vendor_foo",
         )
 
-        mapping_function: GetAutoMapperFunction = get_python_function_from_location(
+        mapping_function: Callable[
+            [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
+        ] = get_python_function_from_location(
             location=str(parameters["feature_path"]),
             import_module_name=".mapping",
             function_name="mapping",
@@ -113,7 +121,9 @@ class MappingPipeline(FrameworkPipeline):
             client_name="client_bar",
             vendor_name="vendor_bar",
         )
-        mapping_function: GetAutoMapperFunction = get_python_function_from_location(
+        mapping_function: Callable[
+            [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
+        ] = get_python_function_from_location(
             location=str(parameters["feature_path"]),
             import_module_name=".mapping",
             function_name="mapping",

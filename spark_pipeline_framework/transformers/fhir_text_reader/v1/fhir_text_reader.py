@@ -14,9 +14,6 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
-    GetFilePathFunction,
-)
 
 
 class FhirTextReader(FrameworkTransformer):
@@ -24,16 +21,15 @@ class FhirTextReader(FrameworkTransformer):
     @capture_parameters
     def __init__(
         self,
-        file_path: Union[Path, str, GetFilePathFunction],
+        file_path: Union[Path, str],
         destination_column_name: str = "value",
         view: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        bad_records_path: Optional[Union[Path, str, GetFilePathFunction]] = None,
+        bad_records_path: Optional[Union[Path, str]] = None,
         create_empty_view_if_file_path_not_found: Optional[bool] = False,
         limit: int = -1,
-        resource_name: Optional[str] = None,
     ):
         """
         Reads files from path and creates one column called destination_column_name that contains the FHIR data as text
@@ -63,9 +59,7 @@ class FhirTextReader(FrameworkTransformer):
         self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.file_path: Param[Union[Path, str, GetFilePathFunction]] = Param(
-            self, "file_path", ""
-        )
+        self.file_path: Param[Union[Path, str]] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
         self.destination_column_name: Param[str] = Param(
@@ -76,9 +70,9 @@ class FhirTextReader(FrameworkTransformer):
         self.limit: Param[int] = Param(self, "limit", "")
         self._setDefault(limit=None)
 
-        self.bad_records_path: Param[
-            Optional[Union[Path, str, GetFilePathFunction]]
-        ] = Param(self, "bad_records_path", "")
+        self.bad_records_path: Param[Optional[Union[Path, str]]] = Param(
+            self, "bad_records_path", ""
+        )
         self._setDefault(bad_records_path=None)
 
         self.create_empty_view_if_file_path_not_found: Param[Optional[bool]] = Param(
@@ -88,33 +82,15 @@ class FhirTextReader(FrameworkTransformer):
             create_empty_view_if_file_path_not_found=create_empty_view_if_file_path_not_found
         )
 
-        self.resource_name: Param[str] = Param(self, "resource_name", "")
-        self._setDefault(resource_name=resource_name)
-
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
-        resource_name: str = self.getOrDefault(self.resource_name)
-        path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
-        path = (
-            path(view=view, resource_name=resource_name, loop_id=self.loop_id)
-            if callable(path)
-            else path
-        )
+        path: Union[Path, str] = self.getFilePath()
         name: Optional[str] = self.getName()
         destination_column_name: str = self.getDestinationColumnName()
-        bad_records_path: Optional[
-            Union[Path, str, GetFilePathFunction]
-        ] = self.getBadRecordsPath()
-        bad_records_path = (
-            bad_records_path(
-                view=view, resource_name=resource_name, loop_id=self.loop_id
-            )
-            if callable(bad_records_path)
-            else bad_records_path
-        )
+        bad_records_path: Optional[Union[Path, str]] = self.getBadRecordsPath()
         create_empty_view_if_file_path_not_found: Optional[
             bool
         ] = self.getCreateEmptyViewIfFilePathNotFound()
@@ -168,7 +144,7 @@ class FhirTextReader(FrameworkTransformer):
         return self.getOrDefault(self.destination_column_name)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilePath(self) -> Union[Path, str, GetFilePathFunction]:
+    def getFilePath(self) -> Union[Path, str]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -176,7 +152,7 @@ class FhirTextReader(FrameworkTransformer):
         return self.getOrDefault(self.limit)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getBadRecordsPath(self) -> Optional[Union[Path, str, GetFilePathFunction]]:
+    def getBadRecordsPath(self) -> Optional[Union[Path, str]]:
         return self.getOrDefault(self.bad_records_path)
 
     # noinspection PyPep8Naming

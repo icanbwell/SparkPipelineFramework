@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Union, Optional, Callable
 
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -8,11 +9,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import (
     FrameworkBaseExporter,
 )
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
-from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
-    GetFilePathFunction,
-)
 
 
 class FrameworkParquetExporter(FrameworkBaseExporter):
@@ -24,7 +21,7 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
     @capture_parameters
     def __init__(
         self,
-        file_path: Union[Path, str, GetFilePathFunction],
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
         view: Optional[str] = None,
         name: Optional[str] = None,
         mode: str = FileWriteModes.MODE_ERROR,
@@ -64,9 +61,9 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
 
         self.logger = get_logger(__name__)
 
-        self.file_path: Param[Union[Path, str, GetFilePathFunction]] = Param(
-            self, "file_path", ""
-        )
+        self.file_path: Param[
+            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+        ] = Param(self, "file_path", "")
         self._setDefault(file_path=file_path)
 
         kwargs = self._input_kwargs
@@ -75,14 +72,16 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(
         self,
-    ) -> Union[Path, str, GetFilePathFunction]:
+    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
         return self.getOrDefault(self.file_path)
 
     def getFormat(self) -> str:
         return "parquet"
 
     def getOptions(self) -> Dict[str, Any]:
-        file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
+        file_path: Union[
+            Path, str, Callable[[Optional[str]], Union[Path, str]]
+        ] = self.getFilePath()
         if callable(file_path):
-            file_path = file_path(view=self.getView(), loop_id=self.loop_id)
+            file_path = file_path(self.loop_id)
         return {"path": file_path}

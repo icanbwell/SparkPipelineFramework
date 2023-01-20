@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
@@ -15,11 +16,7 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_modes import FileReadModes
-from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
-    GetFilePathFunction,
-)
 
 
 class FrameworkParquetLoader(FrameworkTransformer):
@@ -32,7 +29,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
     def __init__(
         self,
         view: str,
-        file_path: Union[Path, str, GetFilePathFunction],
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -69,9 +66,9 @@ class FrameworkParquetLoader(FrameworkTransformer):
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
-        self.file_path: Param[Union[Path, str, GetFilePathFunction]] = Param(
-            self, "file_path", ""
-        )
+        self.file_path: Param[
+            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+        ] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
         self.merge_schema: Param[bool] = Param(self, "merge_schema", "")
@@ -96,9 +93,11 @@ class FrameworkParquetLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
+        file_path: Union[
+            Path, str, Callable[[Optional[str]], Union[Path, str]]
+        ] = self.getFilePath()
         if callable(file_path):
-            file_path = file_path(view=view, loop_id=self.loop_id)
+            file_path = file_path(self.loop_id)
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         merge_schema: bool = self.getMergeSchema()
@@ -158,7 +157,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(
         self,
-    ) -> Union[Path, str, GetFilePathFunction]:
+    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

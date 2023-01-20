@@ -1,9 +1,12 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union, Generator, Tuple
 
+from requests import Response
+
+from spark_pipeline_framework.utilities.api_helper.http_request import HelixHttpRequest
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
@@ -12,13 +15,6 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.transformers.http_data_receiver.v3.get_request_function import (
-    GetRequestFunction,
-)
-from spark_pipeline_framework.transformers.http_data_receiver.v3.process_response_function import (
-    ProcessResponseFunction,
-)
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import sc
 
 
@@ -31,10 +27,23 @@ class HttpDataReceiver(FrameworkTransformer):
     @capture_parameters
     def __init__(
         self,
-        http_request_generator: GetRequestFunction,
+        http_request_generator: Callable[
+            [DataFrame, Optional[ProgressLogger]],
+            Generator[HelixHttpRequest, None, None],
+        ],
         view_name: str,
         name: Optional[str] = None,
-        response_processor: Optional[ProcessResponseFunction] = None,
+        response_processor: Optional[
+            Callable[
+                [
+                    List[Dict[str, Any]],
+                    Union[List[Dict[str, Any]], Dict[str, Any]],
+                    HelixHttpRequest,
+                    Optional[ProgressLogger],
+                ],
+                List[Dict[str, Any]],
+            ]
+        ] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         log_response: bool = False,
@@ -61,9 +70,12 @@ class HttpDataReceiver(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
 
-        self.http_request_generator: Param[GetRequestFunction] = Param(
-            self, "http_request_generator", ""
-        )
+        self.http_request_generator: Param[
+            Callable[
+                [DataFrame, Optional[ProgressLogger]],
+                Generator[HelixHttpRequest, None, None],
+            ]
+        ] = Param(self, "http_request_generator", "")
         self._setDefault(http_request_generator=None)
 
         self.view_name: Param[str] = Param(self, "view_name", "")
@@ -72,9 +84,20 @@ class HttpDataReceiver(FrameworkTransformer):
         self.log_response: Param[bool] = Param(self, "log_response", "")
         self._setDefault(log_response=log_response)
 
-        self.response_processor: Param[Optional[ProcessResponseFunction]] = Param(
-            self, "response_processor", ""
-        )
+        self.response_processor: Param[
+            Optional[
+                Callable[
+                    [
+                        List[Dict[str, Any]],
+                        List[Dict[str, Any]],
+                        Response,
+                        HelixHttpRequest,
+                        Optional[ProgressLogger],
+                    ],
+                    Tuple[List[Dict[str, Any]], List[Dict[str, Any]]],
+                ]
+            ]
+        ] = Param(self, "response_processor", "")
         self._setDefault(response_processor=None)
 
         self.error_view: Param[Optional[str]] = Param(self, "error_view", "")
@@ -87,7 +110,10 @@ class HttpDataReceiver(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        http_request_generator: GetRequestFunction = self.getHttpRequestGenerator()
+        http_request_generator: Callable[
+            [DataFrame, Optional[ProgressLogger]],
+            Generator[HelixHttpRequest, None, None],
+        ] = self.getHttpRequestGenerator()
         raise_error: bool = self.getRaiseError()
         error_view: Optional[str] = self.getOrDefault(self.error_view)
         view_name = self.getView()
@@ -101,9 +127,7 @@ class HttpDataReceiver(FrameworkTransformer):
             success_responses: List[Dict[str, Any]] = []
             error_responses: List[Dict[str, Any]] = []
             try:
-                for http_request in http_request_generator(
-                    df=df, progress_logger=progress_logger
-                ):
+                for http_request in http_request_generator(df, progress_logger):
                     # Added the statement so the error is not immediately raised
                     http_request.set_raise_error(raise_error)
                     self.logger.debug(f"Calling API: {http_request.to_string()}...")
@@ -132,11 +156,11 @@ class HttpDataReceiver(FrameworkTransformer):
 
                     if response_processor:
                         success_responses, error_responses = response_processor(
-                            success_responses=success_responses,
-                            error_responses=error_responses,
-                            response=response,
-                            request=http_request,
-                            progress_logger=progress_logger,
+                            success_responses,
+                            error_responses,
+                            response,
+                            http_request,
+                            progress_logger,
                         )
                     else:
                         if response.ok:
@@ -183,7 +207,9 @@ class HttpDataReceiver(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getHttpRequestGenerator(
         self,
-    ) -> GetRequestFunction:
+    ) -> Callable[
+        [DataFrame, Optional[ProgressLogger]], Generator[HelixHttpRequest, None, None]
+    ]:
         return self.getOrDefault(self.http_request_generator)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
@@ -193,7 +219,18 @@ class HttpDataReceiver(FrameworkTransformer):
     # noinspection PyPep8Naming
     def getResponseProcessor(
         self,
-    ) -> Optional[ProcessResponseFunction]:
+    ) -> Optional[
+        Callable[
+            [
+                List[Dict[str, Any]],
+                List[Dict[str, Any]],
+                Response,
+                HelixHttpRequest,
+                Optional[ProgressLogger],
+            ],
+            Tuple[List[Dict[str, Any]], List[Dict[str, Any]]],
+        ]
+    ]:
         return self.getOrDefault(self.response_processor)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
