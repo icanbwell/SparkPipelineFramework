@@ -1,16 +1,21 @@
 import time
 from datetime import datetime
-from typing import Dict, Any, Optional, Union, List, Callable
+from typing import Dict, Any, Optional, Union, List
 
-# noinspection PyProtectedMember
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
+
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.get_transformers_function import (
+    GetTransformersFunction,
+)
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+
+# noinspection PyProtectedMember
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
@@ -21,7 +26,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
     @capture_parameters
     def __init__(
         self,
-        stages: Union[List[Transformer], Callable[[], List[Transformer]]],
+        stages: Union[List[Transformer], GetTransformersFunction],
         sleep_interval_in_seconds: int,
         max_time_in_seconds: Optional[int] = None,
         max_number_of_runs: Optional[int] = None,
@@ -51,7 +56,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
         self.max_number_of_runs: Optional[int] = max_number_of_runs
         self.run_until: Optional[datetime] = run_until
 
-        self.stages: Union[List[Transformer], Callable[[], List[Transformer]]] = stages
+        self.stages: Union[List[Transformer], GetTransformersFunction] = stages
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)

@@ -4,12 +4,14 @@ import sys
 import types
 from importlib import import_module
 from inspect import signature
-from typing import Dict, Any, Optional, Callable, Union, List, cast
+from typing import Dict, Any, Optional, List, cast
 
 from pyspark.ml import Transformer
-from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.proxy_generator.get_automapper_function import (
+    GetAutoMapperFunction,
+)
 
 
 def get_python_transformer_from_location(
@@ -58,7 +60,7 @@ def get_python_transformer_from_location(
 
 def get_python_function_from_location(
     location: str, import_module_name: str, function_name: Optional[str] = None
-) -> Callable[[Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]]:
+) -> GetAutoMapperFunction:
     assert location
     search = re.search(r"/library/", location)
     assert search
@@ -68,9 +70,7 @@ def get_python_function_from_location(
     module = import_module(import_module_name, lib_path)
     md = module.__dict__
     # noinspection PyTypeChecker
-    my_functions: List[
-        Callable[[Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]]
-    ] = (
+    my_functions: List[GetAutoMapperFunction] = (
         [md[c] for c in md if isinstance(md[c], types.FunctionType)]
         if not function_name
         else [
@@ -79,9 +79,7 @@ def get_python_function_from_location(
             if isinstance(md[c], types.FunctionType) and c == function_name
         ]
     )
-    my_function: Callable[
-        [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
-    ] = my_functions[0]
+    my_function: GetAutoMapperFunction = my_functions[0]
     my_function_signature = signature(my_function)
     my_function_args = [
         param
