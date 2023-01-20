@@ -25,7 +25,6 @@ class FrameworkPipeline(Transformer):
         progress_logger: ProgressLogger,
         run_id: Optional[str] = None,
         log_level: Optional[Union[int, str]] = None,
-        name: Optional[str] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -42,7 +41,6 @@ class FrameworkPipeline(Transformer):
         self.log_level: Optional[Union[int, str]] = log_level or os.environ.get(
             "LOGLEVEL"
         )
-        self.name: Optional[str] = name
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -60,8 +58,7 @@ class FrameworkPipeline(Transformer):
         logger = get_logger(__name__)
         count_of_transformers: int = len(self.transformers)
         i: int = 0
-        pipeline_name: str = self.name or self.__class__.__name__
-
+        pipeline_name: str = self.__class__.__name__
         self.progress_logger.log_event(
             event_name=pipeline_name,
             event_text=f"Starting Pipeline {pipeline_name}" + f"_{self._run_id}"
