@@ -40,8 +40,8 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self,
         # add your parameters here (be sure to add them to setParams below too)
         transformer: ProxyBase,
-        func_get_path: Callable[[str, str, Optional[str]], str],
-        func_get_response_path: Callable[[str, str, Optional[str]], str],
+        func_get_path: Callable[[str, str], str],
+        func_get_response_path: Callable[[str, str], str],
         fhir_server_url: str,
         source_entity_name: str,
         fhir_validation_url: Optional[str] = None,
@@ -76,22 +76,21 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
 
         self.logger = get_logger(__name__)
         self.logger.info(
-            f"Parameters="
-            + f"{json.dumps({str(key): str(value) for key, value in parameters.items()}) if parameters else 'None'}"
+            f"Parameters={json.dumps({str(key): str(value) for key, value in parameters.items()}) if parameters else 'None'}"
         )
 
         # add a param
         self.transformer: Param[ProxyBase] = Param(self, "transformer", "")
         self._setDefault(transformer=transformer)
 
-        self.func_get_path: Param[Callable[[str, str, Optional[str]], str]] = Param(
+        self.func_get_path: Param[Callable[[str, str], str]] = Param(
             self, "func_get_path", ""
         )
         self._setDefault(func_get_path=func_get_path)
 
-        self.func_get_response_path: Param[
-            Callable[[str, str, Optional[str]], str]
-        ] = Param(self, "func_get_response_path", "")
+        self.func_get_response_path: Param[Callable[[str, str], str]] = Param(
+            self, "func_get_response_path", ""
+        )
         self._setDefault(func_get_response_path=func_get_response_path)
 
         self.fhir_server_url: Param[str] = Param(self, "fhir_server_url", "")
@@ -138,9 +137,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         transformer: ProxyBase = self.getTransformer()
-        func_get_path: Callable[[str, str, Optional[str]], str] = self.getFuncGetPath()
+        func_get_path: Callable[[str, str], str] = self.getFuncGetPath()
         func_get_response_path: Callable[
-            [str, str, Optional[str]], str
+            [str, str], str
         ] = self.getFuncGetResponsePath()
         fhir_server_url: str = self.getFhirServerUrl()
         fhir_validation_url: Optional[str] = self.getFhirValidationServerUrl()
@@ -187,11 +186,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                     assert first_row
                     # noinspection PyPep8Naming
                     resourceType: str = first_row["resourceType"]
-                    fhir_resource_path: str = func_get_path(
-                        view, resourceType, self.loop_id
-                    )
+                    fhir_resource_path: str = func_get_path(view, resourceType)
                     fhir_resource_response_path: str = func_get_response_path(
-                        view, resourceType, self.loop_id
+                        view, resourceType
                     )
                     # export as FHIR to local fhir_resource_path
                     FhirExporter(
@@ -244,11 +241,11 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         return self.getOrDefault(self.transformer)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFuncGetPath(self) -> Callable[[str, str, Optional[str]], str]:
+    def getFuncGetPath(self) -> Callable[[str, str], str]:
         return self.getOrDefault(self.func_get_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFuncGetResponsePath(self) -> Callable[[str, str, Optional[str]], str]:
+    def getFuncGetResponsePath(self) -> Callable[[str, str], str]:
         return self.getOrDefault(self.func_get_response_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
