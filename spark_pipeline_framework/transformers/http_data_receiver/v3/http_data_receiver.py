@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Dict, List, Optional, Union, Generator, Tuple
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 from requests import Response
 
@@ -37,11 +37,12 @@ class HttpDataReceiver(FrameworkTransformer):
             Callable[
                 [
                     List[Dict[str, Any]],
-                    Union[List[Dict[str, Any]], Dict[str, Any]],
+                    List[Dict[str, Any]],
+                    Response,
                     HelixHttpRequest,
                     Optional[ProgressLogger],
                 ],
-                List[Dict[str, Any]],
+                Tuple[List[Dict[str, Any]], List[Dict[str, Any]]],
             ]
         ] = None,
         parameters: Optional[Dict[str, Any]] = None,
