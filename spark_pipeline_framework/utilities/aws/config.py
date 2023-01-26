@@ -35,3 +35,21 @@ def get_ssm_config(
         params[key] = param["Value"]
 
     return params
+
+
+def put_ssm_config(
+    config_arguments: Dict[str, Any],
+    region: str = "us-east-1",
+) -> Dict[str, Any]:
+    """
+    Update ssm config in AWS
+
+    :param config_arguments: Configurations sent to ssm client
+    :param region: default region in aws
+    :return refer https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.put_parameter
+    doc for return type
+    """
+    ssm = boto3.client("ssm", region_name=region)
+    response: Dict[str, Any] = ssm.put_parameter(**config_arguments)
+    assert response.get("HTTPStatusCode") == 200, "Error in updating ssm config"
+    return response
