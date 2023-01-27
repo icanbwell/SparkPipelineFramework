@@ -19,15 +19,19 @@ def test_pandas(spark_session: SparkSession) -> None:
 
 def test_pandas2(spark_session: SparkSession) -> None:
     print("")
-    df = spark_session.createDataFrame([(1, 21), (2, 30), (3, 40)], ("id", "age"))
+    df = spark_session.createDataFrame(
+        [(1, 21), (2, 30), (3, 40), (4, 50)], ("id", "age")
+    )
 
     def run_func(iterator: Iterable[DataFrame[Any]]) -> Iterable[DataFrame[Any]]:
         pdf: DataFrame[Any]
         i: int = 0
         for pdf in iterator:
             i = i + 1
-            pdf["result"] = pdf.apply(lambda row: row[0] + row[1], axis=1)
             print(f"loop: {i}")
+            my_dict = pdf.to_dict("records")
+            print(f"dict:{my_dict!r}")
+            pdf["result"] = pdf.apply(lambda row: row[0] + row[1], axis=1)
             yield pdf
 
     response_schema = StructType(
