@@ -8,7 +8,7 @@ from pyspark.sql import SparkSession, DataFrame
 from spark_fhir_schemas.r4.resources.patient import PatientSchema
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.fhir_receiver.v1.fhir_receiver import (
+from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
