@@ -1,23 +1,11 @@
 from typing import Iterable, Any
 
-from pyarrow import RecordBatch
 from pyspark.pandas import DataFrame
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, IntegerType
 
 
 def test_pandas(spark_session: SparkSession) -> None:
-    df = spark_session.createDataFrame([(1, 21), (2, 30)], ("id", "age"))
-
-    def filter_func(iterator: Iterable[DataFrame[Any]]) -> Iterable[DataFrame[Any]]:
-        pdf: DataFrame[Any]
-        for pdf in iterator:
-            yield pdf[pdf.id == 1]
-
-    df.mapInPandas(filter_func, df.schema).show()
-
-
-def test_pandas2(spark_session: SparkSession) -> None:
     print("")
     df = spark_session.createDataFrame(
         [(1, 21), (2, 30), (3, 40), (4, 50)], ("id", "age")
@@ -49,19 +37,3 @@ def test_pandas2(spark_session: SparkSession) -> None:
 
     # Each pyarrow.RecordBatch size can be controlled by spark.sql.execution.arrow.maxRecordsPerBatch.
     df.mapInPandas(run_func, response_schema).show()
-
-
-def test_pandas3(spark_session: SparkSession) -> None:
-    df = spark_session.createDataFrame([(1, 21), (2, 30)], ("id", "age"))
-
-    def run_func(iterator: Iterable[RecordBatch]) -> Iterable[RecordBatch]:
-        pdf: RecordBatch
-        for pdf in iterator:
-            # pdf["result"] = pdf.apply(lambda row: row[0] + row[1], axis=1)
-            yield pdf
-
-    response_schema = StructType(
-        [StructField("id", IntegerType()), StructField("age", IntegerType())]
-    )
-
-    df.mapInArrow(run_func, response_schema).show()
