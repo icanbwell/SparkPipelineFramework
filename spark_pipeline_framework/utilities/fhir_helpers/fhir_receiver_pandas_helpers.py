@@ -29,7 +29,7 @@ class FhirReceiverPandasHelpers:
     # function that is called for each partition
     def send_pandas_request_to_server(
         *,
-        iterator: Iterable[pandas.core.frame.DataFrame],
+        iterator: Iterable[pandas.DataFrame[Any]],
         batch_size: Optional[int],
         has_token_col: bool,
         server_url: Optional[str],
@@ -60,13 +60,13 @@ class FhirReceiverPandasHelpers:
         error_view: Optional[str],
         url_column: Optional[str],
         use_data_streaming: Optional[bool],
-    ) -> Iterable[pandas.core.frame.DataFrame]:
-        pdf: pandas.core.frame.DataFrame
+    ) -> Iterable[pandas.DataFrame[Any]]:
+        pdf: pandas.DataFrame[Any]
         i: int = 0
         for pdf in iterator:
             i = i + 1
-            print(f"loop: {i}")
-            rows: List[Dict[str, Any]] = pdf.to_dict("records")
+            # print(f"loop: {i}")
+            rows: List[Dict[str, Any]] = pdf.to_dict("records")  # type: ignore
             output_rows: List[
                 Dict[str, Any]
             ] = FhirReceiverPandasHelpers.send_partition_request_to_server(
@@ -106,30 +106,30 @@ class FhirReceiverPandasHelpers:
             # pdf["result"] = pdf.apply(lambda row: row[0] + row[1], axis=1)
             import pandas as pd
 
-            pd.set_option("display.max_colwidth", None)
-            pd.set_option("display.max_rows", 500)
-            pd.set_option("display.max_columns", 500)
-            pd.set_option("display.width", 150)
+            # pd.set_option("display.max_colwidth", None)
+            # pd.set_option("display.max_rows", 500)
+            # pd.set_option("display.max_columns", 500)
+            # pd.set_option("display.width", 150)
 
             df: pandas.core.frame.DataFrame = pd.DataFrame(output_rows)
-            print("fhir_result")
-            print(df)
-            print("fhir_result_columns")
-            print(df.columns)
-            print("fhir_result_responses")
-            print(df["responses"])
-            for output_row in output_rows:
-                print(f"output={output_row!r}")
-            pdf = pdf.iloc[0:0]
-            print("clean_columns")
-            print(pdf.columns)
+            # print("fhir_result")
+            # print(df)
+            # print("fhir_result_columns")
+            # print(df.columns)
+            # print("fhir_result_responses")
+            # print(df["responses"])
+            # for output_row in output_rows:
+            #     print(f"output={output_row!r}")
+            pdf = pdf.iloc[0:0]  # type: ignore
+            # print("clean_columns")
+            # print(pdf.columns)
             pdf = pdf.append(df, ignore_index=False)
-            print("appended_columns")
-            print(pdf.columns)
-            print("appended_responses")
-            print(pdf["responses"])
-            print("appended")
-            print(pdf)
+            # print("appended_columns")
+            # print(pdf.columns)
+            # print("appended_responses")
+            # print(pdf["responses"])
+            # print("appended")
+            # print(pdf)
             pdf = pdf[
                 [
                     "partition_index",
@@ -145,12 +145,12 @@ class FhirReceiverPandasHelpers:
                 ]
             ]
             # pdf = pdf.dropna()
-            print("final_columns")
-            print(pdf.columns)
-            print("final_responses")
-            print(pdf["responses"])
-            print("final")
-            print(pdf)
+            # print("final_columns")
+            # print(pdf.columns)
+            # print("final_responses")
+            # print(pdf["responses"])
+            # print("final")
+            # print(pdf)
             yield pdf
 
     @staticmethod

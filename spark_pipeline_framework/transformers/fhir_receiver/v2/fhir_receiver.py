@@ -503,8 +503,8 @@ class FhirReceiver(FrameworkTransformer):
                 result_with_counts_and_responses: DataFrame = id_df.repartition(
                     desired_partitions
                 ).mapInPandas(
-                    lambda iterator: FhirReceiverPandasHelpers.send_pandas_request_to_server(
-                        iterator=iterator,
+                    lambda iterator: FhirReceiverPandasHelpers.send_pandas_request_to_server(  # type: ignore
+                        iterator=iterator,  # type: ignore
                         batch_size=batch_size,
                         has_token_col=has_token_col,
                         server_url=server_url,

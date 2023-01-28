@@ -2,7 +2,6 @@ import locale
 from typing import Iterable, Any, Tuple
 
 from pyspark import pandas
-from pyspark.pandas import DataFrame
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, IntegerType
 
@@ -14,9 +13,9 @@ def test_pandas(spark_session: SparkSession) -> None:
     )
 
     def run_func(
-        iterator: Iterable[pandas.core.frame.DataFrame],
-    ) -> Iterable[pandas.core.frame.DataFrame]:
-        pdf: DataFrame[Any]
+        iterator: Iterable[pandas.DataFrame[Any]],
+    ) -> Iterable[pandas.DataFrame[Any]]:
+        pdf: pandas.DataFrameDataFrame
         i: int = 0
         for pdf in iterator:
             i = i + 1
@@ -40,7 +39,7 @@ def test_pandas(spark_session: SparkSession) -> None:
     print(f"partitions={df.rdd.getNumPartitions()}")
 
     # Each pyarrow.RecordBatch size can be controlled by spark.sql.execution.arrow.maxRecordsPerBatch.
-    df.mapInPandas(run_func, response_schema).show()
+    df.mapInPandas(run_func, response_schema).show()  # type: ignore
 
 
 def test_panda_manipulation() -> None:
