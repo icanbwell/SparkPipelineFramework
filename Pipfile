@@ -58,6 +58,7 @@ types-boto3 = ">=1.0.2"
 moto = ">=4.0.9"
 types-requests=">=0.1.11"
 types-PyMySQL=">=0.1.5"
+pandas-stubs="*"
 
 
 [requires]

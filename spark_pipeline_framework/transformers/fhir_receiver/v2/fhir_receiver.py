@@ -21,7 +21,6 @@ from pyspark.sql.types import (
     IntegerType,
     StructField,
     ArrayType,
-    Row,
     DataType,
 )
 
@@ -43,6 +42,9 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_helpers import (
     FhirReceiverHelpers,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_pandas_helpers import (
+    FhirReceiverPandasHelpers,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -481,13 +483,28 @@ class FhirReceiver(FrameworkTransformer):
                     f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
-                # run the above function on every partition
-                rdd: RDD[Row] = id_df.repartition(
+                response_schema = StructType(
+                    [
+                        StructField("partition_index", IntegerType(), nullable=False),
+                        StructField("sent", IntegerType(), nullable=False),
+                        StructField("received", IntegerType(), nullable=False),
+                        StructField(
+                            "responses", ArrayType(StringType()), nullable=False
+                        ),
+                        StructField("first", StringType(), nullable=True),
+                        StructField("last", StringType(), nullable=True),
+                        StructField("error_text", StringType(), nullable=True),
+                        StructField("url", StringType(), nullable=True),
+                        StructField("status_code", IntegerType(), nullable=True),
+                        StructField("request_id", StringType(), nullable=True),
+                    ]
+                )
+
+                result_with_counts_and_responses: DataFrame = id_df.repartition(
                     desired_partitions
-                ).rdd.mapPartitionsWithIndex(
-                    lambda partition_index, rows: FhirReceiverHelpers.send_partition_request_to_server(
-                        partition_index=partition_index,
-                        rows=rows,
+                ).mapInPandas(
+                    lambda iterator: FhirReceiverPandasHelpers.send_pandas_request_to_server(
+                        iterator=iterator,
                         batch_size=batch_size,
                         has_token_col=has_token_col,
                         server_url=server_url,
@@ -518,7 +535,8 @@ class FhirReceiver(FrameworkTransformer):
                         error_view=error_view,
                         url_column=url_column,
                         use_data_streaming=use_data_streaming,
-                    )
+                    ),
+                    response_schema,
                 )
 
                 if has_token_col and not server_url:
@@ -531,24 +549,6 @@ class FhirReceiver(FrameworkTransformer):
                             if [c in id_df.columns]
                         ]
                     )
-                response_schema = StructType(
-                    [
-                        StructField("partition_index", IntegerType(), nullable=False),
-                        StructField("sent", IntegerType(), nullable=False),
-                        StructField("received", IntegerType(), nullable=False),
-                        StructField(
-                            "responses", ArrayType(StringType()), nullable=False
-                        ),
-                        StructField("first", StringType(), nullable=True),
-                        StructField("last", StringType(), nullable=True),
-                        StructField("error_text", StringType(), nullable=True),
-                        StructField("url", StringType(), nullable=True),
-                        StructField("status_code", IntegerType(), nullable=True),
-                        StructField("request_id", StringType(), nullable=True),
-                    ]
-                )
-
-                result_with_counts_and_responses: DataFrame = rdd.toDF(response_schema)
                 if checkpoint_path:
                     if callable(checkpoint_path):
                         checkpoint_path = checkpoint_path(self.loop_id)
