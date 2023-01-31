@@ -51,5 +51,4 @@ def put_ssm_config(
     """
     ssm = boto3.client("ssm", region_name=region)
     response: Dict[str, Any] = ssm.put_parameter(**config_arguments)
-    assert response.get("HTTPStatusCode") == 200, "Error in updating ssm config"
     return response
