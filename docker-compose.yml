@@ -14,6 +14,7 @@ services:
     volumes:
       - ./:/SparkpipelineFramework/
       - ~/.local/share/virtualenvs:/root/.local/share/virtualenvs:rw
+#    - ~/.cache:/root/.cache  # so we can cache pip packages
     container_name: spf_dev
     working_dir: /SparkpipelineFramework
 

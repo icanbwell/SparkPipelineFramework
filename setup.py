@@ -78,6 +78,8 @@ setup(
         "spark-nlp>=4.2.2",
         "tensorflow",
         "delta-spark>=2.1.0",
+        "pyarrow>=1.0.0",
+        "pandas>=1.0.5",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
