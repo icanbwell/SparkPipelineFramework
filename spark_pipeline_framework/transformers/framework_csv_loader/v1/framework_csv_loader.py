@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional, Callable
+from typing import Any, Dict, List, Union, Optional
 
 from pyspark.ml.param import Param
 from pyspark.sql.types import StructType
@@ -10,6 +10,9 @@ from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framew
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.file_modes import FileReadModes
+from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
+    GetFilePathFunction,
+)
 
 
 class FrameworkCsvLoader(FrameworkLocalFileLoader):
@@ -18,9 +21,7 @@ class FrameworkCsvLoader(FrameworkLocalFileLoader):
     def __init__(
         self,
         view: str,
-        file_path: Union[
-            str, List[str], Path, Callable[[Optional[str]], Union[Path, str]]
-        ],
+        file_path: Union[str, List[str], Path, GetFilePathFunction],
         delimiter: str = ",",
         has_header: bool = True,
         clean_column_names: bool = False,

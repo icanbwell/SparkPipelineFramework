@@ -1,8 +1,9 @@
 from pathlib import Path
-from typing import Dict, Any, Optional, Union, Callable
+from typing import Dict, Any, Optional, Union
 
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
+
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_parquet_exporter.v1.framework_parquet_exporter import (
@@ -15,6 +16,9 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
+from spark_pipeline_framework.utilities.get_file_path_function.get_file_path_function import (
+    GetFilePathFunction,
+)
 
 
 class FrameworkCheckpoint(FrameworkTransformer):
@@ -26,7 +30,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
     @capture_parameters
     def __init__(
         self,
-        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
+        file_path: Union[Path, str, GetFilePathFunction],
         view: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -86,11 +90,9 @@ class FrameworkCheckpoint(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, GetFilePathFunction] = self.getFilePath()
         if callable(file_path):
-            file_path = file_path(self.loop_id)
+            file_path = file_path(view=view, resource_name="", loop_id=self.loop_id)
         stream: bool = self.getStream()
 
         delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
@@ -125,7 +127,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFilePath(
         self,
-    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
+    ) -> Union[Path, str, GetFilePathFunction]:
         return self.getOrDefault(self.file_path)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

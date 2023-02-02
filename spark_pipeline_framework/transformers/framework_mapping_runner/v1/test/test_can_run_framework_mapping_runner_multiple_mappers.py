@@ -1,10 +1,11 @@
 from pathlib import Path
-from typing import Callable, Dict, Any, Union, List
 
 from pyspark.sql import SparkSession, DataFrame
-from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.proxy_generator.get_automapper_function import (
+    GetAutoMapperFunction,
+)
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
     get_python_function_from_location,
 )
@@ -33,9 +34,7 @@ def test_can_run_framework_mapping_runner_multiple_mappings(
     df.createOrReplaceTempView("members")
 
     # Act
-    mapping_function: Callable[
-        [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
-    ] = get_python_function_from_location(
+    mapping_function: GetAutoMapperFunction = get_python_function_from_location(
         location=str(
             data_dir.joinpath("library/features/carriers_multiple_mappings/v1")
         ),
