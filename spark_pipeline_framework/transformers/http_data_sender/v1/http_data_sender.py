@@ -1,6 +1,6 @@
 import json
 import math
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
@@ -19,6 +19,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.transformers.http_data_sender.v1.http_data_sender_processor import (
     HttpDataSenderProcessor,
 )
+from spark_pipeline_framework.utilities.api_helper.http_request import HelixHttpRequest
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.oauth2_helpers.v1.oauth2_client_credentials_flow import (
     OAuth2ClientCredentialsFlow,
@@ -50,6 +51,7 @@ class HttpDataSender(FrameworkTransformer):
         batch_count: Optional[int] = None,
         batch_size: Optional[int] = None,
         cache_storage_level: Optional[StorageLevel] = None,
+        response_processor: Optional[Callable[[HelixHttpRequest], Any]] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -117,6 +119,11 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(cache_storage_level=None)
 
+        self.response_processor: Param[
+            Optional[Callable[[HelixHttpRequest], Any]]
+        ] = Param(self, "response_processor", "")
+        self._setDefault(response_processor=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -132,6 +139,9 @@ class HttpDataSender(FrameworkTransformer):
         parse_response_as_json: Optional[bool] = self.getOrDefault(
             self.parse_response_as_json
         )
+        response_processor: Optional[
+            Callable[[HelixHttpRequest], Any]
+        ] = self.getOrDefault(self.response_processor)
         content_type: str = self.getOrDefault(self.content_type)
         batch_count: Optional[int] = self.getOrDefault(self.batch_count)
         batch_size: Optional[int] = self.getOrDefault(self.batch_size)
@@ -202,6 +212,7 @@ class HttpDataSender(FrameworkTransformer):
                     headers=headers,
                     post_as_json_formatted_string=post_as_json_formatted_string,
                     parse_response_as_json=parse_response_as_json,
+                    response_processor=response_processor,
                 )
             )
 

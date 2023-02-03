@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from pyspark.sql.types import Row
 
@@ -22,6 +22,7 @@ class HttpDataSenderProcessor:
         headers: Dict[str, Any],
         post_as_json_formatted_string: Optional[bool],
         parse_response_as_json: Optional[bool],
+        response_processor: Optional[Callable[[HelixHttpRequest], Any]],
     ) -> Iterable[Row]:
         """
         This function processes a partition
@@ -52,15 +53,21 @@ class HttpDataSenderProcessor:
                 post_as_json_formatted_string=post_as_json_formatted_string,
             )
             if parse_response_as_json:
-                response_json = request.get_result()
+                response_processor = response_processor or (
+                    lambda helix_http_request: helix_http_request.get_result()
+                )
+                response_json = response_processor(request)
                 yield Row(
                     url=url,
                     status=response_json.status,
-                    result=response_json.result,
+                    result=response_processor(response_json),
                     headers=json.dumps(headers, default=str),
                     request_type=str(RequestType.POST),
                 )
             else:
+                response_processor = response_processor or (
+                    lambda helix_http_request: helix_http_request.get_text()
+                )
                 response_text = request.get_text()
                 yield Row(
                     url=url,
