@@ -32,7 +32,6 @@ class DebugTransformer(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-
         print("kwargs: {}".format(self.kwargs))
         i = df.sql_ctx.table("preprocessed")
 

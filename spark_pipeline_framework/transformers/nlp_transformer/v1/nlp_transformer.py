@@ -159,7 +159,6 @@ class NlpTransformer(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-
         """
         Performs a series of NLP feature generations  for analysis in a spark Dataframe Environment.
         Loads end result to a Spark View

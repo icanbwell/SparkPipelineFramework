@@ -59,7 +59,6 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
 
             value: Union[bool, int, float, str]
             for col, value in column_mapping.items():
-
                 if data_types[col] != "string":
                     try:
                         value = float(value)

@@ -19,7 +19,6 @@ def fhir_get_access_token(
     auth_access_token: Optional[str] = None,
     auth_scopes: Optional[List[str]] = None,
 ) -> Optional[str]:
-
     fhir_client: FhirClient = get_fhir_client(
         logger=logger,
         server_url=server_url,

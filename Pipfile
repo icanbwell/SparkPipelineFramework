@@ -21,7 +21,7 @@ alembic = ">=1.8.0"
 sqlparse = ">=0.4.2"
 bounded-pool-executor = ">=0.0.3"
 fastjsonschema= "*"
-"helix.fhir.client.sdk" = ">=1.0.31"
+"helix.fhir.client.sdk" = "==1.0.31.a1"
 opensearch-py= "*"
 pyathena = "*"
 spark-nlp = ">=4.2.2"
@@ -62,4 +62,4 @@ types-PyMySQL=">=0.1.5"
 python_version = "3.7"
 
 [pipenv]
-allow_prereleases = false
+allow_prereleases = true
