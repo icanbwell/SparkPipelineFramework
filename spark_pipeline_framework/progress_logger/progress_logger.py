@@ -53,27 +53,36 @@ class ProgressLogger:
             self.logger.info("MLFLOW IS NOT ENABLED")
             return self
         self.logger.info("MLFLOW IS ENABLED")
-        mlflow.set_tracking_uri(self.mlflow_config.mlflow_tracking_url)
-        self.logger.info(f"MLFLOW TRACKING URL: {mlflow.get_tracking_uri()}")
 
-        # get or create experiment
-        experiment: Experiment = mlflow.get_experiment_by_name(
-            name=self.mlflow_config.experiment_name
-        )
+        try:
+            mlflow.set_tracking_uri(self.mlflow_config.mlflow_tracking_url)
+            self.logger.info(f"MLFLOW TRACKING URL: {mlflow.get_tracking_uri()}")
 
-        if experiment is None:
-            experiment_id: str = mlflow.create_experiment(
-                name=self.mlflow_config.experiment_name,
-                artifact_location=self.mlflow_config.artifact_url,
+            # get or create experiment
+            experiment: Experiment = mlflow.get_experiment_by_name(
+                name=self.mlflow_config.experiment_name
             )
-        else:
-            experiment_id = experiment.experiment_id
-        mlflow.set_experiment(experiment_id=experiment_id)
 
-        mlflow.start_run(run_name=self.mlflow_config.flow_run_name)
-        self.logger.info(f"MLFLOW ARTIFACTS URL: {mlflow.get_artifact_uri()}")
-        # set the parameters used in the pipeline run
-        self.log_params(params=self.mlflow_config.parameters)
+            if experiment is None:
+                experiment_id: str = mlflow.create_experiment(
+                    name=self.mlflow_config.experiment_name,
+                    artifact_location=self.mlflow_config.artifact_url,
+                )
+            else:
+                experiment_id = experiment.experiment_id
+            mlflow.set_experiment(experiment_id=experiment_id)
+
+            mlflow.start_run(run_name=self.mlflow_config.flow_run_name)
+            self.logger.info(f"MLFLOW ARTIFACTS URL: {mlflow.get_artifact_uri()}")
+            # set the parameters used in the pipeline run
+            self.log_params(params=self.mlflow_config.parameters)
+        except Exception as e:
+            self.log_event(
+                "mlflow initialization error. suppressing and continuing.",
+                str({e}),
+                log_level=LogLevel.ERROR,
+            )
+            self.mlflow_config = None  # since there are checks for this everywhere, quick way to bypass MLFlow
 
         return self
 
