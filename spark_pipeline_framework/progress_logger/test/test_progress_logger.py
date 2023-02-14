@@ -386,3 +386,75 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     # assert that an event notification was sent out
     event_log_files = os.listdir(event_log_path)
     assert len(event_log_files) == 1
+
+
+def test_progress_logger_mlflow_error_handling_when_tracking_server_is_inaccessible(
+    spark_session: SparkSession, test_setup: Any
+) -> None:
+    # Arrange
+    clean_spark_session(spark_session)
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    temp_dir: Path = data_dir.joinpath("temp")
+    flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
+    export_path: str = str(temp_dir.joinpath("output").joinpath("flights.json"))
+
+    schema = StructType([])
+
+    spark_session.createDataFrame(spark_session.sparkContext.emptyRDD(), schema)
+
+    spark_session.sql("DROP TABLE IF EXISTS default.flights")
+
+    spark_session.createDataFrame(
+        [
+            (1, "Qureshi", "Imran"),
+            (2, "Vidal", "Michael"),
+        ],  # noqa: E231
+        ["member_id", "last_name", "first_name"],
+    ).createOrReplaceTempView("patients")
+
+    source_df: DataFrame = spark_session.table("patients")
+
+    df = source_df.select("member_id")
+    df.createOrReplaceTempView("members")
+
+    # Act
+    parameters = {
+        "flights_path": flights_path,
+        "feature_path": data_dir.joinpath(
+            "library/features/carriers_multiple_mappings/v1"
+        ),
+        "foo": "bar",
+        "view2": "my_view_2",
+        "export_path": export_path,
+        "conn_str": "jdbc:mysql://username:Im5CYsCO923GFAebv6bf@warehouse-mysql.server:3306/"
+        + "schema?rewriteBatchedStatements=true",
+    }
+
+    flow_run_name = "fluffy-fox"
+
+    mlflow_tracking_url = "https://blah"  # giving it an invalid URL to simulate tracking server being down
+    artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
+    random_string = "".join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
+    )
+    experiment_name = random_string
+
+    mlflow_config = MlFlowConfig(
+        parameters=parameters,
+        experiment_name=experiment_name,
+        flow_run_name=flow_run_name,
+        mlflow_tracking_url=str(mlflow_tracking_url),
+        artifact_url=artifact_url,
+    )
+
+    with ProgressLogger(mlflow_config=mlflow_config) as progress_logger:
+        pipeline: SimplePipeline = SimplePipeline(
+            parameters=parameters, progress_logger=progress_logger
+        )
+        transformer = pipeline.fit(df)
+        transformer.transform(df)
+
+    result_df: DataFrame = spark_session.sql("SELECT * FROM flights2")
+    result_df.show()
+
+    assert result_df.count() > 0
