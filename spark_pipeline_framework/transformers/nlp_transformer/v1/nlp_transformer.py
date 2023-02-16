@@ -181,16 +181,9 @@ class NlpTransformer(FrameworkTransformer):
         # get data from view
         #
         df_nlp: DataFrame = df.sql_ctx.table(view)
-        final_columns = []
+        final_columns = df_nlp.columns
         explode_vector_tf = True  # need to make into function
 
-        if "id" in df_nlp.columns:
-            df_nlp = df_nlp.select("id", column)
-            final_columns.append("id")
-        else:
-            df_nlp = df_nlp.select(column)
-
-        final_columns.append(in_col)
         # FEATURE GEN
         # get string length
         out_col = "character_count"
