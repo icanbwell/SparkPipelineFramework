@@ -610,6 +610,9 @@ class FhirReceiverHelpers:
     ) -> FhirGetResponse:
         url = server_url_ or server_url
         assert url
+        extra_context_to_return = {"resource_id": id_}
+        if slug_column and service_slug:
+            extra_context_to_return.update({slug_column: service_slug})
         return await FhirReceiverHelpers.send_fhir_request_async(
             logger=get_logger(__name__),
             action=action,
