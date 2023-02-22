@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, TypeVar
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from pyspark.ml.base import Transformer
 
@@ -13,8 +13,6 @@ from typing_extensions import final
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
-
-T = TypeVar("T")
 
 
 class FrameworkTransformer(
@@ -142,11 +140,6 @@ class FrameworkTransformer(
             for key, value in dictionary.items():
                 setattr(self, key, value)
         return self
-
-    # Have to re-declare here because MyPy does not seem to pick up the overload from base class (Params)
-    def getOrDefault(self, param: Param[T]) -> T:  # type: ignore
-        # noinspection PyUnresolvedReferences
-        return super().getOrDefault(param)
 
     def set_loop_id(self, loop_id: str) -> None:
         """
