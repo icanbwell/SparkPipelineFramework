@@ -1,16 +1,12 @@
 import json
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, TypeVar
 
-# noinspection PyPackageRequirements
 from pyspark.ml.base import Transformer
 
-# noinspection PyPackageRequirements
 from pyspark.ml.param import Param
 
-# noinspection PyPackageRequirements
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 
-# noinspection PyPackageRequirements
 from pyspark.sql.dataframe import DataFrame
 from typing_extensions import final
 
@@ -26,7 +22,6 @@ class FrameworkTransformer(
     DefaultParamsReadable,  # type: ignore
     DefaultParamsWritable,
 ):
-    # noinspection PyUnusedLocal
     def __init__(
         self,
         name: Optional[str] = None,
@@ -111,13 +106,6 @@ class FrameworkTransformer(
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSql(self) -> Optional[str]:
         return None
-
-    # # This is here to avoid mypy from complaining since this is a protected member
-    # noinspection PyPep8Naming
-    def _setDefault(self, **kwargs: Any) -> "FrameworkTransformer":
-        # noinspection PyUnresolvedReferences,PyProtectedMember
-        super()._setDefault(**kwargs)
-        return self
 
     def _set(self, **kwargs: Any) -> "FrameworkTransformer":
         # filter out any args that don't have parameters
