@@ -114,15 +114,17 @@ class FrameworkTransformer(
 
     # # This is here to avoid mypy from complaining since this is a protected member
     # noinspection PyPep8Naming
-    def _setDefault(self, **kwargs: Any) -> None:
+    def _setDefault(self, **kwargs: Any) -> "FrameworkTransformer":
         # noinspection PyUnresolvedReferences,PyProtectedMember
         super()._setDefault(**kwargs)
+        return self
 
-    def _set(self, **kwargs: Any) -> None:
+    def _set(self, **kwargs: Any) -> "FrameworkTransformer":
         # filter out any args that don't have parameters
         kwargs = {key: value for key, value in kwargs.items() if self.hasParam(key)}
         # noinspection PyUnresolvedReferences,PyProtectedMember
         super()._set(**kwargs)
+        return self
 
     def __str__(self) -> str:
         return json.dumps(self.as_dict(), default=str)
@@ -154,10 +156,9 @@ class FrameworkTransformer(
         return self
 
     # Have to re-declare here because MyPy does not seem to pick up the overload from base class (Params)
-    def getOrDefault(self, param: Param[T]) -> T:
+    def getOrDefault(self, param: Param[T]) -> T:  # type: ignore
         # noinspection PyUnresolvedReferences
-        # return super(Params, self).getOrDefault(param)  # type: ignore
-        return super().getOrDefault(param)  # type: ignore
+        return super().getOrDefault(param)
 
     def set_loop_id(self, loop_id: str) -> None:
         """
