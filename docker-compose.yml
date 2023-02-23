@@ -14,6 +14,7 @@ services:
     volumes:
       - ./:/SparkpipelineFramework/
       - ~/.local/share/virtualenvs:/root/.local/share/virtualenvs:rw
+      - ../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.7/dist-packages/helix_fhir_client_sdk
     container_name: spf_dev
     working_dir: /SparkpipelineFramework
 

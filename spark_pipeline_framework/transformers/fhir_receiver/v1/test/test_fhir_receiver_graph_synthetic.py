@@ -1,4 +1,4 @@
-from os import path, makedirs
+from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
 
@@ -58,6 +58,8 @@ slot_practitioner_graph = {
 def test_fhir_receiver_graph_synthetic(spark_session: SparkSession) -> None:
     # Arrange
     print()
+
+    environ["LOGLEVEL"] = "DEBUG"
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
     temp_folder = data_dir.joinpath("./temp")
@@ -116,11 +118,12 @@ def test_fhir_receiver_graph_synthetic(spark_session: SparkSession) -> None:
             # additional_parameters=["contained=true"],
             expand_fhir_bundle=True,
             graph_json=slot_practitioner_graph,
+            separate_bundle_resources=True,
         ).transform(df)
 
     # Assert
     json_df: DataFrame = df.sql_ctx.read.json(str(patient_json_path))
-    json_df.show()
+    json_df.show(truncate=False)
     json_df.printSchema()
 
     assert json_df.select("resourceType").collect()[0][0] == "Practitioner"

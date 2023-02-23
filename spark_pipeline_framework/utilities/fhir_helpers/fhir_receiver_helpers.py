@@ -747,7 +747,10 @@ class FhirReceiverHelpers:
             auth_scopes=auth_scopes,
             log_level=log_level,
         )
-        fhir_client = fhir_client.separate_bundle_resources(separate_bundle_resources)
+        if not graph_json:  # graph_json passes this in the simulate_graph_async()
+            fhir_client = fhir_client.separate_bundle_resources(
+                separate_bundle_resources
+            )
         fhir_client = fhir_client.expand_fhir_bundle(expand_fhir_bundle)
         if accept_type is not None:
             fhir_client = fhir_client.accept(accept_type)
@@ -806,6 +809,8 @@ class FhirReceiverHelpers:
 
         if not graph_json:
             assert resource_id
+        else:
+            print(f"Simulate with {separate_bundle_resources}")
         return (
             await fhir_client.simulate_graph_async(
                 id_=cast(str, resource_id)
