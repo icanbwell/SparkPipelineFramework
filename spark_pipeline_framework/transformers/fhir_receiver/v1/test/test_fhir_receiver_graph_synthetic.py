@@ -2,7 +2,10 @@ from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
 
-from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
+from mockserver_client.mock_requests_loader import (
+    load_mock_fhir_requests_from_folder,
+    load_mock_source_api_json_responses,
+)
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v1.fhir_receiver import (
@@ -79,10 +82,23 @@ def test_fhir_receiver_graph_synthetic(spark_session: SparkSession) -> None:
     client = MockServerFriendlyClient("http://mock-server:1080")
     client.clear(test_name)
 
-    load_mock_source_api_json_responses(
-        folder=data_dir.joinpath("fhir_graph_calls_practitioner"),
+    load_mock_fhir_requests_from_folder(
+        folder=data_dir.joinpath("fhir_graph_calls_synthetic/practitioner"),
         mock_client=client,
-        url_prefix=f"{test_name}/4_0_0/Practitioner/$graph",
+        method="GET",
+        url_prefix=f"{test_name}",
+    )
+
+    load_mock_source_api_json_responses(
+        folder=data_dir.joinpath("fhir_graph_calls_synthetic/practitionerRole"),
+        mock_client=client,
+        url_prefix=f"{test_name}/4_0_0/PractitionerRole",
+    )
+
+    load_mock_source_api_json_responses(
+        folder=data_dir.joinpath("fhir_graph_calls_synthetic/schedule"),
+        mock_client=client,
+        url_prefix=f"{test_name}/4_0_0/Schedule",
     )
 
     # Act

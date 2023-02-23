@@ -1,0 +1,70 @@
+{
+  "request_parameters": {
+    "method": "GET",
+    "querystring": {
+      "practitioner": "01-practitioner",
+      "_count": "2"
+    }
+  },
+  "request_result": {
+    "resourceType": "Bundle",
+    "id": "bundle-example",
+    "type": "collection",
+    "entry": [
+      {
+        "link": "https://localhost:3000/4_0_0/PractitionerRole/4657-3437",
+        "resource": {
+          "resourceType": "PractitionerRole",
+          "id": "4657-3437",
+          "meta": {
+            "security": [
+              {
+                "system": "https://www.icanbwell.com/access",
+                "code": "medstar"
+              },
+              {
+                "system": "https://www.icanbwell.com/owner",
+                "code": "medstar"
+              }
+            ]
+          },
+          "practitioner": {
+            "reference": "Practitioner/01-practitioner"
+          },
+          "organization": {
+            "reference": "Organization/MedStar Adult Medicine at MUMH",
+            "type": "Organization",
+            "display": "MedStar Adult Medicine at MUMH"
+          },
+          "code": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/practitioner-role",
+                  "code": "doctor",
+                  "display": "Doctor"
+                }
+              ],
+              "text": "Doctor"
+            }
+          ],
+          "specialty": [
+            {
+              "coding": [
+                {
+                  "system": "https://www.medstarhealth.org/"
+                }
+              ]
+            }
+          ],
+          "location": [
+            {
+              "reference": "Location/3437",
+              "display": "UMH 33RD ST PROF BLDG 3RD FL"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
