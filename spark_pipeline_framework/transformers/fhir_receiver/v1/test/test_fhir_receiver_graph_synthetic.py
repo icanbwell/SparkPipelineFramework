@@ -116,7 +116,7 @@ def test_fhir_receiver_graph_synthetic(spark_session: SparkSession) -> None:
             limit=2,
             batch_size=2,
             # additional_parameters=["contained=true"],
-            expand_fhir_bundle=True,
+            # expand_fhir_bundle=True,
             graph_json=slot_practitioner_graph,
             separate_bundle_resources=True,
         ).transform(df)
@@ -126,11 +126,13 @@ def test_fhir_receiver_graph_synthetic(spark_session: SparkSession) -> None:
     json_df.show(truncate=False)
     json_df.printSchema()
 
-    assert json_df.select("resourceType").collect()[0][0] == "Practitioner"
-    assert json_df.select("resourceType").collect()[1][0] == "Practitioner"
+    practitioners = json_df.select("Practitioner").collect()[0][0]
+    assert len(practitioners) == 1
+    assert practitioners[0].asDict() == {
+        "id": "01-practitioner",
+        "resourceType": "Practitioner",
+    }
 
-    text_df: DataFrame = df.sql_ctx.read.text(str(patient_json_path))
-    text_df = text_df.withColumnRenamed("value", "bundle")
-    text_df.printSchema()
-
-    text_df.show(truncate=False)
+    practitioner_roles = json_df.select("PractitionerRole").collect()[0][0]
+    assert len(practitioner_roles) == 1
+    assert practitioner_roles[0]["id"] == "4657-3437"
