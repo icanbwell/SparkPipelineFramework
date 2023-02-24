@@ -136,3 +136,7 @@ def test_fhir_receiver_graph_synthetic(spark_session: SparkSession) -> None:
     practitioner_roles = json_df.select("PractitionerRole").collect()[0][0]
     assert len(practitioner_roles) == 1
     assert practitioner_roles[0]["id"] == "4657-3437"
+
+    schedules = json_df.select("Schedule").collect()[0][0]
+    assert len(schedules) == 1
+    assert schedules[0]["id"] == "1720233406-SCH-MPCS"
