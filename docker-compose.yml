@@ -14,7 +14,7 @@ services:
     volumes:
       - ./:/SparkpipelineFramework/
       - ~/.local/share/virtualenvs:/root/.local/share/virtualenvs:rw
-      - ../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.7/dist-packages/helix_fhir_client_sdk
+#      - ../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.7/dist-packages/helix_fhir_client_sdk
     container_name: spf_dev
     working_dir: /SparkpipelineFramework
 
@@ -50,7 +50,7 @@ services:
   fhir:
     depends_on:
       - mongo
-    image: imranq2/node-fhir-server-mongo:3.0.8
+    image: imranq2/node-fhir-server-mongo:3.0.12
     # To use local fhir code, comment above line and uncomment below
 #    build:
 #      dockerfile: Dockerfile
