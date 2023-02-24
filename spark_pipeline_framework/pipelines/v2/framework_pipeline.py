@@ -229,7 +229,7 @@ class FrameworkPipeline(Transformer):
                 for k, v in self.parameters.items()
             },
             "steps": [
-                s.as_dict() if not isinstance(s, list) else [s1.as_dict() for s1 in s]
+                s.as_dict() if not isinstance(s, list) else [s1.as_dict() for s1 in s]  # type: ignore
                 for s in self.steps
             ],
         }

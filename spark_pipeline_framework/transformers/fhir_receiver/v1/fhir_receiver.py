@@ -105,6 +105,7 @@ class FhirReceiver(FrameworkTransformer):
         delta_lake_table: Optional[str] = None,
         schema: Optional[Union[StructType, DataType]] = None,
         cache_storage_level: Optional[StorageLevel] = None,
+        graph_json: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -152,6 +153,7 @@ class FhirReceiver(FrameworkTransformer):
         :param schema: the schema to apply after we receive the data
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
+        :param graph_json: (Optional) a FHIR GraphDefinition resource to use for retrieving data
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -355,6 +357,9 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(cache_storage_level=None)
 
+        self.graph_json: Param[Optional[Dict[str, Any]]] = Param(self, "graph_json", "")
+        self._setDefault(graph_json=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -433,6 +438,8 @@ class FhirReceiver(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
+
+        graph_json: Optional[Dict[str, Any]] = self.getOrDefault(self.graph_json)
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -518,6 +525,7 @@ class FhirReceiver(FrameworkTransformer):
                         error_view=error_view,
                         url_column=url_column,
                         use_data_streaming=use_data_streaming,
+                        graph_json=graph_json,
                     )
                 )
 
@@ -829,6 +837,7 @@ class FhirReceiver(FrameworkTransformer):
                     error_view=error_view,
                     ignore_status_codes=ignore_status_codes,
                     use_data_streaming=use_data_streaming,
+                    graph_json=graph_json,
                 )
                 resources = result1.resources
                 errors = result1.errors

@@ -80,6 +80,7 @@ class FhirReceiverHelpers:
         error_view: Optional[str],
         url_column: Optional[str],
         use_data_streaming: Optional[bool],
+        graph_json: Optional[Dict[str, Any]],
     ) -> List[Row]:
         """
         This function processes a partition
@@ -139,6 +140,7 @@ class FhirReceiverHelpers:
             error_view=error_view,
             url_column=url_column,
             use_data_streaming=use_data_streaming,
+            graph_json=graph_json,
         )
         return result
 
@@ -177,6 +179,7 @@ class FhirReceiverHelpers:
         error_view: Optional[str],
         url_column: Optional[str],
         use_data_streaming: Optional[bool],
+        graph_json: Optional[Dict[str, Any]],
     ) -> List[Row]:
         try:
             first_id: Optional[str] = resource_id_with_token_list[0]["resource_id"]
@@ -240,6 +243,7 @@ class FhirReceiverHelpers:
                 resource_type=resource_type,
                 error_view=error_view,
                 use_data_streaming=use_data_streaming,
+                graph_json=graph_json,
             )
         else:  # otherwise send one by one
             return FhirReceiverHelpers.process_one_by_one(
@@ -274,6 +278,7 @@ class FhirReceiverHelpers:
                 url_column=url_column,
                 resource_name=resource_type,
                 use_data_streaming=use_data_streaming,
+                graph_json=graph_json,
             )
 
     @staticmethod
@@ -310,6 +315,7 @@ class FhirReceiverHelpers:
         url_column: Optional[str],
         resource_name: str,
         use_data_streaming: Optional[bool],
+        graph_json: Optional[Dict[str, Any]],
     ) -> List[Row]:
         coroutines: List[Coroutine[Any, Any, List[Row]]] = [
             FhirReceiverHelpers.process_single_row_async(
@@ -344,6 +350,7 @@ class FhirReceiverHelpers:
                 resource1=resource1,
                 resource_name=resource_name,
                 use_data_streaming=use_data_streaming,
+                graph_json=graph_json,
             )
             for resource1 in resource_id_with_token_list
         ]
@@ -389,6 +396,7 @@ class FhirReceiverHelpers:
         resource_name: str,
         resource1: Dict[str, Optional[str]],
         use_data_streaming: Optional[bool],
+        graph_json: Optional[Dict[str, Any]],
     ) -> List[Row]:
         id_ = resource1["resource_id"]
         token_ = resource1["access_token"]
@@ -429,6 +437,7 @@ class FhirReceiverHelpers:
                     exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                     limit=limit,
                     use_data_streaming=use_data_streaming,
+                    graph_json=graph_json,
                 )
             )
             resp_result: str = result1.responses.replace("\n", "")
@@ -506,6 +515,7 @@ class FhirReceiverHelpers:
         resource_type: str,
         error_view: Optional[str],
         use_data_streaming: Optional[bool],
+        graph_json: Optional[Dict[str, Any]],
     ) -> List[Row]:
         result1 = asyncio.run(
             FhirReceiverHelpers.send_simple_fhir_request_async(
@@ -537,6 +547,7 @@ class FhirReceiverHelpers:
                 exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                 limit=limit,
                 use_data_streaming=use_data_streaming,
+                graph_json=graph_json,
             )
         )
         resp_result: str = result1.responses.replace("\n", "")
@@ -607,6 +618,7 @@ class FhirReceiverHelpers:
         exclude_status_codes_from_retry: Optional[List[int]],
         limit: Optional[int],
         use_data_streaming: Optional[bool],
+        graph_json: Optional[Dict[str, Any]],
     ) -> FhirGetResponse:
         url = server_url_ or server_url
         assert url
@@ -641,6 +653,7 @@ class FhirReceiverHelpers:
             limit=limit,
             log_level=log_level,
             use_data_streaming=use_data_streaming,
+            graph_json=graph_json,
         )
 
     @staticmethod
@@ -678,6 +691,7 @@ class FhirReceiverHelpers:
         exclude_status_codes_from_retry: Optional[List[int]] = None,
         limit: Optional[int] = None,
         use_data_streaming: Optional[bool],
+        graph_json: Optional[Dict[str, Any]],
     ) -> FhirGetResponse:
         """
         Sends a fhir request to the fhir client sdk
@@ -704,17 +718,20 @@ class FhirReceiverHelpers:
         :param auth_login_token:
         :param auth_access_token:
         :param auth_scopes:
-        :param separate_bundle_resources: separate bundle resources into a dict where each resourceType is a field with an array of results
-        :param expand_fhir_bundle: expand the fhir bundle to create a list of resources
+        :param separate_bundle_resources: separate bundle resources into a dict where each resourceType is a field
+                                            with an array of results
+        :param expand_fhir_bundle: expands the fhir bundle to create a list of resources
         :param accept_type: (Optional) Accept header to use
         :param content_type: (Optional) Content-Type header to use
         :param accept_encoding: (Optional) Accept-encoding header to use
-        :param extra_context_to_return: a dict to return with every row (separate_bundle_resources is set) or with FhirGetResponse
+        :param extra_context_to_return: a dict to return with every row (separate_bundle_resources is set)
+                                        or with FhirGetResponse
         :param retry_count: how many times to retry
         :param exclude_status_codes_from_retry: do not retry for these status codes
         :param limit: limit results to this
         :param log_level:
         :param use_data_streaming:
+        :param graph_json:
         :return:
         :rtype:
         """
@@ -730,7 +747,10 @@ class FhirReceiverHelpers:
             auth_scopes=auth_scopes,
             log_level=log_level,
         )
-        fhir_client = fhir_client.separate_bundle_resources(separate_bundle_resources)
+        if not graph_json:  # graph_json passes this in the simulate_graph_async()
+            fhir_client = fhir_client.separate_bundle_resources(
+                separate_bundle_resources
+            )
         fhir_client = fhir_client.expand_fhir_bundle(expand_fhir_bundle)
         if accept_type is not None:
             fhir_client = fhir_client.accept(accept_type)
@@ -787,7 +807,18 @@ class FhirReceiverHelpers:
         if use_data_streaming:
             fhir_client = fhir_client.use_data_streaming(use_data_streaming)
 
-        return await fhir_client.get_async()
+        return (
+            await fhir_client.simulate_graph_async(
+                id_=cast(str, resource_id)
+                if not isinstance(resource_id, list)
+                else resource_id[0],
+                graph_json=graph_json,
+                contained=False,
+                separate_bundle_resources=separate_bundle_resources,
+            )
+            if graph_json
+            else await fhir_client.get_async()
+        )
 
     @staticmethod
     def json_str_to_list_str(json_str: str) -> List[str]:
@@ -835,6 +866,7 @@ class FhirReceiverHelpers:
         error_view: Optional[str],
         ignore_status_codes: List[int],
         use_data_streaming: Optional[bool],
+        graph_json: Optional[Dict[str, Any]],
     ) -> GetBatchResult:
         resources: List[str] = []
         errors: List[str] = []
@@ -876,6 +908,7 @@ class FhirReceiverHelpers:
                     exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                     log_level=log_level,
                     use_data_streaming=use_data_streaming,
+                    graph_json=graph_json,
                 )
             )
             try:
@@ -934,6 +967,7 @@ class FhirReceiverHelpers:
                         exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                         log_level=log_level,
                         use_data_streaming=use_data_streaming,
+                        graph_json=graph_json,
                     )
                 )
                 result_response: List[str] = []
@@ -1009,7 +1043,7 @@ class FhirReceiverHelpers:
                                 break
                     else:
                         # Received an error
-                        if not result.status in ignore_status_codes:
+                        if result.status not in ignore_status_codes:
                             raise FhirReceiverException(
                                 url=result.url,
                                 json_data=result.responses,

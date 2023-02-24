@@ -133,10 +133,10 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             "enable": self.enable,
             "enable_if_view_not_empty": self.enable_if_view_not_empty,
             "enable_sql": self.enable_sql,
-            "stages": [s.as_dict() for s in self.stages]
+            "stages": [s.as_dict() for s in self.stages]  # type: ignore
             if not callable(self.stages)
             else str(self.stages),
-            "else_stages": [s.as_dict() for s in self.else_stages]
+            "else_stages": [s.as_dict() for s in self.else_stages]  # type: ignore
             if self.else_stages and not callable(self.else_stages)
             else str(self.else_stages),
         }

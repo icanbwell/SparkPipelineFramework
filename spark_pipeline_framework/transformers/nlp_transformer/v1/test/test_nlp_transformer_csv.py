@@ -25,7 +25,7 @@ class MyPipeline(FrameworkPipeline):
             parameters=parameters, progress_logger=progress_logger
         )
         self.transformers = self.create_steps(
-            [  # type: ignore
+            [
                 FrameworkCsvLoader(
                     view=parameters["view"], file_path=parameters["analysis_path"]
                 ),

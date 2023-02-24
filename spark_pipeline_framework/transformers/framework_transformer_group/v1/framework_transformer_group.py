@@ -103,7 +103,7 @@ class FrameworkTransformerGroup(FrameworkTransformer):
             **(super().as_dict()),
             "enable": self.enable,
             "enable_if_view_not_empty": self.enable_if_view_not_empty,
-            "stages": [s.as_dict() for s in self.stages]
+            "stages": [s.as_dict() for s in self.stages]  # type: ignore
             if not callable(self.stages)
             else str(self.stages),
         }
