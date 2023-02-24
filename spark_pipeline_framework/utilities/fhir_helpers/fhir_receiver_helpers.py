@@ -807,10 +807,6 @@ class FhirReceiverHelpers:
         if use_data_streaming:
             fhir_client = fhir_client.use_data_streaming(use_data_streaming)
 
-        if not graph_json:
-            assert resource_id
-        else:
-            print(f"Simulate with {separate_bundle_resources}")
         return (
             await fhir_client.simulate_graph_async(
                 id_=cast(str, resource_id)
