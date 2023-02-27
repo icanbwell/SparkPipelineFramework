@@ -53,6 +53,10 @@ class HttpDataSenderProcessor:
             )
             if parse_response_as_json:
                 response_json = request.get_result()
+                if not response_json.result:
+                    print(
+                        f"Received empty json response with status code {response_json.status}"
+                    )
                 yield Row(
                     url=url,
                     status=response_json.status,
@@ -62,6 +66,10 @@ class HttpDataSenderProcessor:
                 )
             else:
                 response_text = request.get_text()
+                if not response_text.result:
+                    print(
+                        f"Received empty response with status code {response_text.status}"
+                    )
                 yield Row(
                     url=url,
                     status=response_text.status,
