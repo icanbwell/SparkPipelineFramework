@@ -76,9 +76,9 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         view_name = self.get_view_name()
         conn_string = self.get_conn_string()
 
-        try:
-            client = pymongo.MongoClient(conn_string)  # type: ignore
+        client = pymongo.MongoClient(conn_string)  # type: ignore
 
+        try:
             integration_hub_db = client.integration_hub
             client_connection = integration_hub_db.client_connection
 
@@ -95,9 +95,8 @@ class ConnectHubDataReceiver(FrameworkTransformer):
             )
             df2.createOrReplaceTempView(view_name)
 
+        finally:
             client.close()
-        except Exception as e:
-            self.logger.error(e)
 
         return df
 
