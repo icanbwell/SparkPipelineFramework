@@ -78,6 +78,7 @@ setup(
         "spark-nlp>=4.2.2",
         "tensorflow",
         "delta-spark>=2.1.0",
+        "pymongo==4.2.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
