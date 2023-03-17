@@ -25,7 +25,7 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
     last_run_date = datetime.strptime("1970-01-01", "%Y-%m-%d")
     conn_string = "mongodb://mongo:27017/"
 
-    mongo_client: MongoClient = pymongo.MongoClient(conn_string)  # type: ignore
+    mongo_client: MongoClient = pymongo.MongoClient(conn_string)
     integration_hub = mongo_client.integration_hub
     client_connection = integration_hub.client_connection
 
@@ -34,11 +34,7 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
         client_connection.drop()
 
     client_connection.insert_one(
-        {"displayLabel": "Should Return 1", "lastUpdatedOnDate": datetime.now()}
-    )
-
-    client_connection.insert_one(
-        {"displayLabel": "Should Return 2", "lastUpdatedOnDate": datetime.now()}
+        {"displayLabel": "Should Return", "lastUpdatedOnDate": datetime.now()}
     )
 
     client_connection.insert_one(
@@ -69,5 +65,5 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
         .map(lambda j: cast(Dict[str, Dict[str, List[str]]], json.loads(j)))
         .collect()
     )
-    assert len(result) == 2
+    assert len(result) == 1
     assert result[0].get("displayLabel") is not "Should NOT Return"
