@@ -71,3 +71,9 @@ sphinx-html:
 .PHONY:pipenv-setup
 pipenv-setup:devdocker ## Brings up the bash shell in dev docker
 	docker-compose run --rm --name spark_pipeline_framework dev pipenv-setup sync --pipfile
+
+.PHONY: clean_data
+clean_data: down ## Cleans all the local docker setup
+ifneq ($(shell docker volume ls | grep "sparkpipelineframework"| awk '{print $$2}'),)
+	docker volume ls | grep "sparkpipelineframework" | awk '{print $$2}' | xargs docker volume rm
+endif
