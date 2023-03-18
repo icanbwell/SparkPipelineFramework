@@ -21,8 +21,6 @@ class FhirSenderOperation(Enum):
         source: Union["FhirSenderOperation", str], target: "FhirSenderOperation"
     ) -> bool:
         if isinstance(source, FhirSenderOperation):
-            return True if source.value == target.value else False
+            return source == target
         else:
-            return (
-                True if FhirSenderOperation.from_str(source) == target.value else False
-            )
+            return FhirSenderOperation.from_str(source) == target

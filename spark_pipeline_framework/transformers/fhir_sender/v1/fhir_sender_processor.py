@@ -49,6 +49,8 @@ class FhirSenderProcessor:
         """
         json_data_list: List[Row] = list(rows)
         logger = get_logger(__name__)
+        assert server_url
+
         if len(json_data_list) == 0:
             yield []
         print(
