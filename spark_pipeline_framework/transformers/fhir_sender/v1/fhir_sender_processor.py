@@ -12,6 +12,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import 
     send_fhir_delete,
     send_json_bundle_to_fhir,
 )
+from spark_pipeline_framework.utilities.json_helpers import convert_dict_to_fhir_json
 
 
 class FhirSenderProcessor:
@@ -99,7 +100,7 @@ class FhirSenderProcessor:
                     current_bundle: List[Dict[str, Any]]
                     result: Optional[FhirMergeResponse] = send_json_bundle_to_fhir(
                         json_data_list=[
-                            json.dumps(item.asDict(recursive=True), default=str)
+                            convert_dict_to_fhir_json(item.asDict(recursive=True))
                             if "id" in item
                             else item["value"]
                         ],
@@ -126,7 +127,7 @@ class FhirSenderProcessor:
                 # send a whole batch to the server at once
                 result = send_json_bundle_to_fhir(
                     json_data_list=[
-                        json.dumps(item.asDict(recursive=True))
+                        convert_dict_to_fhir_json(item.asDict(recursive=True))
                         if "id" in item
                         else item["value"]
                         for item in json_data_list
@@ -271,14 +272,7 @@ class FhirSenderProcessor:
                     current_bundle: List[Dict[str, Any]]
                     result: Optional[FhirMergeResponse] = send_json_bundle_to_fhir(
                         json_data_list=[
-                            json.dumps(
-                                item.asDict(recursive=True),
-                                default=lambda o: dict(
-                                    (key, value)
-                                    for key, value in o.__dict__.items()
-                                    if value
-                                ),
-                            )
+                            convert_dict_to_fhir_json(item.asDict(recursive=True))
                             if "id" in item
                             else item["value"]
                         ],
@@ -305,14 +299,7 @@ class FhirSenderProcessor:
                 # send a whole batch to the server at once
                 result = send_json_bundle_to_fhir(
                     json_data_list=[
-                        json.dumps(
-                            item.asDict(recursive=True),
-                            default=lambda o: dict(
-                                (key, value)
-                                for key, value in o.__dict__.items()
-                                if value
-                            ),
-                        )
+                        convert_dict_to_fhir_json(item.asDict(recursive=True))
                         if "id" in item
                         else item["value"]
                         for item in json_data_list
