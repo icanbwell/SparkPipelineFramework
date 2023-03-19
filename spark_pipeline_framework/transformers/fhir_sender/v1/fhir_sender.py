@@ -407,10 +407,9 @@ class FhirSender(FrameworkTransformer):
                     assert isinstance(rdd_first_row_obj, list), type(rdd_first_row_obj)
                     if len(rdd_first_row_obj) > 0:
                         rdd_first_row = rdd_first_row_obj[0]
+                        rdd1: RDD[Collection[str]]
                         if isinstance(rdd_first_row, list):
-                            rdd1: RDD[Collection[str]] = rdd_flat.flatMap(
-                                lambda a: a
-                            ).filter(lambda x: True)
+                            rdd1 = rdd_flat.flatMap(lambda a: a).filter(lambda x: True)
                         else:
                             rdd1 = rdd_flat  # type: ignore
 
@@ -470,7 +469,7 @@ class FhirSender(FrameworkTransformer):
                                 )
                 except Exception as e:
                     self.logger.exception(f"Exception in FHIR Sender: {str(e)}")
-                    self.logger.error(f"Response: {rdd1.collect()}")
+                    self.logger.error(f"Response: {result_df.collect()}")
                     raise e
 
         self.logger.info(
