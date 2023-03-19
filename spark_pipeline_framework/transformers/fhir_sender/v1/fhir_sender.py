@@ -32,6 +32,9 @@ from spark_pipeline_framework.utilities.capture_parameters import capture_parame
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_schema import (
+    FhirMergeResponseSchema,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exception import (
     FhirSenderValidationException,
 )
@@ -378,7 +381,9 @@ class FhirSender(FrameworkTransformer):
                     #     ]
                     # )
                     try:
-                        result_df: DataFrame = rdd1.toDF()
+                        result_df: DataFrame = rdd1.toDF(
+                            schema=FhirMergeResponseSchema.get_schema()
+                        )
                         self.logger.info(
                             f"Executing requests and writing FHIR {resource_name} responses to disk..."
                         )
