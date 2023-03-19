@@ -17,6 +17,9 @@ class FhirMergeResponseItemSchema:
     sourceAssigningAuthority = "sourceAssigningAuthority"
     resource_version = "resource_version"
     message = "message"
+    error = "error"
+    token = "token"
+    resource_json = "resource_json"
 
     @staticmethod
     def get_schema() -> StructType:
@@ -63,6 +66,17 @@ class FhirMergeResponseItemSchema:
                 ),
                 StructField(
                     FhirMergeResponseItemSchema.issue, StringType(), nullable=True
+                ),
+                StructField(
+                    FhirMergeResponseItemSchema.error, StringType(), nullable=True
+                ),
+                StructField(
+                    FhirMergeResponseItemSchema.resource_version,
+                    StringType(),
+                    nullable=True,
+                ),
+                StructField(
+                    FhirMergeResponseItemSchema.token, StringType(), nullable=True
                 ),
             ]
         )
