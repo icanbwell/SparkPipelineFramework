@@ -106,6 +106,7 @@ class FhirReceiver(FrameworkTransformer):
         schema: Optional[Union[StructType, DataType]] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         graph_json: Optional[Dict[str, Any]] = None,
+        run_synchronously: Optional[bool] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -154,6 +155,7 @@ class FhirReceiver(FrameworkTransformer):
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param graph_json: (Optional) a FHIR GraphDefinition resource to use for retrieving data
+        :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -360,6 +362,11 @@ class FhirReceiver(FrameworkTransformer):
         self.graph_json: Param[Optional[Dict[str, Any]]] = Param(self, "graph_json", "")
         self._setDefault(graph_json=None)
 
+        self.run_synchronously: Param[Optional[bool]] = Param(
+            self, "run_synchronously", ""
+        )
+        self._setDefault(run_synchronously=run_synchronously)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -441,6 +448,8 @@ class FhirReceiver(FrameworkTransformer):
 
         graph_json: Optional[Dict[str, Any]] = self.getOrDefault(self.graph_json)
 
+        run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+
         # get access token first so we can reuse it
         if auth_client_id and server_url:
             auth_access_token = fhir_get_access_token(
@@ -488,13 +497,14 @@ class FhirReceiver(FrameworkTransformer):
                     f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
-                # run the above function on every partition
-                rdd: RDD[Row] = id_df.repartition(
-                    desired_partitions
-                ).rdd.mapPartitionsWithIndex(
-                    lambda partition_index, rows: FhirReceiverHelpers.send_partition_request_to_server(
-                        partition_index=partition_index,
-                        rows=rows,
+                result_with_counts_and_responses: DataFrame
+                if run_synchronously:
+                    id_rows: List[Row] = id_df.collect()
+                    result_rows: List[
+                        Row
+                    ] = FhirReceiverHelpers.send_partition_request_to_server(
+                        partition_index=0,
+                        rows=id_rows,
                         batch_size=batch_size,
                         has_token_col=has_token_col,
                         server_url=server_url,
@@ -527,21 +537,68 @@ class FhirReceiver(FrameworkTransformer):
                         use_data_streaming=use_data_streaming,
                         graph_json=graph_json,
                     )
-                )
+                    response_schema = FhirGetResponseSchema.get_schema()
 
-                if has_token_col and not server_url:
-                    assert slug_column
-                    assert url_column
-                    assert all(
-                        [
-                            c
-                            for c in [url_column, slug_column, "resourceType"]
-                            if [c in id_df.columns]
-                        ]
+                    result_with_counts_and_responses = df.sparkSession.createDataFrame(
+                        result_rows, schema=response_schema
                     )
-                response_schema = FhirGetResponseSchema.get_schema()
+                else:
+                    # run the above function on every partition
+                    rdd: RDD[Row] = id_df.repartition(
+                        desired_partitions
+                    ).rdd.mapPartitionsWithIndex(
+                        lambda partition_index, rows: FhirReceiverHelpers.send_partition_request_to_server(
+                            partition_index=partition_index,
+                            rows=rows,
+                            batch_size=batch_size,
+                            has_token_col=has_token_col,
+                            server_url=server_url,
+                            log_level=log_level,
+                            action=action,
+                            action_payload=action_payload,
+                            additional_parameters=additional_parameters,
+                            filter_by_resource=filter_by_resource,
+                            filter_parameter=filter_parameter,
+                            sort_fields=sort_fields,
+                            auth_server_url=auth_server_url,
+                            auth_client_id=auth_client_id,
+                            auth_client_secret=auth_client_secret,
+                            auth_login_token=auth_login_token,
+                            auth_scopes=auth_scopes,
+                            include_only_properties=include_only_properties,
+                            separate_bundle_resources=separate_bundle_resources,
+                            expand_fhir_bundle=expand_fhir_bundle,
+                            accept_type=accept_type,
+                            content_type=content_type,
+                            accept_encoding=accept_encoding,
+                            slug_column=slug_column,
+                            retry_count=retry_count,
+                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                            limit=limit,
+                            auth_access_token=auth_access_token,
+                            resource_type=resource_name,
+                            error_view=error_view,
+                            url_column=url_column,
+                            use_data_streaming=use_data_streaming,
+                            graph_json=graph_json,
+                        )
+                    )
 
-                result_with_counts_and_responses: DataFrame = rdd.toDF(response_schema)
+                    if has_token_col and not server_url:
+                        assert slug_column
+                        assert url_column
+                        assert all(
+                            [
+                                c
+                                for c in [url_column, slug_column, "resourceType"]
+                                if [c in id_df.columns]
+                            ]
+                        )
+                    response_schema = FhirGetResponseSchema.get_schema()
+
+                    result_with_counts_and_responses = rdd.toDF(response_schema)
+
+                # Now write to checkpoint if requested
                 if checkpoint_path:
                     if callable(checkpoint_path):
                         checkpoint_path = checkpoint_path(self.loop_id)

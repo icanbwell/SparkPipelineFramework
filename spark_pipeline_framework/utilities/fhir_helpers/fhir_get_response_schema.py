@@ -1,4 +1,10 @@
-from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+from pyspark.sql.types import (
+    StructType,
+    StructField,
+    IntegerType,
+    StringType,
+    ArrayType,
+)
 
 
 class FhirGetResponseSchema:
@@ -40,7 +46,9 @@ class FhirGetResponseSchema:
                     FhirGetResponseSchema.received, IntegerType(), nullable=False
                 ),
                 StructField(
-                    FhirGetResponseSchema.responses, StringType(), nullable=False
+                    FhirGetResponseSchema.responses,
+                    ArrayType(StringType()),
+                    nullable=False,
                 ),
                 StructField(FhirGetResponseSchema.first, StringType(), nullable=True),
                 StructField(FhirGetResponseSchema.last, StringType(), nullable=True),
