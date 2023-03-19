@@ -206,7 +206,7 @@ class FhirReceiverHelpers:
                     responses=[],
                     first=None,
                     last=None,
-                    error_text="",
+                    error_text=None,
                     url=server_url,
                     status_code=200,
                     request_id=None,

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union, Generator
 
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from pyspark.sql.types import Row
@@ -41,7 +41,7 @@ class FhirSenderProcessor:
         validation_server_url: Optional[str],
         retry_count: Optional[int],
         exclude_status_codes_from_retry: Optional[List[int]],
-    ) -> Iterable[List[Dict[str, Any]]]:
+    ) -> Generator[List[Dict[str, Any]], None, None]:
         """
         This function processes a partition
 

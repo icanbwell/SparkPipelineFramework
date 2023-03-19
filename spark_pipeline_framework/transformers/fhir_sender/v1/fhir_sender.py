@@ -2,7 +2,7 @@ import json
 import math
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Union, Callable, Collection
 
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
@@ -32,13 +32,15 @@ from spark_pipeline_framework.utilities.capture_parameters import capture_parame
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_schema import (
-    FhirMergeResponseSchema,
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
+    FhirMergeResponseItemSchema,
 )
+
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exception import (
     FhirSenderValidationException,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
+from spark_pipeline_framework.utilities.flattener.flattener import flatten
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
@@ -77,6 +79,7 @@ class FhirSender(FrameworkTransformer):
         num_partitions: Optional[int] = None,
         delta_lake_table: Optional[str] = None,
         cache_storage_level: Optional[StorageLevel] = None,
+        run_synchronously: Optional[bool] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -102,6 +105,7 @@ class FhirSender(FrameworkTransformer):
         :param delta_lake_table: use delta lake format
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
+        :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -214,6 +218,11 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(cache_storage_level=None)
 
+        self.run_synchronously: Param[Optional[bool]] = Param(
+            self, "run_synchronously", ""
+        )
+        self._setDefault(run_synchronously=run_synchronously)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -273,6 +282,8 @@ class FhirSender(FrameworkTransformer):
 
         num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
 
+        run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+
         # get access token first so we can reuse it
         if auth_client_id:
             auth_access_token = fhir_get_access_token(
@@ -324,119 +335,143 @@ class FhirSender(FrameworkTransformer):
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
                 )
 
-                # ---- Now process all the results ----
-                rdd: RDD[
-                    Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
-                ] = json_df.repartition(desired_partitions).rdd.mapPartitionsWithIndex(
-                    lambda partition_index, rows: FhirSenderProcessor.send_partition_to_server(
-                        partition_index=partition_index,
-                        rows=rows,
-                        desired_partitions=desired_partitions,
-                        operation=operation,
-                        server_url=server_url,
-                        resource_name=resource_name,
-                        name=name,
-                        auth_server_url=auth_server_url,
-                        auth_client_id=auth_client_id,
-                        auth_client_secret=auth_client_secret,
-                        auth_login_token=auth_login_token,
-                        auth_scopes=auth_scopes,
-                        auth_access_token=auth_access_token,
-                        log_level=log_level,
-                        batch_size=batch_size,
-                        validation_server_url=validation_server_url,
-                        retry_count=retry_count,
-                        exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                result_df: DataFrame
+                if run_synchronously:
+                    rows_to_send: List[Row] = json_df.collect()
+                    result_rows_list: List[List[Dict[str, Any]]] = list(
+                        FhirSenderProcessor.send_partition_to_server(
+                            partition_index=0,
+                            rows=rows_to_send,
+                            desired_partitions=desired_partitions,
+                            operation=operation,
+                            server_url=server_url,
+                            resource_name=resource_name,
+                            name=name,
+                            auth_server_url=auth_server_url,
+                            auth_client_id=auth_client_id,
+                            auth_client_secret=auth_client_secret,
+                            auth_login_token=auth_login_token,
+                            auth_scopes=auth_scopes,
+                            auth_access_token=auth_access_token,
+                            log_level=log_level,
+                            batch_size=batch_size,
+                            validation_server_url=validation_server_url,
+                            retry_count=retry_count,
+                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                        )
                     )
-                )
-                rdd = (
-                    rdd.cache()
-                    if cache_storage_level is None
-                    else rdd.persist(storageLevel=cache_storage_level)
-                )
+                    result_rows: List[Dict[str, Any]] = flatten(result_rows_list)
+                    result_df = df.sparkSession.createDataFrame(
+                        result_rows, schema=FhirMergeResponseItemSchema.get_schema()
+                    )
+                else:
+                    # ---- Now process all the results ----
+                    rdd: RDD[
+                        Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
+                    ] = json_df.repartition(
+                        desired_partitions
+                    ).rdd.mapPartitionsWithIndex(
+                        lambda partition_index, rows: FhirSenderProcessor.send_partition_to_server(
+                            partition_index=partition_index,
+                            rows=rows,
+                            desired_partitions=desired_partitions,
+                            operation=operation,
+                            server_url=server_url,
+                            resource_name=resource_name,
+                            name=name,
+                            auth_server_url=auth_server_url,
+                            auth_client_id=auth_client_id,
+                            auth_client_secret=auth_client_secret,
+                            auth_login_token=auth_login_token,
+                            auth_scopes=auth_scopes,
+                            auth_access_token=auth_access_token,
+                            log_level=log_level,
+                            batch_size=batch_size,
+                            validation_server_url=validation_server_url,
+                            retry_count=retry_count,
+                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                        )
+                    )
+                    rdd = (
+                        rdd.cache()
+                        if cache_storage_level is None
+                        else rdd.persist(storageLevel=cache_storage_level)
+                    )
 
-                # turn list of list of string to list of strings
-                rdd_type = Union[Dict[str, Any], List[Dict[str, Any]]]
-                rdd_flat: RDD[rdd_type] = rdd.flatMap(lambda a: a).filter(lambda x: True)  # type: ignore
+                    # turn list of list of string to list of strings
+                    rdd_type = Union[Dict[str, Any], List[Dict[str, Any]]]
+                    rdd_flat: RDD[rdd_type] = rdd.flatMap(lambda a: a).filter(lambda x: True)  # type: ignore
 
-                # check if RDD contains a list.  If so, flatMap it
-                rdd_first_row_obj = rdd_flat.take(1)
-                assert isinstance(rdd_first_row_obj, list), type(rdd_first_row_obj)
-                if len(rdd_first_row_obj) > 0:
-                    rdd_first_row = rdd_first_row_obj[0]
-                    if isinstance(rdd_first_row, list):
-                        rdd1: RDD[Dict[str, Any]] = rdd_flat.flatMap(lambda a: a).filter(lambda x: True)  # type: ignore
-                    else:
-                        rdd1 = rdd_flat  # type: ignore
-                    # schema = StructType(
-                    #     [
-                    #         StructField(name="id", dataType=StringType()),
-                    #         StructField(name="created", dataType=BooleanType()),
-                    #         StructField(name="updated", dataType=BooleanType()),
-                    #         StructField(name="deleted", dataType=BooleanType()),
-                    #         StructField(name="resource_version", dataType=StringType()),
-                    #         StructField(name="resourceType", dataType=StringType()),
-                    #         StructField(name="message", dataType=StringType()),
-                    #         StructField(name="issue", dataType=StringType()),
-                    #     ]
-                    # )
-                    try:
-                        result_df: DataFrame = rdd1.toDF(
-                            schema=FhirMergeResponseSchema.get_schema()
-                        )
-                        self.logger.info(
-                            f"Executing requests and writing FHIR {resource_name} responses to disk..."
-                        )
-                        result_df.write.mode(mode).json(str(response_path))
-                        # result_df.show(truncate=False, n=100)
-                        self.logger.info(
-                            f"Reading from disk and counting rows for {resource_name}..."
-                        )
-                        result_df = df.sql_ctx.read.json(str(response_path))
-                        file_row_count: int = result_df.count()
-                        self.logger.info(
-                            f"Wrote {file_row_count} FHIR {resource_name} responses to {response_path}"
-                        )
-                        if view:
-                            result_df.createOrReplaceTempView(view)
+                    # check if RDD contains a list.  If so, flatMap it
+                    rdd_first_row_obj = rdd_flat.take(1)
+                    assert isinstance(rdd_first_row_obj, list), type(rdd_first_row_obj)
+                    if len(rdd_first_row_obj) > 0:
+                        rdd_first_row = rdd_first_row_obj[0]
+                        if isinstance(rdd_first_row, list):
+                            rdd1: RDD[Collection[str]] = rdd_flat.flatMap(
+                                lambda a: a
+                            ).filter(lambda x: True)
+                        else:
+                            rdd1 = rdd_flat  # type: ignore
 
-                        if "issue" in result_df.columns:
-                            # if there are any errors then raise exception
-                            first_error_response: Optional[Row] = result_df.filter(
-                                col("issue").isNotNull()
-                            ).first()
-                            if first_error_response is not None:
-                                if throw_exception_on_validation_failure:
-                                    raise FhirSenderValidationException(
-                                        url=validation_server_url or server_url,
-                                        json_data=json.dumps(
-                                            first_error_response[0],
-                                            indent=2,
-                                            default=str,
-                                        ),
-                                    )
-                                else:
-                                    self.logger.info(
-                                        f"------- Failed validations for {resource_name} ---------"
-                                    )
-                                    failed_df = result_df.filter(
-                                        col("issue").isNotNull()
-                                    )
-                                    if error_view:
-                                        failed_df.createOrReplaceTempView(error_view)
-                                    failed_validations: List[str] = (
-                                        failed_df.select("issue")
-                                        .rdd.flatMap(lambda x: x)
-                                        .collect()
-                                    )
-                                    self.logger.info(failed_validations)
-                                    self.logger.info(
-                                        f"------- End Failed validations for {resource_name} ---------"
-                                    )
-                    except Exception as e:
-                        self.logger.exception(f"Exception in FHIR Sender: {str(e)}")
-                        self.logger.error(f"Response: {rdd1.collect()}")
-                        raise e
+                        result_df = rdd1.toDF(
+                            schema=FhirMergeResponseItemSchema.get_schema()
+                        )
+
+                try:
+                    self.logger.info(
+                        f"Executing requests and writing FHIR {resource_name} responses to disk..."
+                    )
+                    result_df.write.mode(mode).json(str(response_path))
+                    # result_df.show(truncate=False, n=100)
+                    self.logger.info(
+                        f"Reading from disk and counting rows for {resource_name}..."
+                    )
+                    result_df = df.sql_ctx.read.json(str(response_path))
+                    file_row_count: int = result_df.count()
+                    self.logger.info(
+                        f"Wrote {file_row_count} FHIR {resource_name} responses to {response_path}"
+                    )
+                    if view:
+                        result_df.createOrReplaceTempView(view)
+
+                    if FhirMergeResponseItemSchema.issue in result_df.columns:
+                        # if there are any errors then raise exception
+                        first_error_response: Optional[Row] = result_df.filter(
+                            col(FhirMergeResponseItemSchema.issue).isNotNull()
+                        ).first()
+                        if first_error_response is not None:
+                            if throw_exception_on_validation_failure:
+                                raise FhirSenderValidationException(
+                                    url=validation_server_url or server_url,
+                                    json_data=json.dumps(
+                                        first_error_response[0],
+                                        indent=2,
+                                        default=str,
+                                    ),
+                                )
+                            else:
+                                self.logger.info(
+                                    f"------- Failed validations for {resource_name} ---------"
+                                )
+                                failed_df = result_df.filter(
+                                    col(FhirMergeResponseItemSchema.issue).isNotNull()
+                                )
+                                if error_view:
+                                    failed_df.createOrReplaceTempView(error_view)
+                                failed_validations: List[str] = (
+                                    failed_df.select(FhirMergeResponseItemSchema.issue)
+                                    .rdd.flatMap(lambda x: x)
+                                    .collect()
+                                )
+                                self.logger.info(failed_validations)
+                                self.logger.info(
+                                    f"------- End Failed validations for {resource_name} ---------"
+                                )
+                except Exception as e:
+                    self.logger.exception(f"Exception in FHIR Sender: {str(e)}")
+                    self.logger.error(f"Response: {rdd1.collect()}")
+                    raise e
 
         self.logger.info(
             f"----- Finished sending {resource_name} (rows={row_count}) to FHIR server {server_url}  -----"
