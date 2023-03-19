@@ -71,11 +71,6 @@ class FhirMergeResponseItemSchema:
                     FhirMergeResponseItemSchema.error, StringType(), nullable=True
                 ),
                 StructField(
-                    FhirMergeResponseItemSchema.resource_version,
-                    StringType(),
-                    nullable=True,
-                ),
-                StructField(
                     FhirMergeResponseItemSchema.token, StringType(), nullable=True
                 ),
             ]
