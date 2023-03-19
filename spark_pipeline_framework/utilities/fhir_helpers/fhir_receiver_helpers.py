@@ -23,6 +23,11 @@ from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 from pyspark.sql.types import (
     Row,
+    StructField,
+    IntegerType,
+    ArrayType,
+    StringType,
+    StructType,
 )
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -1061,3 +1066,23 @@ class FhirReceiverHelpers:
                     break
 
         return GetBatchResult(resources=resources, errors=errors)
+
+    @staticmethod
+    def get_fhir_response_schema() -> StructType:
+        response_schema = StructType(
+            [
+                StructField("partition_index", IntegerType(), nullable=False),
+                StructField("sent", IntegerType(), nullable=False),
+                StructField("received", IntegerType(), nullable=False),
+                StructField("responses", ArrayType(StringType()), nullable=False),
+                StructField("first", StringType(), nullable=True),
+                StructField("last", StringType(), nullable=True),
+                StructField("error_text", StringType(), nullable=True),
+                StructField("url", StringType(), nullable=True),
+                StructField("status_code", IntegerType(), nullable=True),
+                StructField("request_id", StringType(), nullable=True),
+                StructField("access_token", StringType(), nullable=True),
+                StructField("extra_context_to_return", StringType(), nullable=True),
+            ]
+        )
+        return response_schema

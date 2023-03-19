@@ -18,9 +18,6 @@ from pyspark.sql.functions import explode
 from pyspark.sql.types import (
     StringType,
     StructType,
-    IntegerType,
-    StructField,
-    ArrayType,
     Row,
     DataType,
 )
@@ -539,22 +536,7 @@ class FhirReceiver(FrameworkTransformer):
                             if [c in id_df.columns]
                         ]
                     )
-                response_schema = StructType(
-                    [
-                        StructField("partition_index", IntegerType(), nullable=False),
-                        StructField("sent", IntegerType(), nullable=False),
-                        StructField("received", IntegerType(), nullable=False),
-                        StructField(
-                            "responses", ArrayType(StringType()), nullable=False
-                        ),
-                        StructField("first", StringType(), nullable=True),
-                        StructField("last", StringType(), nullable=True),
-                        StructField("error_text", StringType(), nullable=True),
-                        StructField("url", StringType(), nullable=True),
-                        StructField("status_code", IntegerType(), nullable=True),
-                        StructField("request_id", StringType(), nullable=True),
-                    ]
-                )
+                response_schema = FhirReceiverHelpers.get_fhir_response_schema()
 
                 result_with_counts_and_responses: DataFrame = rdd.toDF(response_schema)
                 if checkpoint_path:
