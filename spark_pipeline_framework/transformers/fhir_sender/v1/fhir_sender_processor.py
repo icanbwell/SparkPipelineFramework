@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union, Generator
 
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from pyspark.sql.types import Row
@@ -7,6 +7,9 @@ from pyspark.sql.types import Row
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
     FhirSenderOperation,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
+    FhirMergeResponseItemSchema,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import (
     send_fhir_delete,
@@ -38,7 +41,7 @@ class FhirSenderProcessor:
         validation_server_url: Optional[str],
         retry_count: Optional[int],
         exclude_status_codes_from_retry: Optional[List[int]],
-    ) -> Iterable[List[Dict[str, Any]]]:
+    ) -> Generator[List[Dict[str, Any]], None, None]:
         """
         This function processes a partition
 
@@ -161,15 +164,15 @@ class FhirSenderProcessor:
         errors: List[str] = []
         response: Dict[str, Any]
         for response in responses:
-            if "updated" in response and response["updated"] is True:
+            if response.get(FhirMergeResponseItemSchema.updated) is True:
                 updated_count += 1
-            if "created" in response and response["created"] is True:
+            if response.get(FhirMergeResponseItemSchema.created) is True:
                 created_count += 1
-            if "deleted" in response and response["deleted"] is True:
+            if response.get(FhirMergeResponseItemSchema.deleted) is True:
                 deleted_count += 1
-            if "issue" in response and response["issue"] is not None:
+            if response.get(FhirMergeResponseItemSchema.issue) is not None:
                 error_count += 1
-                errors.append(json.dumps(response["issue"]))
+                errors.append(json.dumps(response[FhirMergeResponseItemSchema.issue]))
         print(
             f"Received response for batch {partition_index}/{desired_partitions} "
             f"request_ids:[{', '.join(request_id_list)}] "

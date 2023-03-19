@@ -38,6 +38,7 @@ def test_fhir_sender_merge(spark_session: SparkSession) -> None:
             response_path=response_files_dir,
             progress_logger=progress_logger,
             batch_size=1,
+            run_synchronously=True,
         ).transform(df)
 
     # Assert
