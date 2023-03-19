@@ -1,5 +1,6 @@
 import json
 import math
+import traceback
 from os import environ
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable, Collection
@@ -335,7 +336,7 @@ class FhirSender(FrameworkTransformer):
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
                 )
 
-                result_df: DataFrame
+                result_df: Optional[DataFrame] = None
                 if run_synchronously:
                     rows_to_send: List[Row] = json_df.collect()
                     result_rows_list: List[List[Dict[str, Any]]] = list(
@@ -407,10 +408,9 @@ class FhirSender(FrameworkTransformer):
                     assert isinstance(rdd_first_row_obj, list), type(rdd_first_row_obj)
                     if len(rdd_first_row_obj) > 0:
                         rdd_first_row = rdd_first_row_obj[0]
+                        rdd1: RDD[Collection[str]]
                         if isinstance(rdd_first_row, list):
-                            rdd1: RDD[Collection[str]] = rdd_flat.flatMap(
-                                lambda a: a
-                            ).filter(lambda x: True)
+                            rdd1 = rdd_flat.flatMap(lambda a: a).filter(lambda x: True)
                         else:
                             rdd1 = rdd_flat  # type: ignore
 
@@ -418,60 +418,70 @@ class FhirSender(FrameworkTransformer):
                             schema=FhirMergeResponseItemSchema.get_schema()
                         )
 
-                try:
-                    self.logger.info(
-                        f"Executing requests and writing FHIR {resource_name} responses to disk..."
-                    )
-                    result_df.write.mode(mode).json(str(response_path))
-                    # result_df.show(truncate=False, n=100)
-                    self.logger.info(
-                        f"Reading from disk and counting rows for {resource_name}..."
-                    )
-                    result_df = df.sql_ctx.read.json(str(response_path))
-                    file_row_count: int = result_df.count()
-                    self.logger.info(
-                        f"Wrote {file_row_count} FHIR {resource_name} responses to {response_path}"
-                    )
-                    if view:
-                        result_df.createOrReplaceTempView(view)
+                if result_df is not None:
+                    try:
+                        self.logger.info(
+                            f"Executing requests and writing FHIR {resource_name} responses to disk..."
+                        )
+                        result_df.write.mode(mode).json(str(response_path))
+                        # result_df.show(truncate=False, n=100)
+                        self.logger.info(
+                            f"Reading from disk and counting rows for {resource_name}..."
+                        )
+                        result_df = df.sql_ctx.read.json(str(response_path))
+                        file_row_count: int = result_df.count()
+                        self.logger.info(
+                            f"Wrote {file_row_count} FHIR {resource_name} responses to {response_path}"
+                        )
+                        if view:
+                            result_df.createOrReplaceTempView(view)
 
-                    if FhirMergeResponseItemSchema.issue in result_df.columns:
-                        # if there are any errors then raise exception
-                        first_error_response: Optional[Row] = result_df.filter(
-                            col(FhirMergeResponseItemSchema.issue).isNotNull()
-                        ).first()
-                        if first_error_response is not None:
-                            if throw_exception_on_validation_failure:
-                                raise FhirSenderValidationException(
-                                    url=validation_server_url or server_url,
-                                    json_data=json.dumps(
-                                        first_error_response[0],
-                                        indent=2,
-                                        default=str,
-                                    ),
-                                )
-                            else:
-                                self.logger.info(
-                                    f"------- Failed validations for {resource_name} ---------"
-                                )
-                                failed_df = result_df.filter(
-                                    col(FhirMergeResponseItemSchema.issue).isNotNull()
-                                )
-                                if error_view:
-                                    failed_df.createOrReplaceTempView(error_view)
-                                failed_validations: List[str] = (
-                                    failed_df.select(FhirMergeResponseItemSchema.issue)
-                                    .rdd.flatMap(lambda x: x)
-                                    .collect()
-                                )
-                                self.logger.info(failed_validations)
-                                self.logger.info(
-                                    f"------- End Failed validations for {resource_name} ---------"
-                                )
-                except Exception as e:
-                    self.logger.exception(f"Exception in FHIR Sender: {str(e)}")
-                    self.logger.error(f"Response: {rdd1.collect()}")
-                    raise e
+                        if FhirMergeResponseItemSchema.issue in result_df.columns:
+                            # if there are any errors then raise exception
+                            first_error_response: Optional[Row] = result_df.filter(
+                                col(FhirMergeResponseItemSchema.issue).isNotNull()
+                            ).first()
+                            if first_error_response is not None:
+                                if throw_exception_on_validation_failure:
+                                    raise FhirSenderValidationException(
+                                        url=validation_server_url or server_url,
+                                        json_data=json.dumps(
+                                            first_error_response[0],
+                                            indent=2,
+                                            default=str,
+                                        ),
+                                    )
+                                else:
+                                    self.logger.info(
+                                        f"------- Failed validations for {resource_name} ---------"
+                                    )
+                                    failed_df = result_df.filter(
+                                        col(
+                                            FhirMergeResponseItemSchema.issue
+                                        ).isNotNull()
+                                    )
+                                    if error_view:
+                                        failed_df.createOrReplaceTempView(error_view)
+                                    failed_validations: List[str] = (
+                                        failed_df.select(
+                                            FhirMergeResponseItemSchema.issue
+                                        )
+                                        .rdd.flatMap(lambda x: x)
+                                        .collect()
+                                    )
+                                    self.logger.info(failed_validations)
+                                    self.logger.info(
+                                        f"------- End Failed validations for {resource_name} ---------"
+                                    )
+                    except Exception as e:
+                        exception_traceback = "".join(
+                            traceback.TracebackException.from_exception(e).format()
+                        )
+                        self.logger.exception(
+                            f"Exception in FHIR Sender: {str(e)}: {exception_traceback}"
+                        )
+                        # self.logger.error(f"Response: {result_df.collect()}")
+                        raise e
 
         self.logger.info(
             f"----- Finished sending {resource_name} (rows={row_count}) to FHIR server {server_url}  -----"

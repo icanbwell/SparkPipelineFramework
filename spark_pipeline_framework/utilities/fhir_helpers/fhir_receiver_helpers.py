@@ -97,11 +97,11 @@ class FhirReceiverHelpers:
             {
                 "resource_id": r["id"],
                 "access_token": r["token"],
-                url_column: r[url_column],  # type: ignore
-                slug_column: r[slug_column],  # type: ignore
+                url_column: r[url_column],
+                slug_column: r[slug_column],
                 "resourceType": r["resourceType"],
             }
-            if has_token_col and not server_url
+            if has_token_col and url_column and slug_column
             else {
                 "resource_id": r["id"],
                 "access_token": r["token"],
