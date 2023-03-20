@@ -12,7 +12,7 @@ class FhirGetResponseWriter:
         first: Optional[str],
         last: Optional[str],
         error_text: Optional[str],
-        url: str,
+        url: Optional[str],
         status_code: int,
         request_id: Optional[str],
         extra_context_to_return: Optional[Dict[str, Any]],

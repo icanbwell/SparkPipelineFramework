@@ -184,7 +184,6 @@ class FhirReceiverHelpers:
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
     ) -> List[Row]:
-        assert server_url
         try:
             first_id: Optional[str] = resource_id_with_token_list[0]["resource_id"]
         except IndexError:
