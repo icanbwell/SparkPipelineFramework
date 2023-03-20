@@ -34,35 +34,39 @@ class FhirGetResponseReader:
 
     @property
     def first(self) -> Optional[str]:
-        return self._safe_get(FhirGetResponseSchema.first)
+        return self._safe_get_string(FhirGetResponseSchema.first)
 
     @property
     def last(self) -> Optional[str]:
-        return self._safe_get(FhirGetResponseSchema.last)
+        return self._safe_get_string(FhirGetResponseSchema.last)
 
     @property
     def error_text(self) -> Optional[str]:
-        return self._safe_get(FhirGetResponseSchema.error_text)
+        return self._safe_get_string(FhirGetResponseSchema.error_text)
 
     @property
     def url(self) -> Optional[str]:
-        return self._safe_get(FhirGetResponseSchema.url)
+        return self._safe_get_string(FhirGetResponseSchema.url)
 
     @property
-    def status_code(self) -> Optional[str]:
-        return self._safe_get(FhirGetResponseSchema.status_code)
+    def status_code(self) -> Optional[int]:
+        return (
+            self.row[FhirGetResponseSchema.status_code]
+            if FhirGetResponseSchema.status_code in self.row
+            else None
+        )
 
     @property
     def request_id(self) -> Optional[str]:
-        return self._safe_get(FhirGetResponseSchema.request_id)
+        return self._safe_get_string(FhirGetResponseSchema.request_id)
 
     @property
     def access_token(self) -> Optional[str]:
-        return self._safe_get(FhirGetResponseSchema.access_token)
+        return self._safe_get_string(FhirGetResponseSchema.access_token)
 
     @property
     def extra_context_to_return(self) -> Optional[str]:
-        return self._safe_get(FhirGetResponseSchema.extra_context_to_return)
+        return self._safe_get_string(FhirGetResponseSchema.extra_context_to_return)
 
-    def _safe_get(self, property_name: str) -> Optional[str]:
+    def _safe_get_string(self, property_name: str) -> Optional[str]:
         return self.row[property_name] if property_name in self.row else None
