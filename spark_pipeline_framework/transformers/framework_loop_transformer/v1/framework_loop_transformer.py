@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional, Union, List, Callable
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml import Transformer
+from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -24,7 +25,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
         stages: Union[List[Transformer], Callable[[], List[Transformer]]],
         sleep_interval_in_seconds: int,
         max_time_in_seconds: Optional[int] = None,
-        max_number_of_runs: Optional[int] = None,
+        max_number_of_runs: Optional[Union[int, Callable[[], int]]] = None,
         run_until: Optional[datetime] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
@@ -48,7 +49,10 @@ class FrameworkLoopTransformer(FrameworkTransformer):
 
         self.sleep_interval_in_seconds: int = sleep_interval_in_seconds
         self.max_time_in_seconds: Optional[int] = max_time_in_seconds
-        self.max_number_of_runs: Optional[int] = max_number_of_runs
+        self.max_number_of_runs: Param[Optional[Union[int, Callable[[], int]]]] = Param(
+            self, "max_number_of_runs", ""
+        )
+        self._setDefault(max_number_of_runs=max_number_of_runs)
         self.run_until: Optional[datetime] = run_until
 
         self.stages: Union[List[Transformer], Callable[[], List[Transformer]]] = stages
@@ -59,13 +63,18 @@ class FrameworkLoopTransformer(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         start_time: float = time.time()
+        max_number_of_runs: Optional[
+            Union[int, Callable[[], int]]
+        ] = self.get_max_number_of_runs()
+        if callable(max_number_of_runs):
+            max_number_of_runs = max_number_of_runs()
         if progress_logger is not None:
             progress_logger.write_to_log(
                 f"---- Starting loop: "
                 + f"sleep_interval_in_seconds: {self.sleep_interval_in_seconds}, "
                 + f"max_time_in_seconds: {self.max_time_in_seconds}, "
                 + f"run_until: {self.run_until}, "
-                + f"max_number_of_runs: {self.max_number_of_runs} "
+                + f"max_number_of_runs: {max_number_of_runs} "
                 + f" ---------"
             )
 
@@ -126,10 +135,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     or time_elapsed < self.max_time_in_seconds
                 )
                 and (self.run_until is None or datetime.utcnow() < self.run_until)
-                and (
-                    not self.max_number_of_runs
-                    or current_run_number < self.max_number_of_runs
-                )
+                and (not max_number_of_runs or current_run_number < max_number_of_runs)
             ):
                 time.sleep(self.sleep_interval_in_seconds)
             else:
@@ -142,3 +148,6 @@ class FrameworkLoopTransformer(FrameworkTransformer):
             if not callable(self.stages)
             else str(self.stages),
         }
+
+    def get_max_number_of_runs(self) -> Optional[Union[int, Callable[[], int]]]:
+        return self.getOrDefault(self.max_number_of_runs)
