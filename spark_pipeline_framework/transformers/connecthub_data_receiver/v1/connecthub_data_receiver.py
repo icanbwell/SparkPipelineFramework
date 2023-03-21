@@ -90,6 +90,10 @@ class ConnectHubDataReceiver(FrameworkTransformer):
                     break
                 converted_data.extend(data)
 
+            self.logger.debug(
+                f"the total number of documents about to be loaded into Spark: {len(converted_data)}"
+            )
+
             df2 = df.sql_ctx.read.json(
                 sc(df).parallelize([json.dumps(r) for r in converted_data])
             )
@@ -116,6 +120,8 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         """
         page_size = self.get_page_size()
         last_run_date = self.get_last_run_date()
+
+        self.logger.debug(f"last_run_date: {last_run_date}; last_seen: {last_seen}")
 
         LAST_UPDATED_ON_DATE = "lastUpdatedOnDate"
 
@@ -151,9 +157,15 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         json_string = dumps(list_cur)
         data: List[Any] = json.loads(json_string)
 
+        self.logger.debug(f"returned # of documents: {len(data)}")
+
         # this appears to be unique, since it takes more than a ms between updates to generate this timestamp
         last_seen_string = data[-1][LAST_UPDATED_ON_DATE]["$date"]
         last_seen_date = datetime.strptime(last_seen_string, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        self.logger.debug(
+            f"the {LAST_UPDATED_ON_DATE} of the last returned document: {last_seen_string}"
+        )
 
         return data, last_seen_date
 

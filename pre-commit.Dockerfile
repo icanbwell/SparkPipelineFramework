@@ -6,7 +6,12 @@ RUN apt-get update && \
 
 COPY ${project_root}/Pipfile* ./
 
-RUN pipenv sync --dev --system
+#RUN pipenv sync --dev --system
+
+ARG TARGETPLATFORM
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; \
+    then pipenv sync --dev --system; \
+    else rm -rf Pipfile.lock && pipenv lock && pipenv sync --dev --system; fi
 
 WORKDIR /sourcecode
 RUN git config --global --add safe.directory /sourcecode
