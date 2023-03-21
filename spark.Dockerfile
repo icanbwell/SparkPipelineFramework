@@ -11,7 +11,12 @@ RUN apt-get remove python3-entrypoints -y
 COPY Pipfile* /spf/
 WORKDIR /spf
 
-RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0
+#RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0
+
+ARG TARGETPLATFORM
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; \
+    then pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0; \
+    else rm -rf Pipfile.lock && pipenv lock && pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0; fi
 
 #COPY ./jars/* /opt/spark/jars/
 #COPY ./conf/* /opt/spark/conf/
