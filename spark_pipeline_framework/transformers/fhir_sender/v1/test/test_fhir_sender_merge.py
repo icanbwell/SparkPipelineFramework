@@ -1,5 +1,5 @@
 import json
-from os import path, makedirs
+from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
 
@@ -28,6 +28,7 @@ def test_fhir_sender_merge(spark_session: SparkSession) -> None:
 
     fhir_server_url: str = "http://fhir:3000/4_0_0"
 
+    environ["LOGLEVEL"] = "DEBUG"
     # Act
     with ProgressLogger() as progress_logger:
         FhirSender(
@@ -37,17 +38,18 @@ def test_fhir_sender_merge(spark_session: SparkSession) -> None:
             response_path=response_files_dir,
             progress_logger=progress_logger,
             batch_size=1,
+            run_synchronously=True,
         ).transform(df)
 
     # Assert
     response = requests.get(f"{fhir_server_url}/Patient/00100000000")
-    assert response.ok
+    assert response.ok, response.text
     json_text: str = response.text
     obj = json.loads(json_text)
     assert obj["birthDate"] == "2017-01-01"
 
     response = requests.get(f"{fhir_server_url}/Patient/00200000000")
-    assert response.ok
+    assert response.ok, response.text
     json_text = response.text
     obj = json.loads(json_text)
     assert obj["birthDate"] == "1984-01-01"

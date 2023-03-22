@@ -26,6 +26,9 @@ from pyspark.sql.types import (
 )
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_writer import (
+    FhirGetResponseWriter,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
 )
@@ -94,11 +97,11 @@ class FhirReceiverHelpers:
             {
                 "resource_id": r["id"],
                 "access_token": r["token"],
-                url_column: r[url_column],  # type: ignore
-                slug_column: r[slug_column],  # type: ignore
+                url_column: r[url_column],
+                slug_column: r[slug_column],
                 "resourceType": r["resourceType"],
             }
-            if has_token_col and not server_url
+            if has_token_col and url_column and slug_column
             else {
                 "resource_id": r["id"],
                 "access_token": r["token"],
@@ -195,7 +198,7 @@ class FhirReceiverHelpers:
 
         if sent == 0:
             return [
-                Row(
+                FhirGetResponseWriter.create_row(
                     partition_index=partition_index,
                     sent=0,
                     received=0,
@@ -203,9 +206,11 @@ class FhirReceiverHelpers:
                     first=None,
                     last=None,
                     error_text=None,
-                    url=None,
-                    status_code=None,
+                    url=server_url,
+                    status_code=200,
                     request_id=None,
+                    access_token=None,
+                    extra_context_to_return=None,
                 )
             ]
 
@@ -399,17 +404,18 @@ class FhirReceiverHelpers:
         graph_json: Optional[Dict[str, Any]],
     ) -> List[Row]:
         id_ = resource1["resource_id"]
-        token_ = resource1["access_token"]
+        access_token = resource1["access_token"]
         url_ = resource1.get(url_column) if url_column else None
         service_slug = resource1.get(slug_column) if slug_column else None
         resource_type = resource1.get("resourceType")
         request_id: Optional[str] = None
         responses_from_fhir: List[str] = []
+        extra_context_to_return: Optional[Dict[str, Any]] = None
         try:
             result1: FhirGetResponse = (
                 await FhirReceiverHelpers.send_simple_fhir_request_async(
                     id_=id_,
-                    token_=token_,
+                    token_=access_token,
                     server_url_=url_ or server_url,
                     service_slug=service_slug,
                     resource_type=resource_type or resource_name,
@@ -461,12 +467,14 @@ class FhirReceiverHelpers:
             status_code = result1.status
             request_url = result1.url
             request_id = result1.request_id
+            extra_context_to_return = result1.extra_context_to_return
+            access_token = result1.access_token
         except FhirSenderException as e1:
             error_text = str(e1)
             status_code = e1.response_status_code or 0
             request_url = e1.url
         result = [
-            Row(
+            FhirGetResponseWriter.create_row(
                 partition_index=partition_index,
                 sent=1,
                 received=len(responses_from_fhir),
@@ -477,6 +485,8 @@ class FhirReceiverHelpers:
                 url=request_url,
                 status_code=status_code,
                 request_id=request_id,
+                extra_context_to_return=extra_context_to_return,
+                access_token=access_token,
             )
         ]
         return result
@@ -571,7 +581,7 @@ class FhirReceiverHelpers:
         request_id: Optional[str] = result1.request_id
         is_valid_response: bool = True if len(responses_from_fhir) > 0 else False
         result = [
-            Row(
+            FhirGetResponseWriter.create_row(
                 partition_index=partition_index,
                 sent=1,
                 received=len(responses_from_fhir) if is_valid_response else 0,
@@ -582,6 +592,8 @@ class FhirReceiverHelpers:
                 url=result1.url,
                 status_code=status_code,
                 request_id=request_id,
+                access_token=None,
+                extra_context_to_return=None,
             )
         ]
         return result

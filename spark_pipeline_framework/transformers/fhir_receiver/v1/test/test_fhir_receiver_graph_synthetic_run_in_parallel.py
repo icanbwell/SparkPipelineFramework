@@ -55,7 +55,9 @@ slot_practitioner_graph = {
 }
 
 
-def test_fhir_receiver_graph_synthetic(spark_session: SparkSession) -> None:
+def test_fhir_receiver_graph_synthetic_run_in_parallel(
+    spark_session: SparkSession,
+) -> None:
     # Arrange
     print()
 

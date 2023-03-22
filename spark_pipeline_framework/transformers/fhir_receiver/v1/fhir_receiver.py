@@ -18,9 +18,6 @@ from pyspark.sql.functions import explode
 from pyspark.sql.types import (
     StringType,
     StructType,
-    IntegerType,
-    StructField,
-    ArrayType,
     Row,
     DataType,
 )
@@ -43,6 +40,9 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_helpers import (
     FhirReceiverHelpers,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
+    FhirGetResponseSchema,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -106,6 +106,7 @@ class FhirReceiver(FrameworkTransformer):
         schema: Optional[Union[StructType, DataType]] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         graph_json: Optional[Dict[str, Any]] = None,
+        run_synchronously: Optional[bool] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -154,6 +155,7 @@ class FhirReceiver(FrameworkTransformer):
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param graph_json: (Optional) a FHIR GraphDefinition resource to use for retrieving data
+        :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -360,6 +362,11 @@ class FhirReceiver(FrameworkTransformer):
         self.graph_json: Param[Optional[Dict[str, Any]]] = Param(self, "graph_json", "")
         self._setDefault(graph_json=None)
 
+        self.run_synchronously: Param[Optional[bool]] = Param(
+            self, "run_synchronously", ""
+        )
+        self._setDefault(run_synchronously=run_synchronously)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -441,6 +448,8 @@ class FhirReceiver(FrameworkTransformer):
 
         graph_json: Optional[Dict[str, Any]] = self.getOrDefault(self.graph_json)
 
+        run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+
         # get access token first so we can reuse it
         if auth_client_id and server_url:
             auth_access_token = fhir_get_access_token(
@@ -488,13 +497,14 @@ class FhirReceiver(FrameworkTransformer):
                     f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
-                # run the above function on every partition
-                rdd: RDD[Row] = id_df.repartition(
-                    desired_partitions
-                ).rdd.mapPartitionsWithIndex(
-                    lambda partition_index, rows: FhirReceiverHelpers.send_partition_request_to_server(
-                        partition_index=partition_index,
-                        rows=rows,
+                result_with_counts_and_responses: DataFrame
+                if run_synchronously:
+                    id_rows: List[Row] = id_df.collect()
+                    result_rows: List[
+                        Row
+                    ] = FhirReceiverHelpers.send_partition_request_to_server(
+                        partition_index=0,
+                        rows=id_rows,
                         batch_size=batch_size,
                         has_token_col=has_token_col,
                         server_url=server_url,
@@ -527,36 +537,68 @@ class FhirReceiver(FrameworkTransformer):
                         use_data_streaming=use_data_streaming,
                         graph_json=graph_json,
                     )
-                )
+                    response_schema = FhirGetResponseSchema.get_schema()
 
-                if has_token_col and not server_url:
-                    assert slug_column
-                    assert url_column
-                    assert all(
-                        [
-                            c
-                            for c in [url_column, slug_column, "resourceType"]
-                            if [c in id_df.columns]
-                        ]
+                    result_with_counts_and_responses = df.sparkSession.createDataFrame(
+                        result_rows, schema=response_schema
                     )
-                response_schema = StructType(
-                    [
-                        StructField("partition_index", IntegerType(), nullable=False),
-                        StructField("sent", IntegerType(), nullable=False),
-                        StructField("received", IntegerType(), nullable=False),
-                        StructField(
-                            "responses", ArrayType(StringType()), nullable=False
-                        ),
-                        StructField("first", StringType(), nullable=True),
-                        StructField("last", StringType(), nullable=True),
-                        StructField("error_text", StringType(), nullable=True),
-                        StructField("url", StringType(), nullable=True),
-                        StructField("status_code", IntegerType(), nullable=True),
-                        StructField("request_id", StringType(), nullable=True),
-                    ]
-                )
+                else:
+                    # run the above function on every partition
+                    rdd: RDD[Row] = id_df.repartition(
+                        desired_partitions
+                    ).rdd.mapPartitionsWithIndex(
+                        lambda partition_index, rows: FhirReceiverHelpers.send_partition_request_to_server(
+                            partition_index=partition_index,
+                            rows=rows,
+                            batch_size=batch_size,
+                            has_token_col=has_token_col,
+                            server_url=server_url,
+                            log_level=log_level,
+                            action=action,
+                            action_payload=action_payload,
+                            additional_parameters=additional_parameters,
+                            filter_by_resource=filter_by_resource,
+                            filter_parameter=filter_parameter,
+                            sort_fields=sort_fields,
+                            auth_server_url=auth_server_url,
+                            auth_client_id=auth_client_id,
+                            auth_client_secret=auth_client_secret,
+                            auth_login_token=auth_login_token,
+                            auth_scopes=auth_scopes,
+                            include_only_properties=include_only_properties,
+                            separate_bundle_resources=separate_bundle_resources,
+                            expand_fhir_bundle=expand_fhir_bundle,
+                            accept_type=accept_type,
+                            content_type=content_type,
+                            accept_encoding=accept_encoding,
+                            slug_column=slug_column,
+                            retry_count=retry_count,
+                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                            limit=limit,
+                            auth_access_token=auth_access_token,
+                            resource_type=resource_name,
+                            error_view=error_view,
+                            url_column=url_column,
+                            use_data_streaming=use_data_streaming,
+                            graph_json=graph_json,
+                        )
+                    )
 
-                result_with_counts_and_responses: DataFrame = rdd.toDF(response_schema)
+                    if has_token_col and not server_url:
+                        assert slug_column
+                        assert url_column
+                        assert all(
+                            [
+                                c
+                                for c in [url_column, slug_column, "resourceType"]
+                                if [c in id_df.columns]
+                            ]
+                        )
+                    response_schema = FhirGetResponseSchema.get_schema()
+
+                    result_with_counts_and_responses = rdd.toDF(response_schema)
+
+                # Now write to checkpoint if requested
                 if checkpoint_path:
                     if callable(checkpoint_path):
                         checkpoint_path = checkpoint_path(self.loop_id)
@@ -589,68 +631,81 @@ class FhirReceiver(FrameworkTransformer):
 
                 # don't need the large responses column to figure out if we had errors or not
                 result_with_counts: DataFrame = result_with_counts_and_responses.select(
-                    "partition_index",
-                    "sent",
-                    "received",
-                    "first",
-                    "last",
-                    "error_text",
-                    "url",
-                    "status_code",
-                    "request_id",
+                    FhirGetResponseSchema.partition_index,
+                    FhirGetResponseSchema.sent,
+                    FhirGetResponseSchema.received,
+                    FhirGetResponseSchema.first,
+                    FhirGetResponseSchema.last,
+                    FhirGetResponseSchema.error_text,
+                    FhirGetResponseSchema.url,
+                    FhirGetResponseSchema.status_code,
+                    FhirGetResponseSchema.request_id,
                 )
                 result_with_counts = result_with_counts.cache()
                 # find results that have a status code not in the ignore_status_codes
                 results_with_counts_errored = result_with_counts.where(
                     (
-                        (col("status_code").isNotNull())
-                        & (~col("status_code").isin(ignore_status_codes))
+                        (col(FhirGetResponseSchema.status_code).isNotNull())
+                        & (
+                            ~col(FhirGetResponseSchema.status_code).isin(
+                                ignore_status_codes
+                            )
+                        )
                     )
-                    | (col("error_text").isNotNull())
+                    | (col(FhirGetResponseSchema.error_text).isNotNull())
                 )
                 count_bad_requests: int = results_with_counts_errored.count()
 
                 if count_bad_requests > 0:
                     result_with_counts.select(
-                        "partition_index",
-                        "sent",
-                        "received",
-                        "error_text",
-                        "status_code",
-                        "request_id",
+                        FhirGetResponseSchema.partition_index,
+                        FhirGetResponseSchema.sent,
+                        FhirGetResponseSchema.received,
+                        FhirGetResponseSchema.error_text,
+                        FhirGetResponseSchema.status_code,
+                        FhirGetResponseSchema.request_id,
                     ).show(truncate=False, n=1000000)
                     results_with_counts_errored.select(
-                        "partition_index",
-                        "sent",
-                        "received",
-                        "error_text",
-                        "url",
-                        "status_code",
-                        "request_id",
+                        FhirGetResponseSchema.partition_index,
+                        FhirGetResponseSchema.sent,
+                        FhirGetResponseSchema.received,
+                        FhirGetResponseSchema.error_text,
+                        FhirGetResponseSchema.url,
+                        FhirGetResponseSchema.status_code,
+                        FhirGetResponseSchema.request_id,
                     ).show(truncate=False, n=1000000)
                     first_error: str = (
-                        results_with_counts_errored.select("error_text")
+                        results_with_counts_errored.select(
+                            FhirGetResponseSchema.error_text
+                        )
                         .limit(1)
                         .collect()[0][0]
                     )
                     first_url: str = (
-                        results_with_counts_errored.select("url")
+                        results_with_counts_errored.select(FhirGetResponseSchema.url)
                         .limit(1)
                         .collect()[0][0]
                     )
                     first_error_status_code: Optional[int] = (
-                        results_with_counts_errored.select("status_code")
+                        results_with_counts_errored.select(
+                            FhirGetResponseSchema.status_code
+                        )
                         .limit(1)
                         .collect()[0][0]
                     )
                     first_request_id: Optional[str] = (
-                        results_with_counts_errored.select("request_id")
+                        results_with_counts_errored.select(
+                            FhirGetResponseSchema.request_id
+                        )
                         .limit(1)
                         .collect()[0][0]
                     )
                     if error_view:
                         errors_df = results_with_counts_errored.select(
-                            "url", "error_text", "status_code", "request_id"
+                            FhirGetResponseSchema.url,
+                            FhirGetResponseSchema.error_text,
+                            FhirGetResponseSchema.status_code,
+                            FhirGetResponseSchema.request_id,
                         )
                         errors_df.createOrReplaceTempView(error_view)
                         if progress_logger and not spark_is_data_frame_empty(errors_df):
@@ -669,10 +724,14 @@ class FhirReceiver(FrameworkTransformer):
                         # filter out bad records
                         result_with_counts = result_with_counts.where(
                             ~(
-                                (col("status_code").isNotNull())
-                                & (~col("status_code").isin(ignore_status_codes))
+                                (col(FhirGetResponseSchema.status_code).isNotNull())
+                                & (
+                                    ~col(FhirGetResponseSchema.status_code).isin(
+                                        ignore_status_codes
+                                    )
+                                )
                             )
-                            | (col("error_text").isNotNull())
+                            | (col(FhirGetResponseSchema.error_text).isNotNull())
                         )
                     else:
                         raise FhirReceiverException(
@@ -687,12 +746,16 @@ class FhirReceiver(FrameworkTransformer):
                 if expand_fhir_bundle:
                     # noinspection PyUnresolvedReferences
                     count_sent_df: DataFrame = result_with_counts.agg(
-                        F.sum("sent").alias("sent")
+                        F.sum(FhirGetResponseSchema.sent).alias(
+                            FhirGetResponseSchema.sent
+                        )
                     )
                     # count_sent_df.show()
                     # noinspection PyUnresolvedReferences
                     count_received_df: DataFrame = result_with_counts.agg(
-                        F.sum("received").alias("received")
+                        F.sum(FhirGetResponseSchema.received).alias(
+                            FhirGetResponseSchema.received
+                        )
                     )
                     # count_received_df.show()
                     count_sent: Optional[int] = count_sent_df.collect()[0][0]
@@ -703,24 +766,31 @@ class FhirReceiver(FrameworkTransformer):
                         and error_on_result_count
                         and verify_counts_match
                     ):
-                        result_with_counts.where(col("sent") != col("received")).select(
-                            "partition_index",
-                            "sent",
-                            "received",
-                            "error_text",
-                            "url",
-                            "request_id",
-                        ).show(truncate=False, n=1000000)
+                        result_with_counts.where(
+                            col(FhirGetResponseSchema.sent)
+                            != col(FhirGetResponseSchema.received)
+                        ).select(
+                            FhirGetResponseSchema.partition_index,
+                            FhirGetResponseSchema.sent,
+                            FhirGetResponseSchema.received,
+                            FhirGetResponseSchema.error_text,
+                            FhirGetResponseSchema.url,
+                            FhirGetResponseSchema.request_id,
+                        ).show(
+                            truncate=False, n=1000000
+                        )
                         first_url = (
-                            result_with_counts.select("url").limit(1).collect()[0][0]
+                            result_with_counts.select(FhirGetResponseSchema.url)
+                            .limit(1)
+                            .collect()[0][0]
                         )
                         first_error_status_code = (
-                            result_with_counts.select("status_code")
+                            result_with_counts.select(FhirGetResponseSchema.status_code)
                             .limit(1)
                             .collect()[0][0]
                         )
                         first_request_id = (
-                            result_with_counts.select("request_id")
+                            result_with_counts.select(FhirGetResponseSchema.request_id)
                             .limit(1)
                             .collect()[0][0]
                         )
@@ -749,11 +819,13 @@ class FhirReceiver(FrameworkTransformer):
                 # noinspection PyUnresolvedReferences
                 # result_df: DataFrame = rdd1.toDF(StringType())
                 result_df: DataFrame = (
-                    result_with_counts_and_responses.select(explode(col("responses")))
+                    result_with_counts_and_responses.select(
+                        explode(col(FhirGetResponseSchema.responses))
+                    )
                     if expand_fhir_bundle
                     else result_with_counts_and_responses.select(
                         # col("responses")[0]["id"].alias("id"),
-                        col("responses")[0].alias("bundle")
+                        col(FhirGetResponseSchema.responses)[0].alias("bundle")
                     )
                 )
 
