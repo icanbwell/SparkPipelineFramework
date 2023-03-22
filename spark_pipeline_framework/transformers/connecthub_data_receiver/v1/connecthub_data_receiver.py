@@ -79,8 +79,15 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         client = pymongo.MongoClient(conn_string)  # type: ignore
 
         try:
+            self.logger.info(f"connected server info: {client.server_info()}")
+
             integration_hub_db = client.integration_hub
             client_connection = integration_hub_db.client_connection
+
+            self.logger.info(
+                f"total # of documents in client_connection collection: "
+                f"{client_connection.count_documents({})}"
+            )
 
             converted_data: List[Any] = []
             last_seen = None
@@ -90,7 +97,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
                     break
                 converted_data.extend(data)
 
-            self.logger.debug(
+            self.logger.info(
                 f"the total number of documents about to be loaded into Spark: {len(converted_data)}"
             )
 
@@ -121,7 +128,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         page_size = self.get_page_size()
         last_run_date = self.get_last_run_date()
 
-        self.logger.debug(f"last_run_date: {last_run_date}; last_seen: {last_seen}")
+        self.logger.info(f"last_run_date: {last_run_date}; last_seen: {last_seen}")
 
         LAST_UPDATED_ON_DATE = "lastUpdatedOnDate"
 
@@ -157,13 +164,13 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         json_string = dumps(list_cur)
         data: List[Any] = json.loads(json_string)
 
-        self.logger.debug(f"returned # of documents: {len(data)}")
+        self.logger.info(f"returned # of documents: {len(data)}")
 
         # this appears to be unique, since it takes more than a ms between updates to generate this timestamp
         last_seen_string = data[-1][LAST_UPDATED_ON_DATE]["$date"]
         last_seen_date = datetime.strptime(last_seen_string, "%Y-%m-%dT%H:%M:%S.%fZ")
 
-        self.logger.debug(
+        self.logger.info(
             f"the {LAST_UPDATED_ON_DATE} of the last returned document: {last_seen_string}"
         )
 
