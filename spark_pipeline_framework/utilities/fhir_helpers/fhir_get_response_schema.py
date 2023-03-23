@@ -55,7 +55,7 @@ class FhirGetResponseSchema:
                 StructField(
                     FhirGetResponseSchema.error_text, StringType(), nullable=True
                 ),
-                StructField(FhirGetResponseSchema.url, StringType(), nullable=False),
+                StructField(FhirGetResponseSchema.url, StringType(), nullable=True),
                 StructField(
                     FhirGetResponseSchema.status_code, IntegerType(), nullable=True
                 ),
