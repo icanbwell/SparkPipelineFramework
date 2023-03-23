@@ -28,6 +28,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         self,
         view_name: str,
         conn_string: str,
+        db_name: str,
         last_run_date: Optional[datetime] = datetime(1970, 1, 1),
         page_size: Optional[
             int
@@ -42,6 +43,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
 
         :param view_name: name of the view to read the response into
         :param conn_string: the root URL
+        :param db_name: the name of the database we need to query
         :param last_run_date: (Optional) the datetime which we should be querying from to get the latest updates. It is
         set to 1/1/1970 by default so that we grab all records without filtering (since there doesn't seem to be a good
         automated way to pass this in from pipeline runs at this point)
@@ -72,20 +74,24 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         self.last_run_date: Param[datetime] = Param(self, "last_run_date", "")
         self._setDefault(last_run_date=last_run_date)
 
+        self.db_name: Param[str] = Param(self, "db_name", "")
+        self._setDefault(db_name=db_name)
+
     def _transform(self, df: DataFrame) -> DataFrame:
         view_name = self.get_view_name()
         conn_string = self.get_conn_string()
+        db_name = self.get_db_name()
 
         client = pymongo.MongoClient(conn_string)  # type: ignore
 
         try:
             self.logger.info(f"connected server info: {client.server_info()}")
 
-            integration_hub_db = client.integration_hub
+            integration_hub_db = client[db_name]
             client_connection = integration_hub_db.client_connection
 
             self.logger.info(
-                f"total # of documents in client_connection collection: "
+                f"db name: {db_name} and total # of documents in client_connection collection: "
                 f"{client_connection.count_documents({})}"
             )
 
@@ -187,3 +193,6 @@ class ConnectHubDataReceiver(FrameworkTransformer):
 
     def get_last_run_date(self) -> datetime:
         return self.getOrDefault(self.last_run_date)
+
+    def get_db_name(self) -> str:
+        return self.getOrDefault(self.db_name)
