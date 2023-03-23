@@ -27,7 +27,7 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
     db_name = "integration_hub"
 
     mongo_client: MongoClient = pymongo.MongoClient(conn_string)
-    integration_hub = mongo_client["db_name"]
+    integration_hub = mongo_client[db_name]
     client_connection = integration_hub.client_connection
 
     # delete the collection if it's already there
