@@ -24,9 +24,10 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
     page_size = 0
     last_run_date = datetime.strptime("1970-01-01", "%Y-%m-%d")
     conn_string = "mongodb://mongo:27017/"
+    db_name = "integration_hub"
 
     mongo_client: MongoClient = pymongo.MongoClient(conn_string)
-    integration_hub = mongo_client.integration_hub
+    integration_hub = mongo_client[db_name]
     client_connection = integration_hub.client_connection
 
     # delete the collection if it's already there
@@ -50,6 +51,7 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
     with ProgressLogger() as progress_logger:
         ConnectHubDataReceiver(
             view_name=test_name,
+            db_name=db_name,
             progress_logger=progress_logger,
             page_size=page_size,
             conn_string=conn_string,
