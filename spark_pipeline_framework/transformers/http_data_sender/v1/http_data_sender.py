@@ -149,27 +149,6 @@ class HttpDataSender(FrameworkTransformer):
 
         headers: Dict[str, Any] = {}
 
-        if client_id and auth_url and client_secret:
-            # first call auth to get a token
-            oauth2_client_credentials_flow: OAuth2ClientCredentialsFlow = (
-                OAuth2ClientCredentialsFlow(
-                    auth_url=auth_url,
-                    client_id=client_id,
-                    client_secret=client_secret,
-                    progress_logger=progress_logger,
-                )
-            )
-
-            access_token: Optional[str] = oauth2_client_credentials_flow.get_token()
-
-            if progress_logger:
-                progress_logger.write_to_log(
-                    f"Received token from {auth_url}: {access_token}"
-                )
-
-            if access_token:
-                headers = {"Authorization": f"Bearer {access_token}"}
-
         if progress_logger:
             progress_logger.write_to_log(
                 f"Using headers: {json.dumps(headers, default=str)}"
@@ -202,6 +181,9 @@ class HttpDataSender(FrameworkTransformer):
                     headers=headers,
                     post_as_json_formatted_string=post_as_json_formatted_string,
                     parse_response_as_json=parse_response_as_json,
+                    client_id=client_id,
+                    auth_url=auth_url,
+                    client_secret=client_secret
                 )
             )
 
