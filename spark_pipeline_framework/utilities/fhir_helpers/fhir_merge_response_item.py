@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
 )
+from spark_pipeline_framework.utilities.json_helpers import convert_fhir_json_to_dict
 
 
 class FhirMergeResponseItem:
@@ -32,3 +33,8 @@ class FhirMergeResponseItem:
 
     def to_dict(self) -> Dict[str, Any]:
         return self.__dict__
+
+    def get_resource(self) -> Optional[Dict[str, Any]]:
+        if not self.resource_json:
+            return None
+        return convert_fhir_json_to_dict(resource_json=self.resource_json)

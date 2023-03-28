@@ -1,4 +1,4 @@
-from typing import Optional, List, cast
+from typing import Optional, List, cast, Any, Dict
 
 from pyspark.sql.types import (
     Row,
@@ -65,8 +65,12 @@ class FhirGetResponseReader:
         return self._safe_get_string(FhirGetResponseSchema.access_token)
 
     @property
-    def extra_context_to_return(self) -> Optional[str]:
-        return self._safe_get_string(FhirGetResponseSchema.extra_context_to_return)
+    def extra_context_to_return(self) -> Optional[Dict[str, Any]]:
+        return (
+            self.row[FhirGetResponseSchema.extra_context_to_return]
+            if FhirGetResponseSchema.extra_context_to_return in self.row
+            else None
+        )
 
     def _safe_get_string(self, property_name: str) -> Optional[str]:
         return self.row[property_name] if property_name in self.row else None

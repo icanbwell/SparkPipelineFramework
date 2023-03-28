@@ -1,5 +1,6 @@
+import collections
 import json
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Dict, List, Union, cast, OrderedDict
 from datetime import datetime, date
 
 
@@ -49,3 +50,17 @@ def convert_dict_to_fhir_json(dict_: Dict[str, Any]) -> str:
 
     instance_variables_text: str = json.dumps(instance_variables, default=json_serial)
     return instance_variables_text
+
+
+def convert_fhir_json_to_ordered_dict(resource_json: str) -> OrderedDict[str, Any]:
+    # noinspection PyTypeChecker
+    resource: OrderedDict[str, Any] = json.loads(
+        resource_json, object_pairs_hook=collections.OrderedDict
+    )
+    return resource
+
+
+def convert_fhir_json_to_dict(resource_json: str) -> Dict[str, Any]:
+    # noinspection PyTypeChecker
+    resource: Dict[str, Any] = json.loads(resource_json)
+    return resource
