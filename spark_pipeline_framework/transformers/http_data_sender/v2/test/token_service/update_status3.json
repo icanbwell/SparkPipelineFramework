@@ -3,8 +3,7 @@
     "method": "POST",
     "body": {
       "member_id": "e3a3f665-eae5-4046-a241-efdfe5c43910",
-      "service_slug": "epic_local",
-      "status": "Data Retrieved"
+      "service_slug": "epic_local"
     },
     "headers": {
       "Authorization": "Bearer access_token_1"

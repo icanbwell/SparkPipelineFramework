@@ -1,7 +1,7 @@
-import json
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
+from typing import Dict, Any, Union, Optional
 
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
@@ -9,6 +9,10 @@ from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_sender.v2.http_data_sender import (
     HttpDataSender,
+)
+from spark_pipeline_framework.utilities.api_helper.http_request import (
+    SingleJsonResult,
+    SingleTextResult,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
@@ -59,6 +63,17 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
         url_prefix=test_name,
     )
 
+    def payload_generator(json_data: Dict[str, Any]) -> Dict[str, Any]:
+        json_data.pop("status")
+        return json_data
+
+    def response_processor(
+        _: Dict[str, Any], response: Union[SingleJsonResult, SingleTextResult]
+    ) -> Optional[Dict[str, Any]]:
+        if isinstance(response, SingleJsonResult):
+            return {**response.result, "testing_field": "testing"}
+        return None
+
     # Act
     with ProgressLogger() as progress_logger:
         HttpDataSender(
@@ -70,6 +85,9 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
             client_id="client_id",
             client_secret="client_secret",
             auth_url=f"{server_url}/token",
+            payload_generator=payload_generator,
+            response_processor=response_processor,
+            parse_response_as_json=True,
         ).transform(df)
 
     # Assert
@@ -77,13 +95,15 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    assert json.loads(result_df.collect()[0]["result"]) == {
-        "token_type": "bearer",
+    assert result_df.collect()[0]["result"] == {
         "access_token": "fake access_token",
-        "expires_in": 54000,
-    }
-    assert json.loads(result_df.collect()[1]["result"]) == {
+        "testing_field": "testing",
         "token_type": "bearer",
+        "expires_in": "54000",
+    }
+    assert result_df.collect()[1]["result"] == {
         "access_token": "fake access_token2",
-        "expires_in": 54000,
+        "testing_field": "testing",
+        "token_type": "bearer",
+        "expires_in": "54000",
     }

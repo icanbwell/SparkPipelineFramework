@@ -1,6 +1,6 @@
 import json
 import math
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable, Union
 
 from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
@@ -18,6 +18,10 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 from spark_pipeline_framework.transformers.http_data_sender.v2.http_data_sender_processor import (
     HttpDataSenderProcessor,
+)
+from spark_pipeline_framework.utilities.api_helper.http_request import (
+    SingleJsonResult,
+    SingleTextResult,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
@@ -47,6 +51,10 @@ class HttpDataSender(FrameworkTransformer):
         batch_count: Optional[int] = None,
         batch_size: Optional[int] = None,
         cache_storage_level: Optional[StorageLevel] = None,
+        payload_generator: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        response_processor: Optional[
+            Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
+        ] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -64,6 +72,8 @@ class HttpDataSender(FrameworkTransformer):
         :param batch_size: (Optional) max number of items in a batch
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
+        :param payload_generator: Callable which can make the payload based the `source_view` column
+        :param response_processor: Callable which processes the response
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -109,6 +119,20 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(post_as_json_formatted_string=None)
 
+        self.payload_generator: Param[
+            Optional[Callable[[Dict[str, Any]], Dict[str, Any]]]
+        ] = Param(self, "payload_generator", "")
+        self._setDefault(payload_generator=None)
+
+        self.response_processor: Param[
+            Optional[
+                Callable[
+                    [Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any
+                ]
+            ]
+        ] = Param(self, "response_processor", "")
+        self._setDefault(response_processor=None)
+
         self.cache_storage_level: Param[Optional[StorageLevel]] = Param(
             self, "cache_storage_level", ""
         )
@@ -135,6 +159,12 @@ class HttpDataSender(FrameworkTransformer):
         post_as_json_formatted_string: Optional[bool] = self.getOrDefault(
             self.post_as_json_formatted_string
         )
+        payload_generator: Optional[
+            Callable[[Dict[str, Any]], Dict[str, Any]]
+        ] = self.getOrDefault(self.payload_generator)
+        response_processor: Optional[
+            Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
+        ] = self.getOrDefault(self.response_processor)
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
@@ -181,6 +211,8 @@ class HttpDataSender(FrameworkTransformer):
                     client_id=client_id,
                     auth_url=auth_url,
                     client_secret=client_secret,
+                    payload_generator=payload_generator,
+                    response_processor=response_processor,
                 )
             )
 

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union, Callable
 from functools import partial
 
 from requests import exceptions, status_codes
@@ -48,6 +48,12 @@ class HttpDataSenderProcessor:
         post_as_json_formatted_string: Optional[bool],
         json_data: Dict[str, Any],
         parse_response_as_json: Optional[bool],
+        response_processor: Optional[
+            Callable[
+                [Dict[str, Any], Union[SingleJsonResult, SingleTextResult]],
+                Any,
+            ]
+        ],
     ) -> Row:
         """
         Function to initiate the request and create row
@@ -57,7 +63,18 @@ class HttpDataSenderProcessor:
         :param post_as_json_formatted_string: flag to convert the json to json string
         :param json_data: payload for the API
         :param parse_response_as_json flag to parse the response as json
+        :param response_processor: Callable which processes the response
         """
+
+        if response_processor is None:
+
+            def default_behaviour(
+                _: Dict[str, Any], _response: Union[SingleJsonResult, SingleTextResult]
+            ) -> Union[Dict[str, Any], str]:
+                return _response.result
+
+            response_processor = default_behaviour
+
         request: HelixHttpRequest = HelixHttpRequest(
             request_type=RequestType.POST,
             url=url,
@@ -73,7 +90,7 @@ class HttpDataSenderProcessor:
         return Row(
             url=url,
             status=response.status,
-            result=response.result,
+            result=response_processor(json_data, response),
             headers=json.dumps(headers, default=str),
             request_type=str(RequestType.POST),
         )
@@ -93,6 +110,10 @@ class HttpDataSenderProcessor:
         client_id: Optional[str],
         auth_url: Optional[str],
         client_secret: Optional[str],
+        payload_generator: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]],
+        response_processor: Optional[
+            Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
+        ],
     ) -> Iterable[Row]:
         """
         This function processes a partition
@@ -128,8 +149,11 @@ class HttpDataSenderProcessor:
                 HttpDataSenderProcessor.create_request,
                 url=url,
                 post_as_json_formatted_string=post_as_json_formatted_string,
-                json_data=json_data,
+                json_data=payload_generator(json_data)
+                if payload_generator
+                else json_data,
                 parse_response_as_json=parse_response_as_json,
+                response_processor=response_processor,
             )
             row: Row
             try:
