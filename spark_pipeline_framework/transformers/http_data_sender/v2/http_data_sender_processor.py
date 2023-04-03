@@ -66,15 +66,6 @@ class HttpDataSenderProcessor:
         :param response_processor: Callable which processes the response
         """
 
-        if response_processor is None:
-
-            def default_behaviour(
-                _: Dict[str, Any], _response: Union[SingleJsonResult, SingleTextResult]
-            ) -> Union[Dict[str, Any], str]:
-                return _response.result
-
-            response_processor = default_behaviour
-
         request: HelixHttpRequest = HelixHttpRequest(
             request_type=RequestType.POST,
             url=url,
@@ -90,7 +81,9 @@ class HttpDataSenderProcessor:
         return Row(
             url=url,
             status=response.status,
-            result=response_processor(json_data, response),
+            result=response_processor(json_data, response)
+            if response_processor
+            else response.result,
             headers=json.dumps(headers, default=str),
             request_type=str(RequestType.POST),
         )
