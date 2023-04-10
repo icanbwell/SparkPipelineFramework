@@ -71,6 +71,9 @@ class HelixHttpRequest:
         logger: Optional[Logger] = None,
         post_as_json_formatted_string: Optional[bool] = None,
         raise_error: bool = True,
+        path_to_client_public_cert: Optional[str] = None,
+        path_to_client_private_key: Optional[str] = None,
+        path_to_server_public_cert: Optional[str] = None,
     ):
         self.url: str = url
         self.request_type = request_type
@@ -84,6 +87,9 @@ class HelixHttpRequest:
             bool
         ] = post_as_json_formatted_string
         self.raise_error = raise_error
+        self.path_to_client_public_cert = path_to_client_public_cert
+        self.path_to_client_private_key = path_to_client_private_key
+        self.path_to_server_public_cert = path_to_server_public_cert
 
     def set_raise_error(self, flag: bool) -> None:
         self.raise_error = flag
@@ -140,7 +146,9 @@ class HelixHttpRequest:
         :return: the Response object
         """
         session = self._get_session(
-            self.retry_count, self.backoff_factor, self.retry_on_status
+            self.retry_count, self.backoff_factor, self.retry_on_status,
+            self.path_to_client_public_cert, self.path_to_client_private_key,
+            self.path_to_server_public_cert,
         )
         arguments = {"headers": self.headers}
         request_function = None
@@ -205,8 +213,17 @@ class HelixHttpRequest:
         retry_count: int = 3,
         backoff_factor: float = 0.1,
         retry_on_status: List[int] = [429, 500, 502, 503, 504],
+        path_to_client_public_cert: Optional[str] = None,
+        path_to_client_private_key: Optional[str] = None,
+        path_to_server_public_cert: Optional[str] = None,
     ) -> Session:
         session = requests.session()
+        if path_to_client_public_cert and path_to_client_private_key:
+            session.cert = (path_to_client_public_cert, path_to_client_private_key)
+
+        if path_to_server_public_cert:
+            session.verify = path_to_server_public_cert
+
         retries = Retry(
             total=retry_count,
             backoff_factor=backoff_factor,
