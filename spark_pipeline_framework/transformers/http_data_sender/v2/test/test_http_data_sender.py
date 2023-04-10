@@ -64,8 +64,9 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     )
 
     def payload_generator(json_data: Dict[str, Any]) -> Dict[str, Any]:
-        json_data.pop("status")
-        return json_data
+        temp_data = json_data.copy()
+        temp_data.pop("status")
+        return temp_data
 
     def response_processor(
         _: Dict[str, Any], response: Union[SingleJsonResult, SingleTextResult]
