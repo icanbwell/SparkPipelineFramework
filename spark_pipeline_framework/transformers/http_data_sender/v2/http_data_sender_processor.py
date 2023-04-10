@@ -54,6 +54,7 @@ class HttpDataSenderProcessor:
                 Any,
             ]
         ],
+        payload_generator: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]],
     ) -> Row:
         """
         Function to initiate the request and create row
@@ -64,13 +65,14 @@ class HttpDataSenderProcessor:
         :param json_data: payload for the API
         :param parse_response_as_json flag to parse the response as json
         :param response_processor: Callable which processes the response
+        :param payload_generator: function to create the payload
         """
 
         request: HelixHttpRequest = HelixHttpRequest(
             request_type=RequestType.POST,
             url=url,
             headers=headers,
-            payload=json_data,
+            payload=payload_generator(json_data) if payload_generator else json_data,
             post_as_json_formatted_string=post_as_json_formatted_string,
         )
         response: Union[SingleJsonResult, SingleTextResult]
@@ -142,11 +144,10 @@ class HttpDataSenderProcessor:
                 HttpDataSenderProcessor.create_request,
                 url=url,
                 post_as_json_formatted_string=post_as_json_formatted_string,
-                json_data=payload_generator(json_data)
-                if payload_generator
-                else json_data,
+                json_data=json_data,
                 parse_response_as_json=parse_response_as_json,
                 response_processor=response_processor,
+                payload_generator=payload_generator,
             )
             row: Row
             try:
