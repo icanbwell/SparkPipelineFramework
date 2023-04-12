@@ -4,7 +4,7 @@ helper functions to abstract http requests so we have less repetitive boilerplat
 import json
 from enum import Enum
 from os import environ
-from typing import Optional, Dict, Any, List, Callable, Union, NamedTuple
+from typing import Optional, Dict, Any, List, Callable, Union, NamedTuple, Tuple
 from urllib import parse
 from urllib.parse import SplitResult, SplitResultBytes
 
@@ -71,9 +71,8 @@ class HelixHttpRequest:
         logger: Optional[Logger] = None,
         post_as_json_formatted_string: Optional[bool] = None,
         raise_error: bool = True,
-        path_to_client_public_cert: Optional[str] = None,
-        path_to_client_private_key: Optional[str] = None,
-        path_to_ca_cert: Optional[str] = None,
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ):
         self.url: str = url
         self.request_type = request_type
@@ -87,9 +86,8 @@ class HelixHttpRequest:
             bool
         ] = post_as_json_formatted_string
         self.raise_error = raise_error
-        self.path_to_client_public_cert = path_to_client_public_cert
-        self.path_to_client_private_key = path_to_client_private_key
-        self.path_to_ca_cert = path_to_ca_cert
+        self.cert = cert
+        self.verify = verify
 
     def set_raise_error(self, flag: bool) -> None:
         self.raise_error = flag
@@ -146,9 +144,7 @@ class HelixHttpRequest:
         :return: the Response object
         """
         session = self._get_session(
-            self.retry_count, self.backoff_factor, self.retry_on_status,
-            self.path_to_client_public_cert, self.path_to_client_private_key,
-            self.path_to_ca_cert,
+            self.retry_count, self.backoff_factor, self.retry_on_status, self.cert, self.verify,
         )
         arguments = {"headers": self.headers}
         request_function = None
@@ -213,16 +209,15 @@ class HelixHttpRequest:
         retry_count: int = 3,
         backoff_factor: float = 0.1,
         retry_on_status: List[int] = [429, 500, 502, 503, 504],
-        path_to_client_public_cert: Optional[str] = None,
-        path_to_client_private_key: Optional[str] = None,
-        path_to_ca_cert: Optional[str] = None,
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ) -> Session:
         session = requests.session()
-        if path_to_client_public_cert and path_to_client_private_key:
-            session.cert = (path_to_client_public_cert, path_to_client_private_key)
+        if cert:
+            session.cert = cert
 
-        if path_to_ca_cert:
-            session.verify = path_to_ca_cert
+        if verify is not None:
+            session.verify = verify
 
         retries = Retry(
             total=retry_count,
