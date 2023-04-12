@@ -144,7 +144,11 @@ class HelixHttpRequest:
         :return: the Response object
         """
         session = self._get_session(
-            self.retry_count, self.backoff_factor, self.retry_on_status, self.cert, self.verify,
+            self.retry_count,
+            self.backoff_factor,
+            self.retry_on_status,
+            self.cert,
+            self.verify,
         )
         arguments = {"headers": self.headers}
         request_function = None
