@@ -5,19 +5,13 @@ from typing import Optional
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 
 
-class ProgressLogMetric:
-    def __init__(
-        self,
-        name: str,
-        progress_logger: Optional[ProgressLogger],
-        measure_in_seconds: Optional[bool] = None,
-    ):
+class ProgressLoggerRun:
+    def __init__(self, name: str, progress_logger: Optional[ProgressLogger]):
         self.progress_logger: Optional[ProgressLogger] = progress_logger
         self.name: str = name
         self.start_time: datetime = datetime.now()
-        self.measure_in_seconds: Optional[bool] = measure_in_seconds
 
-    def __enter__(self) -> "ProgressLogMetric":
+    def __enter__(self) -> "ProgressLoggerRun":
         return self.start()
 
     def __exit__(
@@ -28,12 +22,14 @@ class ProgressLogMetric:
     ) -> None:
         self.stop()
 
-    def start(self) -> "ProgressLogMetric":
+    def start(self) -> "ProgressLoggerRun":
         """
         start
         :return:
         """
         self.start_time = datetime.now()
+        if self.progress_logger:
+            self.progress_logger.start_mlflow_run(self.name)
         return self
 
     def stop(self) -> None:
@@ -41,11 +37,9 @@ class ProgressLogMetric:
         stop
         """
         if self.name and self.progress_logger:
-            end_time: datetime = datetime.now()
-            seconds = (end_time - self.start_time).total_seconds()
+            # end_time: datetime = datetime.now()
+            # time_diff_in_minutes: float = (
+            #     end_time - self.start_time
+            # ).total_seconds() // 60
             if self.progress_logger:
-                if self.measure_in_seconds:
-                    self.progress_logger.log_metric(self.name, seconds)
-                else:
-                    time_diff_in_minutes: float = seconds / 60
-                    self.progress_logger.log_metric(self.name, time_diff_in_minutes)
+                self.progress_logger.end_mlflow_run()
