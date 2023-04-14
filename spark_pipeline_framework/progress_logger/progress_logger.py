@@ -31,6 +31,15 @@ class MlFlowConfig:
         self.flow_run_name = flow_run_name
         self.parameters = parameters
 
+    def clone(self) -> "MlFlowConfig":
+        return MlFlowConfig(
+            mlflow_tracking_url=self.mlflow_tracking_url,
+            artifact_url=self.artifact_url,
+            experiment_name=self.experiment_name,
+            flow_run_name=self.flow_run_name,
+            parameters=self.parameters.copy(),
+        )
+
 
 class ProgressLogger:
     def __init__(
