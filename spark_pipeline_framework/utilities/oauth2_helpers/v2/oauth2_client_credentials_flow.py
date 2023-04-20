@@ -13,7 +13,7 @@ from spark_pipeline_framework.utilities.api_helper.http_request import (
 class OAuth2Credentails:
     client_id: str
     client_secret: str
-    grant_type: str = "client_credentials"
+    grant_type: Optional[str] = "client_credentials"
     audience: Optional[str] = None
 
 
@@ -28,11 +28,12 @@ class OAuth2ClientCredentialsFlow:
         """
         Encapsulate the logic to connect to OAuth2 servers using client credentials flow
 
-
-
+        :param auth_url: OAuth2 token url
+        :param auth_credentails: OAuth2 credentails like client id, secrets, etc
+        :param progress_logger: Progress logger
         """
-        self.auth_url: str = auth_url
         assert auth_url
+        self.auth_url: str = auth_url
         self.auth_credentails = auth_credentails
         self.progress_logger: Optional[ProgressLogger] = progress_logger
 

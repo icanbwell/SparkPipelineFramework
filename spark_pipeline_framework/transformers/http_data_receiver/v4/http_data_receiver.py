@@ -1,4 +1,5 @@
 import json
+import math
 from typing import Any, Dict, List, Optional, cast
 
 from more_itertools import chunked
@@ -17,10 +18,8 @@ from pyspark.sql.types import (
 
 from spark_pipeline_framework.transformers.http_data_receiver.v4.http_data_receiver_processor import (
     HttpDataReceiverProcessor,
-)
-from spark_pipeline_framework.transformers.http_data_receiver.v4.schema import (
-    REQUEST_GENERATOR_TYPE,
     RESPONSE_PROCESSOR_TYPE,
+    REQUEST_GENERATOR_TYPE,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
@@ -36,13 +35,12 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.oauth2_helpers.v2.oauth2_client_credentials_flow import (
     OAuth2Credentails,
 )
-from spark_pipeline_framework.utilities.pipeline_helper import TransformerMixin
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
 
 
-class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
+class HttpDataReceiver(FrameworkTransformer):
     """
     This is a generic class to call a http api and return the response
     """
@@ -52,11 +50,12 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
     def __init__(
         self,
         name: str,
-        view_name: str,
+        success_view: str,
         error_view: str,
         http_request_generator: REQUEST_GENERATOR_TYPE,
         response_processor: RESPONSE_PROCESSOR_TYPE,
-        batch_count: Optional[int] = None,
+        num_partition: Optional[int] = None,
+        responses_batch_size: int = 1000,
         batch_size: Optional[int] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         credentials: Optional[OAuth2Credentails] = None,
@@ -69,15 +68,20 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
         """
         Transformer to call and receive data from an API
 
-
-        :param http_request_generator: Generator to build next http request
-        :param view_name: name of the view to read the response into
         :param name: name of transformer
-        :param parameters: parameters
-        :param progress_logger: progress logger
-        it supposed to return a HelixHttpRequest to be used to call the API or return None to end the API call loop
-        :param response_processor: it can change the result before loading to spark df
+        :param success_view: name of the view to read the response into
         :param error_view: (Optional) log the details of the api failure into `error_view` view.
+        :param http_request_generator: Generator to build next http request
+        :param response_processor: it can change the result before loading to spark df
+        :param num_partition: Number of batches
+        :param responses_batch_size: number of responses to process in batch
+        :param batch_size: Number of items to process in a batch
+        :param cache_storage_level: (Optional) how to store the cache:
+                                    https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
+        :param credentials: OAuth2 credentails
+        :param auth_url: OAuth2 token URL
+        :param parameters: parameters
+        :param run_sync: process the items linearly
         :param raise_error: (Optional) Raise error in case of api failure
         """
         super().__init__(
@@ -89,8 +93,8 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
         self.name: Param[str] = Param(self, "name", "")
         self._setDefault(name=None)
 
-        self.view_name: Param[str] = Param(self, "view_name", "")
-        self._setDefault(view_name=None)
+        self.success_view: Param[str] = Param(self, "success_view", "")
+        self._setDefault(success_view=None)
 
         self.error_view: Param[str] = Param(self, "error_view", "")
         self._setDefault(error_view=None)
@@ -105,10 +109,13 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
         )
         self._setDefault(response_processor=None)
 
-        self.batch_count: Param[int] = Param(self, "batch_count", "")
-        self._setDefault(batch_count=None)
+        self.num_partition: Param[Optional[int]] = Param(self, "num_partition", "")
+        self._setDefault(num_partition=None)
 
-        self.batch_size: Param[int] = Param(self, "batch_size", "")
+        self.responses_batch_size: Param[int] = Param(self, "responses_batch_size", "")
+        self._setDefault(responses_batch_size=responses_batch_size)
+
+        self.batch_size: Param[Optional[int]] = Param(self, "batch_size", "")
         self._setDefault(batch_size=None)
 
         self.cache_storage_level: Param[Optional[StorageLevel]] = Param(
@@ -116,17 +123,19 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
         )
         self._setDefault(cache_storage_level=None)
 
-        self.credentials: Param[OAuth2Credentails] = Param(self, "credentials", "")
+        self.credentials: Param[Optional[OAuth2Credentails]] = Param(
+            self, "credentials", ""
+        )
         self._setDefault(credentials=None)
 
-        self.auth_url: Param[str] = Param(self, "auth_url", "")
+        self.auth_url: Param[Optional[str]] = Param(self, "auth_url", "")
         self._setDefault(auth_url=None)
 
         self.run_sync: Param[bool] = Param(self, "run_sync", "")
-        self._setDefault(run_sync=None)
+        self._setDefault(run_sync=run_sync)
 
         self.raise_error: Param[bool] = Param(self, "raise_error", "")
-        self._setDefault(raise_error=None)
+        self._setDefault(raise_error=raise_error)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -134,10 +143,11 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
     def _transform(self, df: DataFrame) -> DataFrame:
         # Setting the variables
         name: str = self.getOrDefault(self.name)
-        view_name: str = self.getOrDefault(self.view_name)
+        success_view: str = self.getOrDefault(self.success_view)
         error_view: str = self.getOrDefault(self.error_view)
-        batch_count: int = self.getOrDefault(self.batch_count)
-        batch_size: int = self.getOrDefault(self.batch_size)
+        num_partition: Optional[int] = self.getOrDefault(self.num_partition)
+        responses_batch_size: int = self.getOrDefault(self.responses_batch_size)
+        batch_size: Optional[int] = self.getOrDefault(self.batch_size)
         http_request_generator: REQUEST_GENERATOR_TYPE = self.getOrDefault(
             self.http_request_generator
         )
@@ -154,7 +164,7 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         with ProgressLogMetric(
-            name=f"{name}_http_data_receiver(V4)", progress_logger=progress_logger
+            name=f"{name}_http_data_receiver_v4", progress_logger=progress_logger
         ):
             requests_df: DataFrame = create_empty_dataframe(
                 df.sparkSession,
@@ -166,11 +176,15 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
                     ]
                 ),
             )
-            for requests in chunked(http_request_generator(df), 1000):
+            for requests in chunked(http_request_generator(df), responses_batch_size):
                 # Create the Dataframe
                 view_data = [
-                    [request.url, json.dumps(request.headers), json.dumps(state)]
-                    for request, state in requests
+                    [
+                        request.url,
+                        json.dumps(request.headers),
+                        json.dumps(extra_context),
+                    ]
+                    for request, extra_context in requests
                 ]
                 df_ = df.sparkSession.createDataFrame(
                     view_data, ["url", "headers", "state"]
@@ -181,7 +195,7 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
                 requests_df.createOrReplaceTempView("requests_view")
 
             desired_partitions: int = self.get_desired_partitions(
-                batch_count=batch_count, batch_size=batch_size, df=requests_df
+                num_partition=num_partition, batch_size=batch_size, df=requests_df
             )
 
             row_schema = StructType(
@@ -212,22 +226,24 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
                 df_success: DataFrame = df.sparkSession.createDataFrame(
                     [s.asDict(recursive=True) for s in success], schema=row_schema
                 )
-                df_success = self.infer_schema_json_string_column(
-                    df_success, "success_data", "data"
+                json_schema = self.infer_schema_json_string_column(
+                    df_success, "success_data"
                 )
-                df_success = df_success.drop("success_data", "error_data", "is_error")
-                df_success.createOrReplaceTempView(view_name)
+                self.copy_and_drop_column(
+                    df_success, "success_data", "data", success_view, json_schema
+                )
 
                 # Create error view
                 error = filter(lambda row: row["is_error"], result_rows)
                 df_errors: DataFrame = df.sparkSession.createDataFrame(
                     [e.asDict(recursive=True) for e in error], schema=row_schema
                 )
-                df_errors = self.infer_schema_json_string_column(
-                    df_errors, "error_data", "data"
+                json_schema = self.infer_schema_json_string_column(
+                    df_errors, "error_data"
                 )
-                df_errors = df_errors.drop("success_data", "error_data", "is_error")
-                df_errors.createOrReplaceTempView(error_view)
+                self.copy_and_drop_column(
+                    df_errors, "error_data", "data", error_view, json_schema
+                )
             else:
                 rdd: RDD[Row] = requests_df.repartition(
                     desired_partitions
@@ -251,27 +267,75 @@ class HttpDataReceiver(FrameworkTransformer, TransformerMixin):
 
                 # Create success view
                 df_success = result_df.filter(result_df["is_error"] == False)
-                df_success = self.infer_schema_json_string_column(
-                    df_success, "success_data", "data"
+                json_schema = self.infer_schema_json_string_column(
+                    df_success, "success_data"
                 )
-                df_success = df_success.drop("success_data", "error_data", "is_error")
-                df_success.createOrReplaceTempView(view_name)
+                self.copy_and_drop_column(
+                    df_success, "success_data", "data", success_view, json_schema
+                )
 
                 # Create error view
                 df_errors = result_df.filter(result_df["is_error"] == True)
-                df_errors = self.infer_schema_json_string_column(
-                    df_errors, "error_data", "data"
+                json_schema = self.infer_schema_json_string_column(
+                    df_errors, "error_data"
                 )
-                df_errors = df_errors.drop("success_data", "error_data", "is_error")
-                df_errors.createOrReplaceTempView(error_view)
+                self.copy_and_drop_column(
+                    df_errors, "error_data", "data", error_view, json_schema
+                )
 
         return df
 
-    def infer_schema_json_string_column(
-        self, df: DataFrame, col_: str, dest_col: str
-    ) -> DataFrame:
+    def infer_schema_json_string_column(self, df: DataFrame, col_: str) -> StructType:
+        """
+        Infer json schema from `col_` column
+
+        :param df: Dataframe to be processed.
+        :param col_: Source column name
+        """
         json_schema = df.sparkSession.read.json(
             df.rdd.map(lambda row: cast(str, row[col_]))
         ).schema
-        df = df.withColumn(dest_col, from_json(col(col_), json_schema))
-        return df
+        return json_schema
+
+    def copy_and_drop_column(
+        self, df: DataFrame, col_: str, dest_col: str, view: str, schema: StructType
+    ) -> None:
+        """
+        Copy the `col_` column to `dest_col` column with provided schema
+
+        :param df: Dataframe to be processed.
+        :param col_: source column
+        :param dest_col: destination column
+        :param view: Name of the view where the dataframe will be saved
+        :param schema: schema of the `dest_col` column
+        """
+        df = df.withColumn(dest_col, from_json(col(col_), schema))
+        df = df.drop("success_data", "error_data", "is_error")
+        df.createOrReplaceTempView(view)
+
+    def get_desired_partitions(
+        self,
+        *,
+        df: DataFrame,
+        num_partition: Optional[int] = None,
+        batch_size: Optional[int] = None,
+    ) -> int:
+        """
+        Get the desired partitions based on num_partition, batch_size and dataframe
+
+        :param num_partition: number of desired partitions
+        :param batch_size: number of items in a partitions
+        :param df: Dataframe which will be divided into partitions
+        """
+        desired_partitions: int
+        if num_partition:
+            desired_partitions = num_partition
+        else:
+            row_count: int = df.count()
+            desired_partitions = (
+                math.ceil(row_count / batch_size)
+                if batch_size and batch_size > 0
+                else row_count
+            )
+        self.logger.info(f"Total Batches: {desired_partitions}")
+        return desired_partitions

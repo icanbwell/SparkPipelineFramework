@@ -65,13 +65,13 @@ def test_http_data_receiver(spark_session: SparkSession) -> None:
     ) -> Tuple[Dict[str, Any], bool]:
         assert isinstance(state, int)
         # Considering state 2 as error state
-        return response.json(), state == 2
+        return response.json(), state == 1
 
     # Act
     with ProgressLogger() as progress_logger:
         HttpDataReceiver(
             name="Testing HTTP Data Receiver",
-            view_name="success_view",
+            success_view="success_view",
             error_view="error_view",
             http_request_generator=http_request_generator,
             response_processor=response_processor,
@@ -80,6 +80,7 @@ def test_http_data_receiver(spark_session: SparkSession) -> None:
             ),
             auth_url=f"{server_url}/token",
             batch_size=15,
+            run_sync=True,
         ).transform(df)
 
     # Assert
@@ -94,16 +95,15 @@ def test_http_data_receiver(spark_session: SparkSession) -> None:
         "state": "0",
         "data": {"token_type": "bearer"},
     }
-    assert success_df.collect()[1].asDict(recursive=True) == {
+
+    error_df: DataFrame = spark_session.table("error_view")
+    error_df.printSchema()
+    error_df.show(truncate=False)
+
+    assert error_df.collect()[0].asDict(recursive=True) == {
         "headers": {"Authorization": "Bearer access_token_1"},
         "url": "http://mock-server:1080/test_http_data_receiver/eligibility",
         "status": 200,
         "state": "1",
         "data": {"token_type": "bearer"},
     }
-
-    error_df: DataFrame = spark_session.table("error_view")
-    error_df.printSchema()
-    error_df.show(truncate=False)
-
-    assert error_df.collect() == []

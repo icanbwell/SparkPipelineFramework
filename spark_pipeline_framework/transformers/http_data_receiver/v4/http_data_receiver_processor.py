@@ -1,12 +1,10 @@
 import json
-from typing import List, Iterable, Optional, Dict, Any
+from typing import List, Iterable, Optional, Dict, Any, Callable, Tuple, Iterator
 
+from pyspark.sql import DataFrame
 from pyspark.sql.types import Row
 from requests import status_codes, Response
 
-from spark_pipeline_framework.transformers.http_data_receiver.v4.schema import (
-    RESPONSE_PROCESSOR_TYPE,
-)
 from spark_pipeline_framework.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
@@ -15,6 +13,13 @@ from spark_pipeline_framework.utilities.oauth2_helpers.v2.oauth2_client_credenti
     OAuth2ClientCredentialsFlow,
     OAuth2Credentails,
 )
+
+RESPONSE_PROCESSOR_TYPE = Callable[
+    [Response, Any],
+    Tuple[Any, Any],
+]
+
+REQUEST_GENERATOR_TYPE = Callable[[DataFrame], Iterator[Tuple[HelixHttpRequest, Any]]]
 
 
 class HttpDataReceiverProcessor:
@@ -66,7 +71,7 @@ class HttpDataReceiverProcessor:
         for row in rows:
             response = HttpDataReceiverProcessor.process_row(
                 row=row,
-                raise_error=False,
+                raise_error=False,  # We don't want to raise error in case of access token expiry
                 base_headers=headers,
             )
             if auth_url and response.status_code == status_codes.codes.unauthorized:
