@@ -711,13 +711,10 @@ class FhirReceiver(FrameworkTransformer):
                         if progress_logger and not spark_is_data_frame_empty(errors_df):
                             progress_logger.log_event(
                                 event_name="Errors receiving FHIR",
-                                event_text=json.dumps(
-                                    get_pretty_data_frame(
-                                        df=errors_df,
-                                        limit=100,
-                                        name="Errors Receiving FHIR",
-                                    ),
-                                    default=str,
+                                event_text=get_pretty_data_frame(
+                                    df=errors_df,
+                                    limit=100,
+                                    name="Errors Receiving FHIR",
                                 ),
                                 log_level=LogLevel.INFO,
                             )
@@ -949,13 +946,10 @@ class FhirReceiver(FrameworkTransformer):
                     if progress_logger and not spark_is_data_frame_empty(errors_df):
                         progress_logger.log_event(
                             event_name="Errors receiving FHIR",
-                            event_text=json.dumps(
-                                get_pretty_data_frame(
-                                    df=errors_df,
-                                    limit=100,
-                                    name="Errors Receiving FHIR",
-                                ),
-                                default=str,
+                            event_text=get_pretty_data_frame(
+                                df=errors_df,
+                                limit=100,
+                                name="Errors Receiving FHIR",
                             ),
                             log_level=LogLevel.INFO,
                         )
