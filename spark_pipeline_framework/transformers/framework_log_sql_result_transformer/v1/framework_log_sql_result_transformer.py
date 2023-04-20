@@ -11,7 +11,10 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
+from spark_pipeline_framework.utilities.pretty_print import (
+    get_pretty_data_frame,
+    get_data_frame_as_csv,
+)
 
 
 class FrameworkLogSqlResultTransformer(FrameworkTransformer):
@@ -114,7 +117,8 @@ class FrameworkLogSqlResultTransformer(FrameworkTransformer):
                             event_text=message,
                         )
                 progress_logger.log_artifact(
-                    key=f"{name or view}.csv", contents=message
+                    key=f"{name or view}.csv",
+                    contents=get_data_frame_as_csv(df=df2, limit=log_limit),
                 )
 
         return df

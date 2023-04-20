@@ -119,4 +119,9 @@ def get_data_frame_as_csv(df: DataFrame, limit: int) -> str:
 
     rows: List[List[Any]] = [list(row) for row in df.limit(limit).collect()]
 
-    return get_pretty_table(rows, df.columns)
+    result: str = ""
+    result += ",".join(['"' + c + '"' for c in df.columns]) + "\n"
+    row: List[Any]
+    for row in rows:
+        result += ",".join(['"' + str(r) + '"' for r in row]) + "\n"
+    return result
