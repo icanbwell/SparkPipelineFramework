@@ -31,6 +31,15 @@ class MlFlowConfig:
         self.flow_run_name = flow_run_name
         self.parameters = parameters
 
+    def clone(self) -> "MlFlowConfig":
+        return MlFlowConfig(
+            mlflow_tracking_url=self.mlflow_tracking_url,
+            artifact_url=self.artifact_url,
+            experiment_name=self.experiment_name,
+            flow_run_name=self.flow_run_name,
+            parameters=self.parameters.copy(),
+        )
+
 
 class ProgressLogger:
     def __init__(
@@ -57,23 +66,9 @@ class ProgressLogger:
         try:
             mlflow.set_tracking_uri(self.mlflow_config.mlflow_tracking_url)
             self.logger.info(f"MLFLOW TRACKING URL: {mlflow.get_tracking_uri()}")
-
-            # get or create experiment
-            experiment: Experiment = mlflow.get_experiment_by_name(
-                name=self.mlflow_config.experiment_name
+            self.start_mlflow_run(
+                run_name=self.mlflow_config.flow_run_name, is_nested=False
             )
-
-            if experiment is None:
-                experiment_id: str = mlflow.create_experiment(
-                    name=self.mlflow_config.experiment_name,
-                    artifact_location=self.mlflow_config.artifact_url,
-                )
-            else:
-                experiment_id = experiment.experiment_id
-            mlflow.set_experiment(experiment_id=experiment_id)
-
-            mlflow.start_run(run_name=self.mlflow_config.flow_run_name)
-            self.logger.info(f"MLFLOW ARTIFACTS URL: {mlflow.get_artifact_uri()}")
             # set the parameters used in the pipeline run
             self.log_params(params=self.mlflow_config.parameters)
         except Exception as e:
@@ -102,6 +97,20 @@ class ProgressLogger:
     def start_mlflow_run(self, run_name: str, is_nested: bool = True) -> None:
         if self.mlflow_config is None:
             return
+        # get or create experiment
+        experiment: Experiment = mlflow.get_experiment_by_name(
+            name=self.mlflow_config.experiment_name
+        )
+
+        if experiment is None:
+            experiment_id: str = mlflow.create_experiment(
+                name=self.mlflow_config.experiment_name,
+                artifact_location=self.mlflow_config.artifact_url,
+            )
+        else:
+            experiment_id = experiment.experiment_id
+        mlflow.set_experiment(experiment_id=experiment_id)
+
         mlflow.start_run(run_name=run_name, nested=is_nested)
 
     # noinspection PyMethodMayBeStatic
@@ -184,6 +193,7 @@ class ProgressLogger:
                 with TemporaryDirectory() as temp_dir_name:
                     data_dir: Path = Path(temp_dir_name)
                     file_path: Path = data_dir.joinpath(key)
+                    file_path.parent.mkdir(exist_ok=True, parents=True)
                     with open(file_path, "w") as file:
                         file.write(contents)
                         self.logger.info(f"Wrote sql to {file_path}")

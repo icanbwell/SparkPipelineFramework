@@ -10,6 +10,7 @@ from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.fram
 
 def run_if_else(
     *,
+    name: Optional[str] = None,
     enable: Optional[Union[bool, Callable[[DataFrame], bool]]] = None,
     enable_if_view_not_empty: Optional[
         Union[str, Callable[[Optional[str]], str]]
@@ -22,6 +23,8 @@ def run_if_else(
 ) -> FrameworkIfElseTransformer:
     """
     If enable flag is true then runs stages else runs else_stages
+
+    :param name: name of transformer
     :param enable: a boolean or a function that takes a DataFrame and returns a boolean
     :param stages: list of transformers or a function that returns a list of transformers
     :param else_stages: list of transformers or a function that returns a list of transformers
@@ -29,6 +32,7 @@ def run_if_else(
     :param enable_sql: enable if this sql returns any results
     """
     return FrameworkIfElseTransformer(
+        name=name,
         enable=enable,
         enable_if_view_not_empty=enable_if_view_not_empty,
         enable_sql=enable_sql,
