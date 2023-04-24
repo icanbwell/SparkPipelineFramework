@@ -1,0 +1,12 @@
+ {
+  "request_parameters": {
+    "method": "GET",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer access_token_1"
+    }
+  },
+  "request_result": {
+    "token_type": "bearer"
+  }
+}

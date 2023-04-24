@@ -51,11 +51,11 @@ def create_dataframe_from_dictionary(
     return df
 
 
-def create_empty_dataframe(spark_session: SparkSession) -> DataFrame:
-    schema = StructType([])
-
+def create_empty_dataframe(
+    spark_session: SparkSession, schema: Optional[StructType] = None
+) -> DataFrame:
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema
+        spark_session.sparkContext.emptyRDD(), schema or StructType([])
     )
 
     return df
