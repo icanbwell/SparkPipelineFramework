@@ -55,8 +55,8 @@ class HttpDataReceiver(FrameworkTransformer):
         http_request_generator: REQUEST_GENERATOR_TYPE,
         response_processor: RESPONSE_PROCESSOR_TYPE,
         num_partition: Optional[int] = None,
-        responses_batch_size: int = 1000,
-        batch_size: Optional[int] = None,
+        batch_size: int = 1000,
+        items_per_partition: Optional[int] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         credentials: Optional[OAuth2Credentails] = None,
         auth_url: Optional[str] = None,
@@ -74,8 +74,8 @@ class HttpDataReceiver(FrameworkTransformer):
         :param http_request_generator: Generator to build next http request
         :param response_processor: it can change the result before loading to spark df
         :param num_partition: Number of batches
-        :param responses_batch_size: number of responses to process in batch
-        :param batch_size: Number of items to process in a batch
+        :param batch_size: Size of a partition, used in internal processing like converting requests to view
+        :param items_per_partition: Number of items to process per partition
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param credentials: OAuth2 credentails
@@ -83,6 +83,7 @@ class HttpDataReceiver(FrameworkTransformer):
         :param parameters: parameters
         :param run_sync: process the items linearly
         :param raise_error: (Optional) Raise error in case of api failure
+        :param progress_logger: progress logger
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -112,11 +113,13 @@ class HttpDataReceiver(FrameworkTransformer):
         self.num_partition: Param[Optional[int]] = Param(self, "num_partition", "")
         self._setDefault(num_partition=None)
 
-        self.responses_batch_size: Param[int] = Param(self, "responses_batch_size", "")
-        self._setDefault(responses_batch_size=responses_batch_size)
+        self.batch_size: Param[int] = Param(self, "batch_size", "")
+        self._setDefault(batch_size=batch_size)
 
-        self.batch_size: Param[Optional[int]] = Param(self, "batch_size", "")
-        self._setDefault(batch_size=None)
+        self.items_per_partition: Param[Optional[int]] = Param(
+            self, "items_per_partition", ""
+        )
+        self._setDefault(items_per_partition=None)
 
         self.cache_storage_level: Param[Optional[StorageLevel]] = Param(
             self, "cache_storage_level", ""
@@ -146,8 +149,8 @@ class HttpDataReceiver(FrameworkTransformer):
         success_view: str = self.getOrDefault(self.success_view)
         error_view: str = self.getOrDefault(self.error_view)
         num_partition: Optional[int] = self.getOrDefault(self.num_partition)
-        responses_batch_size: int = self.getOrDefault(self.responses_batch_size)
-        batch_size: Optional[int] = self.getOrDefault(self.batch_size)
+        batch_size: int = self.getOrDefault(self.batch_size)
+        items_per_partition: Optional[int] = self.getOrDefault(self.items_per_partition)
         http_request_generator: REQUEST_GENERATOR_TYPE = self.getOrDefault(
             self.http_request_generator
         )
@@ -176,7 +179,7 @@ class HttpDataReceiver(FrameworkTransformer):
                     ]
                 ),
             )
-            for requests in chunked(http_request_generator(df), responses_batch_size):
+            for requests in chunked(http_request_generator(df), batch_size):
                 # Create the Dataframe
                 view_data = [
                     [
@@ -195,7 +198,9 @@ class HttpDataReceiver(FrameworkTransformer):
                 requests_df.createOrReplaceTempView("requests_view")
 
             desired_partitions: int = self.get_desired_partitions(
-                num_partition=num_partition, batch_size=batch_size, df=requests_df
+                num_partition=num_partition,
+                items_per_partition=items_per_partition,
+                df=requests_df,
             )
 
             row_schema = StructType(
@@ -318,13 +323,13 @@ class HttpDataReceiver(FrameworkTransformer):
         *,
         df: DataFrame,
         num_partition: Optional[int] = None,
-        batch_size: Optional[int] = None,
+        items_per_partition: Optional[int] = None,
     ) -> int:
         """
-        Get the desired partitions based on num_partition, batch_size and dataframe
+        Get the desired partitions based on num_partition, items_per_partition and dataframe
 
         :param num_partition: number of desired partitions
-        :param batch_size: number of items in a partitions
+        :param items_per_partition: number of items in a partitions
         :param df: Dataframe which will be divided into partitions
         """
         desired_partitions: int
@@ -333,8 +338,8 @@ class HttpDataReceiver(FrameworkTransformer):
         else:
             row_count: int = df.count()
             desired_partitions = (
-                math.ceil(row_count / batch_size)
-                if batch_size and batch_size > 0
+                math.ceil(row_count / items_per_partition)
+                if items_per_partition and items_per_partition > 0
                 else row_count
             )
         self.logger.info(f"Total Batches: {desired_partitions}")
