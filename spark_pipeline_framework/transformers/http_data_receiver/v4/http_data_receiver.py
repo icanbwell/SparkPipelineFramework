@@ -179,7 +179,9 @@ class HttpDataReceiver(FrameworkTransformer):
                     ]
                 ),
             )
-            for requests in chunked(http_request_generator(df), batch_size):
+            for requests in chunked(
+                http_request_generator(df, progress_logger), batch_size
+            ):
                 # Create the Dataframe
                 view_data = [
                     [
@@ -343,4 +345,4 @@ class HttpDataReceiver(FrameworkTransformer):
                 else row_count
             )
         self.logger.info(f"Total Batches: {desired_partitions}")
-        return desired_partitions
+        return desired_partitions or 1

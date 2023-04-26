@@ -1,10 +1,20 @@
 import json
-from typing import List, Iterable, Optional, Dict, Any, Callable, Tuple, Iterator
+from typing import (
+    List,
+    Iterable,
+    Optional,
+    Dict,
+    Any,
+    Callable,
+    Tuple,
+    Iterator,
+)
 
 from pyspark.sql import DataFrame
 from pyspark.sql.types import Row
 from requests import status_codes, Response
 
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
@@ -16,10 +26,12 @@ from spark_pipeline_framework.utilities.oauth2_helpers.v2.oauth2_client_credenti
 
 RESPONSE_PROCESSOR_TYPE = Callable[
     [Response, Any],
-    Tuple[Any, Any],
+    Tuple[Any, bool],
 ]
 
-REQUEST_GENERATOR_TYPE = Callable[[DataFrame], Iterator[Tuple[HelixHttpRequest, Any]]]
+REQUEST_GENERATOR_TYPE = Callable[
+    [DataFrame, Optional[ProgressLogger]], Iterator[Tuple[HelixHttpRequest, Any]]
+]
 
 
 class HttpDataReceiverProcessor:
@@ -87,17 +99,31 @@ class HttpDataReceiverProcessor:
             elif raise_error:
                 response.raise_for_status()
             data, is_error = response_processor(response, json.loads(row["state"]))
-            result.append(
-                Row(
-                    headers=headers,
-                    url=row["url"],
-                    status=response.status_code,
-                    is_error=is_error,
-                    error_data=json.dumps(data if is_error else None),
-                    success_data=json.dumps(None if is_error else data),
-                    state=json.loads(row["state"]),
+            if isinstance(data, list):
+                for item in data:
+                    result.append(
+                        Row(
+                            headers=headers,
+                            url=row["url"],
+                            status=response.status_code,
+                            is_error=is_error,
+                            error_data=json.dumps(item if is_error else None),
+                            success_data=json.dumps(None if is_error else item),
+                            state=json.loads(row["state"]),
+                        )
+                    )
+            else:
+                result.append(
+                    Row(
+                        headers=headers,
+                        url=row["url"],
+                        status=response.status_code,
+                        is_error=is_error,
+                        error_data=json.dumps(data if is_error else None),
+                        success_data=json.dumps(None if is_error else data),
+                        state=json.loads(row["state"]),
+                    )
                 )
-            )
         return result
 
     @staticmethod

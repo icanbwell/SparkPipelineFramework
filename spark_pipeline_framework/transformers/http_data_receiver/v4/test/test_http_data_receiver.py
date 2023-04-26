@@ -1,7 +1,7 @@
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
-from typing import Any, Tuple, Dict, Iterator
+from typing import Any, Tuple, Dict, Iterator, Optional
 
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
@@ -51,7 +51,9 @@ def test_http_data_receiver(spark_session: SparkSession) -> None:
         url_prefix=f"{test_name}/eligibility",
     )
 
-    def http_request_generator(_: DataFrame) -> Iterator[Tuple[HelixHttpRequest, int]]:
+    def http_request_generator(
+        _: DataFrame, _1: Optional[ProgressLogger]
+    ) -> Iterator[Tuple[HelixHttpRequest, int]]:
         for i in range(2):
             yield HelixHttpRequest(
                 url=f"{server_url}/eligibility",
