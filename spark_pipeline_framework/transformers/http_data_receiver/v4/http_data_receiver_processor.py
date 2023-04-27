@@ -99,31 +99,23 @@ class HttpDataReceiverProcessor:
             elif raise_error:
                 response.raise_for_status()
             data, is_error = response_processor(response, json.loads(row["state"]))
-            if isinstance(data, list):
-                for item in data:
-                    result.append(
-                        Row(
-                            headers=headers,
-                            url=row["url"],
-                            status=response.status_code,
-                            is_error=is_error,
-                            error_data=json.dumps(item if is_error else None),
-                            success_data=json.dumps(None if is_error else item),
-                            state=json.loads(row["state"]),
-                        )
-                    )
-            else:
-                result.append(
+            if isinstance(data, dict):
+                data = [data]
+            assert isinstance(data, list)
+            result.extend(
+                [
                     Row(
                         headers=headers,
                         url=row["url"],
                         status=response.status_code,
                         is_error=is_error,
-                        error_data=json.dumps(data if is_error else None),
-                        success_data=json.dumps(None if is_error else data),
+                        error_data=json.dumps(item if is_error else None),
+                        success_data=json.dumps(None if is_error else item),
                         state=json.loads(row["state"]),
                     )
-                )
+                    for item in data
+                ]
+            )
         return result
 
     @staticmethod

@@ -343,6 +343,6 @@ class HttpDataReceiver(FrameworkTransformer):
                 math.ceil(row_count / items_per_partition)
                 if items_per_partition and items_per_partition > 0
                 else row_count
-            )
+            ) or 1
         self.logger.info(f"Total Batches: {desired_partitions}")
-        return desired_partitions or 1
+        return desired_partitions
