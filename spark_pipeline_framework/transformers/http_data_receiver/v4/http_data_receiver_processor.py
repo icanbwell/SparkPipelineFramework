@@ -99,9 +99,8 @@ class HttpDataReceiverProcessor:
             elif raise_error:
                 response.raise_for_status()
             data, is_error = response_processor(response, json.loads(row["state"]))
-            if isinstance(data, dict):
+            if not isinstance(data, list):
                 data = [data]
-            assert isinstance(data, list)
             result.extend(
                 [
                     Row(
