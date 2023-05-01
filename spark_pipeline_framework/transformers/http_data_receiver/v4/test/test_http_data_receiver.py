@@ -6,6 +6,7 @@ from typing import Any, Tuple, Dict, Iterator, Optional
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StructType, StructField, StringType
 from requests import Response
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -77,6 +78,9 @@ def test_http_data_receiver(spark_session: SparkSession) -> None:
             error_view="error_view",
             http_request_generator=http_request_generator,
             response_processor=response_processor,
+            success_schema=StructType([
+                StructField("token_type", StringType()),
+            ]),
             credentials=OAuth2Credentails(
                 client_id="client_id", client_secret="client_secret"
             ),
