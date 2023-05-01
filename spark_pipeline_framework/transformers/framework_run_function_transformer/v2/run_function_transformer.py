@@ -29,7 +29,7 @@ class FrameworkRunFunctionTransformer(FrameworkTransformer):
         self.logger = get_logger(__name__)
 
         # add a param
-        self.fn: Param[Any] = Param(self, "fn", "")
+        self.fn: Param[Callable[[DataFrame], DataFrame]] = Param(self, "fn", "")
         self._setDefault(fn=fn)
 
         kwargs = self._input_kwargs
@@ -44,4 +44,4 @@ class FrameworkRunFunctionTransformer(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFunction(self) -> Callable[[DataFrame], DataFrame]:
-        return self.getOrDefault(self.fn)  # type: ignore
+        return self.getOrDefault(self.fn)
