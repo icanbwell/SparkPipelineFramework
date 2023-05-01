@@ -75,6 +75,8 @@ class HttpDataReceiver(FrameworkTransformer):
         :param error_view: (Optional) log the details of the api failure into `error_view` view.
         :param http_request_generator: Generator to build next http request
         :param response_processor: it can change the result before loading to spark df
+        :param success_schema: Schema for success response
+        :param error_schema: Schema for error response
         :param num_partition: Number of batches
         :param batch_size: Size of a partition, used in internal processing like converting requests to view
         :param items_per_partition: Number of items to process per partition
@@ -156,6 +158,8 @@ class HttpDataReceiver(FrameworkTransformer):
         name: str = self.getOrDefault(self.name)
         success_view: str = self.getOrDefault(self.success_view)
         error_view: str = self.getOrDefault(self.error_view)
+        success_schema: StructType = self.getOrDefault(self.success_schema)
+        error_schema: StructType = self.getOrDefault(self.error_schema)
         num_partition: Optional[int] = self.getOrDefault(self.num_partition)
         batch_size: int = self.getOrDefault(self.batch_size)
         items_per_partition: Optional[int] = self.getOrDefault(self.items_per_partition)
@@ -282,7 +286,7 @@ class HttpDataReceiver(FrameworkTransformer):
 
                 # Create success view
                 df_success = result_df.filter(result_df["is_error"] == False)
-                json_schema = self.success_schema or self.infer_schema_json_string_column(
+                json_schema = success_schema or self.infer_schema_json_string_column(
                     df_success, "success_data"
                 )
                 self.copy_and_drop_column(
@@ -291,7 +295,7 @@ class HttpDataReceiver(FrameworkTransformer):
 
                 # Create error view
                 df_errors = result_df.filter(result_df["is_error"] == True)
-                json_schema = self.error_schema or self.infer_schema_json_string_column(
+                json_schema = error_schema or self.infer_schema_json_string_column(
                     df_errors, "error_data"
                 )
                 self.copy_and_drop_column(
