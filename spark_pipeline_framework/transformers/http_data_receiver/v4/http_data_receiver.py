@@ -114,7 +114,9 @@ class HttpDataReceiver(FrameworkTransformer):
         )
         self._setDefault(response_processor=None)
 
-        self.success_schema: Param[Optional[StructType]] = Param(self, "success_schema", "")
+        self.success_schema: Param[Optional[StructType]] = Param(
+            self, "success_schema", ""
+        )
         self._setDefault(success_schema=success_schema)
 
         self.error_schema: Param[Optional[StructType]] = Param(self, "error_schema", "")
@@ -158,8 +160,8 @@ class HttpDataReceiver(FrameworkTransformer):
         name: str = self.getOrDefault(self.name)
         success_view: str = self.getOrDefault(self.success_view)
         error_view: str = self.getOrDefault(self.error_view)
-        success_schema: StructType = self.getOrDefault(self.success_schema)
-        error_schema: StructType = self.getOrDefault(self.error_schema)
+        success_schema: Optional[StructType] = self.getOrDefault(self.success_schema)
+        error_schema: Optional[StructType] = self.getOrDefault(self.error_schema)
         num_partition: Optional[int] = self.getOrDefault(self.num_partition)
         batch_size: int = self.getOrDefault(self.batch_size)
         items_per_partition: Optional[int] = self.getOrDefault(self.items_per_partition)

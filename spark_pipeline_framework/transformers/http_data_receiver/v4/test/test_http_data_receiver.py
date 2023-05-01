@@ -78,9 +78,11 @@ def test_http_data_receiver(spark_session: SparkSession) -> None:
             error_view="error_view",
             http_request_generator=http_request_generator,
             response_processor=response_processor,
-            success_schema=StructType([
-                StructField("token_type", StringType()),
-            ]),
+            success_schema=StructType(
+                [
+                    StructField("token_type", StringType()),
+                ]
+            ),
             credentials=OAuth2Credentails(
                 client_id="client_id", client_secret="client_secret"
             ),
