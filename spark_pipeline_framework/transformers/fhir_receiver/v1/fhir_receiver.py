@@ -108,8 +108,6 @@ class FhirReceiver(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = None,
         graph_json: Optional[Dict[str, Any]] = None,
         run_synchronously: Optional[bool] = None,
-        enable_blocking: Optional[bool] = None,
-        additional_parameter_name_for_blocking: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -160,10 +158,6 @@ class FhirReceiver(FrameworkTransformer):
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param graph_json: (Optional) a FHIR GraphDefinition resource to use for retrieving data
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
-        :param enable_blocking: (Optional) Enable blocking for filtering with given blocking_search_param_name param
-                                 and with the data in the given blocking_search_param_values_view
-        :param additional_parameter_name_for_blocking: (Optional) search parameter name for blocking, which is to be added to the
-                                            additional parameters
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -380,14 +374,6 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
-        self.enable_blocking: Param[Optional[bool]] = Param(self, "enable_blocking", "")
-        self._setDefault(enable_blocking=enable_blocking)
-
-        self.additional_parameter_name_for_blocking: Param[Optional[str]] = Param(
-            self, "additional_parameter_name_for_blocking", ""
-        )
-        self._setDefault(additional_parameter_name_for_blocking=None)
-
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -474,11 +460,6 @@ class FhirReceiver(FrameworkTransformer):
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
-        enable_blocking: Optional[bool] = self.getOrDefault(self.enable_blocking)
-        additional_parameter_name_for_blocking: Optional[str] = self.getOrDefault(
-            self.additional_parameter_name_for_blocking
-        )
-
         # get access token first so we can reuse it
         if auth_client_id and server_url:
             auth_access_token = fhir_get_access_token(
@@ -495,27 +476,20 @@ class FhirReceiver(FrameworkTransformer):
         with ProgressLogMetric(
             name=f"{name}_fhir_receiver", progress_logger=progress_logger
         ):
-            # if blocking is enabled,
-            if (
-                enable_blocking
-                and enable_blocking is True
-                and additional_parameters_view
-                and additional_parameter_name_for_blocking
-                and additional_parameters
-            ):
+            # if additional_parameters_view is given,
+            # this is for generic use. e.g. to support blocking by adding search parameters in a query to FHIR
+            if additional_parameters_view and additional_parameters:
                 # created a df for additional_parameters_view
-                # The data this data view will always be 1 row 1 column
-                df_additional_parameters_view_for_blocking: DataFrame = (
-                    df.sql_ctx.table(additional_parameters_view)
+                # the data in this view MUST have 1 row per each parameter and only 1 column per each row.
+                # e.g. "address-postalcode=10304,11040,11801" for a comma separate postal codes for Person resource
+                df_additional_parameters_view: DataFrame = df.sql_ctx.table(
+                    additional_parameters_view
                 )
-                # add search param values. e.g. for postal codes - 11801,10304,11040,...
-                additional_param_values_for_blocking: str = (
-                    df_additional_parameters_view_for_blocking.collect()[0][0]
-                )
-                # add it to the additional_parameters
-                additional_parameters += [
-                    f"{additional_parameter_name_for_blocking}={additional_param_values_for_blocking}"
-                ]
+                for row in df_additional_parameters_view.collect():
+                    # get the data from each row for each parameter, e.g. "address-postalcode=10304,11040,11801"
+                    parameter_values: str = str(row[0])
+                    # add it to the additional_parameters
+                    additional_parameters += [f"{parameter_values}"]
 
             # if we're calling for individual ids
             # noinspection GrazieInspection
