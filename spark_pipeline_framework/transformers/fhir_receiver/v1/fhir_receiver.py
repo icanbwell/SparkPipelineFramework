@@ -68,6 +68,7 @@ class FhirReceiver(FrameworkTransformer):
         filter_by_resource: Optional[str] = None,
         filter_parameter: Optional[str] = None,
         additional_parameters: Optional[List[str]] = None,
+        additional_parameters_view: Optional[str] = None,
         limit: Optional[int] = None,
         action: Optional[str] = None,
         action_payload: Optional[Dict[str, Any]] = None,
@@ -108,8 +109,7 @@ class FhirReceiver(FrameworkTransformer):
         graph_json: Optional[Dict[str, Any]] = None,
         run_synchronously: Optional[bool] = None,
         enable_blocking: Optional[bool] = None,
-        blocking_search_param_values_view: Optional[str] = None,
-        blocking_search_param_name: Optional[str] = None,
+        additional_parameter_name_for_blocking: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -130,6 +130,7 @@ class FhirReceiver(FrameworkTransformer):
         :param filter_parameter: Instead of requesting ?patient=1,
                 do ?subject:Patient=1 (if filter_parameter is subject)
         :param additional_parameters: Any additional parameters to send with request
+        :param additional_parameters_view: (Optional) view name for additional parameters, e.g. search parameters
         :param auth_scopes: list of scopes to request permission for e.g., system/AllergyIntolerance.read
         :param limit: maximum number of resources to get
         :param action: (Optional) do an action e.g., $everything
@@ -161,8 +162,7 @@ class FhirReceiver(FrameworkTransformer):
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         :param enable_blocking: (Optional) Enable blocking for filtering with given blocking_search_param_name param
                                  and with the data in the given blocking_search_param_values_view
-        :param blocking_search_param_values_view: (Optional) view name for search parameter data values for blocking
-        :param blocking_search_param_name: (Optional) search parameter name for blocking, which is to be added to the
+        :param additional_parameter_name_for_blocking: (Optional) search parameter name for blocking, which is to be added to the
                                             additional parameters
         """
         super().__init__(
@@ -217,6 +217,11 @@ class FhirReceiver(FrameworkTransformer):
             self, "additional_parameters", ""
         )
         self._setDefault(additional_parameters=None)
+
+        self.additional_parameters_view: Param[Optional[str]] = Param(
+            self, "additional_parameters_view", ""
+        )
+        self._setDefault(additional_parameters_view=None)
 
         self.id_view: Param[Optional[str]] = Param(self, "id_view", "")
         self._setDefault(id_view=None)
@@ -378,15 +383,10 @@ class FhirReceiver(FrameworkTransformer):
         self.enable_blocking: Param[Optional[bool]] = Param(self, "enable_blocking", "")
         self._setDefault(enable_blocking=enable_blocking)
 
-        self.blocking_search_param_values_view: Param[Optional[str]] = Param(
-            self, "blocking_search_param_values_view", ""
+        self.additional_parameter_name_for_blocking: Param[Optional[str]] = Param(
+            self, "additional_parameter_name_for_blocking", ""
         )
-        self._setDefault(blocking_search_param_values_view=None)
-
-        self.blocking_search_param_name: Param[Optional[str]] = Param(
-            self, "blocking_search_param_name", ""
-        )
-        self._setDefault(blocking_search_param_name=None)
+        self._setDefault(additional_parameter_name_for_blocking=None)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -397,6 +397,9 @@ class FhirReceiver(FrameworkTransformer):
         filter_by_resource: Optional[str] = self.getFilterByResource()
         filter_parameter: Optional[str] = self.getFilterParameter()
         additional_parameters: Optional[List[str]] = self.getAdditionalParameters()
+        additional_parameters_view: Optional[str] = self.getOrDefault(
+            self.additional_parameters_view
+        )
         id_view: Optional[str] = self.getIdView()
         file_path: Union[
             Path, str, Callable[[Optional[str]], Union[Path, str]]
@@ -472,11 +475,8 @@ class FhirReceiver(FrameworkTransformer):
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
         enable_blocking: Optional[bool] = self.getOrDefault(self.enable_blocking)
-        blocking_search_param_values_view: Optional[str] = self.getOrDefault(
-            self.blocking_search_param_values_view
-        )
-        blocking_search_param_name: Optional[str] = self.getOrDefault(
-            self.blocking_search_param_name
+        additional_parameter_name_for_blocking: Optional[str] = self.getOrDefault(
+            self.additional_parameter_name_for_blocking
         )
 
         # get access token first so we can reuse it
@@ -499,22 +499,22 @@ class FhirReceiver(FrameworkTransformer):
             if (
                 enable_blocking
                 and enable_blocking is True
-                and blocking_search_param_values_view
-                and blocking_search_param_name
+                and additional_parameters_view
+                and additional_parameter_name_for_blocking
                 and additional_parameters
             ):
-                # created a df for blocking_search_param_values_view
+                # created a df for additional_parameters_view
                 # The data this data view will always be 1 row 1 column
-                df_blocking_search_param_values: DataFrame = df.sql_ctx.table(
-                    blocking_search_param_values_view
+                df_additional_parameters_view_for_blocking: DataFrame = (
+                    df.sql_ctx.table(additional_parameters_view)
                 )
                 # add search param values. e.g. for postal codes - 11801,10304,11040,...
-                blocking_search_param_values: str = (
-                    df_blocking_search_param_values.collect()[0][0]
+                additional_param_values_for_blocking: str = (
+                    df_additional_parameters_view_for_blocking.collect()[0][0]
                 )
                 # add it to the additional_parameters
                 additional_parameters += [
-                    f"{blocking_search_param_name}={blocking_search_param_values}"
+                    f"{additional_parameter_name_for_blocking}={additional_param_values_for_blocking}"
                 ]
 
             # if we're calling for individual ids
