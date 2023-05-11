@@ -68,6 +68,7 @@ class FhirReceiver(FrameworkTransformer):
         filter_by_resource: Optional[str] = None,
         filter_parameter: Optional[str] = None,
         additional_parameters: Optional[List[str]] = None,
+        additional_parameters_view: Optional[str] = None,
         limit: Optional[int] = None,
         action: Optional[str] = None,
         action_payload: Optional[Dict[str, Any]] = None,
@@ -127,6 +128,7 @@ class FhirReceiver(FrameworkTransformer):
         :param filter_parameter: Instead of requesting ?patient=1,
                 do ?subject:Patient=1 (if filter_parameter is subject)
         :param additional_parameters: Any additional parameters to send with request
+        :param additional_parameters_view: (Optional) view name for additional parameters, e.g. search parameters
         :param auth_scopes: list of scopes to request permission for e.g., system/AllergyIntolerance.read
         :param limit: maximum number of resources to get
         :param action: (Optional) do an action e.g., $everything
@@ -209,6 +211,11 @@ class FhirReceiver(FrameworkTransformer):
             self, "additional_parameters", ""
         )
         self._setDefault(additional_parameters=None)
+
+        self.additional_parameters_view: Param[Optional[str]] = Param(
+            self, "additional_parameters_view", ""
+        )
+        self._setDefault(additional_parameters_view=None)
 
         self.id_view: Param[Optional[str]] = Param(self, "id_view", "")
         self._setDefault(id_view=None)
@@ -376,6 +383,9 @@ class FhirReceiver(FrameworkTransformer):
         filter_by_resource: Optional[str] = self.getFilterByResource()
         filter_parameter: Optional[str] = self.getFilterParameter()
         additional_parameters: Optional[List[str]] = self.getAdditionalParameters()
+        additional_parameters_view: Optional[str] = self.getOrDefault(
+            self.additional_parameters_view
+        )
         id_view: Optional[str] = self.getIdView()
         file_path: Union[
             Path, str, Callable[[Optional[str]], Union[Path, str]]
@@ -466,6 +476,21 @@ class FhirReceiver(FrameworkTransformer):
         with ProgressLogMetric(
             name=f"{name}_fhir_receiver", progress_logger=progress_logger
         ):
+            # if additional_parameters_view is given,
+            # this is for generic use. e.g. to support blocking by adding search parameters in a query to FHIR
+            if additional_parameters_view and additional_parameters:
+                # created a df for additional_parameters_view
+                # the data in this view MUST have 1 row per each parameter and only 1 column per each row.
+                # e.g. "address-postalcode=10304,11040,11801" for a comma separate postal codes for Person resource
+                df_additional_parameters_view: DataFrame = df.sql_ctx.table(
+                    additional_parameters_view
+                )
+                for row in df_additional_parameters_view.collect():
+                    # get the data from each row for each parameter, e.g. "address-postalcode=10304,11040,11801"
+                    parameter_values: str = str(row[0])
+                    # add it to the additional_parameters
+                    additional_parameters += [f"{parameter_values}"]
+
             # if we're calling for individual ids
             # noinspection GrazieInspection
             if id_view:
