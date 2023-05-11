@@ -375,9 +375,7 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
-        self.enable_blocking: Param[Optional[bool]] = Param(
-            self, "enable_blocking", ""
-        )
+        self.enable_blocking: Param[Optional[bool]] = Param(self, "enable_blocking", "")
         self._setDefault(enable_blocking=enable_blocking)
 
         self.blocking_search_param_values_view: Param[Optional[str]] = Param(
@@ -474,10 +472,12 @@ class FhirReceiver(FrameworkTransformer):
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
         enable_blocking: Optional[bool] = self.getOrDefault(self.enable_blocking)
-
-        blocking_search_param_values_view: Optional[str] = self.getOrDefault(self.blocking_search_param_values_view)
-
-        blocking_search_param_name: Optional[str] = self.getOrDefault(self.blocking_search_param_name)
+        blocking_search_param_values_view: Optional[str] = self.getOrDefault(
+            self.blocking_search_param_values_view
+        )
+        blocking_search_param_name: Optional[str] = self.getOrDefault(
+            self.blocking_search_param_name
+        )
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -496,15 +496,26 @@ class FhirReceiver(FrameworkTransformer):
             name=f"{name}_fhir_receiver", progress_logger=progress_logger
         ):
             # if blocking is enabled,
-            if enable_blocking and enable_blocking is True\
-            and blocking_search_param_values_view\
-            and blocking_search_param_name:
+            if (
+                enable_blocking
+                and enable_blocking is True
+                and blocking_search_param_values_view
+                and blocking_search_param_name
+                and additional_parameters
+            ):
                 # created a df for blocking_search_param_values_view
-                df_blocking_search_param_values: DataFrame = df.sql_ctx.table(blocking_search_param_values_view)
+                # The data this data view will always be 1 row 1 column
+                df_blocking_search_param_values: DataFrame = df.sql_ctx.table(
+                    blocking_search_param_values_view
+                )
                 # add search param values. e.g. for postal codes - 11801,10304,11040,...
-                blocking_search_param_values: str = df_blocking_search_param_values.first().collect()[0]
+                blocking_search_param_values: str = (
+                    df_blocking_search_param_values.collect()[0][0]
+                )
                 # add it to the additional_parameters
-                additional_parameters += [f"{blocking_search_param_name}={blocking_search_param_values}"]
+                additional_parameters += [
+                    f"{blocking_search_param_name}={blocking_search_param_values}"
+                ]
 
             # if we're calling for individual ids
             # noinspection GrazieInspection
