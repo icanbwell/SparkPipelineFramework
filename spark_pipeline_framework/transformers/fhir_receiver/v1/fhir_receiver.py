@@ -107,6 +107,9 @@ class FhirReceiver(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = None,
         graph_json: Optional[Dict[str, Any]] = None,
         run_synchronously: Optional[bool] = None,
+        enable_blocking: Optional[bool] = None,
+        blocking_search_param_values_view: Optional[str] = None,
+        blocking_search_param_name: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -156,6 +159,11 @@ class FhirReceiver(FrameworkTransformer):
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param graph_json: (Optional) a FHIR GraphDefinition resource to use for retrieving data
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
+        :param enable_blocking: (Optional) Enable blocking for filtering with given blocking_search_param_name param
+                                 and with the data in the given blocking_search_param_values_view
+        :param blocking_search_param_values_view: (Optional) view name for search parameter data values for blocking
+        :param blocking_search_param_name: (Optional) search parameter name for blocking, which is to be added to the
+                                            additional parameters
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -367,6 +375,21 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
+        self.enable_blocking: Param[Optional[bool]] = Param(
+            self, "enable_blocking", ""
+        )
+        self._setDefault(enable_blocking=enable_blocking)
+
+        self.blocking_search_param_values_view: Param[Optional[str]] = Param(
+            self, "blocking_search_param_values_view", ""
+        )
+        self._setDefault(blocking_search_param_values_view=None)
+
+        self.blocking_search_param_name: Param[Optional[str]] = Param(
+            self, "blocking_search_param_name", ""
+        )
+        self._setDefault(blocking_search_param_name=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -450,6 +473,12 @@ class FhirReceiver(FrameworkTransformer):
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
+        enable_blocking: Optional[bool] = self.getOrDefault(self.enable_blocking)
+
+        blocking_search_param_values_view: Optional[str] = self.getOrDefault(self.blocking_search_param_values_view)
+
+        blocking_search_param_name: Optional[str] = self.getOrDefault(self.blocking_search_param_name)
+
         # get access token first so we can reuse it
         if auth_client_id and server_url:
             auth_access_token = fhir_get_access_token(
@@ -466,6 +495,17 @@ class FhirReceiver(FrameworkTransformer):
         with ProgressLogMetric(
             name=f"{name}_fhir_receiver", progress_logger=progress_logger
         ):
+            # if blocking is enabled,
+            if enable_blocking and enable_blocking is True\
+            and blocking_search_param_values_view\
+            and blocking_search_param_name:
+                # created a df for blocking_search_param_values_view
+                df_blocking_search_param_values: DataFrame = df.sql_ctx.table(blocking_search_param_values_view)
+                # add search param values. e.g. for postal codes - 11801,10304,11040,...
+                blocking_search_param_values: str = df_blocking_search_param_values.first().collect()[0]
+                # add it to the additional_parameters
+                additional_parameters += [f"{blocking_search_param_name}={blocking_search_param_values}"]
+
             # if we're calling for individual ids
             # noinspection GrazieInspection
             if id_view:
