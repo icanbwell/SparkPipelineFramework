@@ -42,8 +42,6 @@ def test_framework_fhir_meta_updater(spark_session: SparkSession) -> None:
 
     # Assert
     result_df = spark_session.table("fixed_patients")
-    result_df.show(truncate=False)
-    # result_df.write.format("json").save(str(data_dir.joinpath("expected_patient.json")))
 
     meta = json.loads(result_df.select(to_json(col("meta"))).collect()[0][0])
     print(meta)

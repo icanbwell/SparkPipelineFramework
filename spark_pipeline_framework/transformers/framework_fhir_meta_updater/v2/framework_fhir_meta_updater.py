@@ -1,6 +1,5 @@
 from typing import Dict, Any, Optional
 
-# noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -12,7 +11,6 @@ from pyspark.sql.functions import (
     array,
     expr,
 )
-from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
@@ -56,8 +54,6 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
-
-        self.logger = get_logger(__name__)
 
         self.resource_type: Param[str] = Param(self, "resource_type", "")
         self._setDefault(resource_type=None)
