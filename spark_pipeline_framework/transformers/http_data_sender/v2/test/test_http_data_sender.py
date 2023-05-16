@@ -6,6 +6,8 @@ from typing import Dict, Any, Union, Optional
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StringType, MapType
+
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_sender.v2.http_data_sender import (
     HttpDataSender,
@@ -89,6 +91,7 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
             payload_generator=payload_generator,
             response_processor=response_processor,
             parse_response_as_json=True,
+            response_schema=MapType(StringType(), StringType()),
         ).transform(df)
 
     # Assert
