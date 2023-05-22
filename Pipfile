@@ -15,7 +15,7 @@ boto3 = "*"
 chardet="*"
 slack_sdk = "*"
 smart_open = { extras = ['s3'], version = ">=6.3.0" }
-mlflow-skinny = ">=1.26.0"
+mlflow-skinny = "==1.29.0"
 SQLAlchemy = ">=1.4.37"
 alembic = ">=1.8.0"
 sqlparse = ">=0.4.2"
