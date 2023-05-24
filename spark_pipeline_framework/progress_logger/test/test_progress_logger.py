@@ -272,6 +272,12 @@ def test_progress_logger_with_mlflow(
     assert (
         json_export_run[0].data.params.get("data_export_path") == export_path
     ), "export run should have 'data_export_path` param set"
+    drop_views_transformer_run = [
+        run
+        for run in nested_runs
+        if "FrameworkDropViewsTransformer" in run.data.tags.get("mlflow.runName")
+    ]
+    assert len(drop_views_transformer_run) == 1
 
 
 def test_progress_logger_without_mlflow(
