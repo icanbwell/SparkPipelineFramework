@@ -255,9 +255,7 @@ class HttpDataSender(FrameworkTransformer):
         if result_schema.dataType.typeName() == "string":
             df = df.withColumn(
                 "result",
-                from_json(
-                    df.result, schema=response_schema, options={"mode": "FAILFAST"}
-                ),
+                from_json(df.result, schema=response_schema),
             )
         else:
             df = df.withColumn("result_json", to_json(df.result))
