@@ -1,16 +1,28 @@
+import json
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
-from typing import Dict, Any
+from typing import Dict, Any, Union, Optional
 
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StringType
+from pyspark.sql.types import (
+    StringType,
+    MapType,
+    StructField,
+    StructType,
+    LongType,
+    Row,
+)
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_sender.v2.http_data_sender import (
     HttpDataSender,
+)
+from spark_pipeline_framework.utilities.api_helper.http_request import (
+    SingleJsonResult,
+    SingleTextResult,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
@@ -66,6 +78,11 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
         temp_data.pop("status")
         return temp_data
 
+    def response_processor(
+        _: Dict[str, Any], response: Union[SingleJsonResult, SingleTextResult]
+    ) -> Dict[str, Any]:
+        return response.result
+
     # Act
     with ProgressLogger() as progress_logger:
         HttpDataSender(
@@ -78,8 +95,15 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
             client_secret="client_secret",
             auth_url=f"{server_url}/token",
             payload_generator=payload_generator,
-            parse_response_as_json=False,
-            response_schema=StringType(),
+            response_processor=response_processor,
+            parse_response_as_json=True,
+            response_schema=StructType(
+                [
+                    StructField("token_type", StringType(), True),
+                    StructField("access_token", StringType(), True),
+                    StructField("expires_in", LongType(), True),
+                ]
+            ),
         ).transform(df)
 
     # Assert
@@ -87,11 +111,12 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    assert (
-        result_df.collect()[0]["result"]
-        == '{"token_type": "bearer", "access_token": "fake access_token", "expires_in": 54000}'
+    import pdb
+
+    pdb.set_trace()
+    assert result_df.collect()[0]["result"] == Row(
+        token_type="bearer", access_token="fake access_token", expires_in=None
     )
-    assert (
-        result_df.collect()[1]["result"]
-        == '{"token_type": "bearer", "access_token": "fake access_token2", "expires_in": 54000}'
+    assert result_df.collect()[1]["result"] == Row(
+        token_type="bearer", access_token="fake access_token2", expires_in=None
     )

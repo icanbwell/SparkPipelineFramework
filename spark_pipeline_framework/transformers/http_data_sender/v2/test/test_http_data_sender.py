@@ -1,3 +1,4 @@
+import json
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
@@ -6,7 +7,14 @@ from typing import Dict, Any, Union, Optional
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StringType, MapType
+from pyspark.sql.types import (
+    StringType,
+    MapType,
+    StructField,
+    StructType,
+    LongType,
+    Row,
+)
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_sender.v2.http_data_sender import (
@@ -72,9 +80,9 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
 
     def response_processor(
         _: Dict[str, Any], response: Union[SingleJsonResult, SingleTextResult]
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[str]:
         if isinstance(response, SingleJsonResult):
-            return {**response.result, "testing_field": "testing"}
+            return json.dumps({**response.result, "testing_field": "testing"})
         return None
 
     # Act
@@ -91,7 +99,14 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
             payload_generator=payload_generator,
             response_processor=response_processor,
             parse_response_as_json=True,
-            response_schema=MapType(StringType(), StringType()),
+            response_schema=StructType(
+                [
+                    StructField("token_type", StringType(), True),
+                    StructField("access_token", StringType(), True),
+                    StructField("testing_field", StringType(), True),
+                    StructField("expires_in", LongType(), True),
+                ]
+            ),
         ).transform(df)
 
     # Assert
@@ -99,15 +114,15 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    assert result_df.collect()[0]["result"] == {
-        "access_token": "fake access_token",
-        "testing_field": "testing",
-        "token_type": "bearer",
-        "expires_in": "54000",
-    }
-    assert result_df.collect()[1]["result"] == {
-        "access_token": "fake access_token2",
-        "testing_field": "testing",
-        "token_type": "bearer",
-        "expires_in": "54000",
-    }
+    assert result_df.collect()[0]["result"] == Row(
+        token_type="bearer",
+        access_token="fake access_token",
+        testing_field="testing",
+        expires_in=54000,
+    )
+    assert result_df.collect()[1]["result"] == Row(
+        token_type="bearer",
+        access_token="fake access_token2",
+        testing_field="testing",
+        expires_in=54000,
+    )

@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Callable, Union
 from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, from_json, to_json
 from pyspark.sql.types import (
     Row,
     StructType,
@@ -62,7 +62,7 @@ class HttpDataSender(FrameworkTransformer):
         response_processor: Optional[
             Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
         ] = None,
-        response_schema: Optional[DataType] = None,
+        response_schema: Optional[StructType] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -147,7 +147,7 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(cache_storage_level=None)
 
-        self.response_schema: Param[Optional[DataType]] = Param(
+        self.response_schema: Param[Optional[StructType]] = Param(
             self, "response_schema", ""
         )
         self._setDefault(response_schema=response_schema)
@@ -182,7 +182,7 @@ class HttpDataSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
-        response_schema: Optional[DataType] = self.getOrDefault(self.response_schema)
+        response_schema: Optional[StructType] = self.getOrDefault(self.response_schema)
 
         df = df.sparkSession.table(source_view)
 
@@ -237,20 +237,32 @@ class HttpDataSender(FrameworkTransformer):
                 else rdd.persist(storageLevel=cache_storage_level)
             )
             if response_schema is not None:
-                response_schema = StructType(
-                    [
-                        StructField("url", StringType()),
-                        StructField("status", LongType()),
-                        StructField("result", response_schema),
-                        StructField("headers", StringType()),
-                        StructField("request_type", StringType()),
-                    ]
-                )
-
-            result_df: DataFrame = rdd.toDF(schema=response_schema)
+                result_df: DataFrame = self.apply_schema(rdd, response_schema)
+            else:
+                result_df: DataFrame = rdd.toDF()
 
             result_df = result_df.where(col("url").isNotNull())
             if view:
                 result_df.createOrReplaceTempView(view)
 
             return result_df
+
+    def apply_schema(
+        self, rdd: RDD[Row], response_schema: Optional[StructType]
+    ) -> DataFrame:
+        df = rdd.toDF()
+        result_schema = df.schema["result"]
+        if result_schema.dataType.typeName() == "string":
+            df = df.withColumn(
+                "result",
+                from_json(
+                    df.result, schema=response_schema, options={"mode": "FAILFAST"}
+                ),
+            )
+        else:
+            df = df.withColumn("result_json", to_json(df.result))
+            df = df.withColumn(
+                "result", from_json(df.result_json, schema=response_schema)
+            )
+            df.drop("result_json")
+        return df
