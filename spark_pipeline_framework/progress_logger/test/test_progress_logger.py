@@ -14,6 +14,9 @@ from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 from create_spark_session import clean_spark_session
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.log_level import LogLevel
+from spark_pipeline_framework.transformers.framework_drop_views_transformer.v1.framework_drop_views_transformer import (
+    FrameworkDropViewsTransformer,
+)
 
 from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
     FrameworkJsonExporter,
@@ -75,6 +78,12 @@ class SimplePipeline(FrameworkPipeline):
             cast(
                 List[Transformer],
                 [
+                    FrameworkDropViewsTransformer(
+                        name="",
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                        views=["foo"],
+                    ),
                     FrameworkCsvLoader(
                         name="FrameworkCsvLoader",
                         view="flights",
@@ -227,7 +236,7 @@ def test_progress_logger_with_mlflow(
     runs = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
-    assert len(runs) == 9, "there should be 9 runs total, 1 parent and 8 nested"
+    assert len(runs) == 10, "there should be 10 runs total, 1 parent and 9 nested"
     parent_runs = [
         run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
     ]
@@ -235,7 +244,7 @@ def test_progress_logger_with_mlflow(
     nested_runs = [
         run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
     ]
-    assert len(nested_runs) == 8
+    assert len(nested_runs) == 9
     # assert that the parent run has the params
     parent_run: Run = parent_runs[0]
     assert (
@@ -263,6 +272,12 @@ def test_progress_logger_with_mlflow(
     assert (
         json_export_run[0].data.params.get("data_export_path") == export_path
     ), "export run should have 'data_export_path` param set"
+    drop_views_transformer_run = [
+        run
+        for run in nested_runs
+        if "FrameworkDropViewsTransformer" in run.data.tags.get("mlflow.runName")
+    ]
+    assert len(drop_views_transformer_run) == 1
 
 
 def test_progress_logger_without_mlflow(

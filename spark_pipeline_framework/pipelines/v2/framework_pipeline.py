@@ -105,6 +105,9 @@ class FrameworkPipeline(Transformer):
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
                     stage_name = transformer.getName()
+                    # check that there is a value in case it is set to empty string
+                    if not stage_name:
+                        stage_name = transformer.__class__.__name__
                 else:
                     stage_name = transformer.__class__.__name__
                 try:

@@ -66,7 +66,7 @@ setup(
         "chardet",
         "slack-sdk",
         "smart-open[s3]>=6.3.0",
-        "mlflow-skinny>=1.26.0",
+        "mlflow-skinny==1.29.0",
         "sqlalchemy>=1.4.37",
         "alembic>=1.8.0",
         "sqlparse>=0.4.2",
@@ -79,6 +79,7 @@ setup(
         "tensorflow",
         "delta-spark>=2.1.0",
         "pymongo>=4.2.0",
+        "more-itertools==9.1.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
