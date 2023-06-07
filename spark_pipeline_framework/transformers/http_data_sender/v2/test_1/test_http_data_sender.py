@@ -1,15 +1,13 @@
-import json
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
-from typing import Dict, Any, Union, Optional
+from typing import Dict, Any, Union, cast
 
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import (
     StringType,
-    MapType,
     StructField,
     StructType,
     LongType,
@@ -81,7 +79,7 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     def response_processor(
         _: Dict[str, Any], response: Union[SingleJsonResult, SingleTextResult]
     ) -> Dict[str, Any]:
-        return response.result
+        return cast(Dict[str, Any], response.result)
 
     # Act
     with ProgressLogger() as progress_logger:

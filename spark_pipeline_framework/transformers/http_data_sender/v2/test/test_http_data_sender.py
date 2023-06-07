@@ -9,7 +9,6 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import (
     StringType,
-    MapType,
     StructField,
     StructType,
     LongType,

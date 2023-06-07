@@ -9,10 +9,6 @@ from pyspark.sql.functions import col, from_json, to_json
 from pyspark.sql.types import (
     Row,
     StructType,
-    DataType,
-    StructField,
-    StringType,
-    LongType,
 )
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -236,10 +232,11 @@ class HttpDataSender(FrameworkTransformer):
                 if cache_storage_level is None
                 else rdd.persist(storageLevel=cache_storage_level)
             )
+            result_df: DataFrame
             if response_schema is not None:
-                result_df: DataFrame = self.apply_schema(rdd, response_schema)
+                result_df = self.apply_schema(rdd, response_schema)
             else:
-                result_df: DataFrame = rdd.toDF()
+                result_df = rdd.toDF()
 
             result_df = result_df.where(col("url").isNotNull())
             if view:
@@ -247,9 +244,7 @@ class HttpDataSender(FrameworkTransformer):
 
             return result_df
 
-    def apply_schema(
-        self, rdd: RDD[Row], response_schema: Optional[StructType]
-    ) -> DataFrame:
+    def apply_schema(self, rdd: RDD[Row], response_schema: StructType) -> DataFrame:
         df = rdd.toDF()
         result_schema = df.schema["result"]
         if result_schema.dataType.typeName() == "string":
