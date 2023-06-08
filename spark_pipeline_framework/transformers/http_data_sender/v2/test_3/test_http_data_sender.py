@@ -1,3 +1,4 @@
+import json
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
@@ -10,8 +11,8 @@ from pyspark.sql.types import (
     StringType,
     StructField,
     StructType,
-    LongType,
     Row,
+    ArrayType,
 )
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -78,8 +79,8 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
 
     def response_processor(
         _: Dict[str, Any], response: Union[SingleJsonResult, SingleTextResult]
-    ) -> Dict[str, Any]:
-        return cast(Dict[str, Any], response.result)
+    ) -> str:
+        return json.dumps([cast(Dict[str, Any], response.result)])
 
     # Act
     with ProgressLogger() as progress_logger:
@@ -95,12 +96,14 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
             payload_generator=payload_generator,
             response_processor=response_processor,
             parse_response_as_json=True,
-            response_schema=StructType(
-                [
-                    StructField("token_type", StringType(), True),
-                    StructField("access_token", StringType(), True),
-                    StructField("expires_in", LongType(), True),
-                ]
+            response_schema=ArrayType(
+                StructType(
+                    [
+                        StructField("access_token", StringType(), True),
+                        StructField("expires_in", StringType(), True),
+                        StructField("token_type", StringType(), True),
+                    ]
+                )
             ),
         ).transform(df)
 
@@ -109,9 +112,9 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    assert result_df.collect()[0]["result"] == Row(
-        token_type="bearer", access_token="fake access_token", expires_in=54000
-    )
-    assert result_df.collect()[1]["result"] == Row(
-        token_type="bearer", access_token="fake access_token2", expires_in=54000
-    )
+    assert result_df.collect()[0]["result"] == [
+        Row(access_token="fake access_token", expires_in="54000", token_type="bearer")
+    ]
+    assert result_df.collect()[1]["result"] == [
+        Row(access_token="fake access_token2", expires_in="54000", token_type="bearer")
+    ]
