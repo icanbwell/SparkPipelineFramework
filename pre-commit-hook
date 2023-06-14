@@ -2,4 +2,4 @@
 
 GIT_PROJECT_ROOT=$(git rev-parse --show-toplevel)
 cd "$($GIT_PROJECT_ROOT "$0")"
-docker build -f ./pre-commit.Dockerfile -t pre-commit-spf . && docker run --rm --name pre-commit-spf-run -v $(pwd)/:/sourcecode pre-commit-spf
+docker build --progress=plan --no-cache -f ./pre-commit.Dockerfile -t pre-commit-spf . && docker run --rm --name pre-commit-spf-run -v $(pwd)/:/sourcecode pre-commit-spf

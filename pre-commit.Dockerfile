@@ -9,6 +9,9 @@ COPY ${project_root}/Pipfile* ./
 #RUN pipenv sync --dev --system
 
 ARG TARGETPLATFORM
+RUN echo "-------------"
+RUN echo $TARGETPLATFORM
+RUN echo "-------------"
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; \
     then pipenv sync --dev --system; \
     else rm -rf Pipfile.lock && pipenv lock && pipenv sync --dev --system; fi
