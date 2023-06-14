@@ -10,11 +10,11 @@ COPY ${project_root}/Pipfile* ./
 
 ARG TARGETPLATFORM
 RUN echo "-------------"
-RUN echo $TARGETPLATFORM
+RUN echo "-=---$TARGETPLATFORM----"
 RUN echo "-------------"
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; \
-    then pipenv sync --dev --system; \
-    else rm -rf Pipfile.lock && pipenv lock && pipenv sync --dev --system; fi
+    then pipenv sync --dev --system && echo "#########"; \
+    else rm -rf Pipfile.lock && pipenv lock && pipenv sync --dev --system && echo "11111111111"; fi
 
 WORKDIR /sourcecode
 RUN git config --global --add safe.directory /sourcecode
