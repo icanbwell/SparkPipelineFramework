@@ -5,8 +5,16 @@ from typing import Any, Dict, Optional, Callable, Union
 from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col
-from pyspark.sql.types import Row
+from pyspark.sql.functions import col, from_json
+from pyspark.sql.types import (
+    Row,
+    StructType,
+    DataType,
+    StructField,
+    StringType,
+    LongType,
+    ArrayType,
+)
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
@@ -55,6 +63,7 @@ class HttpDataSender(FrameworkTransformer):
         response_processor: Optional[
             Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
         ] = None,
+        response_schema: Optional[DataType] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -74,6 +83,7 @@ class HttpDataSender(FrameworkTransformer):
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param payload_generator: Callable which can make the payload based the `source_view` column
         :param response_processor: Callable which processes the response
+        :param response_schema: Schema returned by `response_processor`
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -138,6 +148,11 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(cache_storage_level=None)
 
+        self.response_schema: Param[Optional[DataType]] = Param(
+            self, "response_schema", ""
+        )
+        self._setDefault(response_schema=response_schema)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -168,6 +183,7 @@ class HttpDataSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
+        response_schema: Optional[DataType] = self.getOrDefault(self.response_schema)
 
         df = df.sparkSession.table(source_view)
 
@@ -221,11 +237,37 @@ class HttpDataSender(FrameworkTransformer):
                 if cache_storage_level is None
                 else rdd.persist(storageLevel=cache_storage_level)
             )
-
-            result_df: DataFrame = rdd.toDF()
+            result_df: DataFrame
+            if response_schema is not None:
+                result_df = self.apply_schema(rdd, response_schema)
+            else:
+                result_df = rdd.toDF()
 
             result_df = result_df.where(col("url").isNotNull())
             if view:
                 result_df.createOrReplaceTempView(view)
 
             return result_df
+
+    def apply_schema(self, rdd: RDD[Row], response_schema: DataType) -> DataFrame:
+        df: DataFrame = rdd.toDF()
+        result_schema = df.schema["result"]
+        if result_schema.dataType.typeName() == "string":
+            assert isinstance(response_schema, (ArrayType, StructType, str))
+            df = df.withColumn(
+                "result",
+                from_json(df.result, schema=response_schema),
+            )
+        else:
+            df = rdd.toDF(
+                schema=StructType(
+                    [
+                        StructField("url", StringType()),
+                        StructField("status", LongType()),
+                        StructField("result", response_schema),
+                        StructField("headers", StringType()),
+                        StructField("request_type", StringType()),
+                    ]
+                )
+            )
+        return df
