@@ -113,8 +113,8 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.show(truncate=False)
 
     assert result_df.collect()[0]["result"] == [
-        Row(access_token="fake access_token", expires_in="54000", token_type="bearer")
+        Row(access_token="fake access_token", expires_in=54000, token_type="bearer")
     ]
     assert result_df.collect()[1]["result"] == [
-        Row(access_token="fake access_token2", expires_in="54000", token_type="bearer")
+        Row(access_token="fake access_token2", expires_in=54000, token_type="bearer")
     ]
