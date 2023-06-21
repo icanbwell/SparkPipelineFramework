@@ -6,6 +6,8 @@ from opensearchpy import OpenSearch
 from furl import furl
 
 from spark_pipeline_framework.utilities.aws.config import get_ssm_config
+from botocore.exceptions import ClientError
+from spark_pipeline_framework.logger.yarn_logger import get_logger
 
 
 class ElasticSearchConnection:
@@ -41,6 +43,7 @@ class ElasticSearchConnection:
 
     @staticmethod
     def _get_user_and_password(env_name: str) -> Tuple[Optional[str], Optional[str]]:
+        logger = get_logger(__name__)
         if env_name == "local":
             return "admin", "admin"
         username: Optional[str] = os.environ.get("ELASTICSEARCH_USER")
@@ -50,7 +53,16 @@ class ElasticSearchConnection:
             return username, password
         # else get from SSM
         path: str = ElasticSearchConnection._get_ssm_path(env_name=env_name)
-        db_config = get_ssm_config(path=path)
+        try:
+            db_config = get_ssm_config(path=path)
+        except ClientError:
+            bwell_env = os.environ.get("BWELL_ENV", "local")
+            bwell_path: str = ElasticSearchConnection._get_ssm_path(env_name=bwell_env)
+            logger.info(
+                f"Unable to find SSM path via ENV: {path}; trying to use BWELL_ENV instead: {bwell_path}"
+            )
+            db_config = get_ssm_config(path=bwell_path)
+
         username = db_config[f"{path}username"]
         password = db_config[f"{path}password"]
         return username, password
