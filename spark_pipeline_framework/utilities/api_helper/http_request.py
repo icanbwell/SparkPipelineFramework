@@ -169,7 +169,7 @@ class HelixHttpRequest:
         # remove None arguments
         arguments = {k: v for k, v in arguments.items() if v is not None}
 
-        response = self._send_request(request_function, arguments=arguments)  # type: ignore
+        response = self._send_request(request_function, arguments=arguments)
         if self.raise_error:
             try:
                 response.raise_for_status()
