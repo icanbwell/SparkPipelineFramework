@@ -62,6 +62,7 @@ class ElasticSearchConnection:
                 f"Unable to find SSM path via ENV: {path}; trying to use BWELL_ENV instead: {bwell_path}"
             )
             db_config = get_ssm_config(path=bwell_path)
+            path = bwell_path
 
         username = db_config[f"{path}username"]
         password = db_config[f"{path}password"]
