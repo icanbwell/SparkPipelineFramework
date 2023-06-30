@@ -99,7 +99,6 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
             ),
         )
         owner_codeset: str = "https://www.icanbwell.com/owner"
-        access_codeset: str = "https://www.icanbwell.com/access"
         vendor_codeset: str = "https://www.icanbwell.com/vendor"
         connection_type_codeset: str = "https://www.icanbwell.com/connectionType"
 
@@ -112,10 +111,6 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
                 array(
                     struct(
                         lit(owner_codeset).alias("system"),
-                        lit(col(slug_column)).alias("code"),
-                    ),
-                    struct(
-                        lit(access_codeset).alias("system"),
                         lit(col(slug_column)).alias("code"),
                     ),
                     struct(
