@@ -41,6 +41,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         mode: str = FileReadModes.MODE_PERMISSIVE,
         stream: bool = False,
         delta_lake_table: Optional[str] = None,
+        encoding: Optional[str] = None,
     ) -> None:
         """
         class that handles loading of json files
@@ -88,6 +89,9 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         self.multiLine: Param[bool] = Param(self, "multiLine", "")
         self._setDefault(multiLine=False)
 
+        self.encoding: Param[str] = Param(self, "encoding", "")
+        self._setDefault(encoding=encoding)
+
         self.json_file_type: Param[Optional[str]] = Param(self, "json_file_type", "")
         self._setDefault(json_file_type=json_file_type)
 
@@ -121,6 +125,10 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
         return self
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getEncoding(self) -> str:
+        return self.getOrDefault(self.encoding)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getMultiLine(self) -> bool:
         return self.getOrDefault(self.multiLine)
 
@@ -131,6 +139,8 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getReaderOptions(self) -> Dict[str, Any]:
         options: Dict[str, Any] = {"multiLine": self.getMultiLine()}
+        if self.getEncoding():
+            options.update({"encoding": self.getEncoding()})
         return options
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
