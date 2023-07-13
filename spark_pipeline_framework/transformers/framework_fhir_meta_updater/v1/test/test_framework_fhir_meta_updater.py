@@ -55,6 +55,7 @@ def test_framework_fhir_meta_updater(spark_session: SparkSession) -> None:
         "source": "https://p-hi2.digitaledge.cigna.com/PatientAccess/v1-devportal/Patient/cigna-0000000000000015116",
         "security": [
             {"system": "https://www.icanbwell.com/owner", "code": "cigna"},
+            {"system": "https://www.icanbwell.com/access", "code": "cigna"},
             {"system": "https://www.icanbwell.com/vendor", "code": "cigna"},
             {"system": "https://www.icanbwell.com/connectionType", "code": "proa"},
         ],
