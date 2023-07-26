@@ -35,7 +35,7 @@ def get_s3_directory_contents(bucket: str, prefix: str) -> List[str]:
         keys.extend([k["Key"] for k in response["Contents"]])
 
         is_truncated = response["IsTruncated"]
-        continuation_token: Optional[str] = response.get("ContinuationToken") or response.get("NextContinuationToken")
+        continuation_token: Optional[str] = response.get("NextContinuationToken")
         kwargs["ContinuationToken"] = continuation_token
 
     return keys
