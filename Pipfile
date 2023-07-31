@@ -7,7 +7,7 @@ name = "pypi"
 logger = ">=1.4"
 protobuf=">=3"
 pyspark = "==3.3.0"
-sparkautomapper = ">=1.1.1"
+sparkautomapper = ">=2.0.0"
 pymysql=">=1.0.2"
 furl = "*"
 requests = "*"
@@ -26,7 +26,7 @@ opensearch-py= "*"
 pyathena = "*"
 spark-nlp = ">=4.2.2"
 tensorflow = "*"
-delta-spark=">=2.1.0"
+delta-spark="==2.3.0"
 pymongo=">=4.2.0"
 more-itertools = "==9.1.0"
 
@@ -49,7 +49,7 @@ py4j = "==0.10.9.5" # https://spark.apache.org/docs/latest/api/python/getting_st
 pyspark="==3.3.0"  # should match the version of spark we use for testing
 pipenv-setup = ">=3.2.0"
 Deprecated = "==1.2.12"
-sparkdataframecomparer = "==1.0.8"
+sparkdataframecomparer = "==2.0.1"
 pytest-asyncio = ">=0.20.3"
 vistir="==0.6.1" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
 helix-mockserver-client=">=1.0.4"
@@ -60,7 +60,7 @@ types-requests=">=0.1.11"
 types-PyMySQL=">=0.1.5"
 
 [requires]
-python_version = "3.7"
+python_version = "3.10"
 
 [pipenv]
 allow_prereleases = false
