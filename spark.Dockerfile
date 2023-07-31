@@ -1,4 +1,4 @@
-FROM imranq2/helix.spark:3.3.0.19-slim
+FROM imranq2/helix.spark:3.3.0.30-slim
 # https://github.com/icanbwell/helix.spark
 USER root
 
@@ -15,8 +15,8 @@ WORKDIR /spf
 
 ARG TARGETPLATFORM
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; \
-    then pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0; \
-    else rm -rf Pipfile.lock && pipenv lock && pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0; fi
+    then pipenv sync --dev --system --extra-pip-args="--prefer-binary"; \
+    else rm -rf Pipfile.lock && pipenv lock && pipenv sync --dev --system --extra-pip-args="--prefer-binary"; fi
 
 #COPY ./jars/* /opt/spark/jars/
 #COPY ./conf/* /opt/spark/conf/

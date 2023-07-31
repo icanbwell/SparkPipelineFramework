@@ -69,7 +69,8 @@ def create_spark_session(request: Any) -> SparkSession:
     jars = [
         "mysql:mysql-connector-java:8.0.24",
         "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0",
-        "io.delta:delta-core_2.12:2.1.0",
+        "io.delta:delta-core_2.12:2.3.0",
+        "io.delta:delta-storage:2.3.0",
         "com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2",
         "org.apache.spark:spark-hadoop-cloud_2.12:3.3.1",
         "com.amazonaws:aws-java-sdk-bundle:1.12.339",
