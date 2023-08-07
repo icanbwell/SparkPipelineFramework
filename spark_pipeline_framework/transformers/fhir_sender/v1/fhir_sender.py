@@ -58,6 +58,7 @@ class FhirSender(FrameworkTransformer):
         resource: str,
         batch_size: Optional[int] = 30,
         limit: int = -1,
+        file_format: str = "json",
         validation_server_url: Optional[str] = None,
         throw_exception_on_validation_failure: Optional[bool] = None,
         auth_server_url: Optional[str] = None,
@@ -154,6 +155,9 @@ class FhirSender(FrameworkTransformer):
         self._setDefault(
             throw_exception_on_validation_failure=throw_exception_on_validation_failure
         )
+
+        self.file_format: Param[str] = Param(self, "file_format", "")
+        self._setDefault(file_format=file_format)
 
         self.validation_server_url: Param[Optional[str]] = Param(
             self, "validation_server_url", ""
@@ -260,6 +264,7 @@ class FhirSender(FrameworkTransformer):
         else:
             batch_size = int(batch_size)
 
+        file_format: str = self.getFileFormat()
         validation_server_url: Optional[str] = self.getValidationServerUrl()
         auth_server_url: Optional[str] = self.getAuthServerUrl()
         auth_client_id: Optional[str] = self.getAuthClientId()
@@ -311,6 +316,8 @@ class FhirSender(FrameworkTransformer):
                     json_df: DataFrame = df.sql_ctx.read.format("delta").load(
                         path_to_files
                     )
+                elif file_format == "parquet":
+                    json_df = df.sql_ctx.read.format(file_format).load(path_to_files)
                 else:
                     json_df = df.sql_ctx.read.text(
                         path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
@@ -423,12 +430,16 @@ class FhirSender(FrameworkTransformer):
                         self.logger.info(
                             f"Executing requests and writing FHIR {resource_name} responses to disk..."
                         )
-                        result_df.write.mode(mode).json(str(response_path))
+                        result_df.write.mode(mode).format(file_format).save(
+                            str(response_path)
+                        )
                         # result_df.show(truncate=False, n=100)
                         self.logger.info(
                             f"Reading from disk and counting rows for {resource_name}..."
                         )
-                        result_df = df.sql_ctx.read.json(str(response_path))
+                        result_df = df.sql_ctx.read.format(file_format).load(
+                            str(response_path)
+                        )
                         file_row_count: int = result_df.count()
                         self.logger.info(
                             f"Wrote {file_row_count} FHIR {resource_name} responses to {response_path}"
@@ -519,6 +530,10 @@ class FhirSender(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
         return self.getOrDefault(self.name) or f" - {self.getResource()}"
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getFileFormat(self) -> str:
+        return self.getOrDefault(self.file_format)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getValidationServerUrl(self) -> Optional[str]:

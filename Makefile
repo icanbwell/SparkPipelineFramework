@@ -32,6 +32,7 @@ up: Pipfile.lock
 .PHONY: down
 down:
 	docker-compose down --remove-orphans && \
+	docker system prune -f && \
 	docker volume prune --filter label=mlflow -f
 
 .PHONY:clean-pre-commit
