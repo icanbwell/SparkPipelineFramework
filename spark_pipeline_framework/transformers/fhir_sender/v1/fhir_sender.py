@@ -157,7 +157,7 @@ class FhirSender(FrameworkTransformer):
         )
 
         self.file_format: Param[str] = Param(self, "file_format", "")
-        self._setDefault(file_format=None)
+        self._setDefault(file_format=file_format)
 
         self.validation_server_url: Param[Optional[str]] = Param(
             self, "validation_server_url", ""
