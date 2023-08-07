@@ -27,6 +27,9 @@ from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.transformers.framework_parquet_exporter.v1.framework_parquet_exporter import (
+    FrameworkParquetExporter,
+)
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
@@ -44,6 +47,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         func_get_response_path: Callable[[str, str], str],
         fhir_server_url: str,
         source_entity_name: str,
+        file_format: str = "json",
         fhir_validation_url: Optional[str] = None,
         athena_schema: Optional[str] = None,
         name: Optional[str] = None,
@@ -96,6 +100,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self.fhir_server_url: Param[str] = Param(self, "fhir_server_url", "")
         self._setDefault(fhir_server_url=fhir_server_url)
 
+        self.file_format: Param[str] = Param(self, "file_format", "")
+        self._setDefault(file_format=file_format)
+
         self.fhir_validation_url: Param[Optional[str]] = Param(
             self, "fhir_validation_url", ""
         )
@@ -141,6 +148,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         func_get_response_path: Callable[
             [str, str], str
         ] = self.getFuncGetResponsePath()
+        file_format: str = self.getFileFormat()
         fhir_server_url: str = self.getFhirServerUrl()
         fhir_validation_url: Optional[str] = self.getFhirValidationServerUrl()
         name: Optional[str] = self.getName()
@@ -190,15 +198,27 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                     fhir_resource_response_path: str = func_get_response_path(
                         view, resourceType
                     )
+
                     # export as FHIR to local fhir_resource_path
-                    FhirExporter(
-                        view=view,
-                        file_path=fhir_resource_path,
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                        name=f"{name}_fhir_exporter",
-                        mode=mode,
-                    ).transform(df)
+                    if file_format == "parquet":
+                        FrameworkParquetExporter(
+                            name=f"{name}_parquet_exporter",
+                            parameters=parameters,
+                            progress_logger=progress_logger,
+                            view=view,
+                            mode=mode,
+                            file_path=fhir_resource_path,
+                        ).transform(df)
+                    else:
+                        FhirExporter(
+                            view=view,
+                            file_path=fhir_resource_path,
+                            parameters=parameters,
+                            progress_logger=progress_logger,
+                            name=f"{name}_fhir_exporter",
+                            mode=mode,
+                        ).transform(df)
+
                     if fhir_resource_path.startswith("s3") and athena_schema:
                         # create table in Athena
                         s3_temp_folder: str = str(parameters.get("s3_temp_folder"))
@@ -219,6 +239,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             server_url=fhir_server_url,
                             validation_server_url=fhir_validation_url,
                             file_path=fhir_resource_path,
+                            file_format=file_format,
                             response_path=fhir_resource_response_path,
                             parameters=parameters,
                             progress_logger=progress_logger,
@@ -251,6 +272,10 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFhirServerUrl(self) -> str:
         return self.getOrDefault(self.fhir_server_url)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getFileFormat(self) -> str:
+        return self.getOrDefault(self.file_format)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFhirValidationServerUrl(self) -> Optional[str]:
