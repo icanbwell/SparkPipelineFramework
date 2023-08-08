@@ -1,12 +1,10 @@
-FROM imranq2/helix.spark:3.3.0.30-precommit-slim
+FROM imranq2/helix.spark:3.3.0.31-precommit-slim
 
 RUN apt-get update && \
     apt-get install -y git && \
     pip install pipenv
 
 COPY ${project_root}/Pipfile* ./
-
-#RUN pipenv sync --dev --system
 
 ARG TARGETPLATFORM
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; \
