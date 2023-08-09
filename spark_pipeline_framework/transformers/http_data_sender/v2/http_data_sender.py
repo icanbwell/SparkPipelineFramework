@@ -64,6 +64,9 @@ class HttpDataSender(FrameworkTransformer):
             Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
         ] = None,
         response_schema: Optional[DataType] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -84,6 +87,9 @@ class HttpDataSender(FrameworkTransformer):
         :param payload_generator: Callable which can make the payload based the `source_view` column
         :param response_processor: Callable which processes the response
         :param response_schema: Schema returned by `response_processor`
+        :param headers: Any additional headers
+        :param cert: certificate or ca bundle file path
+        :param verify: controls whether the SSL certificate of the server should be verified when making HTTPS requests.
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -153,6 +159,21 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(response_schema=response_schema)
 
+        self.headers: Param[Optional[Dict[str, Any]]] = Param(
+            self, "headers", ""
+        )
+        self._setDefault(headers=headers)
+
+        self.cert: Param[Optional[Union[str, Tuple[str, str]]]] = Param(
+            self, "cert", ""
+        )
+        self._setDefault(cert=cert)
+
+        self.verify: Param[Optional[Union[bool, str]]] = Param(
+            self, "verify", ""
+        )
+        self._setDefault(verify=verify)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -184,13 +205,16 @@ class HttpDataSender(FrameworkTransformer):
             self.cache_storage_level
         )
         response_schema: Optional[DataType] = self.getOrDefault(self.response_schema)
+        headers: Optional[Dict[str, Any]] = self.getOrDefault(self.headers)
+        cert: Optional[Union[str, Tuple[str, str]]] = self.getOrDefault(self.cert)
+        verify: Optional[Union[bool, str]] = self.getOrDefault(self.verify)
 
         df = df.sparkSession.table(source_view)
 
         if spark_is_data_frame_empty(df=df):
             return df
 
-        headers: Dict[str, Any] = {}
+        headers: Dict[str, Any] = headers or dict()
 
         if progress_logger:
             progress_logger.write_to_log(
@@ -229,6 +253,8 @@ class HttpDataSender(FrameworkTransformer):
                     client_secret=client_secret,
                     payload_generator=payload_generator,
                     response_processor=response_processor,
+                    cert=cert,
+                    verify=verify,
                 )
             )
 

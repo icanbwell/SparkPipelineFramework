@@ -55,6 +55,8 @@ class HttpDataSenderProcessor:
             ]
         ],
         payload_generator: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]],
+        cert: Optional[Union[str, Tuple[str, str]]],
+        verify: Optional[Union[bool, str]],
     ) -> Row:
         """
         Function to initiate the request and create row
@@ -66,6 +68,8 @@ class HttpDataSenderProcessor:
         :param parse_response_as_json flag to parse the response as json
         :param response_processor: Callable which processes the response
         :param payload_generator: function to create the payload
+        :param cert: certificate or ca bundle file path
+        :param verify: controls whether the SSL certificate of the server should be verified when making HTTPS requests.
         """
 
         request: HelixHttpRequest = HelixHttpRequest(
@@ -74,6 +78,8 @@ class HttpDataSenderProcessor:
             headers=headers,
             payload=payload_generator(json_data) if payload_generator else json_data,
             post_as_json_formatted_string=post_as_json_formatted_string,
+            cert=cert,
+            verify=verify,
         )
         response: Union[SingleJsonResult, SingleTextResult]
         if parse_response_as_json:
@@ -109,6 +115,8 @@ class HttpDataSenderProcessor:
         response_processor: Optional[
             Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
         ],
+        cert: Optional[Union[str, Tuple[str, str]]],
+        verify: Optional[Union[bool, str]],
     ) -> Iterable[Row]:
         """
         This function processes a partition
@@ -148,6 +156,8 @@ class HttpDataSenderProcessor:
                 parse_response_as_json=parse_response_as_json,
                 response_processor=response_processor,
                 payload_generator=payload_generator,
+                cert=cert,
+                verify=verify,
             )
             row: Row
             try:
