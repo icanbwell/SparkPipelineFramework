@@ -60,6 +60,7 @@ class HttpDataSender(FrameworkTransformer):
         batch_size: Optional[int] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         payload_generator: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        url_generator: Optional[Callable[[Dict[str, Any]], str]] = None,
         response_processor: Optional[
             Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
         ] = None,
@@ -84,7 +85,8 @@ class HttpDataSender(FrameworkTransformer):
         :param batch_size: (Optional) max number of items in a batch
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
-        :param payload_generator: Callable which can make the payload based the `source_view` column
+        :param payload_generator: Callable which can make the payload based on the `source_view` column
+        :param url_generator: Callable which can make the url based on the `source_view` column
         :param response_processor: Callable which processes the response
         :param response_schema: Schema returned by `response_processor`
         :param headers: Any additional headers
@@ -140,6 +142,11 @@ class HttpDataSender(FrameworkTransformer):
         ] = Param(self, "payload_generator", "")
         self._setDefault(payload_generator=None)
 
+        self.url_generator: Param[Optional[Callable[[Dict[str, Any]], str]]] = Param(
+            self, "url_generator", ""
+        )
+        self._setDefault(url_generator=None)
+
         self.response_processor: Param[
             Optional[
                 Callable[
@@ -194,6 +201,9 @@ class HttpDataSender(FrameworkTransformer):
         payload_generator: Optional[
             Callable[[Dict[str, Any]], Dict[str, Any]]
         ] = self.getOrDefault(self.payload_generator)
+        url_generator: Optional[Callable[[Dict[str, Any]], str]] = self.getOrDefault(
+            self.url_generator
+        )
         response_processor: Optional[
             Callable[[Dict[str, Any], Union[SingleJsonResult, SingleTextResult]], Any]
         ] = self.getOrDefault(self.response_processor)
@@ -246,6 +256,7 @@ class HttpDataSender(FrameworkTransformer):
                     auth_url=auth_url,
                     client_secret=client_secret,
                     payload_generator=payload_generator,
+                    url_generator=url_generator,
                     response_processor=response_processor,
                     cert=cert,
                     verify=verify,
