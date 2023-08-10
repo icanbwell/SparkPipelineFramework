@@ -1,6 +1,6 @@
 import json
 import math
-from typing import Any, Dict, Optional, Callable, Union, Tuple, cast
+from typing import Any, Dict, Optional, Callable, Union, Tuple
 
 from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
@@ -159,9 +159,7 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(response_schema=response_schema)
 
-        self.headers: Param[Optional[Dict[str, Any]]] = Param(
-            self, "headers", ""
-        )
+        self.headers: Param[Optional[Dict[str, Any]]] = Param(self, "headers", "")
         self._setDefault(headers=headers)
 
         self.cert: Param[Optional[Union[str, Tuple[str, str]]]] = Param(
@@ -169,9 +167,7 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(cert=cert)
 
-        self.verify: Param[Optional[Union[bool, str]]] = Param(
-            self, "verify", ""
-        )
+        self.verify: Param[Optional[Union[bool, str]]] = Param(self, "verify", "")
         self._setDefault(verify=verify)
 
         kwargs = self._input_kwargs
@@ -214,9 +210,7 @@ class HttpDataSender(FrameworkTransformer):
         if spark_is_data_frame_empty(df=df):
             return df
 
-        headers = headers or dict()
-
-        if progress_logger:
+        if headers and progress_logger:
             progress_logger.write_to_log(
                 f"Using headers: {json.dumps(headers, default=str)}"
             )
@@ -245,7 +239,7 @@ class HttpDataSender(FrameworkTransformer):
                     rows=rows,
                     url=url,
                     content_type=content_type,
-                    headers=headers,
+                    headers=headers or dict(),
                     post_as_json_formatted_string=post_as_json_formatted_string,
                     parse_response_as_json=parse_response_as_json,
                     client_id=client_id,
