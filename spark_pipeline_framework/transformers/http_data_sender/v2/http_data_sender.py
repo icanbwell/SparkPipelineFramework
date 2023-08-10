@@ -214,7 +214,7 @@ class HttpDataSender(FrameworkTransformer):
         if spark_is_data_frame_empty(df=df):
             return df
 
-        headers = cast(Dict[str, Any], headers or dict())
+        headers = headers or dict()
 
         if progress_logger:
             progress_logger.write_to_log(
