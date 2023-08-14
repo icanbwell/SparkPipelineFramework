@@ -74,9 +74,10 @@ class HttpDataSenderProcessor:
         :param verify: controls whether the SSL certificate of the server should be verified when making HTTPS requests.
         """
 
+        url = url_generator(json_data) if url_generator else url
         request: HelixHttpRequest = HelixHttpRequest(
             request_type=RequestType.POST,
-            url=url_generator(json_data) if url_generator else url,
+            url=url,
             headers=headers,
             payload=payload_generator(json_data) if payload_generator else json_data,
             post_as_json_formatted_string=post_as_json_formatted_string,
