@@ -76,7 +76,7 @@ setup(
         "opensearch-py",
         "pyathena",
         "spark-nlp>=4.2.2",
-        "delta-spark>=2.1.0",
+        "delta-spark==2.3.0",
         "pymongo>=4.2.0",
         "more-itertools==9.1.0",
     ],
