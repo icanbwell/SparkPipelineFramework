@@ -328,7 +328,7 @@ def test_progress_logger_without_mlflow(
         transformer.transform(df)
     # semi hack -- reset the tracking url s
     mlflow.set_tracking_uri(uri="")
-    experiments = mlflow.list_experiments()
+    experiments = mlflow.search_experiments()
     assert len(experiments) == 1
     assert experiments[0].name == "Default"
 
