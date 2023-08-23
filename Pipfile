@@ -15,6 +15,7 @@ boto3 = "*"
 chardet="*"
 slack_sdk = "*"
 smart_open = { extras = ['s3'], version = ">=6.3.0" }
+packaging = "==20.9"  # need to lock to this version because of compatibility issues with pipenv-setup
 mlflow-skinny = "==2.6.0"
 SQLAlchemy = ">=1.4.37"
 alembic = ">=1.8.0"
@@ -46,11 +47,11 @@ myst-parser="==0.15.1"
 recommonmark="==0.7.1"
 py4j = "==0.10.9.5" # https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
 pyspark="==3.3.0"  # should match the version of spark we use for testing
-pipenv-setup = ">=3.2.0"
 Deprecated = "==1.2.12"
 sparkdataframecomparer = "==2.0.2"
 pytest-asyncio = ">=0.20.3"
 vistir="==0.6.1" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
+pipenv-setup = ">=3.2.0"  # might need to have this here due to stupid stuff in this library
 helix-mockserver-client=">=1.0.4"
 sparkfhirschemas = "==1.0.14"
 types-boto3 = ">=1.0.2"
