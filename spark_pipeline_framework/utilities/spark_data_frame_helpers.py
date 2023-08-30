@@ -75,7 +75,11 @@ def spark_is_data_frame_empty(df: DataFrame) -> bool:
     """
     # from: https://stackoverflow.com/questions/32707620/how-to-check-if-spark-dataframe-is-empty
     # Spark 3.3 adds native function: https://github.com/apache/spark/pull/34483
-    return df.isEmpty()
+    # Performance improvements
+    #  - from https://stackoverflow.com/questions/74904389/how-to-check-if-pyspark-dataframe-is-empty-quickly
+    #  - direct df.isEmpty() is a very expensive operation to perform lazy eval,
+    #    hence to be more performant, limiting to only 1 row and adding rdd before invoking the .isEmpty() method
+    return df.limit(1).rdd.isEmpty()
 
 
 def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
