@@ -50,6 +50,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
         :param view: view to save to parquet
         :param file_path: where to save
         :param name: a name for the transformer step
+        :param mode: file write mode, defined in FileWriteModes
         :param parameters: parameters
         :param progress_logger: the logger to use for logging
         """
