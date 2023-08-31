@@ -15,6 +15,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
+from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 
 
 class FrameworkCheckpoint(FrameworkTransformer):
@@ -29,6 +30,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
         file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
         view: Optional[str] = None,
         name: Optional[str] = None,
+        mode: str = FileWriteModes.MODE_ERROR,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         stream: bool = False,
@@ -70,6 +72,9 @@ class FrameworkCheckpoint(FrameworkTransformer):
         self.view: Param[str] = Param(self, "view", "")
         self._setDefault(view=view)
 
+        self.mode: Param[str] = Param(self, "mode", "")
+        self._setDefault(mode=mode)
+
         self.file_path: Param[Union[str, Path]] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
@@ -86,6 +91,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
+        mode: str = self.getMode()
         file_path: Union[
             Path, str, Callable[[Optional[str]], Union[Path, str]]
         ] = self.getFilePath()
@@ -98,6 +104,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
         save_transformer = FrameworkParquetExporter(
             view=view,
             name=f"{self.getName()}-save",
+            mode=mode,
             file_path=file_path,
             parameters=self.getParameters(),
             progress_logger=self.getProgressLogger(),
@@ -117,6 +124,10 @@ class FrameworkCheckpoint(FrameworkTransformer):
         )
         df = load_transformer.transform(df)
         return df
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getMode(self) -> str:
+        return self.getOrDefault(self.mode)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
