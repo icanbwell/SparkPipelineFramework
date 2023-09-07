@@ -120,7 +120,9 @@ class FrameworkParquetLoader(FrameworkTransformer):
             try:
                 # To fix errors in reading dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z
                 if format_ == "parquet":
-                    df.sql_ctx.setConf('spark.sql.parquet.datetimeRebaseModeInRead', 'CORRECTED')
+                    df.sql_ctx.setConf(
+                        "spark.sql.parquet.datetimeRebaseModeInRead", "CORRECTED"
+                    )
 
                 df_reader: Union[DataFrameReader, DataStreamReader] = (
                     df.sql_ctx.read if not stream else df.sql_ctx.readStream

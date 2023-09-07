@@ -42,7 +42,7 @@ def test_person_json_can_save_parquet(spark_session: SparkSession) -> None:
     FrameworkJsonLoader(
         view="my_view",
         file_path=test_file_path,
-        schema=PersonSchema.get_schema(include_extension=True)
+        schema=PersonSchema.get_schema(include_extension=True),  # type: ignore
     ).transform(df)
 
     parquet_file_path: str = (
@@ -62,5 +62,5 @@ def test_person_json_can_save_parquet(spark_session: SparkSession) -> None:
 
     assert result.count() == 1
 
-    assert result.select('id').collect()[0][0] == "P111999"
-    assert result.select('birthDate').collect()[0][0] == datetime.date(1582, 1, 1)
+    assert result.select("id").collect()[0][0] == "P111999"
+    assert result.select("birthDate").collect()[0][0] == datetime.date(1582, 1, 1)

@@ -85,7 +85,9 @@ class FrameworkBaseExporter(FrameworkTransformer):
 
                 # To fix errors in writing dates before 1582-10-15 or timestamps before 1900-01-01T00:00:00Z
                 if format_ == "parquet":
-                    df.sql_ctx.setConf('spark.sql.parquet.datetimeRebaseModeInWrite', 'CORRECTED')
+                    df.sql_ctx.setConf(
+                        "spark.sql.parquet.datetimeRebaseModeInWrite", "CORRECTED"
+                    )
 
                 writer = writer.format(format_)
 
