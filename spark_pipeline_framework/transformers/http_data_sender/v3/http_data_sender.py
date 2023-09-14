@@ -1,19 +1,15 @@
 import json
 import math
-from typing import Any, Dict, Optional, Callable, Union, Tuple, cast
+from typing import Any, Dict, Optional, Callable, Union, Tuple
 
 from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col, from_json
+from pyspark.sql.functions import col, from_json, schema_of_json
 from pyspark.sql.types import (
     Row,
     StructType,
-    DataType,
-    StructField,
-    StringType,
-    LongType,
-    ArrayType, BooleanType, MapType, IntegerType,
+    ArrayType,
 )
 from requests import Response
 
@@ -25,12 +21,8 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from transformers.http_data_sender.v2.http_data_sender_processor import (
+from spark_pipeline_framework.transformers.http_data_sender.v3.http_data_sender_processor import (
     HttpDataSenderProcessor,
-)
-from spark_pipeline_framework.utilities.api_helper.http_request import (
-    SingleJsonResult,
-    SingleTextResult,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
@@ -52,8 +44,8 @@ class HttpDataSender(FrameworkTransformer):
         source_view: str,
         success_view: Optional[str] = None,
         error_view: Optional[str] = None,
-        success_schema: Optional[StructType] = None,
-        error_schema: Optional[StructType] = None,
+        success_schema: Optional[Union[StructType, ArrayType, str]] = None,
+        error_schema: Optional[Union[StructType, ArrayType, str]] = None,
         url: Optional[str] = None,
         auth_url: Optional[str] = None,
         client_id: Optional[str] = None,
@@ -117,12 +109,12 @@ class HttpDataSender(FrameworkTransformer):
         self.error_view: Param[Optional[str]] = Param(self, "error_view", "")
         self._setDefault(error_view=None)
 
-        self.success_schema: Param[Optional[StructType]] = Param(
+        self.success_schema: Param[Optional[Union[StructType, ArrayType, str]]] = Param(
             self, "success_schema", ""
         )
         self._setDefault(success_schema=success_schema)
 
-        self.error_schema: Param[Optional[StructType]] = Param(self, "error_schema", "")
+        self.error_schema: Param[Optional[Union[StructType, ArrayType, str]]] = Param(self, "error_schema", "")
         self._setDefault(error_schema=error_schema)
 
         self.url: Param[Optional[str]] = Param(self, "url", "")
@@ -198,8 +190,8 @@ class HttpDataSender(FrameworkTransformer):
         source_view: str = self.getOrDefault(self.source_view)
         success_view: Optional[str] = self.getOrDefault(self.success_view)
         error_view: Optional[str] = self.getOrDefault(self.error_view)
-        success_schema: Optional[StructType] = self.getOrDefault(self.success_schema)
-        error_schema: Optional[StructType] = self.getOrDefault(self.error_schema)
+        success_schema: Optional[Union[StructType, ArrayType, str]] = self.getOrDefault(self.success_schema)
+        error_schema: Optional[Union[StructType, ArrayType, str]] = self.getOrDefault(self.error_schema)
         url: Optional[str] = self.getOrDefault(self.url)
         content_type: str = self.getOrDefault(self.content_type)
         batch_count: Optional[int] = self.getOrDefault(self.batch_count)
@@ -284,21 +276,44 @@ class HttpDataSender(FrameworkTransformer):
             # Create success view
             if success_view:
                 df_success = result_df.filter(result_df["is_error"] == False)
+                success_schema = success_schema or self.infer_schema_json_string_column(
+                    df_success, "success_data"
+                )
                 self.copy_and_drop_column(
-                    df_success, "success_data", "data", success_view, success_schema
+                    df_success, "success_data", "data", success_view, success_schema  # arraytype
                 )
 
             # Create error view
             if error_view:
                 df_errors = result_df.filter(result_df["is_error"] == True)
+                error_schema = error_schema or self.infer_schema_json_string_column(
+                    df_errors, "error_data"
+                )
                 self.copy_and_drop_column(
                     df_errors, "error_data", "data", error_view, error_schema
                 )
 
             return result_df
 
+    def infer_schema_json_string_column(self, df: DataFrame, col_: str) -> str:
+        """
+        Infer json schema from `col_` column
+
+        :param df: Dataframe to be processed.
+        :param col_: Source column name
+        """
+        head = df.select(col_).head()
+        if not head:
+            return "null"
+
+        schema: str = df.select(schema_of_json(head[0]).alias("schema")).collect()[0].asDict(True)["schema"]
+        # return df.sparkSession.read.json(
+        #     df.rdd.map(lambda row: cast(str, row[col_])),
+        # ).schema
+        return schema
+
     def copy_and_drop_column(
-        self, df: DataFrame, col_: str, dest_col: str, view: str, schema: Optional[Union[ArrayType, StructType]]
+        self, df: DataFrame, col_: str, dest_col: str, view: str, schema: Optional[Union[ArrayType, StructType, str]]
     ) -> None:
         """
         Copy the `col_` column to `dest_col` column with provided schema
@@ -309,7 +324,7 @@ class HttpDataSender(FrameworkTransformer):
         :param view: Name of the view where the dataframe will be saved
         :param schema: schema of the `dest_col` column
         """
-        if schema:
+        if schema and schema != "null":
             df = df.withColumn(dest_col, from_json(col(col_), schema))
         else:
             df = df.withColumn(dest_col, col(col_))

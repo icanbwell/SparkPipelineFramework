@@ -164,19 +164,12 @@ class HttpDataSenderProcessor:
             else:
                 result, is_error = response.json(), response.status_code >= 400
 
-            if is_error:
-                error_data = json.dumps(result) if has_error_schema else result
-                success_data = "null"
-            else:
-                error_data = "null"
-                success_data = json.dumps(result) if has_success_schema else result
-
             yield Row(
                 url=url,
                 status=response.status_code,
                 is_error=is_error,
-                error_data=error_data,
-                success_data=success_data,
+                error_data=json.dumps(result if is_error else None),
+                success_data=json.dumps(None if is_error else result),
                 headers=headers,
                 request_type=str(RequestType.POST),
             )
