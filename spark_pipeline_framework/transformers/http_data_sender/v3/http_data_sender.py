@@ -57,9 +57,7 @@ class HttpDataSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = None,
         payload_generator: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
         url_generator: Optional[Callable[[Dict[str, Any]], str]] = None,
-        response_processor: Optional[
-            Callable[[Dict[str, Any], Response], Any]
-        ] = None,
+        response_processor: Optional[Callable[[Dict[str, Any], Response], Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
@@ -114,7 +112,9 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(success_schema=success_schema)
 
-        self.error_schema: Param[Optional[Union[StructType, ArrayType, str]]] = Param(self, "error_schema", "")
+        self.error_schema: Param[Optional[Union[StructType, ArrayType, str]]] = Param(
+            self, "error_schema", ""
+        )
         self._setDefault(error_schema=error_schema)
 
         self.url: Param[Optional[str]] = Param(self, "url", "")
@@ -153,12 +153,8 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(url_generator=None)
 
-        self.response_processor : Param[
-            Optional[
-                Callable[
-                    [Dict[str, Any], Response], Any
-                ]
-            ]
+        self.response_processor: Param[
+            Optional[Callable[[Dict[str, Any], Response], Any]]
         ] = Param(self, "response_processor", "")
         self._setDefault(response_processor=None)
 
@@ -190,8 +186,12 @@ class HttpDataSender(FrameworkTransformer):
         source_view: str = self.getOrDefault(self.source_view)
         success_view: Optional[str] = self.getOrDefault(self.success_view)
         error_view: Optional[str] = self.getOrDefault(self.error_view)
-        success_schema: Optional[Union[StructType, ArrayType, str]] = self.getOrDefault(self.success_schema)
-        error_schema: Optional[Union[StructType, ArrayType, str]] = self.getOrDefault(self.error_schema)
+        success_schema: Optional[Union[StructType, ArrayType, str]] = self.getOrDefault(
+            self.success_schema
+        )
+        error_schema: Optional[Union[StructType, ArrayType, str]] = self.getOrDefault(
+            self.error_schema
+        )
         url: Optional[str] = self.getOrDefault(self.url)
         content_type: str = self.getOrDefault(self.content_type)
         batch_count: Optional[int] = self.getOrDefault(self.batch_count)
@@ -306,14 +306,23 @@ class HttpDataSender(FrameworkTransformer):
         if not head:
             return "null"
 
-        schema: str = df.select(schema_of_json(head[0]).alias("schema")).collect()[0].asDict(True)["schema"]
+        schema: str = (
+            df.select(schema_of_json(head[0]).alias("schema"))
+            .collect()[0]
+            .asDict(True)["schema"]
+        )
         # return df.sparkSession.read.json(
         #     df.rdd.map(lambda row: cast(str, row[col_])),
         # ).schema
         return schema
 
     def copy_and_drop_column(
-        self, df: DataFrame, col_: str, dest_col: str, view: str, schema: Optional[Union[ArrayType, StructType, str]]
+        self,
+        df: DataFrame,
+        col_: str,
+        dest_col: str,
+        view: str,
+        schema: Optional[Union[ArrayType, StructType, str]],
     ) -> None:
         """
         Copy the `col_` column to `dest_col` column with provided schema
@@ -325,7 +334,9 @@ class HttpDataSender(FrameworkTransformer):
         :param schema: schema of the `dest_col` column
         """
         if schema and schema != "null":
-            df = df.withColumn(dest_col, from_json(col(col_), schema, options={"mode": "FAILFAST"}))
+            df = df.withColumn(
+                dest_col, from_json(col(col_), schema, options={"mode": "FAILFAST"})
+            )
         else:
             df = df.withColumn(dest_col, col(col_))
         df = df.drop("success_data", "error_data", "is_error")

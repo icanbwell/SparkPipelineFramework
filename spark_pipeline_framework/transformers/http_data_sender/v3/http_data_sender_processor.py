@@ -78,7 +78,6 @@ class HttpDataSenderProcessor:
         )
         return request.get_response()
 
-
     @staticmethod
     # function that is called for each partition
     # noinspection PyUnusedLocal
@@ -98,9 +97,7 @@ class HttpDataSenderProcessor:
         client_secret: Optional[str],
         payload_generator: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]],
         url_generator: Optional[Callable[[Dict[str, Any]], str]],
-        response_processor: Optional[
-            Callable[[Dict[str, Any], Response], Any]
-        ],
+        response_processor: Optional[Callable[[Dict[str, Any], Response], Any]],
         cert: Optional[Union[str, Tuple[str, str]]],
         verify: Optional[Union[bool, str]],
     ) -> Iterable[Row]:
@@ -119,7 +116,15 @@ class HttpDataSenderProcessor:
 
         # logger = get_logger(__name__)
         if len(json_data_list) == 0:
-            yield Row(url="", status=0, is_error=False, error_data="", success_data="", headers={}, request_type="")
+            yield Row(
+                url="",
+                status=0,
+                is_error=False,
+                error_data="",
+                success_data="",
+                headers={},
+                request_type="",
+            )
 
         headers["Content-Type"] = content_type
         if oauth_enabled:
@@ -147,7 +152,10 @@ class HttpDataSenderProcessor:
             )
             response: Response = create_request(headers=headers)
 
-            if oauth_enabled and response.status_code == status_codes.codes.unauthorized:
+            if (
+                oauth_enabled
+                and response.status_code == status_codes.codes.unauthorized
+            ):
                 assert client_id
                 assert auth_url
                 assert client_secret
