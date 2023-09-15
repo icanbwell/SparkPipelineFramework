@@ -249,8 +249,6 @@ class HttpDataSender(FrameworkTransformer):
                     partition_index=partition_index,
                     rows=rows,
                     raise_error=raise_error,
-                    has_success_schema=bool(success_schema),
-                    has_error_schema=bool(error_schema),
                     url=url,
                     content_type=content_type,
                     headers=headers or dict(),

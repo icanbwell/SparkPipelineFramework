@@ -86,8 +86,6 @@ class HttpDataSenderProcessor:
         partition_index: int,
         rows: Iterable[Row],
         raise_error: bool,
-        has_success_schema: bool,
-        has_error_schema: bool,
         url: Optional[str],
         content_type: str,
         headers: Dict[str, Any],
