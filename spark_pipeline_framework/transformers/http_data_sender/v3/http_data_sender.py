@@ -280,7 +280,7 @@ class HttpDataSender(FrameworkTransformer):
                     df_success, "success_data"
                 )
                 self.copy_and_drop_column(
-                    df_success, "success_data", "data", success_view, success_schema  # arraytype
+                    df_success, "success_data", "data", success_view, success_schema
                 )
 
             # Create error view
@@ -325,7 +325,7 @@ class HttpDataSender(FrameworkTransformer):
         :param schema: schema of the `dest_col` column
         """
         if schema and schema != "null":
-            df = df.withColumn(dest_col, from_json(col(col_), schema))
+            df = df.withColumn(dest_col, from_json(col(col_), schema, options={"mode": "FAILFAST"}))
         else:
             df = df.withColumn(dest_col, col(col_))
         df = df.drop("success_data", "error_data", "is_error")
