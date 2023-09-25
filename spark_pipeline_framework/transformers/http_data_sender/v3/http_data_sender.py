@@ -333,7 +333,7 @@ class HttpDataSender(FrameworkTransformer):
         """
         if schema and schema != "null":
             df = df.withColumn(
-                dest_col, from_json(col(col_), schema, options={"mode": "FAILFAST"})
+                dest_col, from_json(col(col_), schema)
             )
         else:
             df = df.withColumn(dest_col, col(col_))
