@@ -332,9 +332,7 @@ class HttpDataSender(FrameworkTransformer):
         :param schema: schema of the `dest_col` column
         """
         if schema and schema != "null":
-            df = df.withColumn(
-                dest_col, from_json(col(col_), schema)
-            )
+            df = df.withColumn(dest_col, from_json(col(col_), schema))
         else:
             df = df.withColumn(dest_col, col(col_))
         df = df.drop("success_data", "error_data", "is_error")
