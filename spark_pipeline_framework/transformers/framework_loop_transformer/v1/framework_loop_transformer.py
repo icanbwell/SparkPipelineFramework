@@ -98,6 +98,8 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                 if hasattr(stage, "getName"):
                     # noinspection Mypy
                     stage_name = stage.getName()
+                    if not stage_name:
+                        stage_name = stage.__class__.__name__
                 else:
                     stage_name = stage.__class__.__name__
                 if progress_logger is not None:
