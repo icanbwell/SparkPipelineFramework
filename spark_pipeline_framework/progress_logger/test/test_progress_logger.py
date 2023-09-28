@@ -244,7 +244,7 @@ class MappingPipeline(FrameworkPipeline):
         )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_setup() -> None:
     data_dir = Path(__file__).parent
     temp_dir = data_dir.joinpath("temp")
@@ -294,8 +294,8 @@ def test_progress_logger_with_mlflow(
 
     flow_run_name = "fluffy-fox"
 
-    # mlflow_tracking_url = temp_dir.joinpath("mlflow")
-    mlflow_tracking_url = "http://mlflow:5000"
+    mlflow_tracking_url = temp_dir.joinpath("mlflow")
+    # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
@@ -324,7 +324,7 @@ def test_progress_logger_with_mlflow(
     runs = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
-    assert len(runs) == 10, "there should be 10 runs total, 1 parent and 9 nested"
+    assert len(runs) == 13, "there should be 13 runs total, 1 parent and 12 nested"
     parent_runs = [
         run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
     ]
@@ -332,7 +332,7 @@ def test_progress_logger_with_mlflow(
     nested_runs = [
         run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
     ]
-    assert len(nested_runs) == 9
+    assert len(nested_runs) == 12
     # assert that the parent run has the params
     parent_run: Run = parent_runs[0]
     assert (
@@ -411,8 +411,8 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
 
     flow_run_name = "fluffy-fox"
 
-    # mlflow_tracking_url = temp_dir.joinpath("mlflow")
-    mlflow_tracking_url = "http://mlflow:5000"
+    mlflow_tracking_url = temp_dir.joinpath("mlflow")
+    # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
@@ -438,6 +438,20 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
     experiment = mlflow.get_experiment_by_name(name=experiment_name)
     assert experiment is not None, "the mlflow experiment was not created"
 
+    # assert the experiment has one parent run and 7 nested runs
+    runs = mlflow.search_runs(
+        experiment_ids=[experiment.experiment_id], output_format="list"
+    )
+    assert len(runs) == 20, "there should be 20 runs total, 1 parent and 19 nested"
+    parent_runs = [
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
+    ]
+    assert len(parent_runs) == 1
+    nested_runs = [
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
+    ]
+    assert len(nested_runs) == 19
+
 
 def test_progress_logger_without_mlflow(
     spark_session: SparkSession, test_setup: Any
@@ -447,7 +461,7 @@ def test_progress_logger_without_mlflow(
     temp_dir: Path = data_dir.joinpath("temp")
 
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
-    export_path: str = str(temp_dir.joinpath("ouptput").joinpath("flights.json"))
+    export_path: str = str(temp_dir.joinpath("output").joinpath("flights.json"))
 
     schema = StructType([])
 
