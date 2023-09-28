@@ -142,11 +142,17 @@ class LoopingPipeline(FrameworkPipeline):
 
 class SimplePipeline(FrameworkPipeline):
     def get_fhir_path(self, view: str, resource_name: str) -> str:
-        return str(self.data_dir.joinpath("temp").joinpath(f"{resource_name}-{view}"))
+        return str(
+            self.data_dir.joinpath("temp")
+            .joinpath("output")
+            .joinpath(f"{resource_name}-{view}")
+        )
 
     def get_fhir_response_path(self, view: str, resource_name: str) -> str:
         return str(
-            self.data_dir.joinpath("temp").joinpath(f"{resource_name}-{view}-response")
+            self.data_dir.joinpath("temp")
+            .joinpath("output")
+            .joinpath(f"{resource_name}-{view}-response")
         )
 
     def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
@@ -248,9 +254,9 @@ class MappingPipeline(FrameworkPipeline):
 def test_setup() -> None:
     data_dir = Path(__file__).parent
     temp_dir = data_dir.joinpath("temp")
-    if os.path.isdir(temp_dir):
-        rmtree(temp_dir)
-    os.makedirs(temp_dir)
+    output_dir = temp_dir.joinpath("output")
+    if os.path.isdir(output_dir):
+        rmtree(output_dir)
 
 
 def test_progress_logger_with_mlflow(
@@ -411,7 +417,7 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
 
     flow_run_name = "fluffy-fox"
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow")
+    mlflow_tracking_url = temp_dir.joinpath("mlflow_loop")
     # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
@@ -456,6 +462,7 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
 def test_progress_logger_without_mlflow(
     spark_session: SparkSession, test_setup: Any
 ) -> None:
+
     clean_spark_session(spark_session)
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
@@ -513,12 +520,13 @@ def test_progress_logger_without_mlflow(
 def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
-    event_log_path = temp_dir.joinpath("event_log")
+    output_dir: Path = temp_dir.joinpath("output")
+    event_log_path = output_dir.joinpath("event_log")
 
     class FileEventLogger(EventLogger):
         def __init__(self, log_path: Path):
             self.log_path = log_path
-            os.makedirs(self.log_path)
+            os.makedirs(self.log_path, exist_ok=True)
 
         def log_event(self, event_name: str, event_text: str) -> None:
             log_file_path: Path = self.log_path.joinpath(
@@ -531,7 +539,7 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
 
     parameters = {"foo": "bar", "view2": "my_view_2"}
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow")
+    mlflow_tracking_url = temp_dir.joinpath("mlflow_error")
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     experiment_name: str = "error_tests"
 
