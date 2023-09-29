@@ -110,10 +110,10 @@ class FrameworkMappingLoader(FrameworkTransformer):
             try:
                 stage_name = automapper.__class__.__name__
 
+                run_name = f"{stage_name} map view - {automapper.view}"
+
                 if progress_logger is not None:
-                    progress_logger.start_mlflow_run(
-                        run_name=stage_name, is_nested=True
-                    )
+                    progress_logger.start_mlflow_run(run_name=run_name, is_nested=True)
 
                 try:
                     automapper.transform(df=df)

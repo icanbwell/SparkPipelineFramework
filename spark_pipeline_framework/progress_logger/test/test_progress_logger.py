@@ -7,6 +7,10 @@ from typing import Dict, Any, Callable, Union, List, cast
 
 import mlflow  # type: ignore
 import pytest
+
+from library.features.carriers_fhir.v1.features_carriers_fhir_v1 import (
+    FeaturesCarriersFhirV1,
+)
 from mlflow.entities import Run, RunStatus  # type: ignore
 from pyspark.ml import Transformer
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
@@ -20,6 +24,9 @@ from spark_pipeline_framework.transformers.framework_drop_views_transformer.v1.f
 
 from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
     FrameworkJsonExporter,
+)
+from spark_pipeline_framework.transformers.framework_loop_transformer.v1.framework_loop_transformer import (
+    FrameworkLoopTransformer,
 )
 
 from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
@@ -54,14 +61,22 @@ from spark_pipeline_framework.pipelines.v2.framework_pipeline import FrameworkPi
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.transformers.send_automapper_to_fhir.v1.automapper_to_fhir_transformer import (
+    AutoMapperToFhirTransformer,
+)
 
 
-class SimplePipeline(FrameworkPipeline):
-    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
-        super(SimplePipeline, self).__init__(
+class LoopingPipeline(FrameworkPipeline):
+    def __init__(
+        self,
+        parameters: Dict[str, Any],
+        progress_logger: ProgressLogger,
+        max_number_of_runs: int = 1,
+    ):
+        super(LoopingPipeline, self).__init__(
             parameters=parameters,
             progress_logger=progress_logger,
-            run_id="12345678",
+            run_id="87654321",
             client_name="client_foo",
             vendor_name="vendor_foo",
         )
@@ -74,10 +89,14 @@ class SimplePipeline(FrameworkPipeline):
             function_name="mapping",
         )
 
-        self.transformers = self.create_steps(
-            cast(
-                List[Transformer],
-                [
+        self.steps = [
+            FrameworkLoopTransformer(
+                name="FrameworkLoopTransformer",
+                parameters=parameters,
+                progress_logger=progress_logger,
+                sleep_interval_in_seconds=2,
+                max_number_of_runs=max_number_of_runs,
+                stages=[
                     FrameworkDropViewsTransformer(
                         name="",
                         parameters=parameters,
@@ -108,6 +127,84 @@ class SimplePipeline(FrameworkPipeline):
                         mapping_function=mapping_function,
                         parameters=parameters,
                         progress_logger=progress_logger,
+                    ),
+                    FrameworkJsonExporter(
+                        file_path=parameters["export_path"],
+                        view="flights",
+                        name="FrameworkJsonExporter",
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                ],
+            )
+        ]
+
+
+class SimplePipeline(FrameworkPipeline):
+    def get_fhir_path(self, view: str, resource_name: str) -> str:
+        return str(
+            self.data_dir.joinpath("temp")
+            .joinpath("output")
+            .joinpath(f"{resource_name}-{view}")
+        )
+
+    def get_fhir_response_path(self, view: str, resource_name: str) -> str:
+        return str(
+            self.data_dir.joinpath("temp")
+            .joinpath("output")
+            .joinpath(f"{resource_name}-{view}-response")
+        )
+
+    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
+        super(SimplePipeline, self).__init__(
+            parameters=parameters,
+            progress_logger=progress_logger,
+            run_id="12345678",
+            client_name="client_foo",
+            vendor_name="vendor_foo",
+        )
+        self.data_dir: Path = Path(__file__).parent.joinpath("./")
+
+        self.transformers = self.create_steps(
+            cast(
+                List[Transformer],
+                [
+                    FrameworkDropViewsTransformer(
+                        name="",
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                        views=["foo"],
+                    ),
+                    FrameworkCsvLoader(
+                        name="FrameworkCsvLoader",
+                        view="flights",
+                        file_path=parameters["flights_path"],
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                    ),
+                    FeaturesCarriersV1(
+                        parameters=parameters, progress_logger=progress_logger
+                    ),
+                    FrameworkIfElseTransformer(
+                        enable=True,
+                        progress_logger=progress_logger,
+                        stages=[
+                            FeaturesCarriersPythonV1(
+                                parameters=parameters, progress_logger=progress_logger
+                            ),
+                        ],
+                    ),
+                    AutoMapperToFhirTransformer(
+                        name="AutoMapperToFhirTransformer",
+                        parameters=parameters,
+                        progress_logger=progress_logger,
+                        transformer=FeaturesCarriersFhirV1(
+                            parameters=parameters, progress_logger=progress_logger
+                        ),
+                        func_get_path=self.get_fhir_path,
+                        func_get_response_path=self.get_fhir_response_path,
+                        fhir_server_url="http://mock-server:1080",
+                        source_entity_name="members",
                     ),
                     FrameworkJsonExporter(
                         file_path=parameters["export_path"],
@@ -153,13 +250,13 @@ class MappingPipeline(FrameworkPipeline):
         )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_setup() -> None:
     data_dir = Path(__file__).parent
     temp_dir = data_dir.joinpath("temp")
-    if os.path.isdir(temp_dir):
-        rmtree(temp_dir)
-    os.makedirs(temp_dir)
+    output_dir = temp_dir.joinpath("output")
+    if os.path.isdir(output_dir):
+        rmtree(output_dir)
 
 
 def test_progress_logger_with_mlflow(
@@ -194,13 +291,10 @@ def test_progress_logger_with_mlflow(
     # Act
     parameters = {
         "flights_path": flights_path,
-        "feature_path": data_dir.joinpath(
-            "library/features/carriers_multiple_mappings/v1"
-        ),
-        "foo": "bar",
+        "view": "my_view_1",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:Im5CYsCO923GFAebv6bf@warehouse-mysql.server:3306/"
+        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
         + "schema?rewriteBatchedStatements=true",
     }
 
@@ -236,7 +330,7 @@ def test_progress_logger_with_mlflow(
     runs = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
-    assert len(runs) == 10, "there should be 10 runs total, 1 parent and 9 nested"
+    assert len(runs) == 13, "there should be 13 runs total, 1 parent and 12 nested"
     parent_runs = [
         run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
     ]
@@ -244,7 +338,7 @@ def test_progress_logger_with_mlflow(
     nested_runs = [
         run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
     ]
-    assert len(nested_runs) == 9
+    assert len(nested_runs) == 12
     # assert that the parent run has the params
     parent_run: Run = parent_runs[0]
     assert (
@@ -280,15 +374,101 @@ def test_progress_logger_with_mlflow(
     assert len(drop_views_transformer_run) == 1
 
 
-def test_progress_logger_without_mlflow(
+def test_progress_logger_with_mlflow_and_looping_pipeline(
     spark_session: SparkSession, test_setup: Any
 ) -> None:
     clean_spark_session(spark_session)
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
+    flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
+    export_path: str = str(temp_dir.joinpath("output").joinpath("flights.json"))
+
+    schema = StructType([])
+
+    spark_session.createDataFrame(spark_session.sparkContext.emptyRDD(), schema)
+
+    spark_session.sql("DROP TABLE IF EXISTS default.flights")
+
+    spark_session.createDataFrame(
+        [
+            (1, "Qureshi", "Imran"),
+            (2, "Vidal", "Michael"),
+        ],  # noqa: E231
+        ["member_id", "last_name", "first_name"],
+    ).createOrReplaceTempView("patients")
+
+    source_df: DataFrame = spark_session.table("patients")
+
+    df = source_df.select("member_id")
+    df.createOrReplaceTempView("members")
+
+    # Act
+    parameters = {
+        "flights_path": flights_path,
+        "feature_path": data_dir.joinpath(
+            "library/features/carriers_multiple_mappings/v1"
+        ),
+        "view": "my_view_1",
+        "view2": "my_view_2",
+        "export_path": export_path,
+        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
+        + "schema?rewriteBatchedStatements=true",
+    }
+
+    flow_run_name = "fluffy-fox"
+
+    mlflow_tracking_url = temp_dir.joinpath("mlflow_loop")
+    # mlflow_tracking_url = "http://mlflow:5000"
+    artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
+    random_string = "".join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
+    )
+    experiment_name = random_string
+
+    mlflow_config = MlFlowConfig(
+        parameters=parameters,
+        experiment_name=experiment_name,
+        flow_run_name=flow_run_name,
+        mlflow_tracking_url=str(mlflow_tracking_url),
+        artifact_url=artifact_url,
+    )
+
+    with ProgressLogger(mlflow_config=mlflow_config) as progress_logger:
+        pipeline: LoopingPipeline = LoopingPipeline(
+            parameters=parameters, progress_logger=progress_logger, max_number_of_runs=2
+        )
+        transformer = pipeline.fit(df)
+        transformer.transform(df)
+
+    # assert we have an experiment created in mlflow
+    experiment = mlflow.get_experiment_by_name(name=experiment_name)
+    assert experiment is not None, "the mlflow experiment was not created"
+
+    # assert the experiment has one parent run and 7 nested runs
+    runs = mlflow.search_runs(
+        experiment_ids=[experiment.experiment_id], output_format="list"
+    )
+    assert len(runs) == 20, "there should be 20 runs total, 1 parent and 19 nested"
+    parent_runs = [
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
+    ]
+    assert len(parent_runs) == 1
+    nested_runs = [
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
+    ]
+    assert len(nested_runs) == 19
+
+
+def test_progress_logger_without_mlflow(
+    spark_session: SparkSession, test_setup: Any
+) -> None:
+
+    clean_spark_session(spark_session)
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    temp_dir: Path = data_dir.joinpath("temp")
 
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
-    export_path: str = str(temp_dir.joinpath("ouptput").joinpath("flights.json"))
+    export_path: str = str(temp_dir.joinpath("output").joinpath("flights.json"))
 
     schema = StructType([])
 
@@ -340,12 +520,13 @@ def test_progress_logger_without_mlflow(
 def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
-    event_log_path = temp_dir.joinpath("event_log")
+    output_dir: Path = temp_dir.joinpath("output")
+    event_log_path = output_dir.joinpath("event_log")
 
     class FileEventLogger(EventLogger):
         def __init__(self, log_path: Path):
             self.log_path = log_path
-            os.makedirs(self.log_path)
+            os.makedirs(self.log_path, exist_ok=True)
 
         def log_event(self, event_name: str, event_text: str) -> None:
             log_file_path: Path = self.log_path.joinpath(
@@ -358,7 +539,7 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
 
     parameters = {"foo": "bar", "view2": "my_view_2"}
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow")
+    mlflow_tracking_url = temp_dir.joinpath("mlflow_error")
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     experiment_name: str = "error_tests"
 
@@ -441,7 +622,7 @@ def test_progress_logger_mlflow_error_handling_when_tracking_server_is_inaccessi
         "foo": "bar",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:Im5CYsCO923GFAebv6bf@warehouse-mysql.server:3306/"
+        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
         + "schema?rewriteBatchedStatements=true",
     }
 
