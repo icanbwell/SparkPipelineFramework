@@ -76,46 +76,46 @@ class HttpDataSender(FrameworkTransformer):
 
         # add a param
         self.source_view: Param[str] = Param(self, "source_view", "")
-        self._setDefault(source_view=None)
+        self._setDefault(source_view=source_view)
 
         self.view: Param[Optional[str]] = Param(self, "view", "")
-        self._setDefault(view=None)
+        self._setDefault(view=view)
 
         self.url: Param[Optional[str]] = Param(self, "url", "")
-        self._setDefault(url=None)
+        self._setDefault(url=url)
 
         self.auth_url: Param[Optional[str]] = Param(self, "auth_url", "")
-        self._setDefault(auth_url=None)
+        self._setDefault(auth_url=auth_url)
 
         self.client_id: Param[Optional[str]] = Param(self, "client_id", "")
-        self._setDefault(client_id=None)
+        self._setDefault(client_id=client_id)
 
         self.client_secret: Param[Optional[str]] = Param(self, "client_secret", "")
-        self._setDefault(client_secret=None)
+        self._setDefault(client_secret=client_secret)
 
         self.content_type: Param[str] = Param(self, "content_type", "")
-        self._setDefault(content_type=None)
+        self._setDefault(content_type=content_type)
 
         self.batch_count: Param[Optional[int]] = Param(self, "batch_count", "")
-        self._setDefault(batch_count=None)
+        self._setDefault(batch_count=batch_count)
 
         self.batch_size: Param[Optional[int]] = Param(self, "batch_size", "")
-        self._setDefault(batch_size=None)
+        self._setDefault(batch_size=batch_size)
 
         self.parse_response_as_json: Param[Optional[bool]] = Param(
             self, "parse_response_as_json", ""
         )
-        self._setDefault(parse_response_as_json=None)
+        self._setDefault(parse_response_as_json=parse_response_as_json)
 
         self.post_as_json_formatted_string: Param[Optional[bool]] = Param(
             self, "post_as_json_formatted_string", ""
         )
-        self._setDefault(post_as_json_formatted_string=None)
+        self._setDefault(post_as_json_formatted_string=post_as_json_formatted_string)
 
         self.cache_storage_level: Param[Optional[StorageLevel]] = Param(
             self, "cache_storage_level", ""
         )
-        self._setDefault(cache_storage_level=None)
+        self._setDefault(cache_storage_level=cache_storage_level)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)

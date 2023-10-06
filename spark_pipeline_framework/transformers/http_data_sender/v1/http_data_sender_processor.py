@@ -38,7 +38,14 @@ class HttpDataSenderProcessor:
 
         # logger = get_logger(__name__)
         if len(json_data_list) == 0:
-            yield Row(url=None, status=0, result=None, request_type=None, headers=None)
+            yield Row(
+                url=None,
+                status=0,
+                result=None,
+                headers=None,
+                payload=None,
+                request_type=None,
+            )
 
         assert url
         json_data: Dict[str, Any]
@@ -58,6 +65,7 @@ class HttpDataSenderProcessor:
                     status=response_json.status,
                     result=response_json.result,
                     headers=json.dumps(headers, default=str),
+                    payload=json.dumps(json_data, default=str),
                     request_type=str(RequestType.POST),
                 )
             else:
@@ -67,5 +75,6 @@ class HttpDataSenderProcessor:
                     status=response_text.status,
                     result=response_text.result,
                     headers=json.dumps(headers, default=str),
+                    payload=json.dumps(json_data, default=str),
                     request_type=str(RequestType.POST),
                 )
