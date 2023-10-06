@@ -37,9 +37,10 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         log_event_level: Optional[LogLevel] = None,
         log_limit: Optional[int] = None,
         desired_partitions: Optional[int] = None,
+        append_to_view: Optional[bool] = None,
     ) -> None:
         """
-        Runs the provided SQL
+        Runs the provided SQL and stores the result in the view parameter
 
 
         :param sql: SQL to run
@@ -51,6 +52,12 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                             the output view
         :param log_event_level: the level to use for logging the event
         :param desired_partitions: (Optional) Repartition the data after executing the sql
+        :param append_to_view: (Optional) Append to the view instead of overwriting it
+        :param mapping_file_name: (Optional) Name of the mapping file to use for logging the result
+        :param log_limit: (Optional) Limit the number of rows logged
+        :param name: (Optional) Name of the transformer
+        :param parameters: (Optional) Parameters for the transformer
+        :param progress_logger: (Optional) ProgressLogger to use
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -101,6 +108,9 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         )
         self._setDefault(desired_partitions=desired_partitions)
 
+        self.append_to_view: Param[Optional[bool]] = Param(self, "append_to_view", "")
+        self._setDefault(append_to_view=append_to_view)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -114,6 +124,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         log_event_level: Optional[LogLevel] = self.getOrDefault(self.log_event_level)
         log_limit: Optional[int] = self.getOrDefault(self.log_limit)
         desired_partitions: Optional[int] = self.getOrDefault(self.desired_partitions)
+        append_to_view: Optional[bool] = self.getOrDefault(self.append_to_view)
 
         assert sql_text
         with ProgressLogMetric(
@@ -167,6 +178,10 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                         )
 
             if view:
+                if append_to_view:
+                    original_df: DataFrame = df.sql_ctx.table(view)
+                    df = original_df.union(df)
+                # now point the view back to it
                 df.createOrReplaceTempView(view)
             self.logger.info(f"GenericSqlTransformer [{name}] finished running SQL")
 
