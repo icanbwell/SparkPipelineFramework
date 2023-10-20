@@ -158,3 +158,4 @@ tests/**/temp*/
 /spark_pipeline_framework/**/test/temp/
 /spark_pipeline_framework/**/test/**/temp/
 /spark_pipeline_framework/progress_logger/test/temp/mlflow/
+/spark_pipeline_framework/**/.idea/

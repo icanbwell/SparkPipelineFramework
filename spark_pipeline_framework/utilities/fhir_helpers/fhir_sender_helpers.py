@@ -11,6 +11,8 @@ from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
 
 
 def send_json_bundle_to_fhir(
+    *,
+    id_: Optional[str] = "1",
     json_data_list: List[str],
     server_url: str,
     validation_server_url: Optional[str],
@@ -54,7 +56,9 @@ def send_json_bundle_to_fhir(
         logger.debug("----------- Sending data to FHIR -------")
         logger.debug(json_data_list)
         logger.debug("----------- End sending data to FHIR -------")
-        response: FhirMergeResponse = fhir_client.merge(json_data_list)
+        response: FhirMergeResponse = fhir_client.merge(
+            id_=id_, json_data_list=json_data_list
+        )
         return response
     except AssertionError as e:
         logger.exception(

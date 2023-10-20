@@ -7,7 +7,7 @@ from spark_pipeline_framework.utilities.json_helpers import convert_fhir_json_to
 
 
 class FhirMergeResponseItem:
-    def __init__(self, item: Dict[str, Any]) -> None:
+    def __init__(self, item: Dict[str, Any], status: Optional[int] = 200) -> None:
         self.item: Dict[str, Any] = item
         self.created: Optional[bool] = item.get(FhirMergeResponseItemSchema.created)
         self.updated: Optional[bool] = item.get(FhirMergeResponseItemSchema.updated)
@@ -30,6 +30,7 @@ class FhirMergeResponseItem:
         self.resource_json: Optional[str] = item.get(
             FhirMergeResponseItemSchema.resource_json
         )
+        self.status: Optional[int] = status
 
     def to_dict(self) -> Dict[str, Any]:
         return self.__dict__
