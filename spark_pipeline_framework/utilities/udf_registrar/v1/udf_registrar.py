@@ -1,11 +1,11 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 # noinspection PyProtectedMember
 from pyspark.sql import SparkSession
 from pyspark.sql.types import DataType
 
 
-def register_udfs(session: SparkSession, udf_infos: List[Dict[str, str]]) -> None:
+def register_udfs(session: SparkSession, udf_infos: List[Dict[str, Any]]) -> None:
     """
     Adds registration for udfs
     :param session: Spark session
