@@ -12,7 +12,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
 
 def send_json_bundle_to_fhir(
     *,
-    id_: Optional[str] = "1",
+    id_: Optional[str],
     json_data_list: List[str],
     server_url: str,
     validation_server_url: Optional[str],
@@ -28,6 +28,7 @@ def send_json_bundle_to_fhir(
     retry_count: Optional[int] = None,
     exclude_status_codes_from_retry: Optional[List[int]] = None,
 ) -> Optional[FhirMergeResponse]:
+    assert id_, f"{json_data_list!r}"
     fhir_client: FhirClient = get_fhir_client(
         logger=logger,
         server_url=server_url,

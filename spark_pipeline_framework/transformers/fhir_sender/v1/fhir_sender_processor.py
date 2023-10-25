@@ -103,58 +103,76 @@ class FhirSenderProcessor:
                         f"for {resource_name}: {json.dumps(item.asDict(recursive=True), default=str)}"
                     )
                     current_bundle: List[Dict[str, Any]]
-                    result: Optional[FhirMergeResponse] = send_json_bundle_to_fhir(
-                        json_data_list=[
-                            convert_dict_to_fhir_json(item.asDict(recursive=True))
-                            if "id" in item
-                            else item["value"]
-                        ],
+                    json_data_list_1: List[str] = [
+                        convert_dict_to_fhir_json(item.asDict(recursive=True))
+                        if "id" in item
+                        else item["value"]
+                    ]
+                    first_item: Optional[Dict[str, Any]] = (
+                        json.loads(json_data_list_1[0])
+                        if len(json_data_list_1) > 0
+                        else None
+                    )
+                    first_id = first_item.get("id") if first_item is not None else None
+                    if first_id:
+                        result: Optional[FhirMergeResponse] = send_json_bundle_to_fhir(
+                            id_=first_id,
+                            json_data_list=json_data_list_1,
+                            server_url=server_url,
+                            validation_server_url=validation_server_url,
+                            resource=resource_name,
+                            logger=logger,
+                            auth_server_url=auth_server_url,
+                            auth_client_id=auth_client_id,
+                            auth_client_secret=auth_client_secret,
+                            auth_login_token=auth_login_token,
+                            auth_scopes=auth_scopes,
+                            auth_access_token=auth_access_token1,
+                            log_level=log_level,
+                            retry_count=retry_count,
+                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                        )
+                        if result:
+                            auth_access_token1 = result.access_token
+                            if result.request_id:
+                                request_id_list.append(result.request_id)
+                            responses.extend(result.responses)
+            else:
+                # send a whole batch to the server at once
+                json_data_list_1 = [
+                    convert_dict_to_fhir_json(item.asDict(recursive=True))
+                    if "id" in item
+                    else item["value"]
+                    for item in json_data_list
+                ]
+                first_item = (
+                    json.loads(json_data_list_1[0])
+                    if len(json_data_list_1) > 0
+                    else None
+                )
+                first_id = first_item.get("id") if first_item is not None else None
+                if first_id:
+                    result = send_json_bundle_to_fhir(
+                        id_=first_id,
+                        json_data_list=json_data_list_1,
                         server_url=server_url,
                         validation_server_url=validation_server_url,
                         resource=resource_name,
-                        logger=logger,
                         auth_server_url=auth_server_url,
                         auth_client_id=auth_client_id,
                         auth_client_secret=auth_client_secret,
                         auth_login_token=auth_login_token,
                         auth_scopes=auth_scopes,
-                        auth_access_token=auth_access_token1,
+                        auth_access_token=auth_access_token,
+                        logger=logger,
                         log_level=log_level,
                         retry_count=retry_count,
                         exclude_status_codes_from_retry=exclude_status_codes_from_retry,
                     )
+                    if result and result.request_id:
+                        request_id_list.append(result.request_id)
                     if result:
-                        auth_access_token1 = result.access_token
-                        if result.request_id:
-                            request_id_list.append(result.request_id)
-                        responses.extend(result.responses)
-            else:
-                # send a whole batch to the server at once
-                result = send_json_bundle_to_fhir(
-                    json_data_list=[
-                        convert_dict_to_fhir_json(item.asDict(recursive=True))
-                        if "id" in item
-                        else item["value"]
-                        for item in json_data_list
-                    ],
-                    server_url=server_url,
-                    validation_server_url=validation_server_url,
-                    resource=resource_name,
-                    auth_server_url=auth_server_url,
-                    auth_client_id=auth_client_id,
-                    auth_client_secret=auth_client_secret,
-                    auth_login_token=auth_login_token,
-                    auth_scopes=auth_scopes,
-                    auth_access_token=auth_access_token,
-                    logger=logger,
-                    log_level=log_level,
-                    retry_count=retry_count,
-                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                )
-                if result and result.request_id:
-                    request_id_list.append(result.request_id)
-                if result:
-                    responses = result.responses
+                        responses = result.responses
         # each item in responses is either a json object
         #   or a list of json objects
         error_count: int = 0
