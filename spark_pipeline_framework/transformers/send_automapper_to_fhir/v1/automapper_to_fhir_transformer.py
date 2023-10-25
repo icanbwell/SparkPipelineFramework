@@ -60,6 +60,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         send_to_fhir: Optional[bool] = True,
         mode: str = FileWriteModes.MODE_ERROR,
+        run_synchronously: Optional[bool] = None,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -71,6 +72,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         :param fhir_validation_url: url to FHIR validation server
         :param source_entity_name: resource name
         :param athena_schema: schema to use when writing data to Athena
+        :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -139,6 +141,11 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
+        self.run_synchronously: Param[Optional[bool]] = Param(
+            self, "run_synchronously", ""
+        )
+        self._setDefault(run_synchronously=run_synchronously)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -166,6 +173,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         send_to_fhir: Optional[bool] = self.getSendToFhir()
 
         mode: str = self.getOrDefault(self.mode)
+        run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
         self.logger.info(f"Calling {fhir_server_url} with client_id={auth_client_id}")
 
@@ -269,6 +277,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             auth_scopes=auth_scopes,
                             name=f"{name}_fhir_sender",
                             mode=mode,
+                            run_synchronously=run_synchronously,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
