@@ -6,7 +6,7 @@ from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col
-from pyspark.sql.types import Row
+from pyspark.sql.types import Row, StructType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
@@ -50,6 +50,7 @@ class HttpDataSender(FrameworkTransformer):
         batch_count: Optional[int] = None,
         batch_size: Optional[int] = None,
         cache_storage_level: Optional[StorageLevel] = None,
+        response_schema: Optional[StructType] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -67,6 +68,7 @@ class HttpDataSender(FrameworkTransformer):
         :param batch_size: (Optional) max number of items in a batch
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
+        :param response_schema: (Optional) schema to use for the response
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -117,6 +119,11 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(cache_storage_level=cache_storage_level)
 
+        self.response_schema: Param[Optional[StructType]] = Param(
+            self, "response_schema", ""
+        )
+        self._setDefault(response_schema=response_schema)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -141,6 +148,7 @@ class HttpDataSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
+        response_schema: Optional[StructType] = self.getOrDefault(self.response_schema)
 
         df = df.sparkSession.table(source_view)
 
@@ -188,7 +196,9 @@ class HttpDataSender(FrameworkTransformer):
                     if batch_size and batch_size > 0
                     else row_count
                 )
-            self.logger.info(f"Total Batches: {desired_partitions}")
+            self.logger.info(
+                f"Total Batches: {desired_partitions} for total rows: {row_count}"
+            )
 
             # ---- Now process all the results ----
             rdd: RDD[Row] = df.repartition(
@@ -211,14 +221,18 @@ class HttpDataSender(FrameworkTransformer):
                 else rdd.persist(storageLevel=cache_storage_level)
             )
 
-            result_df: DataFrame = rdd.toDF()
+            try:
+                result_df: DataFrame = (
+                    rdd.toDF(schema=response_schema) if response_schema else rdd.toDF()
+                )
 
-            result_df = result_df.where(col("url").isNotNull())
-            if view:
-                result_df.createOrReplaceTempView(view)
+                result_df = result_df.where(col("url").isNotNull())
+                if view:
+                    result_df.createOrReplaceTempView(view)
+            except Exception as e:
+                raise Exception(
+                    f"Unable to read data frame: "
+                    + f"{','.join([json.dumps(row.asDict(recursive=True)) for row in rdd.collect()])}"
+                ) from e
 
             return result_df
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    # def getView(self) -> Optional[str]:
-    #     return self.getOrDefault(self.view)  # type: ignore

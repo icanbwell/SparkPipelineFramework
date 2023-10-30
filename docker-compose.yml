@@ -101,6 +101,4 @@ services:
 
 volumes:
   mysql_data:
-    labels:
-      - "mlflow"
   mongo_data:
