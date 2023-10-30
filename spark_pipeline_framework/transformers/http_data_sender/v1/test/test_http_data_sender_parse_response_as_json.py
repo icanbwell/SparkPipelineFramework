@@ -1,4 +1,3 @@
-import json
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
@@ -15,7 +14,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-def test_http_data_sender(spark_session: SparkSession) -> None:
+def test_http_data_sender_parse_response_as_json(spark_session: SparkSession) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
     test_name = "test_http_data_sender"
@@ -61,7 +60,7 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
             source_view="my_view",
             view="output_view",
             url=f"{server_url}",
-            parse_response_as_json=False,
+            parse_response_as_json=True,
         ).transform(df)
 
     # Assert
@@ -69,15 +68,15 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    result_ = json.loads(result_df.collect()[0]["result"])
+    result_ = result_df.collect()[0]["result"]
     assert result_ == {
         "token_type": "bearer",
         "access_token": "fake access_token",
-        "expires_in": 54000,
+        "expires_in": "54000",
     }
-    result_ = json.loads(result_df.collect()[1]["result"])
+    result_ = result_df.collect()[1]["result"]
     assert result_ == {
         "token_type": "bearer",
         "access_token": "fake access_token2",
-        "expires_in": 54000,
+        "expires_in": "54000",
     }

@@ -6,7 +6,7 @@ from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col
-from pyspark.sql.types import Row, StructType
+from pyspark.sql.types import Row, StructType, StructField, StringType, IntegerType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
@@ -50,7 +50,6 @@ class HttpDataSender(FrameworkTransformer):
         batch_count: Optional[int] = None,
         batch_size: Optional[int] = None,
         cache_storage_level: Optional[StorageLevel] = None,
-        response_schema: Optional[StructType] = None,
     ):
         """
         Sends data to http server (usually REST API)
@@ -68,7 +67,6 @@ class HttpDataSender(FrameworkTransformer):
         :param batch_size: (Optional) max number of items in a batch
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
-        :param response_schema: (Optional) schema to use for the response
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -119,11 +117,6 @@ class HttpDataSender(FrameworkTransformer):
         )
         self._setDefault(cache_storage_level=cache_storage_level)
 
-        self.response_schema: Param[Optional[StructType]] = Param(
-            self, "response_schema", ""
-        )
-        self._setDefault(response_schema=response_schema)
-
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -148,7 +141,6 @@ class HttpDataSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
-        response_schema: Optional[StructType] = self.getOrDefault(self.response_schema)
 
         df = df.sparkSession.table(source_view)
 
@@ -221,9 +213,22 @@ class HttpDataSender(FrameworkTransformer):
                 else rdd.persist(storageLevel=cache_storage_level)
             )
 
+            response_schema: StructType = StructType(
+                [
+                    StructField("url", StringType(), True),
+                    StructField("status", IntegerType(), True),
+                    StructField("result", StringType(), True),
+                    StructField("headers", StringType(), True),
+                    StructField("payload", StringType(), True),
+                    StructField("request_type", StringType(), True),
+                ]
+            )
+
             try:
                 result_df: DataFrame = (
-                    rdd.toDF(schema=response_schema) if response_schema else rdd.toDF()
+                    (rdd.toDF())  # let Spark auto-discover the schema
+                    if parse_response_as_json
+                    else (rdd.toDF(schema=response_schema))
                 )
 
                 result_df = result_df.where(col("url").isNotNull())
