@@ -2,8 +2,7 @@
   "request_parameters": {
     "method": "GET",
     "querystring": {
-      "practitioner": "01-practitioner",
-      "_count": "2"
+      "practitioner": "01-practitioner"
     }
   },
   "request_result": {

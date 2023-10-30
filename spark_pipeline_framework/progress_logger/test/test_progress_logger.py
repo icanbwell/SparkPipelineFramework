@@ -7,6 +7,7 @@ from typing import Dict, Any, Callable, Union, List, cast
 
 import mlflow  # type: ignore
 import pytest
+from mlflow.store.tracking.file_store import FileStore
 
 from library.features.carriers_fhir.v1.features_carriers_fhir_v1 import (
     FeaturesCarriersFhirV1,
@@ -462,7 +463,6 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
 def test_progress_logger_without_mlflow(
     spark_session: SparkSession, test_setup: Any
 ) -> None:
-
     clean_spark_session(spark_session)
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
@@ -543,6 +543,8 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     experiment_name: str = "error_tests"
 
+    clean_experiments(experiment_name=experiment_name)
+
     mlflow_config = MlFlowConfig(
         parameters=parameters,
         experiment_name=experiment_name,
@@ -582,6 +584,29 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     # assert that an event notification was sent out
     event_log_files = os.listdir(event_log_path)
     assert len(event_log_files) == 1
+
+
+def clean_experiments(experiment_name: str) -> None:
+    client = mlflow.tracking.MlflowClient()
+    # List all experiments
+    experiments = client.search_experiments()
+    # Delete each experiment
+    for exp in experiments:
+        if exp.experiment_id == FileStore.DEFAULT_EXPERIMENT_ID:
+            continue
+
+        # Get all runs in the experiment
+        runs = client.search_runs(experiment_ids=exp.experiment_id)
+
+        # Delete each run
+        for run in runs:
+            client.delete_run(run.info.run_id)
+            print(f"Run with ID {run.info.run_id} has been deleted")
+
+        client.delete_experiment(exp.experiment_id)
+        print(
+            f"Experiment with ID {exp.experiment_id} and Name {exp.name} has been deleted"
+        )
 
 
 def test_progress_logger_mlflow_error_handling_when_tracking_server_is_inaccessible(

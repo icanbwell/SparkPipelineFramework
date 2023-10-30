@@ -6,7 +6,7 @@ from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col
-from pyspark.sql.types import Row
+from pyspark.sql.types import Row, StructType, StructField, StringType, IntegerType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
@@ -188,7 +188,9 @@ class HttpDataSender(FrameworkTransformer):
                     if batch_size and batch_size > 0
                     else row_count
                 )
-            self.logger.info(f"Total Batches: {desired_partitions}")
+            self.logger.info(
+                f"Total Batches: {desired_partitions} for total rows: {row_count}"
+            )
 
             # ---- Now process all the results ----
             rdd: RDD[Row] = df.repartition(
@@ -211,14 +213,31 @@ class HttpDataSender(FrameworkTransformer):
                 else rdd.persist(storageLevel=cache_storage_level)
             )
 
-            result_df: DataFrame = rdd.toDF()
+            response_schema: StructType = StructType(
+                [
+                    StructField("url", StringType(), True),
+                    StructField("status", IntegerType(), True),
+                    StructField("result", StringType(), True),
+                    StructField("headers", StringType(), True),
+                    StructField("payload", StringType(), True),
+                    StructField("request_type", StringType(), True),
+                ]
+            )
 
-            result_df = result_df.where(col("url").isNotNull())
-            if view:
-                result_df.createOrReplaceTempView(view)
+            try:
+                result_df: DataFrame = (
+                    (rdd.toDF())  # let Spark auto-discover the schema
+                    if parse_response_as_json
+                    else (rdd.toDF(schema=response_schema))
+                )
+
+                result_df = result_df.where(col("url").isNotNull())
+                if view:
+                    result_df.createOrReplaceTempView(view)
+            except Exception as e:
+                raise Exception(
+                    f"Unable to read data frame: "
+                    + f"{','.join([json.dumps(row.asDict(recursive=True)) for row in rdd.collect()])}"
+                ) from e
 
             return result_df
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    # def getView(self) -> Optional[str]:
-    #     return self.getOrDefault(self.view)  # type: ignore

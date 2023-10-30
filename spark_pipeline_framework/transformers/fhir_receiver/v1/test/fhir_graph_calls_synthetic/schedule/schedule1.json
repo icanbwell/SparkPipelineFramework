@@ -2,8 +2,7 @@
   "request_parameters": {
     "method": "GET",
     "querystring": {
-      "actor": "4657-3437",
-      "_count": "2"
+      "actor": "4657-3437"
     }
   },
   "request_result": {

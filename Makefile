@@ -5,6 +5,10 @@ export LANG
 Pipfile.lock: Pipfile
 	docker compose run --rm --name spark_pipeline_framework dev sh -c "rm -f Pipfile.lock && pipenv lock --dev"
 
+.PHONY: install_types
+install_types: Pipfile
+	docker compose run --rm --name spark_pipeline_framework dev sh -c "mypy --install-types"
+
 .PHONY:devdocker
 devdocker: ## Builds the docker for dev
 	docker compose build
