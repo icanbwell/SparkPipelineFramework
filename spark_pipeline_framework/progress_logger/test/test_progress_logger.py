@@ -7,6 +7,7 @@ from typing import Dict, Any, Callable, Union, List, cast
 
 import mlflow  # type: ignore
 import pytest
+from mlflow.store.tracking.file_store import FileStore
 
 from library.features.carriers_fhir.v1.features_carriers_fhir_v1 import (
     FeaturesCarriersFhirV1,
@@ -522,6 +523,20 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     temp_dir: Path = data_dir.joinpath("temp")
     output_dir: Path = temp_dir.joinpath("output")
     event_log_path = output_dir.joinpath("event_log")
+
+    client = mlflow.tracking.MlflowClient()
+
+    # List all experiments
+    experiments = client.search_experiments()
+
+    # Delete each experiment
+    for exp in experiments:
+        if exp.experiment_id == FileStore.DEFAULT_EXPERIMENT_ID:
+            continue
+        client.delete_experiment(exp.experiment_id)
+        print(
+            f"Experiment with ID {exp.experiment_id} and Name {exp.name} has been deleted"
+        )
 
     class FileEventLogger(EventLogger):
         def __init__(self, log_path: Path):

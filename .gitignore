@@ -159,3 +159,6 @@ tests/**/temp*/
 /spark_pipeline_framework/**/test/**/temp/
 /spark_pipeline_framework/progress_logger/test/temp/mlflow/
 /spark_pipeline_framework/**/.idea/
+/spark_pipeline_framework/**/metastore_db/
+/spark_pipeline_framework/transformers/fhir_sender/v1/test/test_files/
+/spark_pipeline_framework/**/mlruns
