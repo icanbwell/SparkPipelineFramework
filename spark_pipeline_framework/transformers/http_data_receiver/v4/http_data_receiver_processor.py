@@ -68,6 +68,8 @@ class HttpDataReceiverProcessor:
         raise_error: bool,
         credentials: Optional[OAuth2Credentails],
         auth_url: Optional[str],
+        cert: Union[str, Tuple[str, str]],
+        verify: Union[bool, str],
     ) -> List[Row]:
         result: List[Row] = []
         headers = {}
@@ -85,6 +87,8 @@ class HttpDataReceiverProcessor:
                 row=row,
                 raise_error=False,  # We don't want to raise error in case of access token expiry
                 base_headers=headers,
+                cert=cert,
+                verify=verify
             )
             if auth_url and response.status_code == status_codes.codes.unauthorized:
                 access_token = HttpDataReceiverProcessor.create_access_token(
@@ -95,6 +99,8 @@ class HttpDataReceiverProcessor:
                     row=row,
                     raise_error=raise_error,
                     base_headers=headers,
+                    cert=cert,
+                    verify=verify
                 )
             elif raise_error:
                 response.raise_for_status()
@@ -122,6 +128,8 @@ class HttpDataReceiverProcessor:
         row: Row,
         raise_error: bool,
         base_headers: Dict[str, Any],
+        cert: Union[str, Tuple[str, str]],
+        verify: Union[bool, str],
     ) -> Response:
         headers = json.loads(row["headers"])
         headers.update(base_headers)
@@ -130,5 +138,7 @@ class HttpDataReceiverProcessor:
             url=row["url"],
             headers=headers,
             raise_error=raise_error,
+            cert=cert,
+            verify=verify
         )
         return http_request.get_response()
