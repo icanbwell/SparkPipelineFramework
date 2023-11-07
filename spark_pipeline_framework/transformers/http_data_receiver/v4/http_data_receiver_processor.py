@@ -7,11 +7,12 @@ from typing import (
     Any,
     Callable,
     Tuple,
-    Iterator,
+    Iterator, Union,
 )
 
 from pyspark.sql import DataFrame
 from pyspark.sql.types import Row
+from pyspark import SparkFiles
 from requests import status_codes, Response
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -82,12 +83,19 @@ class HttpDataReceiverProcessor:
             )
             headers.update({"Authorization": f"Bearer {auth_token}"})
 
+        # Assumes certs are distributed to the executors beforehand via SparkContext.addFile
+        cert_files = None
+        if isinstance(cert, tuple):
+            cert_files = SparkFiles.get(cert[0]), SparkFiles.get(cert[1])
+        elif cert:
+            cert_files = SparkFiles.get(cert)
+
         for row in rows:
             response = HttpDataReceiverProcessor.process_row(
                 row=row,
                 raise_error=False,  # We don't want to raise error in case of access token expiry
                 base_headers=headers,
-                cert=cert,
+                cert=cert_files,
                 verify=verify
             )
             if auth_url and response.status_code == status_codes.codes.unauthorized:
@@ -99,7 +107,7 @@ class HttpDataReceiverProcessor:
                     row=row,
                     raise_error=raise_error,
                     base_headers=headers,
-                    cert=cert,
+                    cert=cert_files,
                     verify=verify
                 )
             elif raise_error:

@@ -1,6 +1,6 @@
 import json
 import math
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast, Union, Tuple
 
 from more_itertools import chunked
 from pyspark import StorageLevel
