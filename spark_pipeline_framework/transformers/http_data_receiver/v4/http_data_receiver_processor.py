@@ -8,10 +8,12 @@ from typing import (
     Callable,
     Tuple,
     Iterator,
+    Union,
 )
 
 from pyspark.sql import DataFrame
 from pyspark.sql.types import Row
+from pyspark import SparkFiles
 from requests import status_codes, Response
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -68,6 +70,8 @@ class HttpDataReceiverProcessor:
         raise_error: bool,
         credentials: Optional[OAuth2Credentails],
         auth_url: Optional[str],
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ) -> List[Row]:
         result: List[Row] = []
         headers = {}
@@ -80,11 +84,20 @@ class HttpDataReceiverProcessor:
             )
             headers.update({"Authorization": f"Bearer {auth_token}"})
 
+        # Assumes certs are distributed to the executors beforehand via SparkContext.addFile
+        cert_files: Optional[Union[str, Tuple[str, str]]] = None
+        if isinstance(cert, tuple):
+            cert_files = SparkFiles.get(cert[0]), SparkFiles.get(cert[1])
+        elif cert:
+            cert_files = SparkFiles.get(cert)
+
         for row in rows:
             response = HttpDataReceiverProcessor.process_row(
                 row=row,
                 raise_error=False,  # We don't want to raise error in case of access token expiry
                 base_headers=headers,
+                cert=cert_files,
+                verify=verify,
             )
             if auth_url and response.status_code == status_codes.codes.unauthorized:
                 access_token = HttpDataReceiverProcessor.create_access_token(
@@ -95,6 +108,8 @@ class HttpDataReceiverProcessor:
                     row=row,
                     raise_error=raise_error,
                     base_headers=headers,
+                    cert=cert_files,
+                    verify=verify,
                 )
             elif raise_error:
                 response.raise_for_status()
@@ -122,6 +137,8 @@ class HttpDataReceiverProcessor:
         row: Row,
         raise_error: bool,
         base_headers: Dict[str, Any],
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ) -> Response:
         headers = json.loads(row["headers"])
         headers.update(base_headers)
@@ -130,5 +147,7 @@ class HttpDataReceiverProcessor:
             url=row["url"],
             headers=headers,
             raise_error=raise_error,
+            cert=cert,
+            verify=verify,
         )
         return http_request.get_response()

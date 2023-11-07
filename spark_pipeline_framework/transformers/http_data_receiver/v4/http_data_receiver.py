@@ -1,6 +1,6 @@
 import json
 import math
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast, Union, Tuple
 
 from more_itertools import chunked
 from pyspark import StorageLevel
@@ -66,6 +66,8 @@ class HttpDataReceiver(FrameworkTransformer):
         run_sync: bool = False,
         raise_error: bool = False,
         progress_logger: Optional[ProgressLogger] = None,
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ) -> None:
         """
         Transformer to call and receive data from an API
@@ -88,6 +90,8 @@ class HttpDataReceiver(FrameworkTransformer):
         :param run_sync: process the items linearly
         :param raise_error: (Optional) Raise error in case of api failure
         :param progress_logger: progress logger
+        :param cert: certificate or ca bundle file path
+        :param verify: controls whether the SSL certificate of the server should be verified when making HTTPS requests.
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -152,6 +156,14 @@ class HttpDataReceiver(FrameworkTransformer):
         self.raise_error: Param[bool] = Param(self, "raise_error", "")
         self._setDefault(raise_error=raise_error)
 
+        self.cert: Param[Optional[Union[str, Tuple[str, str]]]] = Param(
+            self, "cert", ""
+        )
+        self._setDefault(cert=cert)
+
+        self.verify: Param[Optional[Union[bool, str]]] = Param(self, "verify", "")
+        self._setDefault(verify=verify)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -179,6 +191,8 @@ class HttpDataReceiver(FrameworkTransformer):
         run_sync: bool = self.getOrDefault(self.run_sync)
         raise_error: bool = self.getOrDefault(self.raise_error)
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+        cert: Optional[Union[str, Tuple[str, str]]] = self.getOrDefault(self.cert)
+        verify: Optional[Union[bool, str]] = self.getOrDefault(self.verify)
 
         with ProgressLogMetric(
             name=f"{name}_http_data_receiver_v4", progress_logger=progress_logger
@@ -240,6 +254,8 @@ class HttpDataReceiver(FrameworkTransformer):
                     raise_error=raise_error,
                     credentials=credentials,
                     auth_url=auth_url,
+                    cert=cert,
+                    verify=verify,
                 )
 
                 # Create success view
@@ -276,6 +292,8 @@ class HttpDataReceiver(FrameworkTransformer):
                         raise_error=raise_error,
                         credentials=credentials,
                         auth_url=auth_url,
+                        cert=cert,
+                        verify=verify,
                     )
                 )
                 rdd = (
