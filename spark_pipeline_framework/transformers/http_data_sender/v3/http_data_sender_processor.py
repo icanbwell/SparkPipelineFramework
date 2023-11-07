@@ -124,6 +124,13 @@ class HttpDataSenderProcessor:
                 request_type="",
             )
 
+        # Assumes certs are distributed to the executors beforehand via SparkContext.addFile
+        cert_files = None
+        if isinstance(cert, tuple):
+            cert_files = SparkFiles.get(cert[0]), SparkFiles.get(cert[1])
+        elif cert:
+            cert_files = SparkFiles.get(cert)
+
         headers["Content-Type"] = content_type
         if oauth_enabled:
             assert client_id
@@ -145,7 +152,7 @@ class HttpDataSenderProcessor:
                 json_data=json_data,
                 payload_generator=payload_generator,
                 url_generator=url_generator,
-                cert=cert,
+                cert=cert_files,
                 verify=verify,
             )
             response: Response = create_request(headers=headers)
