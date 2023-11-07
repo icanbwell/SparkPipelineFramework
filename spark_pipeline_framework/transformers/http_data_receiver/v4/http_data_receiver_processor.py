@@ -69,8 +69,8 @@ class HttpDataReceiverProcessor:
         raise_error: bool,
         credentials: Optional[OAuth2Credentails],
         auth_url: Optional[str],
-        cert: Union[str, Tuple[str, str]],
-        verify: Union[bool, str],
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ) -> List[Row]:
         result: List[Row] = []
         headers = {}
@@ -84,7 +84,7 @@ class HttpDataReceiverProcessor:
             headers.update({"Authorization": f"Bearer {auth_token}"})
 
         # Assumes certs are distributed to the executors beforehand via SparkContext.addFile
-        cert_files = None
+        cert_files: Optional[Union[str, Tuple[str, str]]] = None
         if isinstance(cert, tuple):
             cert_files = SparkFiles.get(cert[0]), SparkFiles.get(cert[1])
         elif cert:
@@ -136,8 +136,8 @@ class HttpDataReceiverProcessor:
         row: Row,
         raise_error: bool,
         base_headers: Dict[str, Any],
-        cert: Union[str, Tuple[str, str]],
-        verify: Union[bool, str],
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ) -> Response:
         headers = json.loads(row["headers"])
         headers.update(base_headers)
