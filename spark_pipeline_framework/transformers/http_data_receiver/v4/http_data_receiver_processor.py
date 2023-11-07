@@ -7,7 +7,8 @@ from typing import (
     Any,
     Callable,
     Tuple,
-    Iterator, Union,
+    Iterator,
+    Union,
 )
 
 from pyspark.sql import DataFrame
@@ -96,7 +97,7 @@ class HttpDataReceiverProcessor:
                 raise_error=False,  # We don't want to raise error in case of access token expiry
                 base_headers=headers,
                 cert=cert_files,
-                verify=verify
+                verify=verify,
             )
             if auth_url and response.status_code == status_codes.codes.unauthorized:
                 access_token = HttpDataReceiverProcessor.create_access_token(
@@ -108,7 +109,7 @@ class HttpDataReceiverProcessor:
                     raise_error=raise_error,
                     base_headers=headers,
                     cert=cert_files,
-                    verify=verify
+                    verify=verify,
                 )
             elif raise_error:
                 response.raise_for_status()
@@ -147,6 +148,6 @@ class HttpDataReceiverProcessor:
             headers=headers,
             raise_error=raise_error,
             cert=cert,
-            verify=verify
+            verify=verify,
         )
         return http_request.get_response()
