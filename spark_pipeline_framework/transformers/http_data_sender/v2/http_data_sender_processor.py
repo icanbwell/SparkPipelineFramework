@@ -149,6 +149,13 @@ class HttpDataSenderProcessor:
             )
             headers.update({"Authorization": f"Bearer {access_token}"})
 
+        # Assumes certs are distributed to the executors beforehand via SparkContext.addFile
+        cert_files: Optional[Union[str, Tuple[str, str]]] = None
+        if isinstance(cert, tuple):
+            cert_files = SparkFiles.get(cert[0]), SparkFiles.get(cert[1])
+        elif cert:
+            cert_files = SparkFiles.get(cert)
+
         assert url or url_generator
         json_data: Dict[str, Any]
         for json_data in json_data_list:
@@ -161,7 +168,7 @@ class HttpDataSenderProcessor:
                 response_processor=response_processor,
                 payload_generator=payload_generator,
                 url_generator=url_generator,
-                cert=cert,
+                cert=cert_files,
                 verify=verify,
             )
             row: Row
