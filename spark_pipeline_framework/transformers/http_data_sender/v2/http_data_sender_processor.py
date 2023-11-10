@@ -2,6 +2,7 @@ import json
 from typing import Any, Dict, Iterable, List, Optional, Union, Callable, Tuple
 from functools import partial
 
+from pyspark import SparkFiles
 from requests import exceptions, status_codes
 from pyspark.sql.types import Row
 
