@@ -2,7 +2,7 @@ import json
 import math
 from typing import Any, Dict, Optional, Callable, Union, Tuple
 
-from pyspark import RDD, StorageLevel, SparkFiles
+from pyspark import RDD, StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, from_json
@@ -225,13 +225,6 @@ class HttpDataSender(FrameworkTransformer):
                 f"Using headers: {json.dumps(headers, default=str)}"
             )
 
-        # Assumes certs are distributed to the executors beforehand via SparkContext.addFile
-        cert_files: Optional[Union[str, Tuple[str, str]]] = None
-        if isinstance(cert, tuple):
-            cert_files = SparkFiles.get(cert[0]), SparkFiles.get(cert[1])
-        elif cert:
-            cert_files = SparkFiles.get(cert)
-
         with ProgressLogMetric(
             name=f"{name}_fhir_sender", progress_logger=progress_logger
         ):
@@ -265,7 +258,7 @@ class HttpDataSender(FrameworkTransformer):
                     payload_generator=payload_generator,
                     url_generator=url_generator,
                     response_processor=response_processor,
-                    cert=cert_files,
+                    cert=cert,
                     verify=verify,
                 )
             )
