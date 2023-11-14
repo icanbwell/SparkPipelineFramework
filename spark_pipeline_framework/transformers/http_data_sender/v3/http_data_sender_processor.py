@@ -179,7 +179,7 @@ class HttpDataSenderProcessor:
                 result, is_error = response.json(), response.status_code >= 400
 
             yield Row(
-                url=url,
+                url=response.url,
                 status=response.status_code,
                 is_error=is_error,
                 error_data=json.dumps(result if is_error else None),
