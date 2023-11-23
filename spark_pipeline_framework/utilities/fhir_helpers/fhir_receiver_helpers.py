@@ -24,6 +24,7 @@ from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 from pyspark.sql.types import (
     Row,
 )
+from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_writer import (
@@ -84,14 +85,50 @@ class FhirReceiverHelpers:
         url_column: Optional[str],
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
+        refresh_token_function: Optional[RefreshTokenFunction] = None,
     ) -> List[Row]:
         """
-        This function processes a partition
+        This function processes a partition calling fhir server for each row in the partition
 
         This has to be a static function to avoid creating a closure around a class
         https://spark.apache.org/docs/latest/rdd-programming-guide.html#passing-functions-to-spark
 
 
+        :param partition_index: partition index
+        :param rows: rows to process
+        :param batch_size: batch size
+        :param has_token_col: has token column
+        :param server_url: server url
+        :param log_level: log level
+        :param action: action to perform
+        :param action_payload: action payload
+        :param additional_parameters: additional parameters
+        :param filter_by_resource: filter by resource
+        :param filter_parameter: filter parameter
+        :param sort_fields: sort fields
+        :param auth_server_url: auth server url
+        :param auth_client_id: auth client id
+        :param auth_client_secret: auth client secret
+        :param auth_login_token: auth login token
+        :param auth_scopes: auth scopes
+        :param include_only_properties: include only properties
+        :param separate_bundle_resources: separate bundle resources
+        :param expand_fhir_bundle: expand fhir bundle
+        :param accept_type: accept type
+        :param content_type: content type
+        :param accept_encoding: accept encoding
+        :param slug_column: slug column
+        :param retry_count: retry count
+        :param exclude_status_codes_from_retry: exclude status codes from retry
+        :param limit: limit
+        :param auth_access_token: auth access token
+        :param resource_type: resource type
+        :param error_view: error view
+        :param url_column: url column
+        :param use_data_streaming: use data streaming
+        :param graph_json: graph json
+        :param refresh_token_function: function to refresh token
+        :return: rows
         """
         resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
             {
@@ -144,6 +181,7 @@ class FhirReceiverHelpers:
             url_column=url_column,
             use_data_streaming=use_data_streaming,
             graph_json=graph_json,
+            refresh_token_function=refresh_token_function,
         )
         return result
 
@@ -183,6 +221,7 @@ class FhirReceiverHelpers:
         url_column: Optional[str],
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
+        refresh_token_function: Optional[RefreshTokenFunction],
     ) -> List[Row]:
         try:
             first_id: Optional[str] = resource_id_with_token_list[0]["resource_id"]
@@ -249,6 +288,7 @@ class FhirReceiverHelpers:
                 error_view=error_view,
                 use_data_streaming=use_data_streaming,
                 graph_json=graph_json,
+                refresh_token_function=refresh_token_function,
             )
         else:  # otherwise send one by one
             return FhirReceiverHelpers.process_one_by_one(
@@ -284,6 +324,7 @@ class FhirReceiverHelpers:
                 resource_name=resource_type,
                 use_data_streaming=use_data_streaming,
                 graph_json=graph_json,
+                refresh_token_function=refresh_token_function,
             )
 
     @staticmethod
@@ -321,6 +362,7 @@ class FhirReceiverHelpers:
         resource_name: str,
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
+        refresh_token_function: Optional[RefreshTokenFunction],
     ) -> List[Row]:
         coroutines: List[Coroutine[Any, Any, List[Row]]] = [
             FhirReceiverHelpers.process_single_row_async(
@@ -356,6 +398,7 @@ class FhirReceiverHelpers:
                 resource_name=resource_name,
                 use_data_streaming=use_data_streaming,
                 graph_json=graph_json,
+                refresh_token_function=refresh_token_function,
             )
             for resource1 in resource_id_with_token_list
         ]
@@ -402,6 +445,7 @@ class FhirReceiverHelpers:
         resource1: Dict[str, Optional[str]],
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
+        refresh_token_function: Optional[RefreshTokenFunction],
     ) -> List[Row]:
         id_ = resource1["resource_id"]
         access_token = resource1["access_token"]
@@ -444,6 +488,7 @@ class FhirReceiverHelpers:
                     limit=limit,
                     use_data_streaming=use_data_streaming,
                     graph_json=graph_json,
+                    refresh_token_function=refresh_token_function,
                 )
             )
             resp_result: str = result1.responses.replace("\n", "")
@@ -526,6 +571,7 @@ class FhirReceiverHelpers:
         error_view: Optional[str],
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
+        refresh_token_function: Optional[RefreshTokenFunction],
     ) -> List[Row]:
         result1 = asyncio.run(
             FhirReceiverHelpers.send_simple_fhir_request_async(
@@ -558,6 +604,7 @@ class FhirReceiverHelpers:
                 limit=limit,
                 use_data_streaming=use_data_streaming,
                 graph_json=graph_json,
+                refresh_token_function=refresh_token_function,
             )
         )
         resp_result: str = result1.responses.replace("\n", "")
@@ -631,6 +678,7 @@ class FhirReceiverHelpers:
         limit: Optional[int],
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
+        refresh_token_function: Optional[RefreshTokenFunction],
     ) -> FhirGetResponse:
         url = server_url_ or server_url
         assert url
@@ -666,6 +714,7 @@ class FhirReceiverHelpers:
             log_level=log_level,
             use_data_streaming=use_data_streaming,
             graph_json=graph_json,
+            refresh_token_function=refresh_token_function,
         )
 
     @staticmethod
@@ -704,6 +753,7 @@ class FhirReceiverHelpers:
         limit: Optional[int] = None,
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
+        refresh_token_function: Optional[RefreshTokenFunction],
     ) -> FhirGetResponse:
         """
         Sends a fhir request to the fhir client sdk
@@ -744,6 +794,7 @@ class FhirReceiverHelpers:
         :param log_level:
         :param use_data_streaming:
         :param graph_json:
+        :param refresh_token_function: function to refresh token
         :return:
         :rtype:
         """
@@ -819,6 +870,9 @@ class FhirReceiverHelpers:
         if use_data_streaming:
             fhir_client = fhir_client.use_data_streaming(use_data_streaming)
 
+        if refresh_token_function:
+            fhir_client = fhir_client.refresh_token_function(refresh_token_function)
+
         return (
             await fhir_client.simulate_graph_async(
                 id_=cast(str, resource_id)
@@ -879,6 +933,7 @@ class FhirReceiverHelpers:
         ignore_status_codes: List[int],
         use_data_streaming: Optional[bool],
         graph_json: Optional[Dict[str, Any]],
+        refresh_token_function: Optional[RefreshTokenFunction],
     ) -> GetBatchResult:
         resources: List[str] = []
         errors: List[str] = []
@@ -921,6 +976,7 @@ class FhirReceiverHelpers:
                     log_level=log_level,
                     use_data_streaming=use_data_streaming,
                     graph_json=graph_json,
+                    refresh_token_function=refresh_token_function,
                 )
             )
             try:
@@ -980,6 +1036,7 @@ class FhirReceiverHelpers:
                         log_level=log_level,
                         use_data_streaming=use_data_streaming,
                         graph_json=graph_json,
+                        refresh_token_function=refresh_token_function,
                     )
                 )
                 result_response: List[str] = []

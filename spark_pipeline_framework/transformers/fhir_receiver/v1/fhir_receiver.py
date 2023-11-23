@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Union, Callable, cast
 # noinspection PyPep8Naming
 import pyspark.sql.functions as F
 from helix_fhir_client_sdk.filters.sort_field import SortField
+from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.rdd import RDD
@@ -108,6 +109,7 @@ class FhirReceiver(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = None,
         graph_json: Optional[Dict[str, Any]] = None,
         run_synchronously: Optional[bool] = None,
+        refresh_token_function: Optional[RefreshTokenFunction] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -158,6 +160,7 @@ class FhirReceiver(FrameworkTransformer):
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param graph_json: (Optional) a FHIR GraphDefinition resource to use for retrieving data
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
+        :param refresh_token_function: (Optional) function to refresh the token
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -374,6 +377,11 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
+        self.refresh_token_function: Param[Optional[RefreshTokenFunction]] = Param(
+            self, "refresh_token_function", ""
+        )
+        self._setDefault(refresh_token_function=refresh_token_function)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -459,6 +467,10 @@ class FhirReceiver(FrameworkTransformer):
         graph_json: Optional[Dict[str, Any]] = self.getOrDefault(self.graph_json)
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+
+        refresh_token_function: Optional[RefreshTokenFunction] = self.getOrDefault(
+            self.refresh_token_function
+        )
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
@@ -932,6 +944,7 @@ class FhirReceiver(FrameworkTransformer):
                     ignore_status_codes=ignore_status_codes,
                     use_data_streaming=use_data_streaming,
                     graph_json=graph_json,
+                    refresh_token_function=refresh_token_function,
                 )
                 resources = result1.resources
                 errors = result1.errors
