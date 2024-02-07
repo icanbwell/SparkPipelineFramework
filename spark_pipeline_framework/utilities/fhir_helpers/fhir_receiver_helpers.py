@@ -838,6 +838,7 @@ class FhirReceiverHelpers:
         if accept_encoding is not None:
             fhir_client = fhir_client.accept_encoding(accept_encoding)
         if additional_request_headers is not None:
+            logger.debug(f'Additional Request Headers to be sent - {additional_request_headers}')
             fhir_client = fhir_client.additional_request_headers(additional_request_headers)
 
         fhir_client = fhir_client.resource(resource_name)
