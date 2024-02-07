@@ -70,6 +70,7 @@ class FhirSender(FrameworkTransformer):
             FhirSenderOperation, str
         ] = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
         name: Optional[str] = None,
+        additional_request_headers: Optional[Dict[str, str]] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         mode: str = FileWriteModes.MODE_OVERWRITE,
@@ -98,6 +99,7 @@ class FhirSender(FrameworkTransformer):
         :param auth_client_secret: client secret
         :param auth_login_token: login token to send auth server
         :param auth_scopes: scopes to request
+        :param additional_request_headers: (Optional) Additional request headers to use
         :param operation: What FHIR operation to perform (e.g. $merge, delete, etc.)
         :param mode: if output files exist, should we overwrite or append
         :param error_view: (Optional) log errors into this view (view only exists IF there are errors)
@@ -188,6 +190,9 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(operation=operation)
 
+        self.additional_request_headers: Param[Optional[Dict[str, str]]] = Param(self, "additional_request_headers", "")
+        self._setDefault(additional_request_headers=additional_request_headers)
+
         self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
@@ -245,6 +250,7 @@ class FhirSender(FrameworkTransformer):
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         resource_name: str = self.getResource()
+        additional_request_headers: Optional[Dict[str, str]] = self.getAdditionalRequestHeaders()
         server_url: str = self.getServerUrl()
         batch_size: Optional[int] = self.getBatchSize()
         throw_exception_on_validation_failure: Optional[
@@ -361,6 +367,7 @@ class FhirSender(FrameworkTransformer):
                             auth_login_token=auth_login_token,
                             auth_scopes=auth_scopes,
                             auth_access_token=auth_access_token,
+                            additional_request_headers=additional_request_headers,
                             log_level=log_level,
                             batch_size=batch_size,
                             validation_server_url=validation_server_url,
@@ -393,6 +400,7 @@ class FhirSender(FrameworkTransformer):
                             auth_login_token=auth_login_token,
                             auth_scopes=auth_scopes,
                             auth_access_token=auth_access_token,
+                            additional_request_headers=additional_request_headers,
                             log_level=log_level,
                             batch_size=batch_size,
                             validation_server_url=validation_server_url,
@@ -570,3 +578,7 @@ class FhirSender(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getIgnoreStatusCodes(self) -> Optional[List[int]]:
         return self.getOrDefault(self.ignore_status_codes)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getAdditionalRequestHeaders(self) -> Optional[Dict[str, str]]:
+        return self.getOrDefault(self.additional_request_headers)

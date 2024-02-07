@@ -89,6 +89,7 @@ class FhirReceiver(FrameworkTransformer):
         expand_fhir_bundle: bool = True,
         accept_type: Optional[str] = None,
         content_type: Optional[str] = None,
+        additional_request_headers: Optional[Dict[str, str]] = None,
         accept_encoding: Optional[str] = None,
         mode: str = FileWriteModes.MODE_OVERWRITE,
         ignore_status_codes: Optional[List[int]] = None,
@@ -146,6 +147,7 @@ class FhirReceiver(FrameworkTransformer):
         :param error_on_result_count: Throw exception when the response from FHIR count does not match the request count
         :param accept_type: (Optional) Accept header to use
         :param content_type: (Optional) Content-Type header to use
+        :param additional_request_headers: (Optional) Additional request headers to use
         :param accept_encoding: (Optional) Accept-encoding header to use
         :param ignore_status_codes: (Optional) do not throw an exception for these HTTP status codes
         :param mode: if output files exist, should we overwrite or append
@@ -302,6 +304,9 @@ class FhirReceiver(FrameworkTransformer):
         self.content_type: Param[Optional[str]] = Param(self, "content_type", "")
         self._setDefault(content_type=content_type)
 
+        self.additional_request_headers: Param[Optional[Dict[str, str]]] = Param(self, "additional_request_headers", "")
+        self._setDefault(additional_request_headers=additional_request_headers)
+
         self.accept_encoding: Param[Optional[str]] = Param(self, "accept_encoding", "")
         self._setDefault(accept_encoding=accept_encoding)
 
@@ -428,6 +433,7 @@ class FhirReceiver(FrameworkTransformer):
         accept_type: Optional[str] = self.getAcceptType()
         content_type: Optional[str] = self.getContentType()
         accept_encoding: Optional[str] = self.getAcceptEncoding()
+        additional_request_headers: Optional[Dict[str, str]] = self.getAdditionalRequestHeaders()
 
         ignore_status_codes: List[int] = self.getIgnoreStatusCodes() or []
         ignore_status_codes.append(200)
@@ -562,6 +568,7 @@ class FhirReceiver(FrameworkTransformer):
                         expand_fhir_bundle=expand_fhir_bundle,
                         accept_type=accept_type,
                         content_type=content_type,
+                        additional_request_headers=additional_request_headers,
                         accept_encoding=accept_encoding,
                         slug_column=slug_column,
                         retry_count=retry_count,
@@ -607,6 +614,7 @@ class FhirReceiver(FrameworkTransformer):
                             expand_fhir_bundle=expand_fhir_bundle,
                             accept_type=accept_type,
                             content_type=content_type,
+                            additional_request_headers=additional_request_headers,
                             accept_encoding=accept_encoding,
                             slug_column=slug_column,
                             retry_count=retry_count,
@@ -936,6 +944,7 @@ class FhirReceiver(FrameworkTransformer):
                     expand_fhir_bundle=expand_fhir_bundle,
                     accept_type=accept_type,
                     content_type=content_type,
+                    additional_request_headers=additional_request_headers,
                     accept_encoding=accept_encoding,
                     retry_count=retry_count,
                     exclude_status_codes_from_retry=exclude_status_codes_from_retry,
@@ -1099,6 +1108,10 @@ class FhirReceiver(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getContentType(self) -> Optional[str]:
         return self.getOrDefault(self.content_type)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getAdditionalRequestHeaders(self) -> Optional[Dict[str, str]]:
+        return self.getOrDefault(self.additional_request_headers)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getAcceptEncoding(self) -> Optional[str]:
