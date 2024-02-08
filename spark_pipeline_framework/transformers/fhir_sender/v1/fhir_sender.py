@@ -100,6 +100,7 @@ class FhirSender(FrameworkTransformer):
         :param auth_login_token: login token to send auth server
         :param auth_scopes: scopes to request
         :param additional_request_headers: (Optional) Additional request headers to use
+                                            (Eg: {"Accept-Charset": "utf-8"})
         :param operation: What FHIR operation to perform (e.g. $merge, delete, etc.)
         :param mode: if output files exist, should we overwrite or append
         :param error_view: (Optional) log errors into this view (view only exists IF there are errors)
@@ -252,6 +253,7 @@ class FhirSender(FrameworkTransformer):
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         resource_name: str = self.getResource()
+        parameters = self.getParameters()
         additional_request_headers: Optional[
             Dict[str, str]
         ] = self.getAdditionalRequestHeaders()
@@ -299,6 +301,17 @@ class FhirSender(FrameworkTransformer):
         num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+
+        if parameters and parameters.get("flow_name"):
+            user_agent_value = (
+                f"{parameters['flow_name']}/{parameters['team_name']}"
+                if parameters.get("team_name")
+                else str(parameters["flow_name"])
+            )
+            if additional_request_headers:
+                additional_request_headers.update({"User-Agent": user_agent_value})
+            else:
+                additional_request_headers = {"User-Agent": user_agent_value}
 
         # get access token first so we can reuse it
         if auth_client_id:

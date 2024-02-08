@@ -61,6 +61,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         send_to_fhir: Optional[bool] = True,
         mode: str = FileWriteModes.MODE_ERROR,
         run_synchronously: Optional[bool] = None,
+        additional_request_headers: Optional[Dict[str, str]] = None,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -73,6 +74,8 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         :param source_entity_name: resource name
         :param athena_schema: schema to use when writing data to Athena
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
+        :param additional_request_headers: (Optional) Additional request headers to use
+                                            (Eg: {"Accept-Charset": "utf-8"})
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -146,6 +149,11 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
+        self.additional_request_headers: Param[Optional[Dict[str, str]]] = Param(
+            self, "additional_request_headers", ""
+        )
+        self._setDefault(additional_request_headers=additional_request_headers)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -162,6 +170,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         source_entity_name: str = self.getSourceEntityName()
         athena_schema: Optional[str] = self.getAthenaSchema()
         parameters = self.getParameters()
+        additional_request_headers: Optional[
+            Dict[str, str]
+        ] = self.getAdditionalRequestHeaders()
         assert parameters
         progress_logger = self.getProgressLogger()
 
@@ -276,6 +287,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             auth_login_token=auth_login_token,
                             auth_scopes=auth_scopes,
                             name=f"{name}_fhir_sender",
+                            additional_request_headers=additional_request_headers,
                             mode=mode,
                             run_synchronously=run_synchronously,
                         ).transform(df)
@@ -340,3 +352,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getSendToFhir(self) -> Optional[bool]:
         return self.getOrDefault(self.send_to_fhir)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getAdditionalRequestHeaders(self) -> Optional[Dict[str, str]]:
+        return self.getOrDefault(self.additional_request_headers)

@@ -148,6 +148,7 @@ class FhirReceiver(FrameworkTransformer):
         :param accept_type: (Optional) Accept header to use
         :param content_type: (Optional) Content-Type header to use
         :param additional_request_headers: (Optional) Additional request headers to use
+                                            (Eg: {"Accept-Charset": "utf-8"})
         :param accept_encoding: (Optional) Accept-encoding header to use
         :param ignore_status_codes: (Optional) do not throw an exception for these HTTP status codes
         :param mode: if output files exist, should we overwrite or append
@@ -395,6 +396,7 @@ class FhirReceiver(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         server_url: Optional[str] = self.getServerUrl()
         resource_name: str = self.getResource()
+        parameters = self.getParameters()
         filter_by_resource: Optional[str] = self.getFilterByResource()
         filter_parameter: Optional[str] = self.getFilterParameter()
         additional_parameters: Optional[List[str]] = self.getAdditionalParameters()
@@ -481,6 +483,17 @@ class FhirReceiver(FrameworkTransformer):
         refresh_token_function: Optional[RefreshTokenFunction] = self.getOrDefault(
             self.refresh_token_function
         )
+
+        if parameters and parameters.get("flow_name"):
+            user_agent_value = (
+                f"{parameters['flow_name']}/{parameters['team_name']}"
+                if parameters.get("team_name")
+                else str(parameters["flow_name"])
+            )
+            if additional_request_headers:
+                additional_request_headers.update({"User-Agent": user_agent_value})
+            else:
+                additional_request_headers = {"User-Agent": user_agent_value}
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
