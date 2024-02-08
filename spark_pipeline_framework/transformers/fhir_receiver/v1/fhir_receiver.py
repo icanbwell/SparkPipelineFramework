@@ -304,7 +304,9 @@ class FhirReceiver(FrameworkTransformer):
         self.content_type: Param[Optional[str]] = Param(self, "content_type", "")
         self._setDefault(content_type=content_type)
 
-        self.additional_request_headers: Param[Optional[Dict[str, str]]] = Param(self, "additional_request_headers", "")
+        self.additional_request_headers: Param[Optional[Dict[str, str]]] = Param(
+            self, "additional_request_headers", ""
+        )
         self._setDefault(additional_request_headers=additional_request_headers)
 
         self.accept_encoding: Param[Optional[str]] = Param(self, "accept_encoding", "")
@@ -433,7 +435,9 @@ class FhirReceiver(FrameworkTransformer):
         accept_type: Optional[str] = self.getAcceptType()
         content_type: Optional[str] = self.getContentType()
         accept_encoding: Optional[str] = self.getAcceptEncoding()
-        additional_request_headers: Optional[Dict[str, str]] = self.getAdditionalRequestHeaders()
+        additional_request_headers: Optional[
+            Dict[str, str]
+        ] = self.getAdditionalRequestHeaders()
 
         ignore_status_codes: List[int] = self.getIgnoreStatusCodes() or []
         ignore_status_codes.append(200)

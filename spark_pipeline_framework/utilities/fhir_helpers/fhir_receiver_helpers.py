@@ -358,7 +358,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool,
         accept_type: Optional[str],
         content_type: Optional[str],
-        additional_request_headers: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         accept_encoding: Optional[str],
         slug_column: Optional[str],
         retry_count: Optional[int],
@@ -838,8 +838,12 @@ class FhirReceiverHelpers:
         if accept_encoding is not None:
             fhir_client = fhir_client.accept_encoding(accept_encoding)
         if additional_request_headers is not None:
-            logger.debug(f'Additional Request Headers to be sent - {additional_request_headers}')
-            fhir_client = fhir_client.additional_request_headers(additional_request_headers)
+            logger.debug(
+                f"Additional Request Headers to be sent - {additional_request_headers}"
+            )
+            fhir_client = fhir_client.additional_request_headers(
+                additional_request_headers
+            )
 
         fhir_client = fhir_client.resource(resource_name)
         if resource_id:

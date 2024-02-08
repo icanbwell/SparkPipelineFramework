@@ -190,7 +190,9 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(operation=operation)
 
-        self.additional_request_headers: Param[Optional[Dict[str, str]]] = Param(self, "additional_request_headers", "")
+        self.additional_request_headers: Param[Optional[Dict[str, str]]] = Param(
+            self, "additional_request_headers", ""
+        )
         self._setDefault(additional_request_headers=additional_request_headers)
 
         self.mode: Param[str] = Param(self, "mode", "")
@@ -250,7 +252,9 @@ class FhirSender(FrameworkTransformer):
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         resource_name: str = self.getResource()
-        additional_request_headers: Optional[Dict[str, str]] = self.getAdditionalRequestHeaders()
+        additional_request_headers: Optional[
+            Dict[str, str]
+        ] = self.getAdditionalRequestHeaders()
         server_url: str = self.getServerUrl()
         batch_size: Optional[int] = self.getBatchSize()
         throw_exception_on_validation_failure: Optional[

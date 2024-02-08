@@ -49,7 +49,9 @@ def send_json_bundle_to_fhir(
     if retry_count is not None:
         fhir_client = fhir_client.retry_count(retry_count)
     if additional_request_headers is not None:
-        logger.debug(f'Additional Request Headers to be sent - {additional_request_headers}')
+        logger.debug(
+            f"Additional Request Headers to be sent - {additional_request_headers}"
+        )
         fhir_client = fhir_client.additional_request_headers(additional_request_headers)
 
     if exclude_status_codes_from_retry:
@@ -103,7 +105,9 @@ def send_fhir_delete(
     fhir_client = fhir_client.resource(resource)
     fhir_client.resource(resource).id_(obj_id)
     if additional_request_headers is not None:
-        logger.debug(f'Additional Request Headers to be sent - {additional_request_headers}')
+        logger.debug(
+            f"Additional Request Headers to be sent - {additional_request_headers}"
+        )
         fhir_client = fhir_client.additional_request_headers(additional_request_headers)
     try:
         response: FhirDeleteResponse = fhir_client.delete()
