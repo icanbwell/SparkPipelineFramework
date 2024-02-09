@@ -49,7 +49,7 @@ def send_json_bundle_to_fhir(
     if retry_count is not None:
         fhir_client = fhir_client.retry_count(retry_count)
     if additional_request_headers is not None:
-        logger.debug(
+        logger.info(
             f"Additional Request Headers to be sent - {additional_request_headers}"
         )
         fhir_client = fhir_client.additional_request_headers(additional_request_headers)
