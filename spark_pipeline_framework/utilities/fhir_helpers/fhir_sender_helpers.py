@@ -105,7 +105,7 @@ def send_fhir_delete(
     fhir_client = fhir_client.resource(resource)
     fhir_client.resource(resource).id_(obj_id)
     if additional_request_headers is not None:
-        logger.debug(
+        logger.info(
             f"Additional Request Headers to be sent - {additional_request_headers}"
         )
         fhir_client = fhir_client.additional_request_headers(additional_request_headers)
