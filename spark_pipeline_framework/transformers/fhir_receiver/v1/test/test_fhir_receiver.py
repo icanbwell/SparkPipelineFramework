@@ -49,6 +49,8 @@ def test_fhir_receiver(spark_session: SparkSession) -> None:
         url_prefix=f"{test_name}",
     )
 
+    parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
+
     # Act
     with ProgressLogger() as progress_logger:
         FhirReceiver(
@@ -57,6 +59,7 @@ def test_fhir_receiver(spark_session: SparkSession) -> None:
             id_view="fhir_ids",
             file_path=patient_json_path,
             progress_logger=progress_logger,
+            parameters=parameters
             # run_synchronously=True
         ).transform(df)
 

@@ -74,6 +74,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool,
         accept_type: Optional[str],
         content_type: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         accept_encoding: Optional[str],
         slug_column: Optional[str],
         retry_count: Optional[int],
@@ -116,6 +117,7 @@ class FhirReceiverHelpers:
         :param expand_fhir_bundle: expand fhir bundle
         :param accept_type: accept type
         :param content_type: content type
+        :param additional_request_headers: Additional request headers
         :param accept_encoding: accept encoding
         :param slug_column: slug column
         :param retry_count: retry count
@@ -170,6 +172,7 @@ class FhirReceiverHelpers:
             expand_fhir_bundle=expand_fhir_bundle,
             accept_type=accept_type,
             content_type=content_type,
+            additional_request_headers=additional_request_headers,
             accept_encoding=accept_encoding,
             slug_column=slug_column,
             retry_count=retry_count,
@@ -210,6 +213,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool,
         accept_type: Optional[str],
         content_type: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         accept_encoding: Optional[str],
         slug_column: Optional[str],
         retry_count: Optional[int],
@@ -278,6 +282,7 @@ class FhirReceiverHelpers:
                 expand_fhir_bundle=expand_fhir_bundle,
                 accept_type=accept_type,
                 content_type=content_type,
+                additional_request_headers=additional_request_headers,
                 accept_encoding=accept_encoding,
                 slug_column=slug_column,
                 retry_count=retry_count,
@@ -314,6 +319,7 @@ class FhirReceiverHelpers:
                 expand_fhir_bundle=expand_fhir_bundle,
                 accept_type=accept_type,
                 content_type=content_type,
+                additional_request_headers=additional_request_headers,
                 accept_encoding=accept_encoding,
                 slug_column=slug_column,
                 retry_count=retry_count,
@@ -352,6 +358,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool,
         accept_type: Optional[str],
         content_type: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         accept_encoding: Optional[str],
         slug_column: Optional[str],
         retry_count: Optional[int],
@@ -387,6 +394,7 @@ class FhirReceiverHelpers:
                 expand_fhir_bundle=expand_fhir_bundle,
                 accept_type=accept_type,
                 content_type=content_type,
+                additional_request_headers=additional_request_headers,
                 accept_encoding=accept_encoding,
                 slug_column=slug_column,
                 retry_count=retry_count,
@@ -434,6 +442,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool,
         accept_type: Optional[str],
         content_type: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         accept_encoding: Optional[str],
         slug_column: Optional[str],
         retry_count: Optional[int],
@@ -481,6 +490,7 @@ class FhirReceiverHelpers:
                     expand_fhir_bundle=expand_fhir_bundle,
                     accept_type=accept_type,
                     content_type=content_type,
+                    additional_request_headers=additional_request_headers,
                     accept_encoding=accept_encoding,
                     slug_column=slug_column,
                     retry_count=retry_count,
@@ -561,6 +571,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool,
         accept_type: Optional[str],
         content_type: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         accept_encoding: Optional[str],
         slug_column: Optional[str],
         retry_count: Optional[int],
@@ -597,6 +608,7 @@ class FhirReceiverHelpers:
                 expand_fhir_bundle=expand_fhir_bundle,
                 accept_type=accept_type,
                 content_type=content_type,
+                additional_request_headers=additional_request_headers,
                 accept_encoding=accept_encoding,
                 slug_column=slug_column,
                 retry_count=retry_count,
@@ -671,6 +683,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool,
         accept_type: Optional[str],
         content_type: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         accept_encoding: Optional[str],
         slug_column: Optional[str],
         retry_count: Optional[int],
@@ -704,6 +717,7 @@ class FhirReceiverHelpers:
             expand_fhir_bundle=expand_fhir_bundle,
             accept_type=accept_type,
             content_type=content_type,
+            additional_request_headers=additional_request_headers,
             accept_encoding=accept_encoding,
             extra_context_to_return={slug_column: service_slug}
             if slug_column and service_slug
@@ -746,6 +760,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool = True,
         accept_type: Optional[str] = None,
         content_type: Optional[str] = None,
+        additional_request_headers: Optional[Dict[str, str]] = None,
         accept_encoding: Optional[str] = None,
         extra_context_to_return: Optional[Dict[str, Any]] = None,
         retry_count: Optional[int] = None,
@@ -785,6 +800,7 @@ class FhirReceiverHelpers:
         :param expand_fhir_bundle: expands the fhir bundle to create a list of resources
         :param accept_type: (Optional) Accept header to use
         :param content_type: (Optional) Content-Type header to use
+        :param additional_request_headers: (Optional) Additional request headers to add in FHIR request
         :param accept_encoding: (Optional) Accept-encoding header to use
         :param extra_context_to_return: a dict to return with every row (separate_bundle_resources is set)
                                         or with FhirGetResponse
@@ -821,6 +837,13 @@ class FhirReceiverHelpers:
             fhir_client = fhir_client.content_type(content_type)
         if accept_encoding is not None:
             fhir_client = fhir_client.accept_encoding(accept_encoding)
+        if additional_request_headers is not None:
+            logger.info(
+                f"Additional Request Headers to be sent - {additional_request_headers}"
+            )
+            fhir_client = fhir_client.additional_request_headers(
+                additional_request_headers
+            )
 
         fhir_client = fhir_client.resource(resource_name)
         if resource_id:
@@ -925,6 +948,7 @@ class FhirReceiverHelpers:
         expand_fhir_bundle: bool,
         accept_type: Optional[str],
         content_type: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         accept_encoding: Optional[str],
         retry_count: Optional[int],
         exclude_status_codes_from_retry: Optional[List[int]],
@@ -970,6 +994,7 @@ class FhirReceiverHelpers:
                     expand_fhir_bundle=expand_fhir_bundle,
                     accept_type=accept_type,
                     content_type=content_type,
+                    additional_request_headers=additional_request_headers,
                     accept_encoding=accept_encoding,
                     retry_count=retry_count,
                     exclude_status_codes_from_retry=exclude_status_codes_from_retry,
@@ -1030,6 +1055,7 @@ class FhirReceiverHelpers:
                         expand_fhir_bundle=expand_fhir_bundle,
                         accept_type=accept_type,
                         content_type=content_type,
+                        additional_request_headers=additional_request_headers,
                         accept_encoding=accept_encoding,
                         retry_count=retry_count,
                         exclude_status_codes_from_retry=exclude_status_codes_from_retry,

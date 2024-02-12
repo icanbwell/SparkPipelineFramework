@@ -28,6 +28,8 @@ def test_send_delete(spark_session: SparkSession) -> None:
     initial_state_response_files_dir: Path = temp_folder.joinpath("patients-response")
     delete_response_files_dir: Path = temp_folder.joinpath("patients-response-delete")
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
+
+    parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
     fhir_server_url: str = "http://fhir:3000/4_0_0"
     with ProgressLogger() as progress_logger:
         FhirSender(
@@ -36,6 +38,7 @@ def test_send_delete(spark_session: SparkSession) -> None:
             file_path=initial_state_files_dir,
             response_path=initial_state_response_files_dir,
             progress_logger=progress_logger,
+            parameters=parameters,
         ).transform(df)
 
     # Act
@@ -47,6 +50,8 @@ def test_send_delete(spark_session: SparkSession) -> None:
             response_path=delete_response_files_dir,
             progress_logger=progress_logger,
             operation=FhirSenderOperation.FHIR_OPERATION_DELETE,
+            parameters=parameters,
+            additional_request_headers={"SampleHeader": "SampleValue"},
         ).transform(df)
 
     # Assert

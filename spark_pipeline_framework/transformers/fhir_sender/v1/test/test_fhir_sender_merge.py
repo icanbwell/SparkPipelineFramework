@@ -23,6 +23,7 @@ def test_fhir_sender_merge(spark_session: SparkSession) -> None:
 
     test_files_dir: Path = data_dir.joinpath("test_files/patients")
     response_files_dir: Path = temp_folder.joinpath("patients-response")
+    parameters = {"flow_name": "Test Pipeline V2"}
 
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
@@ -39,6 +40,8 @@ def test_fhir_sender_merge(spark_session: SparkSession) -> None:
             progress_logger=progress_logger,
             batch_size=1,
             run_synchronously=True,
+            additional_request_headers={"SampleHeader": "SampleValue"},
+            parameters=parameters,
         ).transform(df)
 
     # Assert

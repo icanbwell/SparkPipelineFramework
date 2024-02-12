@@ -36,6 +36,7 @@ class FhirSenderProcessor:
         auth_login_token: Optional[str],
         auth_scopes: Optional[List[str]],
         auth_access_token: Optional[str],
+        additional_request_headers: Optional[Dict[str, str]],
         log_level: Optional[str],
         batch_size: Optional[int],
         validation_server_url: Optional[str],
@@ -83,6 +84,7 @@ class FhirSenderProcessor:
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
                     auth_access_token=auth_access_token,
+                    additional_request_headers=additional_request_headers,
                     log_level=log_level,
                 )
                 for item in json_data_list
@@ -128,6 +130,7 @@ class FhirSenderProcessor:
                             auth_login_token=auth_login_token,
                             auth_scopes=auth_scopes,
                             auth_access_token=auth_access_token1,
+                            additional_request_headers=additional_request_headers,
                             log_level=log_level,
                             retry_count=retry_count,
                             exclude_status_codes_from_retry=exclude_status_codes_from_retry,
@@ -164,6 +167,7 @@ class FhirSenderProcessor:
                         auth_login_token=auth_login_token,
                         auth_scopes=auth_scopes,
                         auth_access_token=auth_access_token,
+                        additional_request_headers=additional_request_headers,
                         logger=logger,
                         log_level=log_level,
                         retry_count=retry_count,
