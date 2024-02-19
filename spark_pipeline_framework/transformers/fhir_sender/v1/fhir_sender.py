@@ -304,7 +304,9 @@ class FhirSender(FrameworkTransformer):
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
-                f"{parameters['team_name']} : {parameters['flow_name']}"
+                f"{parameters['team_name']}:helix.pipelines:{parameters['flow_name']}".replace(
+                    " ", ""
+                )
                 if parameters.get("team_name")
                 else str(parameters["flow_name"])
             )
