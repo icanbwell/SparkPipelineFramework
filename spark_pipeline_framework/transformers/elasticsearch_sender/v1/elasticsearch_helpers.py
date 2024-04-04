@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterator, List, Optional
 
 from opensearchpy.helpers import bulk
 from furl import furl
+from opensearchpy.helpers.errors import BulkIndexError
 
 from spark_pipeline_framework.transformers.elasticsearch_sender.v1.elasticsearch_result import (
     ElasticSearchResult,
@@ -72,11 +73,17 @@ def send_json_bundle_to_elasticsearch(
     payload: List[Dict[str, Any]] = list(
         generate_es_bulk(json_data_list, operation, index, doc_id_prefix)
     )
-    success: int
-    failed: int
-    success, failed = bulk(
-        client=es_client, actions=payload, index=index, stats_only=True
-    )
+    success: int = 0
+    failed: int = 0
+
+    try:
+        success, failed = bulk(
+            client=es_client, actions=payload, index=index, stats_only=True
+        )
+    except BulkIndexError as e:
+        for error in e.errors:
+            logger.error(f"The following record failed to index: {error}")
+
     full_uri: furl = furl(server_url)
     full_uri /= index
     return ElasticSearchResult(
