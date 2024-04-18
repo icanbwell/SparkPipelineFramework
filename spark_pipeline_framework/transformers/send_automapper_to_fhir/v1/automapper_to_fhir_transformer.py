@@ -290,6 +290,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             additional_request_headers=additional_request_headers,
                             mode=mode,
                             run_synchronously=run_synchronously,
+                            num_partitions=parameters.get("num_partitions"),
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()

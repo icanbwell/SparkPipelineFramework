@@ -100,10 +100,6 @@ class FhirSenderProcessor:
                 count: int = len(json_data_list)
                 for item in json_data_list:
                     i += 1
-                    print(
-                        f"Sending {i} of {count} from partition {partition_index} "
-                        f"for {resource_name}: {json.dumps(item.asDict(recursive=True), default=str)}"
-                    )
                     current_bundle: List[Dict[str, Any]]
                     json_data_list_1: List[str] = [
                         convert_dict_to_fhir_json(item.asDict(recursive=True))
@@ -116,6 +112,10 @@ class FhirSenderProcessor:
                         else None
                     )
                     first_id = first_item.get("id") if first_item is not None else None
+                    print(
+                        f"Sending {i} of {count} from partition {partition_index} "
+                        f"for {resource_name}: {first_id}"
+                    )
                     if first_id:
                         result: Optional[FhirMergeResponse] = send_json_bundle_to_fhir(
                             id_=first_id,
