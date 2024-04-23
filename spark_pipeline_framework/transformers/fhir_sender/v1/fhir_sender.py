@@ -9,8 +9,8 @@ from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.rdd import RDD
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col, get_json_object, udf
-from pyspark.sql.types import Row, StringType
+from pyspark.sql.functions import col, get_json_object
+from pyspark.sql.types import Row
 from pyspark.sql.utils import AnalysisException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -84,7 +84,9 @@ class FhirSender(FrameworkTransformer):
         delta_lake_table: Optional[str] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         run_synchronously: Optional[bool] = None,
-        sort: Optional[Dict[str, Any]] = None,
+        sort_by_column_name: Optional[str] = None,
+        drop_sorted_column: Optional[bool] = None,
+        partition_by_column_name: Optional[str] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -113,11 +115,9 @@ class FhirSender(FrameworkTransformer):
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
-        :param sort: (Optional) Whether to sort the df or not. It accepts 2 parameters - {
-                column_for_sorting: "columnName to be used for sorting",
-                drop_column: bool (Whether to drop the column used for sorting)
-                partition_by_column_name: (str) Name of the column that will be used to repartition df
-            }
+        :param sort_by_column_name: (Optional) columnName to be used for sorting
+        :param drop_sorted_column: (Optional) Whether to drop the column used for sorting
+        :param partition_by_column_name: (Optional) Name of the column that will be used to repartition df
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -243,8 +243,20 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
-        self.sort: Param[Optional[Dict[str, Any]]] = Param(self, "sort", "")
-        self._setDefault(sort=sort)
+        self.sort_by_column_name: Param[Optional[str]] = Param(
+            self, "sort_by_column_name", ""
+        )
+        self._setDefault(sort_by_column_name=sort_by_column_name)
+
+        self.drop_sorted_column: Param[Optional[bool]] = Param(
+            self, "drop_sorted_column", ""
+        )
+        self._setDefault(drop_sorted_column=drop_sorted_column)
+
+        self.partition_by_column_name: Param[Optional[str]] = Param(
+            self, "partition_by_column_name", ""
+        )
+        self._setDefault(partition_by_column_name=partition_by_column_name)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -280,7 +292,9 @@ class FhirSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
-        sort = self.getOrDefault(self.sort)
+        sort_by_column_name = self.getOrDefault(self.sort_by_column_name)
+        drop_sorted_column = self.getOrDefault(self.drop_sorted_column)
+        partition_by_column_name = self.getOrDefault(self.partition_by_column_name)
 
         if not batch_size or batch_size == 0:
             batch_size = 30
@@ -358,13 +372,6 @@ class FhirSender(FrameworkTransformer):
                     json_df = df.sql_ctx.read.text(
                         path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
                     )
-                    if sort and sort.get("column_for_sorting"):
-                        json_df = json_df.withColumn(
-                            sort["column_for_sorting"],
-                            get_json_object(
-                                col("value"), f"$.{sort['column_for_sorting']}"
-                            ),
-                        ).orderBy(sort["column_for_sorting"])
 
             except AnalysisException as e:
                 if str(e).startswith("Path does not exist:"):
@@ -383,31 +390,30 @@ class FhirSender(FrameworkTransformer):
                 desired_partitions: int = num_partitions or math.ceil(
                     row_count / batch_size
                 )
-                if sort and sort.get("partition_by_column_name"):
+                if partition_by_column_name and not num_partitions:
                     json_df.withColumn(
-                        sort["partition_by_column_name"],
-                        get_json_object(
-                            col("value"), f"$.{sort['partition_by_column_name']}"
-                        ),
-                    ).repartition(sort["partition_by_column_name"])
-                    if sort.get("column_for_sorting"):
-                        json_df.sortWithinPartitions(sort["column_for_sorting"])
-                    json_df = json_df.drop(sort["partition_by_column_name"])
-                    desired_partitions = json_df.rdd.getNumPartitions()
+                        partition_by_column_name,
+                        get_json_object(col("value"), f"$.{partition_by_column_name}"),
+                    ).repartition(partition_by_column_name)
+                    json_df.drop(partition_by_column_name)
 
-                if sort and sort.get("drop_column"):
-                    # removing field from all the json values
-                    remove_field_from_json_udf = udf(
-                        lambda json_data: remove_field_from_json(
-                            json_data, sort["column_for_sorting"]
-                        ),
-                        StringType(),
-                    )
-                    json_df = json_df.withColumn(
-                        "value", remove_field_from_json_udf(col("value"))
-                    )
-                    # dropping column which was added to sort the data within partitions
-                    json_df = json_df.drop(sort["column_for_sorting"])
+                if sort_by_column_name:
+                    json_df.withColumn(
+                        sort_by_column_name,
+                        get_json_object(col("value"), f"$.{sort_by_column_name}"),
+                    ).sortWithinPartitions(sort_by_column_name)
+                    json_df.drop(sort_by_column_name)
+
+                if sort_by_column_name and drop_sorted_column:
+                    # removing sorted field from all the json values
+                    json_schema = json_df.schema
+                    json_df = json_df.rdd.map(
+                        lambda row: Row(
+                            value=remove_field_from_json(
+                                row["value"], sort_by_column_name
+                            )
+                        )
+                    ).toDF(json_schema)
 
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
@@ -445,11 +451,12 @@ class FhirSender(FrameworkTransformer):
                     )
                 else:
                     # ---- Now process all the results ----
+                    if not partition_by_column_name:
+                        # repartition only when we've already repartitioned by column
+                        json_df.repartition(desired_partitions)
                     rdd: RDD[
                         Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
-                    ] = json_df.repartition(
-                        desired_partitions
-                    ).rdd.mapPartitionsWithIndex(
+                    ] = json_df.rdd.mapPartitionsWithIndex(
                         lambda partition_index, rows: FhirSenderProcessor.send_partition_to_server(
                             partition_index=partition_index,
                             rows=rows,

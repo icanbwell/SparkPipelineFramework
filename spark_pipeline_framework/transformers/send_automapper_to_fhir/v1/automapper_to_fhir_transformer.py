@@ -186,7 +186,6 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
             Dict[str, str]
         ] = self.getAdditionalRequestHeaders()
         sort_data = self.getOrDefault(self.sort_data)
-        print(f"sort data -> {sort_data}")
         assert parameters
         progress_logger = self.getProgressLogger()
 
@@ -310,15 +309,15 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             mode=mode,
                             run_synchronously=run_synchronously,
                             num_partitions=parameters.get("num_partitions"),
-                            sort={
-                                "column_for_sorting": sort_data.get(  # type: ignore
-                                    "column_for_sorting"
-                                ),
-                                "drop_column": sort_data.get("drop_column"),  # type: ignore
-                                "partition_by_column_name": sort_data.get(  # type: ignore
-                                    "partition_by_column_name"
-                                ),
-                            }
+                            sort_by_column_name=sort_data.get("column_for_sorting")  # type: ignore
+                            if need_sorting
+                            else None,
+                            drop_sorted_column=sort_data.get("drop_column")  # type: ignore
+                            if need_sorting
+                            else None,
+                            partition_by_column_name=sort_data.get(  # type: ignore
+                                "partition_by_column_name"
+                            )
                             if need_sorting
                             else None,
                         ).transform(df)
