@@ -1,7 +1,6 @@
 import json
 from typing import Any, Callable, Dict, List, Optional
 
-from pyspark.sql.functions import col
 
 from spark_pipeline_framework.transformers.athena_table_creator.v1.athena_table_creator import (
     AthenaTableCreator,
@@ -164,9 +163,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(additional_request_headers=additional_request_headers)
 
-        self.sort_data: Param[Optional[Dict[str, Any]]] = Param(
-            self, "sort_data", ""
-        )
+        self.sort_data: Param[Optional[Dict[str, Any]]] = Param(self, "sort_data", "")
         self._setDefault(sort_data=sort_data)
 
         kwargs = self._input_kwargs
@@ -237,7 +234,11 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                         )
                     # get resource name
                     result_df: DataFrame = df.sql_ctx.table(view)
-                    need_sorting: bool = True if (sort_data and view in sort_data.get('views')) else False
+                    need_sorting: bool = (
+                        True
+                        if (sort_data and view in sort_data.get("views"))  # type: ignore
+                        else False
+                    )
                     if spark_is_data_frame_empty(df=result_df):
                         self.logger.info(f"No data to export/send for view '{view}'")
                         continue
@@ -310,10 +311,16 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             run_synchronously=run_synchronously,
                             num_partitions=parameters.get("num_partitions"),
                             sort={
-                                'column_for_sorting': sort_data.get('column_for_sorting'),
-                                'drop_column': sort_data.get('drop_column'),
-                                'partition_by_column_name': sort_data.get('partition_by_column_name')
-                            } if need_sorting else None,
+                                "column_for_sorting": sort_data.get(  # type: ignore
+                                    "column_for_sorting"
+                                ),
+                                "drop_column": sort_data.get("drop_column"),  # type: ignore
+                                "partition_by_column_name": sort_data.get(  # type: ignore
+                                    "partition_by_column_name"
+                                ),
+                            }
+                            if need_sorting
+                            else None,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
