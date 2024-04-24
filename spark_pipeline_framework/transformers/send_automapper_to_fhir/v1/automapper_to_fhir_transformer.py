@@ -65,6 +65,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         additional_request_headers: Optional[Dict[str, str]] = None,
         sort_data: Optional[Dict[str, Dict[str, Any]]] = None,
         partition_by_column_name: Optional[str] = None,
+        enable_repartitioning: Optional[bool] = None,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -87,6 +88,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                                 partition_by_column_name: (str) Name of the column that will be used to repartition df
                             }
                         }
+        :param enable_repartitioning: (Optional) Enable repartitioning or not
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -170,6 +172,10 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(sort_data=sort_data)
 
+        self.enable_repartitioning: Param[Optional[bool]] = Param(
+            self, "enable_repartitioning", ""
+        )
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -189,7 +195,12 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         additional_request_headers: Optional[
             Dict[str, str]
         ] = self.getAdditionalRequestHeaders()
-        sort_data = self.getOrDefault(self.sort_data)
+        sort_data: Optional[Dict[str, Dict[str, Any]]] = self.getOrDefault(
+            self.sort_data
+        )
+        enable_repartitioning: Optional[bool] = self.getOrDefault(
+            self.enable_repartitioning
+        )
         assert parameters
         progress_logger = self.getProgressLogger()
 
@@ -327,6 +338,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             )
                             if need_sorting and sort_data
                             else None,
+                            enable_repartitioning=enable_repartitioning,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()

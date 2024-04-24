@@ -87,6 +87,7 @@ class FhirSender(FrameworkTransformer):
         sort_by_column_name: Optional[str] = None,
         drop_fields_from_json: Optional[List[str]] = None,
         partition_by_column_name: Optional[str] = None,
+        enable_repartitioning: Optional[bool] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -118,6 +119,7 @@ class FhirSender(FrameworkTransformer):
         :param sort_by_column_name: (Optional) columnName to be used for sorting
         :param drop_fields_from_json: (Optional) List of field names to drop from json
         :param partition_by_column_name: (Optional) Name of the column that will be used to repartition df
+        :param enable_repartitioning: (Optional) Enable repartitioning or not
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -258,6 +260,10 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(partition_by_column_name=partition_by_column_name)
 
+        self.enable_repartitioning: Param[Optional[bool]] = Param(
+            self, "enable_repartitioning", ""
+        )
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -292,9 +298,13 @@ class FhirSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
-        sort_by_column_name = self.getOrDefault(self.sort_by_column_name)
-        drop_fields_from_json = self.getOrDefault(self.drop_fields_from_json)
-        partition_by_column_name = self.getOrDefault(self.partition_by_column_name)
+        sort_by_column_name: Optional[str] = self.getOrDefault(self.sort_by_column_name)
+        drop_fields_from_json: Optional[List[str]] = self.getOrDefault(
+            self.drop_fields_from_json
+        )
+        partition_by_column_name: Optional[str] = self.getOrDefault(
+            self.partition_by_column_name
+        )
 
         if not batch_size or batch_size == 0:
             batch_size = 30
@@ -324,6 +334,9 @@ class FhirSender(FrameworkTransformer):
         )
 
         num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
+        enable_repartitioning: Optional[bool] = (
+            True if num_partitions else self.getOrDefault(self.enable_repartitioning)
+        )
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
@@ -451,8 +464,8 @@ class FhirSender(FrameworkTransformer):
                     )
                 else:
                     # ---- Now process all the results ----
-                    if not partition_by_column_name:
-                        # repartition only when we've already repartitioned by column
+                    if enable_repartitioning and not partition_by_column_name:
+                        # repartition only when we haven't already repartitioned by column and enable_repartitioning is True
                         json_df = json_df.repartition(desired_partitions)
                     rdd: RDD[
                         Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
