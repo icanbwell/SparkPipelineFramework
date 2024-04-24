@@ -85,7 +85,7 @@ class FhirSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = None,
         run_synchronously: Optional[bool] = None,
         sort_by_column_name: Optional[str] = None,
-        drop_sorted_column: Optional[bool] = None,
+        drop_fields_from_json: Optional[List[str]] = None,
         partition_by_column_name: Optional[str] = None,
     ):
         """
@@ -116,7 +116,7 @@ class FhirSender(FrameworkTransformer):
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         :param sort_by_column_name: (Optional) columnName to be used for sorting
-        :param drop_sorted_column: (Optional) Whether to drop the column used for sorting
+        :param drop_fields_from_json: (Optional) List of field names to drop from json
         :param partition_by_column_name: (Optional) Name of the column that will be used to repartition df
         """
         super().__init__(
@@ -248,10 +248,10 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(sort_by_column_name=sort_by_column_name)
 
-        self.drop_sorted_column: Param[Optional[bool]] = Param(
-            self, "drop_sorted_column", ""
+        self.drop_fields_from_json: Param[Optional[List[str]]] = Param(
+            self, "drop_fields_from_json", ""
         )
-        self._setDefault(drop_sorted_column=drop_sorted_column)
+        self._setDefault(drop_fields_from_json=drop_fields_from_json)
 
         self.partition_by_column_name: Param[Optional[str]] = Param(
             self, "partition_by_column_name", ""
@@ -293,7 +293,7 @@ class FhirSender(FrameworkTransformer):
             self.cache_storage_level
         )
         sort_by_column_name = self.getOrDefault(self.sort_by_column_name)
-        drop_sorted_column = self.getOrDefault(self.drop_sorted_column)
+        drop_fields_from_json = self.getOrDefault(self.drop_fields_from_json)
         partition_by_column_name = self.getOrDefault(self.partition_by_column_name)
 
         if not batch_size or batch_size == 0:
@@ -404,17 +404,16 @@ class FhirSender(FrameworkTransformer):
                     ).sortWithinPartitions(sort_by_column_name)
                     json_df = json_df.drop(sort_by_column_name)
 
-                    if drop_sorted_column:
-                        json_schema = json_df.schema
-                        # removing sorted field from all the json values
-                        json_df = json_df.rdd.map(
-                            lambda row: Row(
-                                value=remove_field_from_json(
-                                    row["value"], sort_by_column_name
-                                ),
+                if drop_fields_from_json:
+                    json_schema = json_df.schema
+                    # removing sorted field from all the json values
+                    json_df = json_df.rdd.map(
+                        lambda row: Row(
+                            value=remove_field_from_json(
+                                row["value"], drop_fields_from_json
                             ),
-                            preservesPartitioning=True,
-                        ).toDF(json_schema)
+                        ),
+                    ).toDF(json_schema)
 
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"

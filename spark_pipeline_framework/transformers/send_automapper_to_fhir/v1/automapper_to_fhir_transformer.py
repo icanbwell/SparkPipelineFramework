@@ -63,7 +63,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         mode: str = FileWriteModes.MODE_ERROR,
         run_synchronously: Optional[bool] = None,
         additional_request_headers: Optional[Dict[str, str]] = None,
-        sort_data: Optional[Dict[str, Any]] = None,
+        sort_data: Optional[Dict[str, Dict[str, Any]]] = None,
         partition_by_column_name: Optional[str] = None,
     ):
         """
@@ -80,10 +80,12 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         :param additional_request_headers: (Optional) Additional request headers to use
                                             (Eg: {"Accept-Charset": "utf-8"})
         :param sort_data: (Optional) Whether to sort the data. Format - {
-                            views: [List of views],
-                            column_for_sorting: "columnName to be used for sorting",
-                            drop_column: bool (Whether to drop the column used for sorting),
-                            partition_by_column_name: (str) Name of the column that will be used to repartition df
+                            KEY - view: view name,
+                            VALUE - {
+                                column_for_sorting: "columnName to be used for sorting",
+                                drop_fields_from_json: (list) List of fields to drop from json,
+                                partition_by_column_name: (str) Name of the column that will be used to repartition df
+                            }
                         }
         """
         super().__init__(
@@ -163,7 +165,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(additional_request_headers=additional_request_headers)
 
-        self.sort_data: Param[Optional[Dict[str, Any]]] = Param(self, "sort_data", "")
+        self.sort_data: Param[Optional[Dict[str, Dict[str, Any]]]] = Param(
+            self, "sort_data", ""
+        )
         self._setDefault(sort_data=sort_data)
 
         kwargs = self._input_kwargs
@@ -233,10 +237,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                         )
                     # get resource name
                     result_df: DataFrame = df.sql_ctx.table(view)
+                    # True if sort_data field exists and view name is present as dict key
                     need_sorting: bool = (
-                        True
-                        if (sort_data and view in sort_data.get("views", []))
-                        else False
+                        True if (sort_data and sort_data.get(view)) else False
                     )
                     if spark_is_data_frame_empty(df=result_df):
                         self.logger.info(f"No data to export/send for view '{view}'")
@@ -309,13 +312,17 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             mode=mode,
                             run_synchronously=run_synchronously,
                             num_partitions=parameters.get("num_partitions"),
-                            sort_by_column_name=sort_data.get("column_for_sorting")
+                            sort_by_column_name=sort_data[view].get(
+                                "column_for_sorting"
+                            )
                             if need_sorting and sort_data
                             else None,
-                            drop_sorted_column=sort_data.get("drop_column")
+                            drop_fields_from_json=sort_data[view].get(
+                                "drop_fields_from_json"
+                            )
                             if need_sorting and sort_data
                             else None,
-                            partition_by_column_name=sort_data.get(
+                            partition_by_column_name=sort_data[view].get(
                                 "partition_by_column_name"
                             )
                             if need_sorting and sort_data
