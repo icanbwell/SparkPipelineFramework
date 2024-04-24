@@ -235,7 +235,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                     result_df: DataFrame = df.sql_ctx.table(view)
                     need_sorting: bool = (
                         True
-                        if (sort_data and view in sort_data.get("views"))  # type: ignore
+                        if (sort_data and view in sort_data.get("views", []))
                         else False
                     )
                     if spark_is_data_frame_empty(df=result_df):
@@ -309,16 +309,16 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             mode=mode,
                             run_synchronously=run_synchronously,
                             num_partitions=parameters.get("num_partitions"),
-                            sort_by_column_name=sort_data.get("column_for_sorting")  # type: ignore
-                            if need_sorting
+                            sort_by_column_name=sort_data.get("column_for_sorting")
+                            if need_sorting and sort_data
                             else None,
-                            drop_sorted_column=sort_data.get("drop_column")  # type: ignore
-                            if need_sorting
+                            drop_sorted_column=sort_data.get("drop_column")
+                            if need_sorting and sort_data
                             else None,
-                            partition_by_column_name=sort_data.get(  # type: ignore
+                            partition_by_column_name=sort_data.get(
                                 "partition_by_column_name"
                             )
-                            if need_sorting
+                            if need_sorting and sort_data
                             else None,
                         ).transform(df)
                     if progress_logger is not None:

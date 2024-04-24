@@ -391,29 +391,31 @@ class FhirSender(FrameworkTransformer):
                     row_count / batch_size
                 )
                 if partition_by_column_name:
-                    json_df.withColumn(
+                    json_df = json_df.withColumn(
                         partition_by_column_name,
                         get_json_object(col("value"), f"$.{partition_by_column_name}"),
                     ).repartition(desired_partitions, partition_by_column_name)
-                    json_df.drop(partition_by_column_name)
+                    json_df = json_df.drop(partition_by_column_name)
 
                 if sort_by_column_name:
-                    json_df.withColumn(
+                    json_df = json_df.withColumn(
                         sort_by_column_name,
                         get_json_object(col("value"), f"$.{sort_by_column_name}"),
                     ).sortWithinPartitions(sort_by_column_name)
-                    json_df.drop(sort_by_column_name)
 
-                if sort_by_column_name and drop_sorted_column:
-                    # removing sorted field from all the json values
-                    json_schema = json_df.schema
-                    json_df = json_df.rdd.map(
-                        lambda row: Row(
-                            value=remove_field_from_json(
-                                row["value"], sort_by_column_name
+                    if drop_sorted_column:
+                        json_schema = json_df.schema
+                        # removing sorted field from all the json values
+                        json_df = json_df.rdd.map(
+                            lambda row: Row(
+                                value=remove_field_from_json(
+                                    row["value"], sort_by_column_name
+                                ),
+                                **{sort_by_column_name: row[sort_by_column_name]},
                             )
-                        )
-                    ).toDF(json_schema)
+                        ).toDF(json_schema)
+
+                    json_df = json_df.drop(sort_by_column_name)
 
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
@@ -453,7 +455,7 @@ class FhirSender(FrameworkTransformer):
                     # ---- Now process all the results ----
                     if not partition_by_column_name:
                         # repartition only when we've already repartitioned by column
-                        json_df.repartition(desired_partitions)
+                        json_df = json_df.repartition(desired_partitions)
                     rdd: RDD[
                         Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
                     ] = json_df.rdd.mapPartitionsWithIndex(
