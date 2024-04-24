@@ -45,7 +45,7 @@ from spark_pipeline_framework.utilities.flattener.flattener import flatten
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
-from spark_pipeline_framework.utilities.udf_functions import remove_field_from_json
+from spark_pipeline_framework.utilities.map_functions import remove_field_from_json
 
 
 class FhirSender(FrameworkTransformer):
@@ -390,11 +390,11 @@ class FhirSender(FrameworkTransformer):
                 desired_partitions: int = num_partitions or math.ceil(
                     row_count / batch_size
                 )
-                if partition_by_column_name and not num_partitions:
+                if partition_by_column_name:
                     json_df.withColumn(
                         partition_by_column_name,
                         get_json_object(col("value"), f"$.{partition_by_column_name}"),
-                    ).repartition(partition_by_column_name)
+                    ).repartition(desired_partitions, partition_by_column_name)
                     json_df.drop(partition_by_column_name)
 
                 if sort_by_column_name:
