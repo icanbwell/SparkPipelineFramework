@@ -402,6 +402,7 @@ class FhirSender(FrameworkTransformer):
                         sort_by_column_name,
                         get_json_object(col("value"), f"$.{sort_by_column_name}"),
                     ).sortWithinPartitions(sort_by_column_name)
+                    json_df = json_df.drop(sort_by_column_name)
 
                     if drop_sorted_column:
                         json_schema = json_df.schema
@@ -411,11 +412,9 @@ class FhirSender(FrameworkTransformer):
                                 value=remove_field_from_json(
                                     row["value"], sort_by_column_name
                                 ),
-                                **{sort_by_column_name: row[sort_by_column_name]},
-                            )
+                            ),
+                            preservesPartitioning=True,
                         ).toDF(json_schema)
-
-                    json_df = json_df.drop(sort_by_column_name)
 
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
