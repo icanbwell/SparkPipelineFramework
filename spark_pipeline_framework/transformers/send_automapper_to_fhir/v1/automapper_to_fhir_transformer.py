@@ -83,7 +83,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         :param sort_data: (Optional) Whether to sort the data. Format - {
                             KEY - view: view name,
                             VALUE - {
-                                column_for_sorting: "columnName to be used for sorting",
+                                column_for_sorting: "columnName and columnType to be used for sorting",
                                 drop_fields_from_json: (list) List of fields to drop from json,
                                 partition_by_column_name: (str) Name of the column that will be used to repartition df
                             }
@@ -175,6 +175,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self.enable_repartitioning: Param[Optional[bool]] = Param(
             self, "enable_repartitioning", ""
         )
+        self._setDefault(enable_repartitioning=enable_repartitioning)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)

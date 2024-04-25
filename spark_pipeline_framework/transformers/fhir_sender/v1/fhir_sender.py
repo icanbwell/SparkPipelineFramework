@@ -84,7 +84,7 @@ class FhirSender(FrameworkTransformer):
         delta_lake_table: Optional[str] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         run_synchronously: Optional[bool] = None,
-        sort_by_column_name: Optional[str] = None,
+        sort_by_column_name: Optional[tuple[str, Any]] = None,
         drop_fields_from_json: Optional[List[str]] = None,
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: Optional[bool] = None,
@@ -116,7 +116,7 @@ class FhirSender(FrameworkTransformer):
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
-        :param sort_by_column_name: (Optional) columnName to be used for sorting
+        :param sort_by_column_name: (Optional) tuple of columnName, columnType to be used for sorting
         :param drop_fields_from_json: (Optional) List of field names to drop from json
         :param partition_by_column_name: (Optional) Name of the column that will be used to repartition df
         :param enable_repartitioning: (Optional) Enable repartitioning or not
@@ -245,7 +245,7 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
-        self.sort_by_column_name: Param[Optional[str]] = Param(
+        self.sort_by_column_name: Param[Optional[tuple[str, Any]]] = Param(
             self, "sort_by_column_name", ""
         )
         self._setDefault(sort_by_column_name=sort_by_column_name)
@@ -263,6 +263,7 @@ class FhirSender(FrameworkTransformer):
         self.enable_repartitioning: Param[Optional[bool]] = Param(
             self, "enable_repartitioning", ""
         )
+        self._setDefault(enable_repartitioning=enable_repartitioning)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -298,7 +299,9 @@ class FhirSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
-        sort_by_column_name: Optional[str] = self.getOrDefault(self.sort_by_column_name)
+        sort_by_column_name: Optional[tuple[str, Any]] = self.getOrDefault(
+            self.sort_by_column_name
+        )
         drop_fields_from_json: Optional[List[str]] = self.getOrDefault(
             self.drop_fields_from_json
         )
@@ -411,11 +414,14 @@ class FhirSender(FrameworkTransformer):
                     json_df = json_df.drop(partition_by_column_name)
 
                 if sort_by_column_name:
+                    column_name, column_type = sort_by_column_name
                     json_df = json_df.withColumn(
-                        sort_by_column_name,
-                        get_json_object(col("value"), f"$.{sort_by_column_name}"),
-                    ).sortWithinPartitions(sort_by_column_name)
-                    json_df = json_df.drop(sort_by_column_name)
+                        column_name,
+                        get_json_object(col("value"), f"$.{column_name}").cast(
+                            column_type
+                        ),
+                    ).sortWithinPartitions(column_name)
+                    json_df = json_df.drop(column_name)
 
                 if drop_fields_from_json:
                     json_schema = json_df.schema
