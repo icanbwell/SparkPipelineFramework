@@ -337,11 +337,12 @@ class FhirSender(FrameworkTransformer):
         )
 
         num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
-        enable_repartitioning: bool = (
-            True if num_partitions else self.getOrDefault(self.enable_repartitioning)
-        )
+        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+
+        if not enable_repartitioning:
+            assert (partition_by_column_name or num_partitions) is None
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
