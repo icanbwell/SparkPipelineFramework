@@ -74,6 +74,9 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
     test_files_dir: Path = data_dir.joinpath("test_files/eob_with_added_field")
     response_files_dir: Path = temp_folder.joinpath("eob-with-added-field-response")
 
+    to_delete_files_dir: Path = data_dir.joinpath("test_files/eob_delete")
+    delete_response_files_dir: Path = temp_folder.joinpath("eob-response-delete")
+
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
     fhir_server_url: str = "http://fhir:3000/4_0_0"
@@ -121,10 +124,7 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
         assert obj["item"][0]["adjudication"][0]["amount"]["value"] == 17
         assert obj.get("source_file_line_num") is None
 
-    # delete the eob responses created on local FHIR
-    to_delete_files_dir: Path = data_dir.joinpath("test_files/eob_delete")
-    delete_response_files_dir: Path = temp_folder.joinpath("eob-response-delete")
-    with ProgressLogger() as progress_logger:
+        # delete the eob responses created on local FHIR
         FhirSender(
             resource="ExplanationOfBenefit",
             server_url=fhir_server_url,
