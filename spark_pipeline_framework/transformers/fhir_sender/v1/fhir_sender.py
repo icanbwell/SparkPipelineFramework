@@ -404,8 +404,10 @@ class FhirSender(FrameworkTransformer):
                     f" with batch_size {batch_size}  -----"
                 )
                 assert batch_size and batch_size > 0
-                desired_partitions: int = num_partitions or math.ceil(
-                    row_count / batch_size
+                desired_partitions: int = (
+                    (num_partitions or math.ceil(row_count / batch_size))
+                    if enable_repartitioning
+                    else json_df.rdd.getNumPartitions()
                 )
                 if partition_by_column_name:
                     json_df = json_df.withColumn(
