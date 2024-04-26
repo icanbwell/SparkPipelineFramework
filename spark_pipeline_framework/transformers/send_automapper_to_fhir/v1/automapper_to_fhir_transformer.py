@@ -65,7 +65,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         additional_request_headers: Optional[Dict[str, str]] = None,
         sort_data: Optional[Dict[str, Dict[str, Any]]] = None,
         partition_by_column_name: Optional[str] = None,
-        enable_repartitioning: Optional[bool] = None,
+        enable_repartitioning: bool = True,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -83,12 +83,12 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         :param sort_data: (Optional) Whether to sort the data. Format - {
                             KEY - view: view name,
                             VALUE - {
-                                column_for_sorting: "columnName and columnType to be used for sorting",
+                                sort_by_column_name_and_type: "columnName and columnType to be used for sorting",
                                 drop_fields_from_json: (list) List of fields to drop from json,
                                 partition_by_column_name: (str) Name of the column that will be used to repartition df
                             }
                         }
-        :param enable_repartitioning: (Optional) Enable repartitioning or not
+        :param enable_repartitioning: Enable repartitioning or not, default True
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -172,7 +172,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(sort_data=sort_data)
 
-        self.enable_repartitioning: Param[Optional[bool]] = Param(
+        self.enable_repartitioning: Param[bool] = Param(
             self, "enable_repartitioning", ""
         )
         self._setDefault(enable_repartitioning=enable_repartitioning)
@@ -199,9 +199,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         sort_data: Optional[Dict[str, Dict[str, Any]]] = self.getOrDefault(
             self.sort_data
         )
-        enable_repartitioning: Optional[bool] = self.getOrDefault(
-            self.enable_repartitioning
-        )
+        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         assert parameters
         progress_logger = self.getProgressLogger()
 
@@ -324,8 +322,8 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             mode=mode,
                             run_synchronously=run_synchronously,
                             num_partitions=parameters.get("num_partitions"),
-                            sort_by_column_name=sort_data[view].get(
-                                "column_for_sorting"
+                            sort_by_column_name_and_type=sort_data[view].get(
+                                "sort_by_column_name_and_type"
                             )
                             if need_sorting and sort_data
                             else None,
