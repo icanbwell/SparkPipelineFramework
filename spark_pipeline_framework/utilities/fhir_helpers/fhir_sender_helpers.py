@@ -111,7 +111,7 @@ def send_fhir_delete(
         fhir_client = fhir_client.additional_request_headers(additional_request_headers)
     try:
         response: FhirDeleteResponse = fhir_client.delete()
-        if response and response.status == 200:
+        if response and response.status == 204:
             return {"deleted": True}
         else:
             return {"deleted": False, "issue": f"Failed to delete {resource}: {obj_id}"}
