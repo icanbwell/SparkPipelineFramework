@@ -9,7 +9,7 @@ from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.rdd import RDD
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, get_json_object
 from pyspark.sql.types import Row
 from pyspark.sql.utils import AnalysisException
 
@@ -45,6 +45,7 @@ from spark_pipeline_framework.utilities.flattener.flattener import flatten
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
+from spark_pipeline_framework.utilities.map_functions import remove_field_from_json
 
 
 class FhirSender(FrameworkTransformer):
@@ -83,6 +84,10 @@ class FhirSender(FrameworkTransformer):
         delta_lake_table: Optional[str] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         run_synchronously: Optional[bool] = None,
+        sort_by_column_name_and_type: Optional[tuple[str, Any]] = None,
+        drop_fields_from_json: Optional[List[str]] = None,
+        partition_by_column_name: Optional[str] = None,
+        enable_repartitioning: bool = True,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -111,6 +116,10 @@ class FhirSender(FrameworkTransformer):
         :param cache_storage_level: (Optional) how to store the cache:
                                     https://sparkbyexamples.com/spark/spark-dataframe-cache-and-persist-explained/.
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
+        :param sort_by_column_name_and_type: (Optional) tuple of columnName, columnType to be used for sorting
+        :param drop_fields_from_json: (Optional) List of field names to drop from json
+        :param partition_by_column_name: (Optional) Name of the column that will be used to repartition df
+        :param enable_repartitioning: Enable repartitioning or not, default True
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -236,6 +245,26 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
+        self.sort_by_column_name_and_type: Param[Optional[tuple[str, Any]]] = Param(
+            self, "sort_by_column_name_and_type", ""
+        )
+        self._setDefault(sort_by_column_name_and_type=sort_by_column_name_and_type)
+
+        self.drop_fields_from_json: Param[Optional[List[str]]] = Param(
+            self, "drop_fields_from_json", ""
+        )
+        self._setDefault(drop_fields_from_json=drop_fields_from_json)
+
+        self.partition_by_column_name: Param[Optional[str]] = Param(
+            self, "partition_by_column_name", ""
+        )
+        self._setDefault(partition_by_column_name=partition_by_column_name)
+
+        self.enable_repartitioning: Param[bool] = Param(
+            self, "enable_repartitioning", ""
+        )
+        self._setDefault(enable_repartitioning=enable_repartitioning)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -270,6 +299,15 @@ class FhirSender(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
+        sort_by_column_name_and_type: Optional[tuple[str, Any]] = self.getOrDefault(
+            self.sort_by_column_name_and_type
+        )
+        drop_fields_from_json: Optional[List[str]] = self.getOrDefault(
+            self.drop_fields_from_json
+        )
+        partition_by_column_name: Optional[str] = self.getOrDefault(
+            self.partition_by_column_name
+        )
 
         if not batch_size or batch_size == 0:
             batch_size = 30
@@ -299,8 +337,12 @@ class FhirSender(FrameworkTransformer):
         )
 
         num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
+        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+
+        if not enable_repartitioning:
+            assert (partition_by_column_name or num_partitions) is None
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -347,6 +389,7 @@ class FhirSender(FrameworkTransformer):
                     json_df = df.sql_ctx.read.text(
                         path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
                     )
+
             except AnalysisException as e:
                 if str(e).startswith("Path does not exist:"):
                     if progress_logger:
@@ -361,9 +404,39 @@ class FhirSender(FrameworkTransformer):
                     f" with batch_size {batch_size}  -----"
                 )
                 assert batch_size and batch_size > 0
-                desired_partitions: int = num_partitions or math.ceil(
-                    row_count / batch_size
+                desired_partitions: int = (
+                    (num_partitions or math.ceil(row_count / batch_size))
+                    if enable_repartitioning
+                    else json_df.rdd.getNumPartitions()
                 )
+                if partition_by_column_name:
+                    json_df = json_df.withColumn(
+                        partition_by_column_name,
+                        get_json_object(col("value"), f"$.{partition_by_column_name}"),
+                    ).repartition(desired_partitions, partition_by_column_name)
+                    json_df = json_df.drop(partition_by_column_name)
+
+                if sort_by_column_name_and_type:
+                    column_name, column_type = sort_by_column_name_and_type
+                    json_df = json_df.withColumn(
+                        column_name,
+                        get_json_object(col("value"), f"$.{column_name}").cast(
+                            column_type
+                        ),
+                    ).sortWithinPartitions(column_name)
+                    json_df = json_df.drop(column_name)
+
+                if drop_fields_from_json:
+                    json_schema = json_df.schema
+                    # removing sorted field from all the json values
+                    json_df = json_df.rdd.map(
+                        lambda row: Row(
+                            value=remove_field_from_json(
+                                row["value"], drop_fields_from_json
+                            ),
+                        ),
+                    ).toDF(json_schema)
+
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
                 )
@@ -400,11 +473,12 @@ class FhirSender(FrameworkTransformer):
                     )
                 else:
                     # ---- Now process all the results ----
+                    if enable_repartitioning and not partition_by_column_name:
+                        # repartition only when we haven't already repartitioned by column and enable_repartitioning is True
+                        json_df = json_df.repartition(desired_partitions)
                     rdd: RDD[
                         Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
-                    ] = json_df.repartition(
-                        desired_partitions
-                    ).rdd.mapPartitionsWithIndex(
+                    ] = json_df.rdd.mapPartitionsWithIndex(
                         lambda partition_index, rows: FhirSenderProcessor.send_partition_to_server(
                             partition_index=partition_index,
                             rows=rows,

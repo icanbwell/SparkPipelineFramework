@@ -1,6 +1,7 @@
 import json
 from typing import Any, Callable, Dict, List, Optional
 
+
 from spark_pipeline_framework.transformers.athena_table_creator.v1.athena_table_creator import (
     AthenaTableCreator,
 )
@@ -62,6 +63,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         mode: str = FileWriteModes.MODE_ERROR,
         run_synchronously: Optional[bool] = None,
         additional_request_headers: Optional[Dict[str, str]] = None,
+        sort_data: Optional[Dict[str, Dict[str, Any]]] = None,
+        partition_by_column_name: Optional[str] = None,
+        enable_repartitioning: bool = True,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -76,6 +80,15 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         :param additional_request_headers: (Optional) Additional request headers to use
                                             (Eg: {"Accept-Charset": "utf-8"})
+        :param sort_data: (Optional) Whether to sort the data. Format - {
+                            KEY - view: view name,
+                            VALUE - {
+                                sort_by_column_name_and_type: "columnName and columnType to be used for sorting",
+                                drop_fields_from_json: (list) List of fields to drop from json,
+                                partition_by_column_name: (str) Name of the column that will be used to repartition df
+                            }
+                        }
+        :param enable_repartitioning: Enable repartitioning or not, default True
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -154,6 +167,16 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(additional_request_headers=additional_request_headers)
 
+        self.sort_data: Param[Optional[Dict[str, Dict[str, Any]]]] = Param(
+            self, "sort_data", ""
+        )
+        self._setDefault(sort_data=sort_data)
+
+        self.enable_repartitioning: Param[bool] = Param(
+            self, "enable_repartitioning", ""
+        )
+        self._setDefault(enable_repartitioning=enable_repartitioning)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -173,6 +196,10 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         additional_request_headers: Optional[
             Dict[str, str]
         ] = self.getAdditionalRequestHeaders()
+        sort_data: Optional[Dict[str, Dict[str, Any]]] = self.getOrDefault(
+            self.sort_data
+        )
+        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         assert parameters
         progress_logger = self.getProgressLogger()
 
@@ -220,6 +247,10 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                         )
                     # get resource name
                     result_df: DataFrame = df.sql_ctx.table(view)
+                    # True if sort_data field exists and view name is present as dict key
+                    need_sorting: bool = (
+                        True if (sort_data and sort_data.get(view)) else False
+                    )
                     if spark_is_data_frame_empty(df=result_df):
                         self.logger.info(f"No data to export/send for view '{view}'")
                         continue
@@ -291,6 +322,22 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             mode=mode,
                             run_synchronously=run_synchronously,
                             num_partitions=parameters.get("num_partitions"),
+                            sort_by_column_name_and_type=sort_data[view].get(
+                                "sort_by_column_name_and_type"
+                            )
+                            if need_sorting and sort_data
+                            else None,
+                            drop_fields_from_json=sort_data[view].get(
+                                "drop_fields_from_json"
+                            )
+                            if need_sorting and sort_data
+                            else None,
+                            partition_by_column_name=sort_data[view].get(
+                                "partition_by_column_name"
+                            )
+                            if need_sorting and sort_data
+                            else None,
+                            enable_repartitioning=enable_repartitioning,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
