@@ -92,6 +92,7 @@ class FhirSender(FrameworkTransformer):
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = True,
         debug: bool = False,
+        debug_file_path: Optional[str] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -125,6 +126,7 @@ class FhirSender(FrameworkTransformer):
         :param partition_by_column_name: (Optional) Name of the column that will be used to repartition df
         :param enable_repartitioning: Enable repartitioning or not, default True
         :param debug: Enable debugging or not. If true, it sends response to s3 before sending to fhir, default False
+        :param debug_file_path: File path for debugging
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -273,6 +275,9 @@ class FhirSender(FrameworkTransformer):
         self.debug: Param[bool] = Param(self, "debug", "")
         self._setDefault(debug=debug)
 
+        self.debug_file_path: Param[str] = Param(self, "debug_file_path", "")
+        self._setDefault(debug_file_path=debug_file_path)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -347,6 +352,7 @@ class FhirSender(FrameworkTransformer):
         num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         debug: bool = self.getOrDefault(self.debug)
+        debug_file_path: str = self.getOrDefault(self.debug_file_path)
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
@@ -454,7 +460,7 @@ class FhirSender(FrameworkTransformer):
                     FhirExporter(
                         progress_logger=progress_logger,
                         view="intermediate_view",
-                        file_path=f"{file_path}/debug/intermediate_responses",
+                        file_path=debug_file_path,
                     ).transform(intermediate_df)
 
                 self.logger.info(

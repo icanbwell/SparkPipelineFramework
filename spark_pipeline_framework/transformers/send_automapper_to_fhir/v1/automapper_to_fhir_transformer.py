@@ -67,6 +67,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = True,
         debug: bool = False,
+        debug_file_path: Optional[str] = None,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -91,6 +92,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                         }
         :param enable_repartitioning: Enable repartitioning or not, default True
         :param debug: Enable debugging or not, default False
+        :param debug_file_path: File path for debugging
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -182,6 +184,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self.debug: Param[bool] = Param(self, "debug", "")
         self._setDefault(debug=debug)
 
+        self.debug_file_path: Param[str] = Param(self, "debug_file_path", "")
+        self._setDefault(debug_file_path=debug_file_path)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -206,6 +211,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         debug: bool = self.getOrDefault(self.debug)
+        debug_file_path: str = self.getOrDefault(self.debug_file_path)
         assert parameters
         progress_logger = self.getProgressLogger()
 
@@ -345,6 +351,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             else None,
                             enable_repartitioning=enable_repartitioning,
                             debug=debug,
+                            debug_file_path=debug_file_path,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
