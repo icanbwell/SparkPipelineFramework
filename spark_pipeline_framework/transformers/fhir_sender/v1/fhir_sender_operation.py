@@ -8,7 +8,12 @@ class FhirSenderOperation(Enum):
     FHIR_OPERATION_PUT = "put"
     FHIR_OPERATION_PATCH = "patch"
 
-    FHIR_OPERATIONS = [FHIR_OPERATION_DELETE, FHIR_OPERATION_MERGE, FHIR_OPERATION_PUT, FHIR_OPERATION_PATCH]
+    FHIR_OPERATIONS = [
+        FHIR_OPERATION_DELETE,
+        FHIR_OPERATION_MERGE,
+        FHIR_OPERATION_PUT,
+        FHIR_OPERATION_PATCH,
+    ]
 
     @staticmethod
     def from_str(text: str) -> "FhirSenderOperation":

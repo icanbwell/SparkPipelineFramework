@@ -69,15 +69,15 @@ class FhirSenderProcessor:
         if FhirSenderOperation.operation_equals(
             operation, FhirSenderOperation.FHIR_OPERATION_PATCH
         ):
-            item: Row
             for item in json_data_list:
-                item = json.loads(item["value"])
-                item["payload"] = [json.loads(convert_dict_to_fhir_json(payload_item)) for payload_item in item["payload"]]
-                result: Dict[str, Any] = update_json_bundle_to_fhir(
-                    obj_id=item[
-                        "id"
-                    ],
-                    json_data=json.dumps(item["payload"]),
+                item_value = json.loads(item["value"])
+                payload = [
+                    json.loads(convert_dict_to_fhir_json(payload_item))
+                    for payload_item in item_value["payload"]
+                ]
+                patch_result: Optional[Dict[str, Any]] = update_json_bundle_to_fhir(
+                    obj_id=item_value["id"],
+                    json_data=json.dumps(payload),
                     server_url=server_url,
                     operation=operation,
                     validation_server_url=validation_server_url,
@@ -92,18 +92,18 @@ class FhirSenderProcessor:
                     additional_request_headers=additional_request_headers,
                     log_level=log_level,
                 )
-                responses.append(result)
+                if patch_result:
+                    responses.append(patch_result)
         elif FhirSenderOperation.operation_equals(
             operation, FhirSenderOperation.FHIR_OPERATION_PUT
         ):
-            item: Row
             for item in json_data_list:
-                item = json.loads(item["value"])
-                result: Dict[str, Any] = update_json_bundle_to_fhir(
-                    obj_id=item[
-                        "id"
-                    ],
-                    json_data=convert_dict_to_fhir_json(item),
+                item_value = json.loads(item["value"])
+                put_result: Optional[Dict[str, Any]] = update_json_bundle_to_fhir(
+                    obj_id=item_value["id"],
+                    json_data=convert_dict_to_fhir_json(
+                        item_value.asDict(recursive=True)
+                    ),
                     server_url=server_url,
                     operation=operation,
                     validation_server_url=validation_server_url,
@@ -118,11 +118,11 @@ class FhirSenderProcessor:
                     additional_request_headers=additional_request_headers,
                     log_level=log_level,
                 )
-                responses.append(result)
+                if put_result:
+                    responses.append(put_result)
         elif FhirSenderOperation.operation_equals(
             operation, FhirSenderOperation.FHIR_OPERATION_DELETE
         ):
-            item: Row
             # FHIR doesn't support bulk deletes, so we have to send one at a time
             responses = [
                 send_fhir_delete(

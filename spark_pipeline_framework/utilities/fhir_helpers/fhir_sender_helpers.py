@@ -6,7 +6,9 @@ from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteRespo
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 
-from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import FhirSenderOperation
+from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
+    FhirSenderOperation,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
@@ -129,7 +131,7 @@ def update_json_bundle_to_fhir(
     obj_id: str,
     json_data: str,
     server_url: str,
-    operation: str,
+    operation: FhirSenderOperation | str,
     validation_server_url: Optional[str],
     resource: str,
     logger: Logger,
@@ -179,20 +181,20 @@ def update_json_bundle_to_fhir(
         logger.debug("----------- Sending data to FHIR -------")
         logger.debug(json_data)
         logger.debug("----------- End sending data to FHIR -------")
+        response: FhirUpdateResponse
         if FhirSenderOperation.operation_equals(
             operation, FhirSenderOperation.FHIR_OPERATION_PATCH
         ):
-            response: FhirUpdateResponse = fhir_client.send_patch_request(
-                data=json_data
-            )
+            response = fhir_client.send_patch_request(data=json_data)
         else:
-            response: FhirUpdateResponse = fhir_client.update(
-                json_data=json_data
-            )
+            response = fhir_client.update(json_data=json_data)
         if response and response.status == 200:
             return {"updated": True}
         else:
-            return {"updated": False, "issue": f"Failed to update {resource} for {obj_id}: {response.responses}"}
+            return {
+                "updated": False,
+                "issue": f"Failed to update {resource} for {obj_id}: {response.responses}",
+            }
     except AssertionError as e:
         logger.exception(
             Exception(
