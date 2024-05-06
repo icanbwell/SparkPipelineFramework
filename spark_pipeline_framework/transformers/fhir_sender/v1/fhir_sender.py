@@ -447,15 +447,15 @@ class FhirSender(FrameworkTransformer):
                     ).toDF(json_schema)
 
                 if debug:
-                    response_df = json_df.cache()
-                    response_df = response_df.coalesce(1)
-                    response_df.createOrReplaceTempView("result_view")
+                    json_df = json_df.cache()
+                    intermediate_df = json_df.coalesce(1)
+                    intermediate_df.createOrReplaceTempView("intermediate_view")
 
                     FhirExporter(
                         progress_logger=progress_logger,
-                        view="result_view",
-                        file_path=f"{file_path}/debug/response.json",
-                    ).transform(response_df)
+                        view="intermediate_view",
+                        file_path=f"{file_path}/debug/intermediate_responses",
+                    ).transform(intermediate_df)
 
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
