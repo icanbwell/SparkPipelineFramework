@@ -66,6 +66,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         sort_data: Optional[Dict[str, Dict[str, Any]]] = None,
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = True,
+        debug: bool = False,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -89,6 +90,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             }
                         }
         :param enable_repartitioning: Enable repartitioning or not, default True
+        :param debug: Enable debugging or not, default False
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -177,6 +179,11 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(enable_repartitioning=enable_repartitioning)
 
+        self.debug: Param[bool] = Param(
+            self, "debug", ""
+        )
+        self._setDefault(debug=debug)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -200,6 +207,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
             self.sort_data
         )
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
+        debug: bool = self.getOrDefault(self.debug)
         assert parameters
         progress_logger = self.getProgressLogger()
 
@@ -338,6 +346,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             if need_sorting and sort_data
                             else None,
                             enable_repartitioning=enable_repartitioning,
+                            debug=debug
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
