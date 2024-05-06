@@ -2,6 +2,7 @@ import json
 from typing import Any, Dict, Iterable, List, Optional, Union, Generator
 
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
+from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 from pyspark.sql.types import Row
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -14,7 +15,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_sc
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import (
     send_fhir_delete,
     send_json_bundle_to_fhir,
-)
+    update_json_bundle_to_fhir)
 from spark_pipeline_framework.utilities.json_helpers import convert_dict_to_fhir_json
 
 
@@ -66,6 +67,59 @@ class FhirSenderProcessor:
         request_id_list: List[str] = []
         responses: List[Dict[str, Any]] = []
         if FhirSenderOperation.operation_equals(
+            operation, FhirSenderOperation.FHIR_OPERATION_PATCH
+        ):
+            item: Row
+            for item in json_data_list:
+                item = json.loads(item["value"])
+                item["payload"] = [json.loads(convert_dict_to_fhir_json(payload_item)) for payload_item in item["payload"]]
+                result: Dict[str, Any] = update_json_bundle_to_fhir(
+                    obj_id=item[
+                        "id"
+                    ],
+                    json_data=json.dumps(item["payload"]),
+                    server_url=server_url,
+                    operation=operation,
+                    validation_server_url=validation_server_url,
+                    resource=resource_name,
+                    logger=logger,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_scopes=auth_scopes,
+                    auth_access_token=auth_access_token,
+                    additional_request_headers=additional_request_headers,
+                    log_level=log_level,
+                )
+                responses.append(result)
+        elif FhirSenderOperation.operation_equals(
+            operation, FhirSenderOperation.FHIR_OPERATION_PUT
+        ):
+            item: Row
+            for item in json_data_list:
+                item = json.loads(item["value"])
+                result: Dict[str, Any] = update_json_bundle_to_fhir(
+                    obj_id=item[
+                        "id"
+                    ],
+                    json_data=convert_dict_to_fhir_json(item),
+                    server_url=server_url,
+                    operation=operation,
+                    validation_server_url=validation_server_url,
+                    resource=resource_name,
+                    logger=logger,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_scopes=auth_scopes,
+                    auth_access_token=auth_access_token,
+                    additional_request_headers=additional_request_headers,
+                    log_level=log_level,
+                )
+                responses.append(result)
+        elif FhirSenderOperation.operation_equals(
             operation, FhirSenderOperation.FHIR_OPERATION_DELETE
         ):
             item: Row
