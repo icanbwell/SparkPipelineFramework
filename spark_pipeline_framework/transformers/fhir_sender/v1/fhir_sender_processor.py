@@ -101,9 +101,7 @@ class FhirSenderProcessor:
                 item_value = json.loads(item["value"])
                 put_result: Optional[Dict[str, Any]] = update_json_bundle_to_fhir(
                     obj_id=item_value["id"],
-                    json_data=convert_dict_to_fhir_json(
-                        item_value.asDict(recursive=True)
-                    ),
+                    json_data=convert_dict_to_fhir_json(item_value),
                     server_url=server_url,
                     operation=operation,
                     validation_server_url=validation_server_url,
