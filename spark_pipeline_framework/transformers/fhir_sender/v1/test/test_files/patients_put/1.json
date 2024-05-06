@@ -1,0 +1,1 @@
+{"resourceType":"Patient","id":"00200000000","meta":{"source":"http://medstarhealth.org/provider","security":[{"system":"https://www.icanbwell.com/access","code":"medstar"},{"system":"https://www.icanbwell.com/owner","code":"medstar"}]},"birthDate":"1984-01-01","gender":"male","name":[{"use":"usual","text":"t","family":"PATIENT2","given":["KATIE"],"prefix":[],"suffix":[]}]}

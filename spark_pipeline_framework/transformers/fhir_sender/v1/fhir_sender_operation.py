@@ -5,8 +5,15 @@ from typing import Union
 class FhirSenderOperation(Enum):
     FHIR_OPERATION_DELETE = "delete"
     FHIR_OPERATION_MERGE = "$merge"
+    FHIR_OPERATION_PUT = "put"
+    FHIR_OPERATION_PATCH = "patch"
 
-    FHIR_OPERATIONS = [FHIR_OPERATION_DELETE, FHIR_OPERATION_MERGE]
+    FHIR_OPERATIONS = [
+        FHIR_OPERATION_DELETE,
+        FHIR_OPERATION_MERGE,
+        FHIR_OPERATION_PUT,
+        FHIR_OPERATION_PATCH,
+    ]
 
     @staticmethod
     def from_str(text: str) -> "FhirSenderOperation":
