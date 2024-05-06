@@ -270,9 +270,7 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(enable_repartitioning=enable_repartitioning)
 
-        self.debug: Param[bool] = Param(
-            self, "debug", ""
-        )
+        self.debug: Param[bool] = Param(self, "debug", "")
         self._setDefault(debug=debug)
 
         kwargs = self._input_kwargs
@@ -456,7 +454,7 @@ class FhirSender(FrameworkTransformer):
                     FhirExporter(
                         progress_logger=progress_logger,
                         view="result_view",
-                        file_path=f'{file_path}/debug/response.json',
+                        file_path=f"{file_path}/debug/response.json",
                     ).transform(response_df)
 
                 self.logger.info(

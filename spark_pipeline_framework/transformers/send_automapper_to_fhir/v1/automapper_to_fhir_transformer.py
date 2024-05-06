@@ -179,9 +179,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(enable_repartitioning=enable_repartitioning)
 
-        self.debug: Param[bool] = Param(
-            self, "debug", ""
-        )
+        self.debug: Param[bool] = Param(self, "debug", "")
         self._setDefault(debug=debug)
 
         kwargs = self._input_kwargs
@@ -346,7 +344,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             if need_sorting and sort_data
                             else None,
                             enable_repartitioning=enable_repartitioning,
-                            debug=debug
+                            debug=debug,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
