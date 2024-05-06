@@ -114,9 +114,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(func_get_path=func_get_path)
 
-        self.func_get_preprocessed_path: Param[Optional[Callable[[str, str], str]]] = Param(
-            self, "func_get_preprocessed_path", ""
-        )
+        self.func_get_preprocessed_path: Param[
+            Optional[Callable[[str, str], str]]
+        ] = Param(self, "func_get_preprocessed_path", "")
         self._setDefault(func_get_preprocessed_path=func_get_preprocessed_path)
 
         self.func_get_response_path: Param[Callable[[str, str], str]] = Param(
@@ -189,16 +189,15 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self.debug: Param[bool] = Param(self, "debug", "")
         self._setDefault(debug=debug)
 
-        self.debug_file_path: Param[str] = Param(self, "debug_file_path", "")
-        self._setDefault(debug_file_path=debug_file_path)
-
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         transformer: ProxyBase = self.getTransformer()
         func_get_path: Callable[[str, str], str] = self.getFuncGetPath()
-        func_get_preprocessed_path: Optional[Callable[[str, str], str]] = self.getOrDefault(self.func_get_preprocessed_path)
+        func_get_preprocessed_path: Optional[
+            Callable[[str, str], str]
+        ] = self.getOrDefault(self.func_get_preprocessed_path)
         func_get_response_path: Callable[
             [str, str], str
         ] = self.getFuncGetResponsePath()
@@ -217,7 +216,6 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         debug: bool = self.getOrDefault(self.debug)
-        debug_file_path: str = self.getOrDefault(self.debug_file_path)
         assert parameters
         progress_logger = self.getProgressLogger()
 
@@ -278,7 +276,11 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                     # noinspection PyPep8Naming
                     resourceType: str = first_row["resourceType"]
                     fhir_resource_path: str = func_get_path(view, resourceType)
-                    fhir_get_preprocessed_path: str = func_get_preprocessed_path(view, resourceType) if debug else None
+                    fhir_get_preprocessed_path: Optional[str] = (
+                        func_get_preprocessed_path(view, resourceType)
+                        if func_get_preprocessed_path
+                        else None
+                    )
                     fhir_resource_response_path: str = func_get_response_path(
                         view, resourceType
                     )
@@ -358,7 +360,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             else None,
                             enable_repartitioning=enable_repartitioning,
                             debug=debug,
-                            debug_file_path=fhir_get_preprocessed_path,
+                            debug_file_path=fhir_get_preprocessed_path
+                            if debug
+                            else None,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
