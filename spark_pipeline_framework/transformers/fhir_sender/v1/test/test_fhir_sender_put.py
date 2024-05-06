@@ -4,7 +4,6 @@ from pathlib import Path
 from shutil import rmtree
 
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import IntegerType
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender import FhirSender

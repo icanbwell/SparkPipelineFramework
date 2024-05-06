@@ -2,7 +2,6 @@ import json
 from typing import Any, Dict, Iterable, List, Optional, Union, Generator
 
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
-from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 from pyspark.sql.types import Row
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -15,7 +14,8 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_sc
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import (
     send_fhir_delete,
     send_json_bundle_to_fhir,
-    update_json_bundle_to_fhir)
+    update_json_bundle_to_fhir,
+)
 from spark_pipeline_framework.utilities.json_helpers import convert_dict_to_fhir_json
 
 
