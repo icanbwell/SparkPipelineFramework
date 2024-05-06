@@ -67,7 +67,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = True,
         debug: bool = False,
-        debug_file_path: Optional[str] = None,
+        func_get_preprocessed_path: Optional[Callable[[str, str], str]] = None,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -92,7 +92,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                         }
         :param enable_repartitioning: Enable repartitioning or not, default True
         :param debug: Enable debugging or not, default False
-        :param debug_file_path: File path for debugging
+        :param func_get_preprocessed_path: function that gets the local path for a resource for debugging
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -113,6 +113,11 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
             self, "func_get_path", ""
         )
         self._setDefault(func_get_path=func_get_path)
+
+        self.func_get_preprocessed_path: Param[Optional[Callable[[str, str], str]]] = Param(
+            self, "func_get_preprocessed_path", ""
+        )
+        self._setDefault(func_get_preprocessed_path=func_get_preprocessed_path)
 
         self.func_get_response_path: Param[Callable[[str, str], str]] = Param(
             self, "func_get_response_path", ""
@@ -193,6 +198,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         transformer: ProxyBase = self.getTransformer()
         func_get_path: Callable[[str, str], str] = self.getFuncGetPath()
+        func_get_preprocessed_path: Optional[Callable[[str, str], str]] = self.getOrDefault(self.func_get_preprocessed_path)
         func_get_response_path: Callable[
             [str, str], str
         ] = self.getFuncGetResponsePath()
@@ -272,6 +278,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                     # noinspection PyPep8Naming
                     resourceType: str = first_row["resourceType"]
                     fhir_resource_path: str = func_get_path(view, resourceType)
+                    fhir_get_preprocessed_path: str = func_get_preprocessed_path(view, resourceType) if debug else None
                     fhir_resource_response_path: str = func_get_response_path(
                         view, resourceType
                     )
@@ -351,7 +358,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             else None,
                             enable_repartitioning=enable_repartitioning,
                             debug=debug,
-                            debug_file_path=debug_file_path,
+                            debug_file_path=fhir_get_preprocessed_path,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
