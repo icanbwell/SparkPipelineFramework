@@ -441,6 +441,19 @@ class FhirSender(FrameworkTransformer):
                     ).sortWithinPartitions(column_name)
                     json_df = json_df.drop(column_name)
 
+                if debug:
+                    json_df = json_df.cache()
+                    intermediate_df_after_sorting = json_df.coalesce(1)
+                    intermediate_df_after_sorting.createOrReplaceTempView(
+                        "intermediate_view_after_sorting"
+                    )
+
+                    FhirExporter(
+                        progress_logger=progress_logger,
+                        view="intermediate_view_after_sorting",
+                        file_path=f"{debug_file_path}/after_sorting",
+                    ).transform(intermediate_df_after_sorting)
+
                 if drop_fields_from_json:
                     json_schema = json_df.schema
                     # removing sorted field from all the json values
@@ -450,18 +463,20 @@ class FhirSender(FrameworkTransformer):
                                 row["value"], drop_fields_from_json
                             ),
                         ),
+                        preservesPartitioning=True,
                     ).toDF(json_schema)
 
                 if debug:
-                    json_df = json_df.cache()
-                    intermediate_df = json_df.coalesce(1)
-                    intermediate_df.createOrReplaceTempView("intermediate_view")
+                    intermediate_df_after_dropping = json_df.coalesce(1)
+                    intermediate_df_after_dropping.createOrReplaceTempView(
+                        "intermediate_view_after_dropping"
+                    )
 
                     FhirExporter(
                         progress_logger=progress_logger,
-                        view="intermediate_view",
-                        file_path=debug_file_path,
-                    ).transform(intermediate_df)
+                        view="intermediate_view_after_dropping",
+                        file_path=f"{debug_file_path}/after_dropping",
+                    ).transform(intermediate_df_after_dropping)
 
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
