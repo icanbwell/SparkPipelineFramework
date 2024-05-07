@@ -93,6 +93,8 @@ class FhirSender(FrameworkTransformer):
         enable_repartitioning: bool = True,
         debug: bool = False,
         debug_file_path: Optional[str] = None,
+        preserve_partition: Optional[bool] = False,
+        enable_coalesce: Optional[bool] = False,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -127,6 +129,8 @@ class FhirSender(FrameworkTransformer):
         :param enable_repartitioning: Enable repartitioning or not, default True
         :param debug: Enable debugging or not. If true, it sends response to s3 before sending to fhir, default False
         :param debug_file_path: File path for debugging
+        :param preserve_partition: Enable preserve partition or not, default False
+        :param enable_coalesce: Enable coalesce or not, default False
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -278,6 +282,12 @@ class FhirSender(FrameworkTransformer):
         self.debug_file_path: Param[str] = Param(self, "debug_file_path", "")
         self._setDefault(debug_file_path=debug_file_path)
 
+        self.preserve_partition: Param[bool] = Param(self, "preserve_partition", "")
+        self._setDefault(preserve_partition=preserve_partition)
+
+        self.enable_coalesce: Param[bool] = Param(self, "enable_coalesce", "")
+        self._setDefault(enable_coalesce=enable_coalesce)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -353,6 +363,8 @@ class FhirSender(FrameworkTransformer):
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         debug: bool = self.getOrDefault(self.debug)
         debug_file_path: str = self.getOrDefault(self.debug_file_path)
+        preserve_partition: bool = self.getOrDefault(self.preserve_partition)
+        enable_coalesce: bool = self.getOrDefault(self.enable_coalesce)
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
@@ -441,6 +453,21 @@ class FhirSender(FrameworkTransformer):
                     ).sortWithinPartitions(column_name)
                     json_df = json_df.drop(column_name)
 
+                if debug:
+                    json_df = json_df.cache()
+                    intermediate_df_after_sorting = (
+                        json_df.coalesce(1) if enable_coalesce else json_df
+                    )
+                    intermediate_df_after_sorting.createOrReplaceTempView(
+                        "intermediate_view_after_sorting"
+                    )
+
+                    FhirExporter(
+                        progress_logger=progress_logger,
+                        view="intermediate_view_after_sorting",
+                        file_path=f"{debug_file_path}/after_sorting",
+                    ).transform(intermediate_df_after_sorting)
+
                 if drop_fields_from_json:
                     json_schema = json_df.schema
                     # removing sorted field from all the json values
@@ -450,18 +477,22 @@ class FhirSender(FrameworkTransformer):
                                 row["value"], drop_fields_from_json
                             ),
                         ),
+                        preservesPartitioning=True if preserve_partition else False,
                     ).toDF(json_schema)
 
                 if debug:
-                    json_df = json_df.cache()
-                    intermediate_df = json_df.coalesce(1)
-                    intermediate_df.createOrReplaceTempView("intermediate_view")
+                    intermediate_df_after_dropping = (
+                        json_df.coalesce(1) if enable_coalesce else json_df
+                    )
+                    intermediate_df_after_dropping.createOrReplaceTempView(
+                        "intermediate_view_after_dropping"
+                    )
 
                     FhirExporter(
                         progress_logger=progress_logger,
-                        view="intermediate_view",
-                        file_path=debug_file_path,
-                    ).transform(intermediate_df)
+                        view="intermediate_view_after_dropping",
+                        file_path=f"{debug_file_path}/after_dropping",
+                    ).transform(intermediate_df_after_dropping)
 
                 self.logger.info(
                     f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
