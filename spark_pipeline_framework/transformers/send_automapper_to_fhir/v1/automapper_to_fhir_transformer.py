@@ -69,6 +69,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         debug: bool = False,
         func_get_debug_path: Optional[Callable[[str, str], str]] = None,
         preserve_partition: Optional[bool] = False,
+        enable_coalesce: Optional[bool] = False,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -95,6 +96,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         :param debug: Enable debugging or not, default False
         :param func_get_debug_path: function that gets the local path for a resource for debugging
         :param preserve_partition: Enable preserve partition or not, default False
+        :param enable_coalesce: Enable coalesce or not, default False
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -194,6 +196,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         self.preserve_partition: Param[bool] = Param(self, "preserve_partition", "")
         self._setDefault(preserve_partition=preserve_partition)
 
+        self.enable_coalesce: Param[bool] = Param(self, "enable_coalesce", "")
+        self._setDefault(enable_coalesce=enable_coalesce)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -222,6 +227,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         debug: bool = self.getOrDefault(self.debug)
         preserve_partition: bool = self.getOrDefault(self.preserve_partition)
+        enable_coalesce: bool = self.getOrDefault(self.enable_coalesce)
 
         assert parameters
         progress_logger = self.getProgressLogger()
@@ -369,6 +375,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             debug=debug,
                             debug_file_path=fhir_get_debug_path if debug else None,
                             preserve_partition=preserve_partition,
+                            enable_coalesce=enable_coalesce,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()

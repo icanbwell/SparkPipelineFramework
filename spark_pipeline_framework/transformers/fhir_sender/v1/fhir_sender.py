@@ -94,6 +94,7 @@ class FhirSender(FrameworkTransformer):
         debug: bool = False,
         debug_file_path: Optional[str] = None,
         preserve_partition: Optional[bool] = False,
+        enable_coalesce: Optional[bool] = False,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -129,6 +130,7 @@ class FhirSender(FrameworkTransformer):
         :param debug: Enable debugging or not. If true, it sends response to s3 before sending to fhir, default False
         :param debug_file_path: File path for debugging
         :param preserve_partition: Enable preserve partition or not, default False
+        :param enable_coalesce: Enable coalesce or not, default False
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -283,6 +285,9 @@ class FhirSender(FrameworkTransformer):
         self.preserve_partition: Param[bool] = Param(self, "preserve_partition", "")
         self._setDefault(preserve_partition=preserve_partition)
 
+        self.enable_coalesce: Param[bool] = Param(self, "enable_coalesce", "")
+        self._setDefault(enable_coalesce=enable_coalesce)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -359,6 +364,7 @@ class FhirSender(FrameworkTransformer):
         debug: bool = self.getOrDefault(self.debug)
         debug_file_path: str = self.getOrDefault(self.debug_file_path)
         preserve_partition: bool = self.getOrDefault(self.preserve_partition)
+        enable_coalesce: bool = self.getOrDefault(self.enable_coalesce)
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
@@ -449,7 +455,9 @@ class FhirSender(FrameworkTransformer):
 
                 if debug:
                     json_df = json_df.cache()
-                    intermediate_df_after_sorting = json_df.coalesce(1)
+                    intermediate_df_after_sorting = (
+                        json_df.coalesce(1) if enable_coalesce else json_df
+                    )
                     intermediate_df_after_sorting.createOrReplaceTempView(
                         "intermediate_view_after_sorting"
                     )
@@ -473,7 +481,9 @@ class FhirSender(FrameworkTransformer):
                     ).toDF(json_schema)
 
                 if debug:
-                    intermediate_df_after_dropping = json_df.coalesce(1)
+                    intermediate_df_after_dropping = (
+                        json_df.coalesce(1) if enable_coalesce else json_df
+                    )
                     intermediate_df_after_dropping.createOrReplaceTempView(
                         "intermediate_view_after_dropping"
                     )
