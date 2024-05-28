@@ -356,13 +356,13 @@ class FhirSender(FrameworkTransformer):
                 additional_request_headers.update(
                     {
                         "User-Agent": user_agent_value,
-                        "Origin-Service": str(parameters["flow_name"]),
+                        "Origin-Service": f"helix.pipelines:{parameters['flow_name']}",
                     }
                 )
             else:
                 additional_request_headers = {
                     "User-Agent": user_agent_value,
-                    "Origin-Service": str(parameters["flow_name"]),
+                    "Origin-Service": f"helix.pipelines:{parameters['flow_name']}",
                 }
 
         # get access token first so we can reuse it
