@@ -493,9 +493,17 @@ class FhirReceiver(FrameworkTransformer):
                 else str(parameters["flow_name"])
             )
             if additional_request_headers:
-                additional_request_headers.update({"User-Agent": user_agent_value})
+                additional_request_headers.update(
+                    {
+                        "User-Agent": user_agent_value,
+                        "Origin-Service": f"helix.pipelines:{parameters['flow_name']}",
+                    }
+                )
             else:
-                additional_request_headers = {"User-Agent": user_agent_value}
+                additional_request_headers = {
+                    "User-Agent": user_agent_value,
+                    "Origin-Service": f"helix.pipelines:{parameters['flow_name']}",
+                }
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
