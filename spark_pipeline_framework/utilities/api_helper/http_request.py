@@ -23,6 +23,7 @@ class RequestType(Enum):
     POST = "post"
     GET = "get"
     HEAD = "head"
+    DELETE = "delete"
 
 
 class SingleJsonResult(NamedTuple):
@@ -165,6 +166,8 @@ class HelixHttpRequest:
             request_function = session.post
         elif self.request_type == RequestType.HEAD:
             request_function = session.head
+        elif self.request_type == RequestType.DELETE:
+            request_function = session.delete
 
         # remove None arguments
         arguments = {k: v for k, v in arguments.items() if v is not None}
