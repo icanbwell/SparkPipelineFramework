@@ -147,6 +147,7 @@ class HelixHttpRequest:
             self.retry_count,
             self.backoff_factor,
             self.retry_on_status,
+            self.raise_error,
             self.cert,
             self.verify,
         )
@@ -217,6 +218,7 @@ class HelixHttpRequest:
         retry_count: int = 3,
         backoff_factor: float = 0.1,
         retry_on_status: List[int] = [429, 500, 502, 503, 504],
+        raise_error: bool = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
     ) -> Session:
@@ -231,6 +233,7 @@ class HelixHttpRequest:
             total=retry_count,
             backoff_factor=backoff_factor,
             status_forcelist=retry_on_status,
+            raise_on_status=raise_error,
         )
         session.mount("http://", HTTPAdapter(max_retries=retries))
         session.mount("https://", HTTPAdapter(max_retries=retries))
