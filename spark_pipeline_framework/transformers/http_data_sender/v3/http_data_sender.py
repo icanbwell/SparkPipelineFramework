@@ -61,6 +61,7 @@ class HttpDataSender(FrameworkTransformer):
         headers: Optional[Dict[str, Any]] = None,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
+        partition_data: Optional[bool] = True,
     ):
         """
         Sends data to http server (usually REST API)
@@ -87,6 +88,7 @@ class HttpDataSender(FrameworkTransformer):
         :param headers: Any additional headers
         :param cert: certificate or ca bundle file path
         :param verify: controls whether the SSL certificate of the server should be verified when making HTTPS requests.
+        :param partition_data: (Optional bool) Tells whether we need to partition data or not
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -174,6 +176,9 @@ class HttpDataSender(FrameworkTransformer):
         self.verify: Param[Optional[Union[bool, str]]] = Param(self, "verify", "")
         self._setDefault(verify=verify)
 
+        self.partition_data: Param[Optional[bool]] = Param(self, "partition_data", "")
+        self._setDefault(partition_data=partition_data)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -215,6 +220,7 @@ class HttpDataSender(FrameworkTransformer):
         cert: Optional[Union[str, Tuple[str, str]]] = self.getOrDefault(self.cert)
         verify: Optional[Union[bool, str]] = self.getOrDefault(self.verify)
         raise_error: bool = self.getOrDefault(self.raise_error)
+        partition_data: Optional[bool] = self.getOrDefault(self.partition_data)
 
         df = df.sparkSession.table(source_view)
 
@@ -242,9 +248,9 @@ class HttpDataSender(FrameworkTransformer):
             self.logger.info(f"Total Batches: {desired_partitions}")
 
             # ---- Now process all the results ----
-            rdd: RDD[Row] = df.repartition(
-                desired_partitions
-            ).rdd.mapPartitionsWithIndex(
+            if partition_data:
+                df = df.repartition(desired_partitions)
+            rdd: RDD[Row] = df.rdd.mapPartitionsWithIndex(
                 lambda partition_index, rows: HttpDataSenderProcessor.send_partition_to_server(
                     partition_index=partition_index,
                     rows=rows,
