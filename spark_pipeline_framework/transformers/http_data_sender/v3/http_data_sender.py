@@ -235,17 +235,18 @@ class HttpDataSender(FrameworkTransformer):
         with ProgressLogMetric(
             name=f"{name}_fhir_sender", progress_logger=progress_logger
         ):
-            desired_partitions: int
-            if batch_count:
-                desired_partitions = batch_count
-            else:
-                row_count: int = df.count()
-                desired_partitions = (
-                    math.ceil(row_count / batch_size)
-                    if batch_size and batch_size > 0
-                    else row_count
-                )
-            self.logger.info(f"Total Batches: {desired_partitions}")
+            if partition_data:
+                desired_partitions: int
+                if batch_count:
+                    desired_partitions = batch_count
+                else:
+                    row_count: int = df.count()
+                    desired_partitions = (
+                        math.ceil(row_count / batch_size)
+                        if batch_size and batch_size > 0
+                        else row_count
+                    )
+                self.logger.info(f"Total Batches: {desired_partitions}")
 
             # ---- Now process all the results ----
             if partition_data:
