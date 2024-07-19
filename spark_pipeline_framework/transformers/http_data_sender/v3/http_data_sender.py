@@ -235,8 +235,8 @@ class HttpDataSender(FrameworkTransformer):
         with ProgressLogMetric(
             name=f"{name}_fhir_sender", progress_logger=progress_logger
         ):
+            desired_partitions: int
             if partition_data:
-                desired_partitions: int
                 if batch_count:
                     desired_partitions = batch_count
                 else:
@@ -246,8 +246,10 @@ class HttpDataSender(FrameworkTransformer):
                         if batch_size and batch_size > 0
                         else row_count
                     )
-                self.logger.info(f"Total Batches: {desired_partitions}")
+            else:
+                desired_partitions = df.rdd.getNumPartitions()
 
+            self.logger.info(f"Total Batches: {desired_partitions}")
             # ---- Now process all the results ----
             if partition_data:
                 df = df.repartition(desired_partitions)
