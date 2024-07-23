@@ -151,7 +151,7 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
                     ]
                 )
             ),
-            partition_data=False,
+            enable_repartitioning=False,
         ).transform(df)
 
     result_df_2: DataFrame = spark_session.table("output_view")
