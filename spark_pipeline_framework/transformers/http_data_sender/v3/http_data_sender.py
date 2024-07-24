@@ -61,6 +61,7 @@ class HttpDataSender(FrameworkTransformer):
         headers: Optional[Dict[str, Any]] = None,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
+        enable_repartitioning: Optional[bool] = True,
     ):
         """
         Sends data to http server (usually REST API)
@@ -87,6 +88,7 @@ class HttpDataSender(FrameworkTransformer):
         :param headers: Any additional headers
         :param cert: certificate or ca bundle file path
         :param verify: controls whether the SSL certificate of the server should be verified when making HTTPS requests.
+        :param enable_repartitioning: (Optional bool) Tells whether we need to partition data or not
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -174,6 +176,11 @@ class HttpDataSender(FrameworkTransformer):
         self.verify: Param[Optional[Union[bool, str]]] = Param(self, "verify", "")
         self._setDefault(verify=verify)
 
+        self.enable_repartitioning: Param[Optional[bool]] = Param(
+            self, "enable_repartitioning", ""
+        )
+        self._setDefault(enable_repartitioning=enable_repartitioning)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -215,6 +222,9 @@ class HttpDataSender(FrameworkTransformer):
         cert: Optional[Union[str, Tuple[str, str]]] = self.getOrDefault(self.cert)
         verify: Optional[Union[bool, str]] = self.getOrDefault(self.verify)
         raise_error: bool = self.getOrDefault(self.raise_error)
+        enable_repartitioning: Optional[bool] = self.getOrDefault(
+            self.enable_repartitioning
+        )
 
         df = df.sparkSession.table(source_view)
 
@@ -230,21 +240,24 @@ class HttpDataSender(FrameworkTransformer):
             name=f"{name}_fhir_sender", progress_logger=progress_logger
         ):
             desired_partitions: int
-            if batch_count:
-                desired_partitions = batch_count
+            if enable_repartitioning:
+                if batch_count:
+                    desired_partitions = batch_count
+                else:
+                    row_count: int = df.count()
+                    desired_partitions = (
+                        math.ceil(row_count / batch_size)
+                        if batch_size and batch_size > 0
+                        else row_count
+                    )
             else:
-                row_count: int = df.count()
-                desired_partitions = (
-                    math.ceil(row_count / batch_size)
-                    if batch_size and batch_size > 0
-                    else row_count
-                )
-            self.logger.info(f"Total Batches: {desired_partitions}")
+                desired_partitions = df.rdd.getNumPartitions()
 
+            self.logger.info(f"Total Batches: {desired_partitions}")
             # ---- Now process all the results ----
-            rdd: RDD[Row] = df.repartition(
-                desired_partitions
-            ).rdd.mapPartitionsWithIndex(
+            if enable_repartitioning:
+                df = df.repartition(desired_partitions)
+            rdd: RDD[Row] = df.rdd.mapPartitionsWithIndex(
                 lambda partition_index, rows: HttpDataSenderProcessor.send_partition_to_server(
                     partition_index=partition_index,
                     rows=rows,

@@ -114,3 +114,45 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     assert result_df.collect()[1]["data"] == [
         Row(access_token="fake access_token2", expires_in=54000, token_type="bearer")
     ]
+
+    load_mock_source_api_json_responses(
+        folder=data_dir.joinpath("oauth_service"),
+        mock_client=mock_client,
+        url_prefix=f"{test_name}/token",
+    )
+    load_mock_source_api_json_responses(
+        folder=data_dir.joinpath("token_service"),
+        mock_client=mock_client,
+        url_prefix=test_name,
+    )
+
+    df = df.sparkSession.table("my_view")
+    df_coalesced = df.coalesce(1)
+    df_coalesced.createOrReplaceTempView("my_view")
+
+    with ProgressLogger() as progress_logger:
+        HttpDataSender(
+            progress_logger=progress_logger,
+            source_view="my_view",
+            success_view="output_view",
+            url=f"{server_url}",
+            batch_size=1,
+            client_id="client_id",
+            client_secret="client_secret",
+            auth_url=f"{server_url}/token",
+            payload_generator=payload_generator,
+            response_processor=response_processor,
+            success_schema=ArrayType(
+                StructType(
+                    [
+                        StructField("access_token", StringType(), True),
+                        StructField("expires_in", LongType(), True),
+                        StructField("token_type", StringType(), True),
+                    ]
+                )
+            ),
+            enable_repartitioning=False,
+        ).transform(df)
+
+    result_df_2: DataFrame = spark_session.table("output_view")
+    assert result_df_2.rdd.getNumPartitions() == 1
