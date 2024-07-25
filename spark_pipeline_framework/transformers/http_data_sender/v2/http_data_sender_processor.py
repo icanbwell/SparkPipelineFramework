@@ -44,7 +44,7 @@ class HttpDataSenderProcessor:
 
     @staticmethod
     def create_request(
-        url: str,
+        url: Optional[str],
         headers: Dict[str, Any],
         post_as_json_formatted_string: Optional[bool],
         json_data: Dict[str, Any],
@@ -76,6 +76,7 @@ class HttpDataSenderProcessor:
         """
 
         url = url_generator(json_data) if url_generator else url
+        assert url
         request: HelixHttpRequest = HelixHttpRequest(
             request_type=RequestType.POST,
             url=url,
