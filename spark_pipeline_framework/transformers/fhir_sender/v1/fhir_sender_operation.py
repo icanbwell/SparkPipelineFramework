@@ -21,7 +21,9 @@ class FhirSenderOperation(Enum):
             return FhirSenderOperation.FHIR_OPERATION_DELETE
         if text.upper() == "$MERGE":
             return FhirSenderOperation.FHIR_OPERATION_MERGE
-        raise NotImplementedError(f"{text} is not delete or $merge")
+        if text.upper() == "PUT":
+            return FhirSenderOperation.FHIR_OPERATION_PUT
+        raise NotImplementedError(f"{text} is not delete or $merge or put")
 
     @staticmethod
     def operation_equals(
