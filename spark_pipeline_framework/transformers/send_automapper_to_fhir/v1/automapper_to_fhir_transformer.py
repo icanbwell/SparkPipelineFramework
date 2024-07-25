@@ -96,6 +96,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             }
                         }
         :param enable_repartitioning: Enable repartitioning or not, default True
+        :param operation: The API operation to perform, such as merge, put, delete etc
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
