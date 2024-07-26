@@ -6,7 +6,7 @@ import boto3
 import pytest
 from _pytest.fixtures import FixtureFunctionMarker
 from botocore.client import BaseClient
-from moto import mock_ssm, mock_s3  # type: ignore
+from moto import mock_ssm, mock_s3
 from pyspark.sql import SparkSession
 
 from create_spark_session import create_spark_session
