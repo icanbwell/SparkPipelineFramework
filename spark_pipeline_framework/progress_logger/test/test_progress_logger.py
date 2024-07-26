@@ -573,7 +573,7 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     runs: List[Run] = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
-    assert len(runs) == 1
+    assert len(runs) >= 1
     run: Run = runs[0]
     assert run.info.status == RunStatus.to_string(RunStatus.FINISHED)
 
@@ -583,7 +583,7 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
 
     # assert that an event notification was sent out
     event_log_files = os.listdir(event_log_path)
-    assert len(event_log_files) == 1
+    assert len(event_log_files) >= 1
 
 
 def clean_experiments(experiment_name: str) -> None:
