@@ -55,7 +55,7 @@ vistir=">=0.6.1, <0.7.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/
 helix-mockserver-client=">=1.2.1"
 sparkfhirschemas = ">=1.0.17"
 types-boto3 = ">=1.0.2"
-moto = ">=5.0.11"
+moto = { extras = ['all'], version = "==4.2.9" }
 types-requests=">=0.1.11"
 types-PyMySQL=">=0.1.5"
 types-urllib3=">=1.26.0"

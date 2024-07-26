@@ -19,7 +19,7 @@ COPY ./test.py ./
 RUN /opt/spark/bin/spark-submit --master local[*] test.py
 
 ARG TARGETPLATFORM
-RUN pipenv run pipenv sync --dev --system --extra-pip-args="--prefer-binary"
+RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 
 COPY . /SparkpipelineFramework
 
