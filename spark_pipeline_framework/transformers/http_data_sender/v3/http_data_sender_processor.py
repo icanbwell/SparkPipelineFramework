@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional, Union, Callable, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Union, Callable, Tuple, cast
 from functools import partial
 
 from requests import status_codes, Response
@@ -42,7 +42,7 @@ class HttpDataSenderProcessor:
 
     @staticmethod
     def create_request(
-        url: str,
+        url: Optional[str],
         headers: Dict[str, Any],
         raise_error: bool,
         post_as_json_formatted_string: Optional[bool],
@@ -66,7 +66,7 @@ class HttpDataSenderProcessor:
         :param verify: controls whether the SSL certificate of the server should be verified when making HTTPS requests.
         """
 
-        url = url_generator(json_data) if url_generator else url
+        url = cast(str, url_generator(json_data) if url_generator else url)
         request: HelixHttpRequest = HelixHttpRequest(
             request_type=RequestType.POST,
             url=url,

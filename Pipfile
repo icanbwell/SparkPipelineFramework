@@ -15,7 +15,6 @@ boto3 = "*"
 chardet="*"
 slack_sdk = "*"
 smart_open = { extras = ['s3'], version = ">=6.3.0" }
-packaging = "==20.9"  # need to lock to this version because of compatibility issues with pipenv-setup
 mlflow-skinny = ">=2.6.0"
 SQLAlchemy = ">=1.4.37"
 alembic = ">=1.8.0"
