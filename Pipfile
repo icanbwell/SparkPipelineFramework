@@ -31,8 +31,7 @@ pymongo=">=4.8.0"
 more-itertools = ">=9.1.0"
 
 [dev-packages]
-setuptools=">=70.3.0"
-packaging=">=24.1"
+setuptools = "<71.0" # https://github.com/pypa/setuptools/issues/4483
 wheel = ">=0.43.0"
 twine=">=5.1.1"
 pre-commit=">=3.7.1"
