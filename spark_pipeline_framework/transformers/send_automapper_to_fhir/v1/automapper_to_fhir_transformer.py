@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 
 from spark_pipeline_framework.transformers.athena_table_creator.v1.athena_table_creator import (
@@ -22,6 +22,9 @@ from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.proxy_base import ProxyBase
+from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
+    FhirSenderOperation,
+)
 from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
     FrameworkMappingLoader,
 )
@@ -31,6 +34,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.transformers.framework_parquet_exporter.v1.framework_parquet_exporter import (
     FrameworkParquetExporter,
 )
+
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
@@ -66,6 +70,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         sort_data: Optional[Dict[str, Dict[str, Any]]] = None,
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = True,
+        operation: Union[
+            FhirSenderOperation, str
+        ] = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -89,6 +96,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             }
                         }
         :param enable_repartitioning: Enable repartitioning or not, default True
+        :param operation: The API operation to perform, such as merge, put, delete etc
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -177,6 +185,11 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(enable_repartitioning=enable_repartitioning)
 
+        self.operation: Param[Union[FhirSenderOperation, str]] = Param(
+            self, "operation", ""
+        )
+        self._setDefault(operation=operation)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -200,6 +213,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
             self.sort_data
         )
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
+        operation: Union[FhirSenderOperation, str] = self.getOrDefault(self.operation)
 
         assert parameters
         progress_logger = self.getProgressLogger()
@@ -339,6 +353,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             if need_sorting and sort_data
                             else None,
                             enable_repartitioning=enable_repartitioning,
+                            operation=operation,
                         ).transform(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()
