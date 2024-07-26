@@ -54,8 +54,7 @@ run-pre-commit: setup-pre-commit
 .PHONY:update
 update: down Pipfile.lock setup-pre-commit  ## Updates all the packages using Pipfile
 	docker compose run --rm --name spf_pipenv dev pipenv sync --dev && \
-	make devdocker && \
-	make pipenv-setup
+	make devdocker
 
 .PHONY:tests
 tests:
@@ -82,3 +81,8 @@ clean_data: down ## Cleans all the local docker setup
 ifneq ($(shell docker volume ls | grep "sparkpipelineframework"| awk '{print $$2}'),)
 	docker volume ls | grep "sparkpipelineframework" | awk '{print $$2}' | xargs docker volume rm
 endif
+
+.PHONY:show_dependency_graph
+show_dependency_graph:
+	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install --skip-lock && pipenv graph --reverse"
+	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install -d && pipenv graph"

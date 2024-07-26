@@ -1,4 +1,4 @@
-FROM imranq2/helix.spark:3.3.0.33-slim
+FROM imranq2/helix.spark:3.3.0.37-slim
 # https://github.com/icanbwell/helix.spark
 USER root
 
@@ -19,7 +19,7 @@ COPY ./test.py ./
 RUN /opt/spark/bin/spark-submit --master local[*] test.py
 
 ARG TARGETPLATFORM
-RUN pipenv run pip install packaging==20.9 && pipenv sync --dev --system --extra-pip-args="--prefer-binary"
+RUN pipenv run pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 
 COPY . /spf
 
