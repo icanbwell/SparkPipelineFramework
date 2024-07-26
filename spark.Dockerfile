@@ -2,14 +2,14 @@ FROM imranq2/helix.spark:3.3.0.37-slim
 # https://github.com/icanbwell/helix.spark
 USER root
 
-ENV PYTHONPATH=/spf
-ENV CLASSPATH=/spf/jars:$CLASSPATH
+ENV PYTHONPATH=/SparkpipelineFramework
+ENV CLASSPATH=/SparkpipelineFramework/jars:$CLASSPATH
 
 # remove the older version of entrypoints with apt-get because that is how it was installed
 RUN apt-get remove python3-entrypoints -y
 
-COPY Pipfile* /spf/
-WORKDIR /spf
+COPY Pipfile* /SparkpipelineFramework/
+WORKDIR /SparkpipelineFramework
 
 #RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0
 #COPY ./jars/* /opt/spark/jars/
@@ -21,7 +21,7 @@ RUN /opt/spark/bin/spark-submit --master local[*] test.py
 ARG TARGETPLATFORM
 RUN pipenv run pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 
-COPY . /spf
+COPY . /SparkpipelineFramework
 
 # override entrypoint to remove extra logging
 RUN mv /opt/minimal_entrypoint.sh /opt/entrypoint.sh
