@@ -12,14 +12,12 @@ from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
-from pyspark.rdd import RDD
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.functions import explode
 from pyspark.sql.types import (
     StringType,
     StructType,
-    Row,
     DataType,
 )
 
@@ -39,11 +37,11 @@ from spark_pipeline_framework.utilities.capture_parameters import capture_parame
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
-    FhirReceiverException,
-)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+    FhirReceiverException,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_processor import (
     FhirReceiverProcessor,
@@ -114,6 +112,8 @@ class FhirReceiver(FrameworkTransformer):
         graph_json: Optional[Dict[str, Any]] = None,
         run_synchronously: Optional[bool] = None,
         refresh_token_function: Optional[RefreshTokenFunction] = None,
+        partition_by_column_name: Optional[str] = None,
+        enable_repartitioning: bool = True,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -393,6 +393,16 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(refresh_token_function=refresh_token_function)
 
+        self.partition_by_column_name: Param[Optional[str]] = Param(
+            self, "partition_by_column_name", ""
+        )
+        self._setDefault(partition_by_column_name=partition_by_column_name)
+
+        self.enable_repartitioning: Param[bool] = Param(
+            self, "enable_repartitioning", ""
+        )
+        self._setDefault(enable_repartitioning=enable_repartitioning)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -486,6 +496,11 @@ class FhirReceiver(FrameworkTransformer):
         refresh_token_function: Optional[RefreshTokenFunction] = self.getOrDefault(
             self.refresh_token_function
         )
+
+        partition_by_column_name: Optional[str] = self.getOrDefault(
+            self.partition_by_column_name
+        )
+        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -620,22 +635,16 @@ class FhirReceiver(FrameworkTransformer):
                     response_schema = FhirGetResponseSchema.get_schema()
 
                     result_with_counts_and_responses = (
-                        df.sparkSession.createDataFrame(  # type:ignore [type-var]
+                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
                             result_rows, schema=response_schema
                         )
                     )
                 else:
-                    # run the above function on every partition
-                    rdd: RDD[Row] = id_df.repartition(
-                        desired_partitions
-                    ).rdd.mapPartitionsWithIndex(
-                        lambda partition_index, rows: FhirReceiverProcessor.send_partition_request_to_server(
-                            partition_index=partition_index,
-                            rows=rows,
-                            parameters=receiver_parameters,
-                        )
-                    )
-
+                    # ---- Now process all the results ----
+                    if enable_repartitioning:
+                        # repartition only when we haven't already repartitioned by column
+                        # and enable_repartitioning is True
+                        id_df = id_df.repartition(desired_partitions)
                     if has_token_col and not server_url:
                         assert slug_column
                         assert url_column
@@ -646,9 +655,13 @@ class FhirReceiver(FrameworkTransformer):
                                 if [c in id_df.columns]
                             ]
                         )
-                    response_schema = FhirGetResponseSchema.get_schema()
-
-                    result_with_counts_and_responses = rdd.toDF(response_schema)
+                    # use mapInPandas
+                    result_with_counts_and_responses = id_df.mapInPandas(
+                        FhirReceiverProcessor.get_process_batch_function(
+                            parameters=receiver_parameters
+                        ),
+                        schema=FhirGetResponseSchema.get_schema(),
+                    )
 
                 # Now write to checkpoint if requested
                 if checkpoint_path:
@@ -862,11 +875,6 @@ class FhirReceiver(FrameworkTransformer):
                             + f"{server_url or ''}/{resource_name}"
                         )
 
-                # turn list of list of string to list of strings
-                # rdd1: RDD = rdd.flatMap(lambda a: a.responses)
-
-                # noinspection PyUnresolvedReferences
-                # result_df: DataFrame = rdd1.toDF(StringType())
                 result_df: DataFrame = (
                     result_with_counts_and_responses.select(
                         explode(col(FhirGetResponseSchema.responses))
@@ -973,13 +981,9 @@ class FhirReceiver(FrameworkTransformer):
                 )
                 resources = result1.resources
                 errors = result1.errors
-                rdd1: RDD[str] = (
-                    sc(df).parallelize(resources, numSlices=num_partitions)
-                    if num_partitions is not None
-                    else sc(df).parallelize(resources)
+                list_df: DataFrame = df.sparkSession.createDataFrame(
+                    resources, schema=StringType()
                 )
-
-                list_df: DataFrame = rdd1.toDF(StringType())
                 file_format = "delta" if delta_lake_table else "text"
                 list_df.write.format(file_format).mode(mode).save(str(file_path))
                 list_df = df.sparkSession.read.format(file_format).load(str(file_path))
