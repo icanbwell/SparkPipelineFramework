@@ -6,8 +6,8 @@ import boto3
 import pytest
 from _pytest.fixtures import FixtureFunctionMarker
 from botocore.client import BaseClient
-from moto import mock_ssm, mock_s3
 from pyspark.sql import SparkSession
+from moto import mock_aws
 
 from create_spark_session import create_spark_session
 
@@ -31,7 +31,7 @@ def aws_credentials() -> None:
 def ssm_mock(
     aws_credentials: FixtureFunctionMarker,
 ) -> Generator[BaseClient, None, None]:
-    with mock_ssm():
+    with mock_aws():
         yield boto3.client("ssm", region_name="us-east-1")
 
 
@@ -39,5 +39,5 @@ def ssm_mock(
 def s3_mock(
     aws_credentials: FixtureFunctionMarker,
 ) -> Generator[BaseClient, None, None]:
-    with mock_s3():
+    with mock_aws():
         yield boto3.client("s3", region_name="us-east-1")

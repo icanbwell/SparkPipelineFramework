@@ -103,7 +103,7 @@ sparkfhirschemas = ">=1.0.17"
 # types-boto3 is needed for type hints for boto3
 types-boto3 = ">=1.0.2"
 # moto is needed for mocking AWS services
-moto = { extras = ['all'], version = "==4.2.9" }
+moto = { extras = ['all'], version = ">=5.0.11" }
 # types-requests is needed for type hints for requests
 types-requests=">=0.1.11"
 # types-PyMySQL is needed for type hints for PyMySQL
