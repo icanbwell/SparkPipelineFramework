@@ -75,8 +75,9 @@ sphinx-html:
 	cp -a docsrc/_build/html/. docs
 
 .PHONY:pipenv-setup
-pipenv-setup:devdocker ## Brings up the bash shell in dev docker
-	docker compose run --rm --name spark_pipeline_framework dev dev sh -c 'pipenv install --categories "packages dev-packages pipenv-setup-packages" && pipenv run pipenv-setup sync --pipfile'
+pipenv-setup:devdocker ## Run pipenv-setup to update setup.py with latest dependencies
+	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv run pipenv install --skip-lock --categories \"pipenvsetup\" && pipenv run pipenv-setup sync --pipfile" && \
+	make run-pre-commit
 
 .PHONY: clean_data
 clean_data: down ## Cleans all the local docker setup
