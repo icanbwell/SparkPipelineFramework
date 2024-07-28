@@ -39,4 +39,5 @@ class FhirReceiverParameters:
     url_column: Optional[str]
     use_data_streaming: Optional[bool]
     graph_json: Optional[Dict[str, Any]]
-    refresh_token_function: Optional[RefreshTokenFunction] = None,
+    ignore_status_codes: List[int]
+    refresh_token_function: Optional[RefreshTokenFunction] = None

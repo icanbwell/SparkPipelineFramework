@@ -29,6 +29,9 @@ from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
+    FhirReceiverParameters,
+)
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
@@ -39,11 +42,11 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token impor
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_helpers import (
-    FhirReceiverHelpers,
-)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_processor import (
+    FhirReceiverProcessor,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -568,91 +571,68 @@ class FhirReceiver(FrameworkTransformer):
                 )
 
                 result_with_counts_and_responses: DataFrame
+                receiver_parameters: FhirReceiverParameters = FhirReceiverParameters(
+                    batch_size=batch_size,
+                    has_token_col=has_token_col,
+                    server_url=server_url,
+                    log_level=log_level,
+                    action=action,
+                    action_payload=action_payload,
+                    additional_parameters=additional_parameters,
+                    filter_by_resource=filter_by_resource,
+                    filter_parameter=filter_parameter,
+                    sort_fields=sort_fields,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_scopes=auth_scopes,
+                    include_only_properties=include_only_properties,
+                    separate_bundle_resources=separate_bundle_resources,
+                    expand_fhir_bundle=expand_fhir_bundle,
+                    accept_type=accept_type,
+                    content_type=content_type,
+                    additional_request_headers=additional_request_headers,
+                    accept_encoding=accept_encoding,
+                    slug_column=slug_column,
+                    retry_count=retry_count,
+                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                    limit=limit,
+                    auth_access_token=auth_access_token,
+                    resource_type=resource_name,
+                    error_view=error_view,
+                    url_column=url_column,
+                    use_data_streaming=use_data_streaming,
+                    graph_json=graph_json,
+                    ignore_status_codes=ignore_status_codes,
+                )
                 if run_synchronously:
-                    id_rows: List[Row] = id_df.collect()
-                    result_rows: List[Row] = (
-                        FhirReceiverHelpers.send_partition_request_to_server(
+                    id_rows: List[Dict[str, Any]] = [
+                        r.asDict(recursive=True) for r in id_df.collect()
+                    ]
+                    result_rows: List[Dict[str, Any]] = (
+                        FhirReceiverProcessor.send_partition_request_to_server(
                             partition_index=0,
                             rows=id_rows,
-                            batch_size=batch_size,
-                            has_token_col=has_token_col,
-                            server_url=server_url,
-                            log_level=log_level,
-                            action=action,
-                            action_payload=action_payload,
-                            additional_parameters=additional_parameters,
-                            filter_by_resource=filter_by_resource,
-                            filter_parameter=filter_parameter,
-                            sort_fields=sort_fields,
-                            auth_server_url=auth_server_url,
-                            auth_client_id=auth_client_id,
-                            auth_client_secret=auth_client_secret,
-                            auth_login_token=auth_login_token,
-                            auth_scopes=auth_scopes,
-                            include_only_properties=include_only_properties,
-                            separate_bundle_resources=separate_bundle_resources,
-                            expand_fhir_bundle=expand_fhir_bundle,
-                            accept_type=accept_type,
-                            content_type=content_type,
-                            additional_request_headers=additional_request_headers,
-                            accept_encoding=accept_encoding,
-                            slug_column=slug_column,
-                            retry_count=retry_count,
-                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                            limit=limit,
-                            auth_access_token=auth_access_token,
-                            resource_type=resource_name,
-                            error_view=error_view,
-                            url_column=url_column,
-                            use_data_streaming=use_data_streaming,
-                            graph_json=graph_json,
+                            parameters=receiver_parameters,
                         )
                     )
                     response_schema = FhirGetResponseSchema.get_schema()
 
-                    result_with_counts_and_responses = df.sparkSession.createDataFrame(
-                        result_rows, schema=response_schema
+                    result_with_counts_and_responses = (
+                        df.sparkSession.createDataFrame(  # type:ignore [type-var]
+                            result_rows, schema=response_schema
+                        )
                     )
                 else:
                     # run the above function on every partition
                     rdd: RDD[Row] = id_df.repartition(
                         desired_partitions
                     ).rdd.mapPartitionsWithIndex(
-                        lambda partition_index, rows: FhirReceiverHelpers.send_partition_request_to_server(
+                        lambda partition_index, rows: FhirReceiverProcessor.send_partition_request_to_server(
                             partition_index=partition_index,
                             rows=rows,
-                            batch_size=batch_size,
-                            has_token_col=has_token_col,
-                            server_url=server_url,
-                            log_level=log_level,
-                            action=action,
-                            action_payload=action_payload,
-                            additional_parameters=additional_parameters,
-                            filter_by_resource=filter_by_resource,
-                            filter_parameter=filter_parameter,
-                            sort_fields=sort_fields,
-                            auth_server_url=auth_server_url,
-                            auth_client_id=auth_client_id,
-                            auth_client_secret=auth_client_secret,
-                            auth_login_token=auth_login_token,
-                            auth_scopes=auth_scopes,
-                            include_only_properties=include_only_properties,
-                            separate_bundle_resources=separate_bundle_resources,
-                            expand_fhir_bundle=expand_fhir_bundle,
-                            accept_type=accept_type,
-                            content_type=content_type,
-                            additional_request_headers=additional_request_headers,
-                            accept_encoding=accept_encoding,
-                            slug_column=slug_column,
-                            retry_count=retry_count,
-                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                            limit=limit,
-                            auth_access_token=auth_access_token,
-                            resource_type=resource_name,
-                            error_view=error_view,
-                            url_column=url_column,
-                            use_data_streaming=use_data_streaming,
-                            graph_json=graph_json,
+                            parameters=receiver_parameters,
                         )
                     )
 
@@ -947,40 +927,49 @@ class FhirReceiver(FrameworkTransformer):
                 if view:
                     result_df.createOrReplaceTempView(view)
             else:  # get all resources
-                result1 = FhirReceiverHelpers.get_batch_result(
-                    page_size=page_size,
-                    limit=limit,
+                receiver_parameters = FhirReceiverParameters(
+                    batch_size=batch_size,
+                    has_token_col=False,
                     server_url=server_url,
+                    log_level=log_level,
                     action=action,
                     action_payload=action_payload,
                     additional_parameters=additional_parameters,
                     filter_by_resource=filter_by_resource,
                     filter_parameter=filter_parameter,
-                    resource_name=resource_name,
-                    include_only_properties=include_only_properties,
-                    last_updated_after=last_updated_after,
-                    last_updated_before=last_updated_before,
                     sort_fields=sort_fields,
                     auth_server_url=auth_server_url,
                     auth_client_id=auth_client_id,
                     auth_client_secret=auth_client_secret,
                     auth_login_token=auth_login_token,
-                    auth_access_token=auth_access_token,
                     auth_scopes=auth_scopes,
+                    include_only_properties=include_only_properties,
                     separate_bundle_resources=separate_bundle_resources,
                     expand_fhir_bundle=expand_fhir_bundle,
                     accept_type=accept_type,
                     content_type=content_type,
                     additional_request_headers=additional_request_headers,
                     accept_encoding=accept_encoding,
+                    slug_column=slug_column,
                     retry_count=retry_count,
                     exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                    log_level=log_level,
+                    limit=limit,
+                    auth_access_token=auth_access_token,
+                    resource_type=resource_name,
                     error_view=error_view,
-                    ignore_status_codes=ignore_status_codes,
+                    url_column=url_column,
                     use_data_streaming=use_data_streaming,
                     graph_json=graph_json,
-                    refresh_token_function=refresh_token_function,
+                    ignore_status_codes=ignore_status_codes,
+                )
+
+                result1 = FhirReceiverProcessor.get_batch_result(
+                    page_size=page_size,
+                    limit=limit,
+                    server_url=server_url,
+                    parameters=receiver_parameters,
+                    last_updated_after=last_updated_after,
+                    last_updated_before=last_updated_before,
                 )
                 resources = result1.resources
                 errors = result1.errors
