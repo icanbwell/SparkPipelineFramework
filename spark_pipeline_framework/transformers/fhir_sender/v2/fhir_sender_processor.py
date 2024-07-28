@@ -9,6 +9,9 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
     FhirSenderParameters,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
+    FhirMergeResponseItem,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
 )
@@ -287,4 +290,11 @@ class FhirSenderProcessor:
                 logger.error(error)
             logger.error("---- end errors -----")
 
-        return responses
+        # parse the response
+        parsed_responses: List[FhirMergeResponseItem] = [
+            FhirMergeResponseItem(item=response) for response in responses
+        ]
+        clean_responses: List[Dict[str, Any]] = [
+            parsed_response.to_dict() for parsed_response in parsed_responses
+        ]
+        return clean_responses

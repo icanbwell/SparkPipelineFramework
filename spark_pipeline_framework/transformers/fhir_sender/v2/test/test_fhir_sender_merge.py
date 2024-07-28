@@ -3,6 +3,7 @@ from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
 
+import pytest
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import IntegerType
 
@@ -15,7 +16,10 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 import requests
 
 
-def test_fhir_sender_merge(spark_session: SparkSession) -> None:
+@pytest.mark.parametrize("run_synchronously", [True, False])
+def test_fhir_sender_merge(
+    spark_session: SparkSession, run_synchronously: bool
+) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("./temp")
@@ -41,7 +45,7 @@ def test_fhir_sender_merge(spark_session: SparkSession) -> None:
             response_path=response_files_dir,
             progress_logger=progress_logger,
             batch_size=1,
-            run_synchronously=True,
+            run_synchronously=run_synchronously,
             additional_request_headers={"SampleHeader": "SampleValue"},
             parameters=parameters,
         ).transform(df)
