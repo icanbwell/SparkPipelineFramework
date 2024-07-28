@@ -89,9 +89,21 @@ def create_spark_session(request: Any) -> SparkSession:
             "org.apache.spark.sql.delta.catalog.DeltaCatalog",
         )
         .config("spark.jars.packages", ",".join(jars))
+        .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+        .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "false")
+        .config("spark.sql.execution.arrow.maxRecordsPerBatch", "2048")
         .enableHiveSupport()
         .getOrCreate()
     )
+
+    configurations = session.sparkContext.getConf().getAll()
+    for item in configurations:
+        print(item)
+
+    # Verify that Arrow is enabled
+    # arrow_enabled = session.conf.get("spark.sql.execution.arrow.pyspark.enabled")
+    # print(f"Arrow Enabled: {arrow_enabled}")
+
     request.addfinalizer(lambda: clean_close(session))
     quiet_py4j()
     return session
