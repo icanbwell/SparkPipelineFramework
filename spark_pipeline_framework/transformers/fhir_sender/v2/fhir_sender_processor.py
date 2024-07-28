@@ -1,7 +1,6 @@
 import json
 from typing import Any, Dict, Iterable, List, Optional, Callable, cast
 
-# noinspection PyUnresolvedReferences
 import pandas as pd
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 
@@ -83,7 +82,7 @@ class FhirSenderProcessor:
 
         if len(json_data_list) == 0:
             return []
-        print(
+        logger.info(
             f"Sending batch {partition_index}/{parameters.desired_partitions} "
             f"containing {len(json_data_list)} rows "
             f"for operation {parameters.operation} "
@@ -191,7 +190,7 @@ class FhirSenderProcessor:
                         else None
                     )
                     first_id = first_item.get("id") if first_item is not None else None
-                    print(
+                    logger.debug(
                         f"Sending {i} of {count} from partition {partition_index} "
                         f"for {parameters.resource_name}: {first_id}"
                     )
@@ -272,7 +271,7 @@ class FhirSenderProcessor:
             if response.get(FhirMergeResponseItemSchema.issue) is not None:
                 error_count += 1
                 errors.append(json.dumps(response[FhirMergeResponseItemSchema.issue]))
-        print(
+        logger.debug(
             f"Received response for batch {partition_index}/{parameters.desired_partitions} "
             f"request_ids:[{', '.join(request_id_list)}] "
             f"total={len(json_data_list)}, error={error_count}, "
