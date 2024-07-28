@@ -30,7 +30,10 @@ RUN mv /opt/minimal_entrypoint.sh /opt/entrypoint.sh
 # RUN pre-commit install
 RUN mkdir -p /fhir && chmod 777 /fhir
 RUN mkdir -p /.local/share/virtualenvs && chmod 777 /.local/share/virtualenvs
-# USER 1001
+
+# Run as non-root user
+# https://spark.apache.org/docs/latest/running-on-kubernetes.html#user-identity
+USER 185
 
 # RUN spark-submit --packages com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2
 # RUN spark-shell --jar spark-nlp-assembly-4.2.2
