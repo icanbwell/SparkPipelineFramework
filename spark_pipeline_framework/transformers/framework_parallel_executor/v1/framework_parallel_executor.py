@@ -179,7 +179,9 @@ class FrameworkParallelExecutor(FrameworkTransformer):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **(super().as_dict()),
-            "stages": [s.as_dict() for s in self.stages]  # type: ignore
-            if not callable(self.stages)
-            else str(self.stages),
+            "stages": (
+                [s.as_dict() for s in self.stages]  # type: ignore
+                if not callable(self.stages)
+                else str(self.stages)
+            ),
         }

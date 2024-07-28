@@ -54,6 +54,7 @@ run-pre-commit: setup-pre-commit
 .PHONY:update
 update: down Pipfile.lock setup-pre-commit  ## Updates all the packages using Pipfile
 	docker compose run --rm --name spf_pipenv dev pipenv sync --dev && \
+	make install_types && \
 	make devdocker
 
 .PHONY:tests
@@ -84,5 +85,5 @@ endif
 
 .PHONY:show_dependency_graph
 show_dependency_graph:
-	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install --skip-lock && pipenv graph --reverse"
+	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install --skip-lock -d && pipenv graph --reverse"
 	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install -d && pipenv graph"

@@ -269,28 +269,28 @@ class FhirSender(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
-        response_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getResponsePath()
+        response_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getResponsePath()
+        )
         if callable(response_path):
             response_path = response_path(self.loop_id)
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         resource_name: str = self.getResource()
         parameters = self.getParameters()
-        additional_request_headers: Optional[
-            Dict[str, str]
-        ] = self.getAdditionalRequestHeaders()
+        additional_request_headers: Optional[Dict[str, str]] = (
+            self.getAdditionalRequestHeaders()
+        )
         server_url: str = self.getServerUrl()
         batch_size: Optional[int] = self.getBatchSize()
-        throw_exception_on_validation_failure: Optional[
-            bool
-        ] = self.getThrowExceptionOnValidationFailure()
+        throw_exception_on_validation_failure: Optional[bool] = (
+            self.getThrowExceptionOnValidationFailure()
+        )
         operation: Union[FhirSenderOperation, str] = self.getOrDefault(self.operation)
         mode: str = self.getMode()
 

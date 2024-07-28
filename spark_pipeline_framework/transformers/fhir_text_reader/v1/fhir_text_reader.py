@@ -91,9 +91,9 @@ class FhirTextReader(FrameworkTransformer):
         name: Optional[str] = self.getName()
         destination_column_name: str = self.getDestinationColumnName()
         bad_records_path: Optional[Union[Path, str]] = self.getBadRecordsPath()
-        create_empty_view_if_file_path_not_found: Optional[
-            bool
-        ] = self.getCreateEmptyViewIfFilePathNotFound()
+        create_empty_view_if_file_path_not_found: Optional[bool] = (
+            self.getCreateEmptyViewIfFilePathNotFound()
+        )
 
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         # limit: int = self.getLimit()

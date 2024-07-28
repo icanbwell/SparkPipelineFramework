@@ -93,9 +93,11 @@ class FrameworkPipeline(Transformer):
 
             self.progress_logger.log_event(
                 event_name=pipeline_name,
-                event_text=f"Starting Pipeline {pipeline_name}" + f"_{self._run_id}"
-                if self._run_id
-                else "",
+                event_text=(
+                    f"Starting Pipeline {pipeline_name}" + f"_{self._run_id}"
+                    if self._run_id
+                    else ""
+                ),
                 log_level=LogLevel.INFO,
             )
             self.progress_logger.log_params(params=self.__parameters)

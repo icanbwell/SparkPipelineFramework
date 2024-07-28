@@ -63,9 +63,9 @@ class FrameworkLoopTransformer(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         start_time: float = time.time()
-        max_number_of_runs: Optional[
-            Union[int, Callable[[], int]]
-        ] = self.get_max_number_of_runs()
+        max_number_of_runs: Optional[Union[int, Callable[[], int]]] = (
+            self.get_max_number_of_runs()
+        )
         if callable(max_number_of_runs):
             max_number_of_runs = max_number_of_runs()
         if progress_logger is not None:
@@ -146,9 +146,11 @@ class FrameworkLoopTransformer(FrameworkTransformer):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **(super().as_dict()),
-            "stages": [s.as_dict() for s in self.stages]  # type: ignore
-            if not callable(self.stages)
-            else str(self.stages),
+            "stages": (
+                [s.as_dict() for s in self.stages]  # type: ignore
+                if not callable(self.stages)
+                else str(self.stages)
+            ),
         }
 
     def get_max_number_of_runs(self) -> Optional[Union[int, Callable[[], int]]]:

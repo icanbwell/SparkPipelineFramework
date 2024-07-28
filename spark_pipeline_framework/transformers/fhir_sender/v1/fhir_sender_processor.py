@@ -154,9 +154,11 @@ class FhirSenderProcessor:
                     i += 1
                     current_bundle: List[Dict[str, Any]]
                     json_data_list_1: List[str] = [
-                        convert_dict_to_fhir_json(item.asDict(recursive=True))
-                        if "id" in item
-                        else item["value"]
+                        (
+                            convert_dict_to_fhir_json(item.asDict(recursive=True))
+                            if "id" in item
+                            else item["value"]
+                        )
                     ]
                     first_item: Optional[Dict[str, Any]] = (
                         json.loads(json_data_list_1[0])
@@ -195,9 +197,11 @@ class FhirSenderProcessor:
             else:
                 # send a whole batch to the server at once
                 json_data_list_1 = [
-                    convert_dict_to_fhir_json(item.asDict(recursive=True))
-                    if "id" in item
-                    else item["value"]
+                    (
+                        convert_dict_to_fhir_json(item.asDict(recursive=True))
+                        if "id" in item
+                        else item["value"]
+                    )
                     for item in json_data_list
                 ]
                 first_item = (

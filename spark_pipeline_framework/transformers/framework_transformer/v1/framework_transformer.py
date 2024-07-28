@@ -122,13 +122,15 @@ class FrameworkTransformer(
             "type": ClassHelpers.get_full_name_of_instance(self),
             "params": {
                 k.name: (
-                    self.getOrDefault(k)
-                    if not hasattr(self.getOrDefault(k), "as_dict")
-                    else self.getOrDefault(k).as_dict()
-                )
-                if not callable(self.getOrDefault(k))
-                else ClassHelpers.get_function_as_text(
-                    fn=self.getOrDefault(k), strip=f"{k.name}="
+                    (
+                        self.getOrDefault(k)
+                        if not hasattr(self.getOrDefault(k), "as_dict")
+                        else self.getOrDefault(k).as_dict()
+                    )
+                    if not callable(self.getOrDefault(k))
+                    else ClassHelpers.get_function_as_text(
+                        fn=self.getOrDefault(k), strip=f"{k.name}="
+                    )
                 )
                 for k, v in self._paramMap.items()
                 if k.name not in ["progress_logger"]
