@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional, Callable, cast
+from typing import Any, Dict, Iterable, List, Optional, Callable
 
 import pandas as pd
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
@@ -41,12 +41,17 @@ class FhirSenderProcessor:
         def process_batch(
             batch_iter: Iterable[pd.DataFrame],
         ) -> Iterable[pd.DataFrame]:
+            """
+            This function is passed a list of dataframes, each dataframe is a partition
+
+            :param batch_iter: Iterable[pd.DataFrame]
+            :return: Iterable[pd.DataFrame]
+            """
             pdf: pd.DataFrame
             for pdf in batch_iter:
                 # convert the dataframe to a list of dictionaries
-                rows: List[Dict[str, Any]] = cast(
-                    List[Dict[str, Any]], pdf.to_dict(orient="records")
-                )
+                pdf_json: str = pdf.to_json(orient="records")
+                rows: List[Dict[str, Any]] = json.loads(pdf_json)
                 # send the partition to the server
                 result_list: List[Dict[str, Any]] = (
                     FhirSenderProcessor.send_partition_to_server(
@@ -73,8 +78,15 @@ class FhirSenderProcessor:
         https://spark.apache.org/docs/latest/rdd-programming-guide.html#passing-functions-to-spark
 
 
+        :param partition_index: index of partition
+        :param rows: rows to process
+        :param parameters: parameters for this function
+        :return: response from the server as FhirMergeResponseItem dicts
         """
         json_data_list: List[Dict[str, Any]] = list(rows)
+        assert isinstance(json_data_list, list)
+        if len(json_data_list) > 0:
+            assert isinstance(json_data_list[0], dict)
         logger = get_logger(__name__)
         assert parameters
         assert isinstance(parameters, FhirSenderParameters)

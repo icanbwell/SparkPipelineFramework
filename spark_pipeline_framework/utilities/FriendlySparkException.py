@@ -31,6 +31,7 @@ class FriendlySparkException(Exception):
             self.exception: Exception = exception
             self.stage_name: Optional[str] = stage_name
             self.message: str = ""
+            # Spark exceptions: https://spark.apache.org/docs/latest/api/python/reference/pyspark.errors.html#classes
             if isinstance(exception, AnalysisException):
                 self.message = str(exception)
             elif isinstance(exception, FrameworkMappingRunnerException):

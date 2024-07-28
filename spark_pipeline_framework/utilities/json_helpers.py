@@ -19,7 +19,7 @@ def remove_empty_elements(
     """recursively remove empty lists, empty dicts, empty strings, or None elements from a dictionary"""
 
     def empty(x: Any) -> bool:
-        return x is None or x == {} or x == [] or x == ""
+        return len(x) == 0 if isinstance(x, list) else x is None or x == {} or x == ""
 
     if not isinstance(d, (dict, list)):
         return d
