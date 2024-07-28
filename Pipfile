@@ -59,7 +59,7 @@ types-PyMySQL=">=0.1.5"
 types-urllib3=">=1.26.0"
 types-python-dateutil=">=2.8.19.14"
 
-# These dependencies are required for pipenv-setup.  They conflict with ones above so we install these
+# These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
 # only when running pipenv-setup
 [pipenvsetup]
 vistir=">=0.6.1, <0.7.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
