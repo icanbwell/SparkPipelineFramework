@@ -7,7 +7,7 @@ Pipfile.lock: Pipfile
 
 .PHONY: install_types
 install_types: Pipfile
-	docker compose run --rm --name spark_pipeline_framework dev pipenv run mypy --install-types
+	docker compose run --rm --name spark_pipeline_framework dev pipenv run mypy --install-types --non-interactive
 
 .PHONY:devdocker
 devdocker: ## Builds the docker for dev
@@ -54,7 +54,6 @@ run-pre-commit: setup-pre-commit
 .PHONY:update
 update: down Pipfile.lock setup-pre-commit  ## Updates all the packages using Pipfile
 	docker compose run --rm --name spf_pipenv dev pipenv sync --dev && \
-	make install_types && \
 	make devdocker && \
 	make pipenv-setup
 

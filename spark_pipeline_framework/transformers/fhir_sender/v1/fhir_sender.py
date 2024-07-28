@@ -476,13 +476,14 @@ class FhirSender(FrameworkTransformer):
                         )
                     )
                     result_rows: List[Dict[str, Any]] = flatten(result_rows_list)
-                    result_df = df.sparkSession.createDataFrame(
+                    result_df = df.sparkSession.createDataFrame(  # type: ignore[type-var]
                         result_rows, schema=FhirMergeResponseItemSchema.get_schema()
                     )
                 else:
                     # ---- Now process all the results ----
                     if enable_repartitioning and not partition_by_column_name:
-                        # repartition only when we haven't already repartitioned by column and enable_repartitioning is True
+                        # repartition only when we haven't already repartitioned by column and
+                        # enable_repartitioning is True
                         json_df = json_df.repartition(desired_partitions)
                     rdd: RDD[
                         Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]

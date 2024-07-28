@@ -59,6 +59,7 @@ setup(
         "protobuf>=3",
         "pyspark==3.3.0",
         "pyarrow>=4.0.0",
+        "pandas>=1.0.5",
         "delta-spark==2.3.0",
         "sparkautomapper>=2.0.7",
         "pymysql>=1.0.2",

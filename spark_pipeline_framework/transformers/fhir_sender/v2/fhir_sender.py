@@ -3,11 +3,10 @@ import math
 import traceback
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Callable, Collection
+from typing import Any, Dict, List, Optional, Union, Callable
 
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
-from pyspark.rdd import RDD
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, get_json_object
 from pyspark.sql.types import Row
@@ -18,8 +17,8 @@ from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
-    FhirSenderOperation,
+from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
+    FhirSenderParameters,
 )
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_processor import (
     FhirSenderProcessor,
@@ -36,16 +35,17 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token impor
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
 )
-
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+    FhirSenderOperation,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exception import (
     FhirSenderValidationException,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
-from spark_pipeline_framework.utilities.flattener.flattener import flatten
+from spark_pipeline_framework.utilities.map_functions import remove_field_from_json
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
-from spark_pipeline_framework.utilities.map_functions import remove_field_from_json
 
 
 class FhirSender(FrameworkTransformer):
@@ -450,89 +450,54 @@ class FhirSender(FrameworkTransformer):
                 )
 
                 result_df: Optional[DataFrame] = None
+                sender_parameters: FhirSenderParameters = FhirSenderParameters(
+                    desired_partitions=desired_partitions,
+                    operation=operation,
+                    server_url=server_url,
+                    resource_name=resource_name,
+                    name=name,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_scopes=auth_scopes,
+                    auth_access_token=auth_access_token,
+                    additional_request_headers=additional_request_headers,
+                    log_level=log_level,
+                    batch_size=batch_size,
+                    validation_server_url=validation_server_url,
+                    retry_count=retry_count,
+                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                )
                 if run_synchronously:
-                    rows_to_send: List[Row] = json_df.collect()
-                    result_rows_list: List[List[Dict[str, Any]]] = list(
+                    rows_to_send: List[Dict[str, Any]] = [
+                        r.asDict(recursive=True) for r in json_df.collect()
+                    ]
+                    result_rows: List[Dict[str, Any]] = (
                         FhirSenderProcessor.send_partition_to_server(
                             partition_index=0,
                             rows=rows_to_send,
-                            desired_partitions=desired_partitions,
-                            operation=operation,
-                            server_url=server_url,
-                            resource_name=resource_name,
-                            name=name,
-                            auth_server_url=auth_server_url,
-                            auth_client_id=auth_client_id,
-                            auth_client_secret=auth_client_secret,
-                            auth_login_token=auth_login_token,
-                            auth_scopes=auth_scopes,
-                            auth_access_token=auth_access_token,
-                            additional_request_headers=additional_request_headers,
-                            log_level=log_level,
-                            batch_size=batch_size,
-                            validation_server_url=validation_server_url,
-                            retry_count=retry_count,
-                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                            parameters=sender_parameters,
                         )
                     )
-                    result_rows: List[Dict[str, Any]] = flatten(result_rows_list)
-                    result_df = df.sparkSession.createDataFrame(
-                        result_rows, schema=FhirMergeResponseItemSchema.get_schema()
+                    result_df = (
+                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                            result_rows, schema=FhirMergeResponseItemSchema.get_schema()
+                        )
                     )
                 else:
                     # ---- Now process all the results ----
                     if enable_repartitioning and not partition_by_column_name:
-                        # repartition only when we haven't already repartitioned by column and enable_repartitioning is True
+                        # repartition only when we haven't already repartitioned by column
+                        # and enable_repartitioning is True
                         json_df = json_df.repartition(desired_partitions)
-                    rdd: RDD[
-                        Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
-                    ] = json_df.rdd.mapPartitionsWithIndex(
-                        lambda partition_index, rows: FhirSenderProcessor.send_partition_to_server(
-                            partition_index=partition_index,
-                            rows=rows,
-                            desired_partitions=desired_partitions,
-                            operation=operation,
-                            server_url=server_url,
-                            resource_name=resource_name,
-                            name=name,
-                            auth_server_url=auth_server_url,
-                            auth_client_id=auth_client_id,
-                            auth_client_secret=auth_client_secret,
-                            auth_login_token=auth_login_token,
-                            auth_scopes=auth_scopes,
-                            auth_access_token=auth_access_token,
-                            additional_request_headers=additional_request_headers,
-                            log_level=log_level,
-                            batch_size=batch_size,
-                            validation_server_url=validation_server_url,
-                            retry_count=retry_count,
-                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                        )
+                    # use mapInPandas
+                    result_df = json_df.mapInPandas(
+                        FhirSenderProcessor.get_process_batch_function(
+                            parameters=sender_parameters
+                        ),
+                        schema=FhirMergeResponseItemSchema.get_schema(),
                     )
-                    rdd = (
-                        rdd.cache()
-                        if cache_storage_level is None
-                        else rdd.persist(storageLevel=cache_storage_level)
-                    )
-
-                    # turn list of list of string to list of strings
-                    rdd_type = Union[Dict[str, Any], List[Dict[str, Any]]]
-                    rdd_flat: RDD[rdd_type] = rdd.flatMap(lambda a: a).filter(lambda x: True)  # type: ignore
-
-                    # check if RDD contains a list.  If so, flatMap it
-                    rdd_first_row_obj = rdd_flat.take(1)
-                    assert isinstance(rdd_first_row_obj, list), type(rdd_first_row_obj)
-                    if len(rdd_first_row_obj) > 0:
-                        rdd_first_row = rdd_first_row_obj[0]
-                        rdd1: RDD[Collection[str]]
-                        if isinstance(rdd_first_row, list):
-                            rdd1 = rdd_flat.flatMap(lambda a: a).filter(lambda x: True)
-                        else:
-                            rdd1 = rdd_flat  # type: ignore
-
-                        result_df = rdd1.toDF(
-                            schema=FhirMergeResponseItemSchema.get_schema()
-                        )
 
                 if result_df is not None:
                     try:
