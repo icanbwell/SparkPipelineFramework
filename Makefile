@@ -55,7 +55,8 @@ run-pre-commit: setup-pre-commit
 update: down Pipfile.lock setup-pre-commit  ## Updates all the packages using Pipfile
 	docker compose run --rm --name spf_pipenv dev pipenv sync --dev && \
 	make install_types && \
-	make devdocker
+	make devdocker && \
+	make pipenv-setup
 
 .PHONY:tests
 tests:
@@ -75,7 +76,7 @@ sphinx-html:
 
 .PHONY:pipenv-setup
 pipenv-setup:devdocker ## Brings up the bash shell in dev docker
-	docker compose run --rm --name spark_pipeline_framework dev pipenv run pipenv-setup sync --pipfile
+	docker compose run --rm --name spark_pipeline_framework dev dev sh -c 'pipenv install --categories "packages dev-packages pipenv-setup-packages" && pipenv run pipenv-setup sync --pipfile'
 
 .PHONY: clean_data
 clean_data: down ## Cleans all the local docker setup

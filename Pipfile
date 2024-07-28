@@ -50,7 +50,6 @@ pyspark="==3.3.0"  # should match the version of spark we use for testing
 Deprecated = ">=1.2.12"
 sparkdataframecomparer = ">=2.0.2"
 pytest-asyncio = ">=0.23.8"
-vistir=">=0.6.1, <0.7.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
 helix-mockserver-client=">=1.2.1"
 sparkfhirschemas = ">=1.0.17"
 types-boto3 = ">=1.0.2"
@@ -59,8 +58,11 @@ types-requests=">=0.1.11"
 types-PyMySQL=">=0.1.5"
 types-urllib3=">=1.26.0"
 types-python-dateutil=">=2.8.19.14"
-plette = "<1.0.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
 
+[pipenv-setup-packages]
+vistir=">=0.6.1, <0.7.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
+plette = "<1.0.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
+pipenv-setup = ">=3.2.0"
 
 [requires]
 python_version = "3.10"
