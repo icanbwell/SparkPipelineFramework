@@ -7,7 +7,7 @@ Pipfile.lock: Pipfile
 
 .PHONY: install_types
 install_types: Pipfile
-	docker compose run --rm --name spark_pipeline_framework dev sh -c "mypy --install-types"
+	docker compose run --rm --name spark_pipeline_framework dev pipenv run mypy --install-types
 
 .PHONY:devdocker
 devdocker: ## Builds the docker for dev
@@ -75,7 +75,7 @@ sphinx-html:
 
 .PHONY:pipenv-setup
 pipenv-setup:devdocker ## Brings up the bash shell in dev docker
-	docker compose run --rm --name spark_pipeline_framework dev pipenv-setup sync --pipfile
+	docker compose run --rm --name spark_pipeline_framework dev pipenv run pipenv-setup sync --pipfile
 
 .PHONY: clean_data
 clean_data: down ## Cleans all the local docker setup
