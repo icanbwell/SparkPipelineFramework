@@ -48,16 +48,21 @@ class FhirSenderProcessor:
             :return: Iterable[pd.DataFrame]
             """
             pdf: pd.DataFrame
+            index: int = 0
+            # print(f"batch type: {type(batch_iter)}")
             for pdf in batch_iter:
+                # print(f"pdf type: {type(pdf)}")
                 # convert the dataframe to a list of dictionaries
                 pdf_json: str = pdf.to_json(orient="records")
                 rows: List[Dict[str, Any]] = json.loads(pdf_json)
+                # print(f"Processing partition {pdf.index} with {len(rows)} rows")
                 # send the partition to the server
                 result_list: List[Dict[str, Any]] = (
                     FhirSenderProcessor.send_partition_to_server(
-                        partition_index=pdf.index.name, parameters=parameters, rows=rows
+                        partition_index=index, parameters=parameters, rows=rows
                     )
                 )
+                index += 1
                 # yield the result as a dataframe
                 yield pd.DataFrame(result_list)
 
@@ -91,6 +96,9 @@ class FhirSenderProcessor:
         assert parameters
         assert isinstance(parameters, FhirSenderParameters)
         assert parameters.server_url
+        assert isinstance(
+            partition_index, int
+        ), f"partition_index should be an int but is {type(partition_index)}"
 
         if len(json_data_list) == 0:
             return []

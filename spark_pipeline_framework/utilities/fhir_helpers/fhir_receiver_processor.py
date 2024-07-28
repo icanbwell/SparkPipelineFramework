@@ -69,16 +69,19 @@ class FhirReceiverProcessor:
             :return: Iterable[pd.DataFrame]
             """
             pdf: pd.DataFrame
+            index: int = 0
             for pdf in batch_iter:
                 # convert the dataframe to a list of dictionaries
                 pdf_json: str = pdf.to_json(orient="records")
                 rows: List[Dict[str, Any]] = json.loads(pdf_json)
+                # print(f"Processing partition {pdf.index} with {len(rows)} rows")
                 # send the partition to the server
                 result_list: List[Dict[str, Any]] = (
                     FhirReceiverProcessor.send_partition_request_to_server(
-                        partition_index=pdf.index.name, parameters=parameters, rows=rows
+                        partition_index=index, parameters=parameters, rows=rows
                     )
                 )
+                index += 1
                 # yield the result as a dataframe
                 yield pd.DataFrame(result_list)
 
@@ -112,7 +115,9 @@ class FhirReceiverProcessor:
         assert parameters
         assert isinstance(parameters, FhirReceiverParameters)
         assert parameters.server_url
-        assert isinstance(partition_index, int)
+        assert isinstance(
+            partition_index, int
+        ), f"partition_index should be an int but is {type(partition_index)}"
 
         resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
             (
