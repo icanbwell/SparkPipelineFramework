@@ -1,6 +1,5 @@
 import json
 import math
-import traceback
 from os import environ
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable
@@ -25,6 +24,9 @@ from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_processor 
 )
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
+)
+from spark_pipeline_framework.utilities.FriendlySparkException import (
+    FriendlySparkException,
 )
 
 # noinspection PyProtectedMember
@@ -559,14 +561,7 @@ class FhirSender(FrameworkTransformer):
                                         f"------- End Failed validations for {resource_name} ---------"
                                     )
                     except Exception as e:
-                        exception_traceback = "".join(
-                            traceback.TracebackException.from_exception(e).format()
-                        )
-                        self.logger.exception(
-                            f"Exception in FHIR Sender: {str(e)}: {exception_traceback}"
-                        )
-                        # self.logger.error(f"Response: {result_df.collect()}")
-                        raise e
+                        raise FriendlySparkException(exception=e, stage_name=None)
 
         self.logger.info(
             f"----- Finished sending {resource_name} (rows={row_count}) to FHIR server {server_url}  -----"
