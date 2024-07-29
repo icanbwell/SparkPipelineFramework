@@ -4,10 +4,6 @@ from typing import Optional, cast, Any, Dict
 import requests
 from requests.auth import HTTPBasicAuth
 
-from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
-    get_auth_server_url_from_well_known_url,
-)
-
 
 class TokenHelper:
     @staticmethod
@@ -56,7 +52,7 @@ class TokenHelper:
         auth_client_secret = environ["FHIR_CLIENT_SECRET"]
         auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
 
-        token_url: Optional[str] = get_auth_server_url_from_well_known_url(
+        token_url: Optional[str] = TokenHelper.get_auth_server_url_from_well_known_url(
             well_known_url=auth_well_known_url
         )
         assert token_url
@@ -66,3 +62,16 @@ class TokenHelper:
             token_url=token_url,
             scope=None,
         )
+
+    @staticmethod
+    def get_auth_server_url_from_well_known_url(
+        *, well_known_url: str
+    ) -> Optional[str]:
+        try:
+            well_known_response = requests.get(well_known_url)
+            # Get token endpoint
+            well_known_info = well_known_response.json()
+            token_url: Optional[str] = well_known_info.get("token_endpoint")
+            return token_url
+        except Exception as e:
+            return None

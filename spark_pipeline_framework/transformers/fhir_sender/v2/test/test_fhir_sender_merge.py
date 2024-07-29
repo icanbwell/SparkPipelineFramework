@@ -11,9 +11,6 @@ from pyspark.sql.types import IntegerType
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender import FhirSender
-from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
-    get_auth_server_url_from_well_known_url,
-)
 from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
@@ -46,7 +43,7 @@ def test_fhir_sender_merge(
 
     logger = get_logger(__name__)
 
-    token_url = get_auth_server_url_from_well_known_url(
+    token_url = TokenHelper.get_auth_server_url_from_well_known_url(
         well_known_url=auth_well_known_url
     )
     assert token_url
@@ -111,7 +108,7 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
     auth_client_id = environ["FHIR_CLIENT_ID"]
     auth_client_secret = environ["FHIR_CLIENT_SECRET"]
     auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
-    token_url = get_auth_server_url_from_well_known_url(
+    token_url = TokenHelper.get_auth_server_url_from_well_known_url(
         well_known_url=auth_well_known_url
     )
     assert token_url
