@@ -2,6 +2,7 @@ import json
 from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
+from urllib.parse import urljoin
 
 import pytest
 from helix_fhir_client_sdk.fhir_client import FhirClient
@@ -50,11 +51,6 @@ def test_fhir_sender_merge(
 
     authorization_header = TokenHelper.get_authorization_header_from_environment()
 
-    response = requests.get(
-        f"{fhir_server_url}Patient/00100000000", headers=authorization_header
-    )
-    assert response.ok, response.text
-
     environ["LOGLEVEL"] = "DEBUG"
     # Act
     with ProgressLogger() as progress_logger:
@@ -75,7 +71,7 @@ def test_fhir_sender_merge(
 
     # Assert
     response = requests.get(
-        f"{fhir_server_url}Patient/00100000000", headers=authorization_header
+        urljoin(fhir_server_url, "Patient/00100000000"), headers=authorization_header
     )
     assert response.ok, response.text
     json_text: str = response.text
@@ -83,7 +79,7 @@ def test_fhir_sender_merge(
     assert obj["birthDate"] == "2017-01-01"
 
     response = requests.get(
-        f"{fhir_server_url}Patient/00200000000", headers=authorization_header
+        urljoin(fhir_server_url, "Patient/00200000000"), headers=authorization_header
     )
     assert response.ok, response.text
     json_text = response.text
@@ -141,7 +137,7 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
 
         # for first EOB
         response = requests.get(
-            f"{fhir_server_url}/ExplanationOfBenefit/H111-12345",
+            urljoin(fhir_server_url, "ExplanationOfBenefit/H111-12345"),
             headers=authorization_header,
         )
         assert response.ok, response.text
@@ -153,7 +149,7 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
 
         # for second EOB
         response = requests.get(
-            f"{fhir_server_url}/ExplanationOfBenefit/H222-12345",
+            urljoin(fhir_server_url, "ExplanationOfBenefit/H222-12345"),
             headers=authorization_header,
         )
         assert response.ok, response.text
@@ -165,7 +161,7 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
 
         # for third EOB
         response = requests.get(
-            f"{fhir_server_url}/ExplanationOfBenefit/H333-12345",
+            urljoin(fhir_server_url, "ExplanationOfBenefit/H333-12345"),
             headers=authorization_header,
         )
         assert response.ok, response.text

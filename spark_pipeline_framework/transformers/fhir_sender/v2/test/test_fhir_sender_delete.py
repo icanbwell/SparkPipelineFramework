@@ -2,6 +2,7 @@ import json
 from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
+from urllib.parse import urljoin
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -72,12 +73,12 @@ def test_send_delete(spark_session: SparkSession) -> None:
 
     # Assert
     response = requests.get(
-        f"{fhir_server_url}/Patient/00100000000", headers=authorization_header
+        urljoin(fhir_server_url, "Patient/00100000000"), headers=authorization_header
     )
     assert response.status_code == 404
 
     response = requests.get(
-        f"{fhir_server_url}/Patient/00200000000", headers=authorization_header
+        urljoin(fhir_server_url, "Patient/00200000000"), headers=authorization_header
     )
     assert response.ok
     json_text = response.text
