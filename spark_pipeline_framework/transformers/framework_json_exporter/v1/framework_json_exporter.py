@@ -114,7 +114,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
             try:
                 mode = self.getMode()
                 if view:
-                    df_view: DataFrame = df.sql_ctx.table(view)
+                    df_view: DataFrame = df.sparkSession.table(view)
                     assert not throw_if_empty or not spark_is_data_frame_empty(
                         df=df_view
                     )

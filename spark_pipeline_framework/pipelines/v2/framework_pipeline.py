@@ -189,10 +189,12 @@ class FrameworkPipeline(Transformer):
             self._check_validation(df)
 
     def _check_validation(self, df: DataFrame) -> None:
-        tables_df = df.sql_ctx.tables().filter(
-            f"tableName ='{pipeline_validation_df_name}'"
-        )
-        if tables_df.count() == 1 and self.validation_output_path:
+        tables = [
+            t.name
+            for t in df.sparkSession.catalog.listTables()
+            if t.name == pipeline_validation_df_name
+        ]
+        if len(tables) == 1 and self.validation_output_path:
             FrameworkCsvExporter(
                 view=pipeline_validation_df_name,
                 file_path=self.validation_output_path,
@@ -200,7 +202,7 @@ class FrameworkPipeline(Transformer):
                 parameters=self.parameters,
                 progress_logger=self.progress_logger,
             ).transform(df)
-            errors_df = df.sql_ctx.sql(
+            errors_df = df.sparkSession.sql(
                 f"SELECT * from {pipeline_validation_df_name} where is_failed == 1"
             )
             error_count = errors_df.count()

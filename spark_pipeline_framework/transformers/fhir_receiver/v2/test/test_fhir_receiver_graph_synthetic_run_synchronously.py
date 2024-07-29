@@ -125,7 +125,7 @@ def test_fhir_receiver_graph_synthetic_run_synchronously(
         ).transform(df)
 
     # Assert
-    json_df: DataFrame = df.sql_ctx.read.json(str(patient_json_path))
+    json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     json_df.show(truncate=False)
     json_df.printSchema()
 

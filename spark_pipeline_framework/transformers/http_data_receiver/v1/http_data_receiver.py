@@ -73,7 +73,7 @@ class HttpDataReceiver(FrameworkTransformer):
 
                 text = response.text
                 self.logger.info(text)
-                df2 = df.sql_ctx.read.json(sc.parallelize([text]))
+                df2 = df.sparkSession.read.json(sc.parallelize([text]))
 
                 df2.createOrReplaceTempView(view)
             else:

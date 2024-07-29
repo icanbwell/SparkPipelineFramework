@@ -184,12 +184,12 @@ class HttpDataReceiver(FrameworkTransformer):
                             )
 
                 if error_responses and error_view:
-                    error_responses_df = df.sql_ctx.read.json(
+                    error_responses_df = df.sparkSession.read.json(
                         sc(df).parallelize([json.dumps(r) for r in error_responses])
                     )
                     error_responses_df.createOrReplaceTempView(error_view)
 
-                df2 = df.sql_ctx.read.json(
+                df2 = df.sparkSession.read.json(
                     sc(df).parallelize([json.dumps(r) for r in success_responses])
                 )
                 df2.createOrReplaceTempView(view_name)

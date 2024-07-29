@@ -83,7 +83,7 @@ class FrameworkGroupByTransformer(FrameworkTransformer):
             df_grouped = df.groupBy(group_by_column).agg(F.count("*").alias("count"))
 
         if append_to_view:
-            if spark_table_exists(df.sql_ctx, view):
+            if spark_table_exists(df.sparkSession, view):
                 df_grouped = df.sparkSession.table(view).union(df_grouped)
 
         df_grouped.createOrReplaceTempView(view)

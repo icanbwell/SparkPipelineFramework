@@ -82,7 +82,7 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         # get columns in data frame
-        df = df.sql_ctx.table(view)
+        df = df.sparkSession.table(view)
 
         if columns_to_analyze:
             columns_to_analyze = [c for c in df.columns if c in columns_to_analyze]

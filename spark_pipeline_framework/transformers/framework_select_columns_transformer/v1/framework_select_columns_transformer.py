@@ -57,7 +57,7 @@ class FrameworkSelectColumnsTransformer(FrameworkTransformer):
         keep_columns: Optional[List[str]] = self.getOrDefault(self.keep_columns)
 
         assert view
-        result_df: DataFrame = df.sql_ctx.table(view)
+        result_df: DataFrame = df.sparkSession.table(view)
 
         if keep_columns and len(keep_columns) > 0:
             all_columns = result_df.columns

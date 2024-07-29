@@ -135,7 +135,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                 progress_logger.log_artifact(key=f"{name}.sql.txt", contents=sql_text)
                 progress_logger.write_to_log(name=name, message=sql_text)
             try:
-                df = df.sql_ctx.sql(sql_text)
+                df = df.sparkSession.sql(sql_text)
             except Exception:
                 self.logger.info(f"Error in {name}")
                 self.logger.info(sql_text)
@@ -179,7 +179,7 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
             if view:
                 if append_to_view:
-                    original_df: DataFrame = df.sql_ctx.table(view)
+                    original_df: DataFrame = df.sparkSession.table(view)
                     df = original_df.union(df)
                 # now point the view back to it
                 df.createOrReplaceTempView(view)

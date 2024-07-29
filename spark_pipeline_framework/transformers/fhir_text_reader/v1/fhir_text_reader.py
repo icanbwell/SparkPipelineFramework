@@ -114,7 +114,7 @@ class FhirTextReader(FrameworkTransformer):
                 # DROPMALFORMED : ignores the whole corrupted records.
                 # FAILFAST : throws an exception when it meets corrupted records.
                 # https://docs.databricks.com/spark/latest/spark-sql/handling-bad-records.html
-                reader = df.sql_ctx.read
+                reader = df.sparkSession.read
                 if bad_records_path:
                     reader = reader.option("badRecordsPath", str(bad_records_path))
                 df = reader.text(str(path))

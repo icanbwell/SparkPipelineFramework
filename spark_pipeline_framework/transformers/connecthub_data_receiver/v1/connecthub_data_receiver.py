@@ -107,7 +107,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
                 f"the total number of documents about to be loaded into Spark: {len(converted_data)}"
             )
 
-            df2 = df.sql_ctx.read.json(
+            df2 = df.sparkSession.read.json(
                 sc(df).parallelize([json.dumps(r) for r in converted_data])
             )
             df2.createOrReplaceTempView(view_name)

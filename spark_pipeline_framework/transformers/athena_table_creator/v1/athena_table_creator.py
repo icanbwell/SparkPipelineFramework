@@ -88,7 +88,7 @@ class AthenaTableCreator(FrameworkTransformer):
         with ProgressLogMetric(
             name=f"{name or view}_athena_table_creator", progress_logger=progress_logger
         ):
-            json_df: DataFrame = df.sql_ctx.table(view)
+            json_df: DataFrame = df.sparkSession.table(view)
             try:
                 Athena.drop_create_table(
                     table_name,

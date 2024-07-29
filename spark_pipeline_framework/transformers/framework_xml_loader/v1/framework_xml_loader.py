@@ -93,7 +93,7 @@ class FrameworkXmlLoader(FrameworkTransformer):
             f"Loading file for view {view}: {paths}"
         )
 
-        df_xml_reader: DataFrameReader = df.sql_ctx.read.format("xml").options(
+        df_xml_reader: DataFrameReader = df.sparkSession.read.format("xml").options(
             rowTag=row_tag
         )
         if schema:

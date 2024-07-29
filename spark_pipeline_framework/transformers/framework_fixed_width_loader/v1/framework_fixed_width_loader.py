@@ -144,7 +144,7 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
             progress_logger.write_to_log(f"Loading file for view {view}: {paths}")
             progress_logger.log_param("data_path", ", ".join(paths))
 
-        df_reader: DataFrameReader = df.sql_ctx.read
+        df_reader: DataFrameReader = df.sparkSession.read
         df_text = df_reader.text(paths=paths)
         if has_header:
             first: Optional[Row] = df_text.first()

@@ -51,7 +51,7 @@ class FrameworkColumnNameCleaner(FrameworkTransformer):
         # name: Optional[str] = self.getName()
 
         if view:
-            df = df.sql_ctx.table(view)
+            df = df.sparkSession.table(view)
 
         df = replace_special_characters_in_columns_in_data_frame(df=df)
 

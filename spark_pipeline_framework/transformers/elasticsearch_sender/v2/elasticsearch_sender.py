@@ -126,13 +126,13 @@ class ElasticSearchSender(FrameworkTransformer):
             path_to_files: str = str(path)
             try:
                 if view:
-                    json_df: DataFrame = df.sql_ctx.table(view)
+                    json_df: DataFrame = df.sparkSession.table(view)
                     if "value" not in json_df.columns:
                         json_df = json_df.select(
                             to_json(struct(col("*"))).alias("value")
                         )
                 else:
-                    json_df = df.sql_ctx.read.text(
+                    json_df = df.sparkSession.read.text(
                         path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
                     )
                 if limit is not None and limit > 0:

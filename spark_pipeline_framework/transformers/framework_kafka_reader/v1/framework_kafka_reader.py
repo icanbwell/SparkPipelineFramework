@@ -75,9 +75,11 @@ class FrameworkKafkaReader(FrameworkTransformer):
             name=f"{name or topic}_kafka_reader", progress_logger=progress_logger
         ):
             try:
-                if previous_checkpoint_view in df.sql_ctx.tableNames():
+                if previous_checkpoint_view in [
+                    t.name for t in df.sparkSession.catalog.listTables()
+                ]:
                     last_offset = (
-                        df.sql_ctx.table(previous_checkpoint_view)
+                        df.sparkSession.table(previous_checkpoint_view)
                         .groupBy()
                         .max("offset")
                         .collect()[0]
@@ -92,7 +94,7 @@ class FrameworkKafkaReader(FrameworkTransformer):
 
                 starting_offset_text = f"""{{"{topic}":{{"0":{starting_offset}}}}}"""
                 df = (
-                    df.sql_ctx.read.format("kafka")
+                    df.sparkSession.read.format("kafka")
                     .option("kafka.bootstrap.servers", kafka_brokers)
                     .option("kafka.security.protocol", security_protocol)
                     .option("subscribe", f"{topic}")
@@ -103,9 +105,9 @@ class FrameworkKafkaReader(FrameworkTransformer):
                 df = df.withColumn("event", from_json(df.event, schema))
                 df.createOrReplaceTempView(topic)
                 if len(df.head(1)) == 0 and previous_checkpoint_view:
-                    df.sql_ctx.table(previous_checkpoint_view).createOrReplaceTempView(
-                        f"{topic}_watermark"
-                    )
+                    df.sparkSession.table(
+                        previous_checkpoint_view
+                    ).createOrReplaceTempView(f"{topic}_watermark")
                 else:
                     df.createOrReplaceTempView(f"{topic}_watermark")
             except AnalysisException as e:

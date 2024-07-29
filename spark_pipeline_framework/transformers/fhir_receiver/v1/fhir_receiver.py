@@ -527,7 +527,7 @@ class FhirReceiver(FrameworkTransformer):
                 # created a df for additional_parameters_view
                 # the data in this view MUST have 1 row per each parameter and only 1 column per each row.
                 # e.g. "address-postalcode=10304,11040,11801" for a comma separate postal codes for Person resource
-                df_additional_parameters_view: DataFrame = df.sql_ctx.table(
+                df_additional_parameters_view: DataFrame = df.sparkSession.table(
                     additional_parameters_view
                 )
                 for row in df_additional_parameters_view.collect():
@@ -539,7 +539,7 @@ class FhirReceiver(FrameworkTransformer):
             # if we're calling for individual ids
             # noinspection GrazieInspection
             if id_view:
-                id_df: DataFrame = df.sql_ctx.table(id_view)
+                id_df: DataFrame = df.sparkSession.table(id_view)
                 if spark_is_data_frame_empty(df=id_df):
                     # nothing to do
                     return df

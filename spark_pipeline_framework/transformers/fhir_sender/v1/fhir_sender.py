@@ -388,13 +388,15 @@ class FhirSender(FrameworkTransformer):
             path_to_files: str = str(file_path)
             try:
                 if delta_lake_table:
-                    json_df: DataFrame = df.sql_ctx.read.format("delta").load(
+                    json_df: DataFrame = df.sparkSession.read.format("delta").load(
                         path_to_files
                     )
                 elif file_format == "parquet":
-                    json_df = df.sql_ctx.read.format(file_format).load(path_to_files)
+                    json_df = df.sparkSession.read.format(file_format).load(
+                        path_to_files
+                    )
                 else:
-                    json_df = df.sql_ctx.read.text(
+                    json_df = df.sparkSession.read.text(
                         path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
                     )
 
@@ -547,7 +549,7 @@ class FhirSender(FrameworkTransformer):
                         self.logger.info(
                             f"Reading from disk and counting rows for {resource_name}..."
                         )
-                        result_df = df.sql_ctx.read.format(file_format).load(
+                        result_df = df.sparkSession.read.format(file_format).load(
                             str(response_path)
                         )
                         file_row_count: int = result_df.count()

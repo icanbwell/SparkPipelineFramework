@@ -64,7 +64,9 @@ def test_fhir_receiver_on_delta(spark_session: SparkSession) -> None:
         ).transform(df)
 
     # Assert
-    json_df: DataFrame = df.sql_ctx.read.format("delta").load(str(patient_json_path))
+    json_df: DataFrame = df.sparkSession.read.format("delta").load(
+        str(patient_json_path)
+    )
     # schema: StructType = cast(StructType, PatientSchema.get_schema())
     # json_df = json_df.select(from_json(col("col"), schema=schema).alias("resource"))
     # json_df = json_df.selectExpr("resource.*")

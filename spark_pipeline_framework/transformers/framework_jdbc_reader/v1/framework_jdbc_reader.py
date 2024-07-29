@@ -57,7 +57,7 @@ class FrameworkJdbcReader(FrameworkTransformer):
         view: Optional[str] = self.getView()
         df = (
             # this execution requires an Option either 'dbtable' or 'query' parameter
-            df.sql_ctx.read.format("jdbc")
+            df.sparkSession.read.format("jdbc")
             .option("url", jdbc_url)
             .option("dbtable", query)
             .option("driver", driver)

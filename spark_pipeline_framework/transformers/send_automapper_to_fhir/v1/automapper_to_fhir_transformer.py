@@ -261,7 +261,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             run_name=f"Exporting view {view}", is_nested=True
                         )
                     # get resource name
-                    result_df: DataFrame = df.sql_ctx.table(view)
+                    result_df: DataFrame = df.sparkSession.table(view)
                     # True if sort_data field exists and view name is present as dict key
                     need_sorting: bool = (
                         True if (sort_data and sort_data.get(view)) else False

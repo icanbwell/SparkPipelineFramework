@@ -36,7 +36,7 @@ def test_validation_throws_error(spark_session: SparkSession) -> None:
             fail_on_validation=True,
         ).transform(df)
 
-        df.sql_ctx.table("pipeline_validation").show(truncate=False)
+        df.sparkSession.table("pipeline_validation").show(truncate=False)
 
 
 def test_validation_records_error(spark_session: SparkSession) -> None:
@@ -59,7 +59,7 @@ def test_validation_records_error(spark_session: SparkSession) -> None:
         validation_queries=[validation_query_file],
     ).transform(df)
 
-    df_validation = df.sql_ctx.table("pipeline_validation")
+    df_validation = df.sparkSession.table("pipeline_validation")
     assert (
         1 == df_validation.filter("is_failed == 1").count()
     ), "Expected one failing row in the validation table"
@@ -86,7 +86,7 @@ def test_validation_recurses_query_dir(spark_session: SparkSession) -> None:
         validation_queries=[validation_query_file, more_queries_dir],
     ).transform(df)
 
-    df_validation = df.sql_ctx.table("pipeline_validation")
+    df_validation = df.sparkSession.table("pipeline_validation")
     df_validation.show(truncate=False)
     assert 3 == df_validation.count(), "Expected 3 total rows in pipeline_validation"
     assert (

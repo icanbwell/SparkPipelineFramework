@@ -223,7 +223,7 @@ def test_validated_framework_pipeline_writes_results(
             transformer = pipeline.fit(df)
             transformer.transform(df)
     except AssertionError:
-        validation_df = df.sql_ctx.read.csv(output_path, header=True)
+        validation_df = df.sparkSession.read.csv(output_path, header=True)
         validation_df.show(truncate=False)
         assert validation_df.count() == 1
 
@@ -263,6 +263,6 @@ def test_fail_fast_validated_framework_pipeline_writes_results(
             transformer = pipeline.fit(df)
             transformer.transform(df)
     except AssertionError:
-        validation_df = df.sql_ctx.read.csv(output_path, header=True)
+        validation_df = df.sparkSession.read.csv(output_path, header=True)
         validation_df.show(truncate=False)
         assert validation_df.count() == 1

@@ -103,14 +103,14 @@ def test_fhir_receiver_graph(spark_session: SparkSession) -> None:
         ).transform(df)
 
     # Assert
-    json_df: DataFrame = df.sql_ctx.read.json(str(patient_json_path))
+    json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     json_df.show()
     json_df.printSchema()
 
     assert json_df.select("resourceType").collect()[0][0] == "Practitioner"
     assert json_df.select("resourceType").collect()[1][0] == "Practitioner"
 
-    text_df: DataFrame = df.sql_ctx.read.text(str(patient_json_path))
+    text_df: DataFrame = df.sparkSession.read.text(str(patient_json_path))
     text_df = text_df.withColumnRenamed("value", "bundle")
     text_df.printSchema()
 

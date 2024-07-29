@@ -184,7 +184,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.preprocess(df=df, absolute_paths=absolute_paths)
 
         df_reader: Union[DataFrameReader, DataStreamReader] = (
-            df.sql_ctx.read if not stream else df.sql_ctx.readStream
+            df.sparkSession.read if not stream else df.sparkSession.readStream
         )
         mode = self.getMode()
         df_reader = df_reader.option("mode", mode)
@@ -192,7 +192,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         if schema:
             df_reader = df_reader.schema(schema)
         elif use_schema_from_view:
-            df_source_view_for_schema = df.sql_ctx.table(use_schema_from_view)
+            df_source_view_for_schema = df.sparkSession.table(use_schema_from_view)
             df_reader = df_reader.schema(df_source_view_for_schema.schema)
         elif infer_schema:
             df_reader = df_reader.option("inferSchema", "true")
@@ -231,7 +231,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
         if cache_table:
             self.logger.info(f"Caching table {view}")
-            df.sql_ctx.sql(f"CACHE TABLE {view}")
+            df.sparkSession.sql(f"CACHE TABLE {view}")
 
         progress_logger and progress_logger.write_to_log(
             f"Finished Loading {self.getReaderFormat()} file for View[{view}]: {absolute_paths}, "

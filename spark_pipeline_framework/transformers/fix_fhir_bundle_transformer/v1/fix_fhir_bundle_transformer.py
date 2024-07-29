@@ -59,7 +59,7 @@ class FixFhirBundleTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         # init
-        spark_session: SparkSession = df.sql_ctx.sparkSession
+        spark_session: SparkSession = df.sparkSession
         input_path: str = self.getInputPath()
         output_path: str = self.getOutputPath()
         resources_to_extract: List[str] = self.getResourcesToExtract()

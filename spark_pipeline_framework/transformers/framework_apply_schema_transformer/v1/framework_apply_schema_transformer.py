@@ -44,7 +44,7 @@ class FrameworkApplySchemaTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        df = df.sql_ctx.table(view)
+        df = df.sparkSession.table(view)
         schema: StructType = self.getSchema()
         field: StructField
         for field in schema.fields:

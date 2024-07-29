@@ -119,7 +119,7 @@ class FrameworkParquetLoader(FrameworkTransformer):
         ):
             try:
                 df_reader: Union[DataFrameReader, DataStreamReader] = (
-                    df.sql_ctx.read if not stream else df.sql_ctx.readStream
+                    df.sparkSession.read if not stream else df.sparkSession.readStream
                 )
 
                 mode = self.getMode()
