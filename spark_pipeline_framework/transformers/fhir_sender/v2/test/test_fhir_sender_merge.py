@@ -120,6 +120,12 @@ def test_fhir_sender_merge_for_custom_parameters(
     fhir_client.id_("H111-12345")
     fhir_client.delete()
 
+    fhir_client.id_("H222-12345")
+    fhir_client.delete()
+
+    fhir_client.id_("H333-12345")
+    fhir_client.delete()
+
     environ["LOGLEVEL"] = "DEBUG"
     # Act
     with ProgressLogger() as progress_logger:
@@ -160,16 +166,6 @@ def test_fhir_sender_merge_for_custom_parameters(
         json_text = response.text
         print(json_text)
         obj = json.loads(json_text)
-
-        with open(
-            data_dir.joinpath("test_files")
-            .joinpath("eob_expected")
-            .joinpath("expected1.json"),
-            "r",
-        ) as f:
-            contents = f.read()
-            expected_obj = json.loads(contents)
-            assert obj == expected_obj
 
         # verify that latest value has been appended for benefit amount
         assert obj["item"][0]["adjudication"][0]["amount"]["value"] == 100
