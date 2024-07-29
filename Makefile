@@ -32,6 +32,7 @@ up: Pipfile.lock
 	@echo MockServer dashboard: http://localhost:1080/mockserver/dashboard
 	@echo Spark dashboard: http://localhost:8080/
 	@echo Fhir server dashboard http://localhost:3000/
+	@echo Keycloak OAuth dashboard http://admin:password@localhost:8080/
 
 .PHONY: down
 down:

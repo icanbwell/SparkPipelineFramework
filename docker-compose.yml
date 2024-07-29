@@ -158,7 +158,7 @@ services:
 #      - postgres
     environment:
       KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN_PASSWORD: password
 #      KC_DB: postgres
 #      KC_DB_URL: jdbc:postgresql://postgres/pdb
 #      KC_DB_USERNAME: admin
@@ -168,21 +168,22 @@ services:
       MY_ADMIN_USER_NAME: admin
       MY_ADMIN_USER_PASSWORD: password
       MY_ADMIN_USER_SCOPE: user/*.* access/*.*
-      MY_ADMIN_USER_GROUPS: user/*.* access/*.*
+      MY_ADMIN_USER_GROUPS: user/*.*,access/*.*
       MY_ADMIN_USER_TOKEN_USERNAME: admin
       # This is the user and password that will be created in the realm
       MY_USER_NAME: tester
       MY_USER_PASSWORD: password
       # These groups get specified as scopes in the token
-      MY_USER_GROUPS: user/*.* access/*.* launch/patient patient/*.read
+      MY_USER_GROUPS: user/*.*,access/*.*,launch/patient,patient/*.read
       MY_USER_SCOPE: user/*.* access/*.* launch/patient patient/*.read
       MY_USER_TOKEN_USERNAME: tester
-      # This is the client service account that will be created in the realm
+      # This is the client setup
       CLIENT_ID: bwell-client-id
       CLIENT_SECRET: bwell-secret
+      # This is the service account that will be created in the realm
       SERVICE_ACCOUNT_NAME: service-account
       SERVICE_ACCOUNT_SCOPE: user/*.* access/*.*
-      SERVICE_ACCOUNT_GROUPS: user/*.* access/*.*
+      SERVICE_ACCOUNT_GROUPS: user/*.*,access/*.*
       # These are the custom claims that will be added to any generated token
       MY_USER_CLIENT_PERSON_ID: 0b2ad38a-20bc-5cf5-9739-13f242b05892
       MY_USER_CLIENT_PATIENT_ID: 22aa18af-af51-5799-bc55-367c22c85407
