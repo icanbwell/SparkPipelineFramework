@@ -1,7 +1,19 @@
 from logging import Logger
 from typing import Optional, List
 
+import requests
 from helix_fhir_client_sdk.fhir_client import FhirClient
+
+
+def get_auth_server_url_from_well_known_url(*, well_known_url: str) -> Optional[str]:
+    try:
+        well_known_response = requests.get(well_known_url)
+        # Get token endpoint
+        well_known_info = well_known_response.json()
+        token_url: Optional[str] = well_known_info.get("token_endpoint")
+        return token_url
+    except Exception as e:
+        return None
 
 
 def get_fhir_client(
@@ -14,6 +26,7 @@ def get_fhir_client(
     auth_access_token: Optional[str] = None,
     auth_scopes: Optional[List[str]] = None,
     log_level: Optional[str] = None,
+    auth_well_known_url: Optional[str] = None,
 ) -> FhirClient:
     assert server_url
 
@@ -25,6 +38,12 @@ def get_fhir_client(
 
     if auth_server_url:
         fhir_client = fhir_client.auth_server_url(auth_server_url)
+    if auth_well_known_url:
+        auth_server_url_from_wellknown: Optional[str] = (
+            get_auth_server_url_from_well_known_url(well_known_url=auth_well_known_url)
+        )
+        if auth_server_url_from_wellknown:
+            fhir_client = fhir_client.auth_server_url(auth_server_url_from_wellknown)
     if auth_client_id and auth_client_secret:
         fhir_client = fhir_client.client_credentials(auth_client_id, auth_client_secret)
     if auth_login_token:

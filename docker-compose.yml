@@ -6,12 +6,12 @@ services:
       dockerfile: spark.Dockerfile
       context: .
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_DEFAULT_REGION
-      - AWS_SECRET_ACCESS_KEY
-      - AWS_SECURITY_TOKEN
-      - AWS_SESSION_TOKEN
-      - ELASTICSEARCH_HOST=https://elasticsearch:9200
+      # configuration for local testing
+        FHIR_SERVER_URL: 'http://fhir:3000/4_0_0/'
+        AUTH_CONFIGURATION_URI: 'http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration'
+        FHIR_CLIENT_ID: bwell-client-id
+        FHIR_CLIENT_SECRET: bwell-secret
+        ELASTICSEARCH_HOST: https://elasticsearch:9200
     volumes:
       - ./:/SparkpipelineFramework/
 #      - ~/.local/share/virtualenvs:/root/.local/share/virtualenvs:rw
@@ -51,28 +51,40 @@ services:
   fhir:
     depends_on:
       - mongo
-    image: imranq2/node-fhir-server-mongo:3.2.74
+#    image: imranq2/node-fhir-server-mongo:5.3.8
     # To use local fhir code, comment above line and uncomment below
-    #    build:
-    #      dockerfile: Dockerfile
-    #      context: ../node-fhir-server-mongo
+    build:
+      dockerfile: Dockerfile
+      context: ../fhir-server
+      args:
+        NODE_ENV: development
     environment:
+      NODE_ENV: 'development'
+      ENV: local
       SERVER_PORT: 3000
       MONGO_DB_NAME: fhir
       MONGO_URL: mongodb://mongo:27017
       AUDIT_EVENT_MONGO_DB_NAME: fhir
       AUDIT_EVENT_MONGO_URL: mongodb://mongo:27017
       RESOURCE_SERVER: http://fhir:3000/
-      AUTH_SERVER_URI: http://myauthzserver.com
-      CLIENT_ID: client
-      CLIENT_SECRET: secret
-      INTROSPECTION_URL: https://myauthzserver.com/introspect
+#      AUTH_SERVER_URI: http://mock-server:1080
+      AUTH_CONFIGURATION_URI: 'http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration'
+      AUTH_JWKS_URL: 'http://keycloak:8080/realms/bwell-realm/protocol/openid-connect/certs'
+      EXTERNAL_AUTH_JWKS_URLS: 'http://keycloak:8080/realms/bwell-realm/protocol/openid-connect/certs'
+      AUTH_CUSTOM_GROUP: "cognito:groups"
+      AUTH_CUSTOM_SCOPE: "custom:scope"
+      # service account used to connect to OAuth IDP
+      CLIENT_ID: bwell-client-id
+      CLIENT_SECRET: bwell-secret
+#      INTROSPECTION_URL: http://mock-server:1080/introspect
       CHECK_ACCESS_TAG_ON_SAVE: 1
       IS_PRODUCTION: ""
       RETURN_BUNDLE: "1"
       VALIDATE_SCHEMA: "1"
-      AUTH_ENABLED: "0"
+      AUTH_ENABLED: "1"
       ENABLE_GRAPHQL: "1"
+      ENABLE_GRAPHQLV2: "1"
+      ENABLE_GRAPHQL_PLAYGROUND: '1'
       LOGLEVEL: "DEBUG"
       SET_INDEX_HINTS: 0
       CREATE_INDEX_ON_COLLECTION_CREATION: 1
@@ -82,11 +94,15 @@ services:
       PARTITION_RESOURCES: 'AuditEvent'
       COLLECTIONS_ACCESS_INDEX: "all"
       USE_ACCESS_INDEX: 1
+      ENABLE_PATIENT_FILTERING: "1"
+      ACCESS_TAGS_INDEXED: "medstar,Thedacare,bwell"
+      ENABLE_GLOBAL_ID: 1
+      NODE_OPTIONS: --max-old-space-size=20240
     ports:
       - '3000:3000'
     command: yarn start
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail localhost:3000/health || exit 1"]
+        test: ["CMD-SHELL", "curl --silent --fail localhost:3000/health || exit 1"]
 
   mongo:
     image: mongo:5.0.28
@@ -130,6 +146,48 @@ services:
       - '9600:9600' # required for Performance Analyzer
     healthcheck:
         test: ["CMD-SHELL", "curl --silent --fail https://admin:admin@localhost:9200/_cluster/health --insecure || exit 1"]
+
+  keycloak:
+    # https://github.com/keycloak/keycloak/releases
+    image: quay.io/keycloak/keycloak:25.0.1
+#    container_name: keycloak
+#    build:
+#      dockerfile: keycloak.Dockerfile
+#      context: .
+#    depends_on:
+#      - postgres
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+#      KC_DB: postgres
+#      KC_DB_URL: jdbc:postgresql://postgres/pdb
+#      KC_DB_USERNAME: admin
+#      KC_DB_PASSWORD: admin
+      # The below settings are for test data creation
+      # This is the user and password that will be created in the realm
+      MY_ADMIN_USER_NAME: admin
+      MY_ADMIN_USER_PASSWORD: password
+      MY_ADMIN_USER_GROUPS: user/*.* access/*.*
+      MY_ADMIN_USER_TOKEN_USERNAME: admin
+      # This is the user and password that will be created in the realm
+      MY_USER_NAME: tester
+      MY_USER_PASSWORD: password
+      # These groups get specified as scopes in the token
+      MY_USER_GROUPS: user/*.* access/*.* launch/patient patient/*.read
+      MY_USER_TOKEN_USERNAME: tester
+      # This is the client service account that will be created in the realm
+      CLIENT_ID: bwell-client-id
+      CLIENT_SECRET: bwell-secret
+      # These are the custom claims that will be added to any generated token
+      MY_USER_CLIENT_PERSON_ID: 0b2ad38a-20bc-5cf5-9739-13f242b05892
+      MY_USER_CLIENT_PATIENT_ID: 22aa18af-af51-5799-bc55-367c22c85407
+      MY_USER_BWELL_PERSON_ID: 0eb80391-0f61-5ce6-b221-a5428f2f38a7
+      MY_USER_BWELL_PATIENT_ID: patient2
+    ports:
+      - "8080:8080"
+    command: ["start-dev", "--import-realm", "--verbose"]
+    volumes:
+      - ./keycloak-config/realm-import.json:/opt/keycloak/data/import/realm-import.json
 
 volumes:
   mysql_data:

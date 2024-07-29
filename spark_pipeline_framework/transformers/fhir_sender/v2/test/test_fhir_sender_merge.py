@@ -8,8 +8,13 @@ from helix_fhir_client_sdk.fhir_client import FhirClient
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import IntegerType
 
+from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender import FhirSender
+from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+    get_auth_server_url_from_well_known_url,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
@@ -34,7 +39,25 @@ def test_fhir_sender_merge(
 
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
-    fhir_server_url: str = "http://fhir:3000/4_0_0"
+    fhir_server_url: str = environ["FHIR_SERVER_URL"]
+    auth_client_id = environ["FHIR_CLIENT_ID"]
+    auth_client_secret = environ["FHIR_CLIENT_SECRET"]
+    auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
+
+    logger = get_logger(__name__)
+
+    token_url = get_auth_server_url_from_well_known_url(
+        well_known_url=auth_well_known_url
+    )
+    assert token_url
+    access_token = TokenHelper.get_oauth_token(
+        client_id=auth_client_id,
+        client_secret=auth_client_secret,
+        token_url=token_url,
+        scope="user/*.* access/*.*",
+    )
+
+    authorization_header = {"Authorization": f"Bearer {access_token}"}
 
     environ["LOGLEVEL"] = "DEBUG"
     # Act
@@ -49,16 +72,23 @@ def test_fhir_sender_merge(
             run_synchronously=run_synchronously,
             additional_request_headers={"SampleHeader": "SampleValue"},
             parameters=parameters,
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
+            auth_well_known_url=auth_well_known_url,
         ).transform(df)
 
     # Assert
-    response = requests.get(f"{fhir_server_url}/Patient/00100000000")
+    response = requests.get(
+        f"{fhir_server_url}Patient/00100000000", headers=authorization_header
+    )
     assert response.ok, response.text
     json_text: str = response.text
     obj = json.loads(json_text)
     assert obj["birthDate"] == "2017-01-01"
 
-    response = requests.get(f"{fhir_server_url}/Patient/00200000000")
+    response = requests.get(
+        f"{fhir_server_url}Patient/00200000000", headers=authorization_header
+    )
     assert response.ok, response.text
     json_text = response.text
     obj = json.loads(json_text)
