@@ -217,9 +217,7 @@
             "id.token.claim": "true",
             "access.token.claim": "true",
             "userinfo.token.claim": "true",
-            "multivalued": "true",
-            "attribute.delimiter": ",",
-            "delimiter": ","
+            "multivalued": "true"
           }
         },
         {
