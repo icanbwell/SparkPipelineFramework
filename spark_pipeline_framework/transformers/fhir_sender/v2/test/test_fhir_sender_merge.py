@@ -107,9 +107,18 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
 
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
-    fhir_server_url: str = "http://fhir:3000/4_0_0"
+    fhir_server_url: str = environ["FHIR_SERVER_URL"]
+    auth_client_id = environ["FHIR_CLIENT_ID"]
+    auth_client_secret = environ["FHIR_CLIENT_SECRET"]
+    auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
+    token_url = get_auth_server_url_from_well_known_url(
+        well_known_url=auth_well_known_url
+    )
+    assert token_url
+    authorization_header = TokenHelper.get_authorization_header_from_environment()
 
     fhir_client: FhirClient = FhirClient().url(fhir_server_url)
+    fhir_client.set_access_token(authorization_header["Authorization"].split(" ")[1])
     fhir_client.resource("ExplanationOfBenefit")
     fhir_client.id_("H111-12345")
     fhir_client.delete()
@@ -128,10 +137,16 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
             sort_by_column_name_and_type=("source_file_line_num", IntegerType()),
             drop_fields_from_json=["source_file_line_num"],
             partition_by_column_name="id",
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
+            auth_well_known_url=auth_well_known_url,
         ).transform(df)
 
         # for first EOB
-        response = requests.get(f"{fhir_server_url}/ExplanationOfBenefit/H111-12345")
+        response = requests.get(
+            f"{fhir_server_url}/ExplanationOfBenefit/H111-12345",
+            headers=authorization_header,
+        )
         assert response.ok, response.text
         json_text = response.text
         obj = json.loads(json_text)
@@ -140,7 +155,10 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
         assert obj.get("source_file_line_num") is None
 
         # for second EOB
-        response = requests.get(f"{fhir_server_url}/ExplanationOfBenefit/H222-12345")
+        response = requests.get(
+            f"{fhir_server_url}/ExplanationOfBenefit/H222-12345",
+            headers=authorization_header,
+        )
         assert response.ok, response.text
         json_text = response.text
         obj = json.loads(json_text)
@@ -149,7 +167,10 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
         assert obj.get("source_file_line_num") is None
 
         # for third EOB
-        response = requests.get(f"{fhir_server_url}/ExplanationOfBenefit/H333-12345")
+        response = requests.get(
+            f"{fhir_server_url}/ExplanationOfBenefit/H333-12345",
+            headers=authorization_header,
+        )
         assert response.ok, response.text
         json_text = response.text
         obj = json.loads(json_text)

@@ -51,13 +51,13 @@ services:
   fhir:
     depends_on:
       - mongo
-#    image: imranq2/node-fhir-server-mongo:5.3.8
+    image: imranq2/node-fhir-server-mongo:5.3.8
     # To use local fhir code, comment above line and uncomment below
-    build:
-      dockerfile: Dockerfile
-      context: ../fhir-server
-      args:
-        NODE_ENV: development
+#    build:
+#      dockerfile: Dockerfile
+#      context: ../fhir-server
+#      args:
+#        NODE_ENV: development
     environment:
       NODE_ENV: 'development'
       ENV: local
