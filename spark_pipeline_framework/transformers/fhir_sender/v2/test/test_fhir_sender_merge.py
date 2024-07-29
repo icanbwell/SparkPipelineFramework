@@ -87,7 +87,11 @@ def test_fhir_sender_merge(
     assert obj["birthDate"] == "1984-01-01"
 
 
-def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) -> None:
+@pytest.mark.parametrize("run_synchronously", [True, False])
+def test_fhir_sender_merge_for_custom_parameters(
+    spark_session: SparkSession, run_synchronously: bool
+) -> None:
+    print("")
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("./temp")
@@ -125,7 +129,7 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
             file_path=test_files_dir,
             response_path=response_files_dir,
             progress_logger=progress_logger,
-            run_synchronously=False,
+            run_synchronously=run_synchronously,
             enable_repartitioning=True,
             sort_by_column_name_and_type=("source_file_line_num", IntegerType()),
             drop_fields_from_json=["source_file_line_num"],
@@ -154,7 +158,19 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
         )
         assert response.ok, response.text
         json_text = response.text
+        print(json_text)
         obj = json.loads(json_text)
+
+        with open(
+            data_dir.joinpath("test_files")
+            .joinpath("eob_expected")
+            .joinpath("expected1.json"),
+            "r",
+        ) as f:
+            contents = f.read()
+            expected_obj = json.loads(contents)
+            assert obj == expected_obj
+
         # verify that latest value has been appended for benefit amount
         assert obj["item"][0]["adjudication"][0]["amount"]["value"] == 100
         assert obj.get("source_file_line_num") is None
