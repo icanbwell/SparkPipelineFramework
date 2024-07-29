@@ -59,6 +59,11 @@ def test_fhir_sender_merge(
 
     authorization_header = {"Authorization": f"Bearer {access_token}"}
 
+    response = requests.get(
+        f"{fhir_server_url}Patient/00100000000", headers=authorization_header
+    )
+    assert response.ok, response.text
+
     environ["LOGLEVEL"] = "DEBUG"
     # Act
     with ProgressLogger() as progress_logger:

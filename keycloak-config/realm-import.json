@@ -191,6 +191,8 @@
         "email"
       ],
       "optionalClientScopes": [
+        "user/*.*",
+        "access/*.*"
       ],
       "authorizationSettings": {
         "allowRemoteResourceManagement": true,
