@@ -78,7 +78,7 @@ class FrameworkBaseExporter(FrameworkTransformer):
             try:
                 writer: Union[DataFrameWriter, DataStreamWriter]
                 if view:
-                    df = df.sql_ctx.table(view)
+                    df = df.sparkSession.table(view)
                 if limit is not None and limit >= 0:
                     df = df.limit(limit)
                 writer = df.write if not stream else df.writeStream

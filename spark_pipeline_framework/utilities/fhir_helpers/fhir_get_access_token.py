@@ -18,6 +18,7 @@ def fhir_get_access_token(
     auth_login_token: Optional[str] = None,
     auth_access_token: Optional[str] = None,
     auth_scopes: Optional[List[str]] = None,
+    auth_well_known_url: Optional[str] = None,
 ) -> Optional[str]:
     fhir_client: FhirClient = get_fhir_client(
         logger=logger,
@@ -29,6 +30,7 @@ def fhir_get_access_token(
         auth_access_token=auth_access_token,
         auth_scopes=auth_scopes,
         log_level=log_level,
+        auth_well_known_url=auth_well_known_url,
     )
 
     return fhir_client.get_access_token()

@@ -46,7 +46,7 @@ class FrameworkDropDuplicatesTransformer(FrameworkTransformer):
         view: str = self.getView()
         columns: List[str] = self.getColumns()
 
-        result_df: DataFrame = df.sql_ctx.table(view)
+        result_df: DataFrame = df.sparkSession.table(view)
         result_df = result_df.drop_duplicates(columns)
         result_df.createOrReplaceTempView(view)
 

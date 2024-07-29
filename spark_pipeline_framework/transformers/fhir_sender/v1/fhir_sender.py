@@ -18,7 +18,7 @@ from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_processor import (
@@ -67,6 +67,7 @@ class FhirSender(FrameworkTransformer):
         auth_client_secret: Optional[str] = None,
         auth_login_token: Optional[str] = None,
         auth_scopes: Optional[List[str]] = None,
+        auth_well_known_url: Optional[str] = None,
         operation: Union[
             FhirSenderOperation, str
         ] = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
@@ -195,6 +196,11 @@ class FhirSender(FrameworkTransformer):
         self.auth_scopes: Param[List[str]] = Param(self, "auth_scopes", "")
         self._setDefault(auth_scopes=None)
 
+        self.auth_well_known_url: Param[Optional[str]] = Param(
+            self, "auth_well_known_url", ""
+        )
+        self._setDefault(auth_well_known_url=None)
+
         self.operation: Param[Union[FhirSenderOperation, str]] = Param(
             self, "operation", ""
         )
@@ -269,28 +275,28 @@ class FhirSender(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
-        response_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getResponsePath()
+        response_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getResponsePath()
+        )
         if callable(response_path):
             response_path = response_path(self.loop_id)
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         resource_name: str = self.getResource()
         parameters = self.getParameters()
-        additional_request_headers: Optional[
-            Dict[str, str]
-        ] = self.getAdditionalRequestHeaders()
+        additional_request_headers: Optional[Dict[str, str]] = (
+            self.getAdditionalRequestHeaders()
+        )
         server_url: str = self.getServerUrl()
         batch_size: Optional[int] = self.getBatchSize()
-        throw_exception_on_validation_failure: Optional[
-            bool
-        ] = self.getThrowExceptionOnValidationFailure()
+        throw_exception_on_validation_failure: Optional[bool] = (
+            self.getThrowExceptionOnValidationFailure()
+        )
         operation: Union[FhirSenderOperation, str] = self.getOrDefault(self.operation)
         mode: str = self.getMode()
 
@@ -317,6 +323,7 @@ class FhirSender(FrameworkTransformer):
         file_format: str = self.getFileFormat()
         validation_server_url: Optional[str] = self.getValidationServerUrl()
         auth_server_url: Optional[str] = self.getAuthServerUrl()
+        auth_well_known_url: Optional[str] = self.getOrDefault(self.auth_well_known_url)
         auth_client_id: Optional[str] = self.getAuthClientId()
         auth_client_secret: Optional[str] = self.getAuthClientSecret()
         auth_login_token: Optional[str] = self.getAuthLoginToken()
@@ -376,6 +383,7 @@ class FhirSender(FrameworkTransformer):
                 auth_login_token=auth_login_token,
                 auth_scopes=auth_scopes,
                 log_level=log_level,
+                auth_well_known_url=auth_well_known_url,
             )
 
         self.logger.info(
@@ -388,13 +396,15 @@ class FhirSender(FrameworkTransformer):
             path_to_files: str = str(file_path)
             try:
                 if delta_lake_table:
-                    json_df: DataFrame = df.sql_ctx.read.format("delta").load(
+                    json_df: DataFrame = df.sparkSession.read.format("delta").load(
                         path_to_files
                     )
                 elif file_format == "parquet":
-                    json_df = df.sql_ctx.read.format(file_format).load(path_to_files)
+                    json_df = df.sparkSession.read.format(file_format).load(
+                        path_to_files
+                    )
                 else:
-                    json_df = df.sql_ctx.read.text(
+                    json_df = df.sparkSession.read.text(
                         path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
                     )
 
@@ -476,13 +486,14 @@ class FhirSender(FrameworkTransformer):
                         )
                     )
                     result_rows: List[Dict[str, Any]] = flatten(result_rows_list)
-                    result_df = df.sparkSession.createDataFrame(
+                    result_df = df.sparkSession.createDataFrame(  # type: ignore[type-var]
                         result_rows, schema=FhirMergeResponseItemSchema.get_schema()
                     )
                 else:
                     # ---- Now process all the results ----
                     if enable_repartitioning and not partition_by_column_name:
-                        # repartition only when we haven't already repartitioned by column and enable_repartitioning is True
+                        # repartition only when we haven't already repartitioned by column and
+                        # enable_repartitioning is True
                         json_df = json_df.repartition(desired_partitions)
                     rdd: RDD[
                         Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
@@ -546,7 +557,7 @@ class FhirSender(FrameworkTransformer):
                         self.logger.info(
                             f"Reading from disk and counting rows for {resource_name}..."
                         )
-                        result_df = df.sql_ctx.read.format(file_format).load(
+                        result_df = df.sparkSession.read.format(file_format).load(
                             str(response_path)
                         )
                         file_row_count: int = result_df.count()

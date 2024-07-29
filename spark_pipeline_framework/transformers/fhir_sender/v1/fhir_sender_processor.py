@@ -5,7 +5,7 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from pyspark.sql.types import Row
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
@@ -154,9 +154,11 @@ class FhirSenderProcessor:
                     i += 1
                     current_bundle: List[Dict[str, Any]]
                     json_data_list_1: List[str] = [
-                        convert_dict_to_fhir_json(item.asDict(recursive=True))
-                        if "id" in item
-                        else item["value"]
+                        (
+                            convert_dict_to_fhir_json(item.asDict(recursive=True))
+                            if "id" in item
+                            else item["value"]
+                        )
                     ]
                     first_item: Optional[Dict[str, Any]] = (
                         json.loads(json_data_list_1[0])
@@ -195,9 +197,11 @@ class FhirSenderProcessor:
             else:
                 # send a whole batch to the server at once
                 json_data_list_1 = [
-                    convert_dict_to_fhir_json(item.asDict(recursive=True))
-                    if "id" in item
-                    else item["value"]
+                    (
+                        convert_dict_to_fhir_json(item.asDict(recursive=True))
+                        if "id" in item
+                        else item["value"]
+                    )
                     for item in json_data_list
                 ]
                 first_item = (

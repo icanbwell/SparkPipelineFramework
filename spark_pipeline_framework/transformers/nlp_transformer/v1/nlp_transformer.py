@@ -180,7 +180,7 @@ class NlpTransformer(FrameworkTransformer):
         in_col = column
         # get data from view
         #
-        df_nlp: DataFrame = df.sql_ctx.table(view)
+        df_nlp: DataFrame = df.sparkSession.table(view)
         final_columns = df_nlp.columns
         explode_vector_tf = True  # need to make into function
 

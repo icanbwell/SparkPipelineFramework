@@ -1,6 +1,7 @@
 """
 helper functions to abstract http requests so we have less repetitive boilerplate code
 """
+
 import json
 from enum import Enum
 from os import environ
@@ -82,9 +83,9 @@ class HelixHttpRequest:
         self.retry_count: int = retry_count
         self.backoff_factor: float = backoff_factor
         self.retry_on_status: List[int] = retry_on_status
-        self.post_as_json_formatted_string: Optional[
-            bool
-        ] = post_as_json_formatted_string
+        self.post_as_json_formatted_string: Optional[bool] = (
+            post_as_json_formatted_string
+        )
         self.raise_error = raise_error
         self.cert = cert
         self.verify = verify

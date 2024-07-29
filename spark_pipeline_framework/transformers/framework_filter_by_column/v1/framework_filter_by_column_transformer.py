@@ -51,7 +51,7 @@ class FrameworkFilterByColumnTransformer(FrameworkTransformer):
         column: str = self.getColumn()
         include_only: List[Union[str, int, float]] = self.getIncludeOnly()
 
-        result_df: DataFrame = df.sql_ctx.table(view)
+        result_df: DataFrame = df.sparkSession.table(view)
         result_df = result_df.where(col(column).isin(include_only))
         result_df.createOrReplaceTempView(view)
 

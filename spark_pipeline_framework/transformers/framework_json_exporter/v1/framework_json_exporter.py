@@ -94,9 +94,9 @@ class FrameworkJsonExporter(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         name: Optional[str] = self.getName()
@@ -114,7 +114,7 @@ class FrameworkJsonExporter(FrameworkTransformer):
             try:
                 mode = self.getMode()
                 if view:
-                    df_view: DataFrame = df.sql_ctx.table(view)
+                    df_view: DataFrame = df.sparkSession.table(view)
                     assert not throw_if_empty or not spark_is_data_frame_empty(
                         df=df_view
                     )

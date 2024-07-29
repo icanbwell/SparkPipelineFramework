@@ -1,0 +1,324 @@
+{
+  "id": "bwell-realm",
+  "realm": "bwell-realm",
+  "enabled": true,
+  "defaultSignatureAlgorithm": "RS256",
+  "sslRequired": "none",
+  "groups": [
+    {
+      "id": "3a16a464-7804-4c95-b5f6-7c35e0a65169",
+      "name": "access/*.*",
+      "path": "/access/*.*",
+      "subGroups": [],
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {}
+    },
+    {
+      "id": "adedee9d-6e05-4d23-944e-87c3b408609f",
+      "name": "launch/patient",
+      "path": "/launch/patient",
+      "subGroups": [],
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {}
+    },
+    {
+      "id": "591a9eac-f40f-450e-baac-db48192f86d0",
+      "name": "patient/*.read",
+      "path": "/patient/*.read",
+      "subGroups": [],
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {}
+    },
+    {
+      "id": "747393c9-10a1-493c-9483-dd71f29e3314",
+      "name": "user/*.*",
+      "path": "/user/*.*",
+      "subGroups": [],
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {}
+    }
+  ],
+  "defaultRole": {
+    "id": "1ba8bdad-53be-46c7-9a21-e173ee9bc904",
+    "name": "default-roles-bwell-realm",
+    "description": "${role_default-roles}",
+    "composite": true,
+    "clientRole": false,
+    "containerId": "bwell-realm"
+  },
+  "requiredCredentials": [
+    "password"
+  ],
+  "users": [
+    {
+      "id": "250614d3-26af-43cf-9eb6-b163e6b88a1f",
+      "username": "service-account-bwell-client-id",
+      "emailVerified": false,
+      "createdTimestamp": 1718982320512,
+      "enabled": true,
+      "totp": false,
+      "serviceAccountClientId": "bwell-client-id",
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": [
+        "default-roles-bwell-realm"
+      ],
+      "clientRoles": {
+        "bwell-client-id": [
+          "uma_protection"
+        ]
+      },
+      "notBefore": 0,
+      "groups": [
+        "/access/*.*",
+        "/user/*.*"
+      ],
+      "attributes": {
+        "cognito:groups": "${SERVICE_ACCOUNT_GROUPS}",
+        "custom:scope": "${SERVICE_ACCOUNT_SCOPE}",
+        "token_use": "access",
+        "username": "${SERVICE_ACCOUNT_NAME}"
+      }
+    },
+    {
+      "id": "918ab7f3-cdd5-4f0c-b469-99782c9ac08a",
+      "username": "${MY_USER_NAME}",
+      "firstName": "Tester",
+      "lastName": "Tester",
+      "email": "tester@tester.com",
+      "emailVerified": true,
+      "createdTimestamp": 1718982320512,
+      "enabled": true,
+      "totp": false,
+      "credentials": [
+        {
+          "id": "6dcd0803-6253-4b3c-909a-f545d54444d9",
+          "type": "password",
+          "createdDate": 1718987296927,
+          "value": "${MY_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "notBefore": 0,
+      "groups": [
+        "/access/*.*",
+        "/launch/patient",
+        "/patient/*.read",
+        "/user/*.*"
+      ],
+      "realmRoles": [
+      ],
+      "attributes": {
+        "cognito:groups": "${MY_USER_GROUPS}",
+        "custom:scope": "${MY_USER_SCOPE}",
+        "clientFhirPersonId": "${MY_USER_CLIENT_PERSON_ID}",
+        "clientFhirPatientId": "${MY_USER_CLIENT_PATIENT_ID}",
+        "bwellFhirPersonId": "${MY_USER_BWELL_PERSON_ID}",
+        "bwellFhirPatientId": "${MY_USER_BWELL_PATIENT_ID}",
+        "token_use": "access",
+        "username": "${MY_USER_TOKEN_USERNAME}"
+      }
+    },
+    {
+      "id": "d3c80de8-6727-4a05-8f0f-59094edcc763",
+      "username": "${MY_ADMIN_USER_NAME}",
+      "firstName": "Tester",
+      "lastName": "Tester",
+      "email": "admin@tester.com",
+      "emailVerified": true,
+      "createdTimestamp": 1718982320512,
+      "enabled": true,
+      "totp": false,
+      "credentials": [
+        {
+          "id": "6dcd0803-6253-4b3c-909a-f545d54444d8",
+          "type": "password",
+          "createdDate": 1718987296927,
+          "value": "${MY_ADMIN_USER_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "notBefore": 0,
+      "realmRoles": [
+      ],
+      "attributes": {
+        "cognito:groups": "${MY_ADMIN_USER_GROUPS}",
+        "custom:scope": "${MY_ADMIN_USER_SCOPE}",
+        "token_use": "access",
+        "username": "${MY_ADMIN_USER_TOKEN_USERNAME}"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "id": "2297ca59-dbd5-48e3-92fd-f7aa865ce3c8",
+      "clientId": "${CLIENT_ID}",
+      "name": "${CLIENT_ID}",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${CLIENT_SECRET}",
+      "redirectUris": [],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "client.secret.creation.time": "1718982319",
+        "post.logout.redirect.uris": "+"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": [
+        "web-origins",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "user/*.*",
+        "access/*.*"
+      ],
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": true,
+        "resources": [],
+        "policies": [],
+        "scopes": [],
+        "decisionStrategy": "UNANIMOUS"
+      },
+      "protocolMappers": [
+        {
+          "name": "cognito-groups-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "cognito:groups",
+            "claim.name": "cognito:groups",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "client-person-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "clientFhirPersonId",
+            "claim.name": "clientFhirPersonId",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "client-patient-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "clientFhirPatientId",
+            "claim.name": "clientFhirPatientId",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "bwell-person-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "bwellFhirPersonId",
+            "claim.name": "bwellFhirPersonId",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "bwell-patient-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "bwellFhirPatientId",
+            "claim.name": "bwellFhirPatientId",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "bwell-token-use-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "token_use",
+            "claim.name": "token_use",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "bwell-username-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "username",
+            "claim.name": "username",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "custom-scope-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "custom:scope",
+            "claim.name": "custom:scope",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

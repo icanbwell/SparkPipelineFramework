@@ -201,7 +201,7 @@ class HttpDataReceiver(FrameworkTransformer):
                     if http_request is None or not response.result:
                         break
 
-                df2 = df.sql_ctx.read.json(
+                df2 = df.sparkSession.read.json(
                     sc(df).parallelize([json.dumps(r) for r in responses])
                 )
                 df2.createOrReplaceTempView(view_name)

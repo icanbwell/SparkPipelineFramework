@@ -80,9 +80,9 @@ class FrameworkXmlLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         row_tag: str = self.getRowTag()
@@ -93,7 +93,7 @@ class FrameworkXmlLoader(FrameworkTransformer):
             f"Loading file for view {view}: {paths}"
         )
 
-        df_xml_reader: DataFrameReader = df.sql_ctx.read.format("xml").options(
+        df_xml_reader: DataFrameReader = df.sparkSession.read.format("xml").options(
             rowTag=row_tag
         )
         if schema:

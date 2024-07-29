@@ -83,7 +83,7 @@ class FrameworkValidationTransformer(FrameworkTransformer):
             self._validate(path, df)
 
         if fail_on_validation:
-            errors_df = df.sql_ctx.sql(
+            errors_df = df.sparkSession.sql(
                 f"SELECT * from {pipeline_validation_df_name} where is_failed == 1"
             )
             error_count = errors_df.count()
@@ -107,10 +107,10 @@ class FrameworkValidationTransformer(FrameworkTransformer):
                     "SELECT", f"SELECT '{path}' as query,\n"
                 )
                 if validation_df:
-                    validation_df = validation_df.union(df.sql_ctx.sql(query_text))
+                    validation_df = validation_df.union(df.sparkSession.sql(query_text))
                     validation_df.createOrReplaceTempView(pipeline_validation_df_name)
                 else:
-                    validation_df = df.sql_ctx.sql(query_text)
+                    validation_df = df.sparkSession.sql(query_text)
                     validation_df.createOrReplaceTempView(pipeline_validation_df_name)
         else:
             self.logger.info(f"Path: {path} is a directory, getting paths")
@@ -122,11 +122,10 @@ class FrameworkValidationTransformer(FrameworkTransformer):
     # noinspection PyMethodMayBeStatic
     def get_validation_df(self, df: DataFrame) -> Optional[DataFrame]:
         validation_df: Optional[DataFrame] = None
-        tables_df = df.sql_ctx.tables().filter(
-            f"tableName ='{pipeline_validation_df_name}'"
-        )
-        if tables_df.count() == 1:
-            validation_df = df.sql_ctx.table(pipeline_validation_df_name)
+        tables: List[str] = [t.name for t in df.sparkSession.catalog.listTables()]
+        tables = [t for t in tables if t == pipeline_validation_df_name]
+        if len(tables) == 1:
+            validation_df = df.sparkSession.table(pipeline_validation_df_name)
         return validation_df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

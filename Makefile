@@ -7,7 +7,7 @@ Pipfile.lock: Pipfile
 
 .PHONY: install_types
 install_types: Pipfile
-	docker compose run --rm --name spark_pipeline_framework dev sh -c "mypy --install-types"
+	docker compose run --rm --name spark_pipeline_framework dev pipenv run mypy --install-types --non-interactive
 
 .PHONY:devdocker
 devdocker: ## Builds the docker for dev
@@ -32,6 +32,7 @@ up: Pipfile.lock
 	@echo MockServer dashboard: http://localhost:1080/mockserver/dashboard
 	@echo Spark dashboard: http://localhost:8080/
 	@echo Fhir server dashboard http://localhost:3000/
+	@echo Keycloak OAuth dashboard http://admin:password@localhost:8080/
 
 .PHONY: down
 down:
@@ -74,11 +75,17 @@ sphinx-html:
 	cp -a docsrc/_build/html/. docs
 
 .PHONY:pipenv-setup
-pipenv-setup:devdocker ## Brings up the bash shell in dev docker
-	docker compose run --rm --name spark_pipeline_framework dev pipenv-setup sync --pipfile
+pipenv-setup:devdocker ## Run pipenv-setup to update setup.py with latest dependencies
+	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv run pipenv install --skip-lock --categories \"pipenvsetup\" && pipenv run pipenv-setup sync --pipfile" && \
+	make run-pre-commit
 
 .PHONY: clean_data
 clean_data: down ## Cleans all the local docker setup
 ifneq ($(shell docker volume ls | grep "sparkpipelineframework"| awk '{print $$2}'),)
 	docker volume ls | grep "sparkpipelineframework" | awk '{print $$2}' | xargs docker volume rm
 endif
+
+.PHONY:show_dependency_graph
+show_dependency_graph:
+	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install --skip-lock -d && pipenv graph --reverse"
+	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install -d && pipenv graph"

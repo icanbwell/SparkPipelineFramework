@@ -59,12 +59,12 @@ def test_fhir_receiver(spark_session: SparkSession) -> None:
             id_view="fhir_ids",
             file_path=patient_json_path,
             progress_logger=progress_logger,
-            parameters=parameters
+            parameters=parameters,
             # run_synchronously=True
         ).transform(df)
 
     # Assert
-    json_df: DataFrame = df.sql_ctx.read.json(str(patient_json_path))
+    json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     json_df.show()
     json_df.printSchema()
 

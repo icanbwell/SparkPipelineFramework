@@ -22,7 +22,7 @@ from pyspark.sql.dataframe import DataFrame
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.proxy_base import ProxyBase
-from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
@@ -196,9 +196,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         transformer: ProxyBase = self.getTransformer()
         func_get_path: Callable[[str, str], str] = self.getFuncGetPath()
-        func_get_response_path: Callable[
-            [str, str], str
-        ] = self.getFuncGetResponsePath()
+        func_get_response_path: Callable[[str, str], str] = (
+            self.getFuncGetResponsePath()
+        )
         file_format: str = self.getFileFormat()
         fhir_server_url: str = self.getFhirServerUrl()
         fhir_validation_url: Optional[str] = self.getFhirValidationServerUrl()
@@ -206,9 +206,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         source_entity_name: str = self.getSourceEntityName()
         athena_schema: Optional[str] = self.getAthenaSchema()
         parameters = self.getParameters()
-        additional_request_headers: Optional[
-            Dict[str, str]
-        ] = self.getAdditionalRequestHeaders()
+        additional_request_headers: Optional[Dict[str, str]] = (
+            self.getAdditionalRequestHeaders()
+        )
         sort_data: Optional[Dict[str, Dict[str, Any]]] = self.getOrDefault(
             self.sort_data
         )
@@ -261,7 +261,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             run_name=f"Exporting view {view}", is_nested=True
                         )
                     # get resource name
-                    result_df: DataFrame = df.sql_ctx.table(view)
+                    result_df: DataFrame = df.sparkSession.table(view)
                     # True if sort_data field exists and view name is present as dict key
                     need_sorting: bool = (
                         True if (sort_data and sort_data.get(view)) else False
@@ -337,21 +337,21 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             mode=mode,
                             run_synchronously=run_synchronously,
                             num_partitions=parameters.get("num_partitions"),
-                            sort_by_column_name_and_type=sort_data[view].get(
-                                "sort_by_column_name_and_type"
-                            )
-                            if need_sorting and sort_data
-                            else None,
-                            drop_fields_from_json=sort_data[view].get(
-                                "drop_fields_from_json"
-                            )
-                            if need_sorting and sort_data
-                            else None,
-                            partition_by_column_name=sort_data[view].get(
-                                "partition_by_column_name"
-                            )
-                            if need_sorting and sort_data
-                            else None,
+                            sort_by_column_name_and_type=(
+                                sort_data[view].get("sort_by_column_name_and_type")
+                                if need_sorting and sort_data
+                                else None
+                            ),
+                            drop_fields_from_json=(
+                                sort_data[view].get("drop_fields_from_json")
+                                if need_sorting and sort_data
+                                else None
+                            ),
+                            partition_by_column_name=(
+                                sort_data[view].get("partition_by_column_name")
+                                if need_sorting and sort_data
+                                else None
+                            ),
                             enable_repartitioning=enable_repartitioning,
                             operation=operation,
                         ).transform(df)

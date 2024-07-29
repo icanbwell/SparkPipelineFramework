@@ -111,7 +111,7 @@ class FrameworkJsonLoader(FrameworkLocalFileLoader):
             self.setMultiLine(False)
         else:
             assert absolute_paths
-            text_df: DataFrame = df.sql_ctx.read.text(absolute_paths)
+            text_df: DataFrame = df.sparkSession.read.text(absolute_paths)
             # read the first line of the file
             first_line: str = text_df.select("value").limit(1).collect()[0][0]
             if first_line.lstrip().startswith("["):

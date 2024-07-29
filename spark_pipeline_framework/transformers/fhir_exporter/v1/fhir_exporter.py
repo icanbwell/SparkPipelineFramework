@@ -82,9 +82,9 @@ class FhirExporter(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         name: Optional[str] = self.getName()
@@ -106,7 +106,7 @@ class FhirExporter(FrameworkTransformer):
                 mode = self.getMode()
                 file_path_text = str(file_path)
                 if view:
-                    df_view: DataFrame = df.sql_ctx.table(view)
+                    df_view: DataFrame = df.sparkSession.table(view)
                     if not spark_is_data_frame_empty(df=df_view):
                         self.logger.info(f"---- Reading from view {view} ------")
                         assert not spark_is_data_frame_empty(df=df_view), view

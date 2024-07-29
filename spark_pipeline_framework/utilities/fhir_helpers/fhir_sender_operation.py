@@ -17,6 +17,7 @@ class FhirSenderOperation(Enum):
 
     @staticmethod
     def from_str(text: str) -> "FhirSenderOperation":
+        assert isinstance(text, str)
         if text.upper() == "DELETE":
             return FhirSenderOperation.FHIR_OPERATION_DELETE
         if text.upper() == "$MERGE":

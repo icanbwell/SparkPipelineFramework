@@ -1,14 +1,16 @@
 import json
-from os import path, makedirs
+from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
+from urllib.parse import urljoin
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender import FhirSender
-from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_operation import (
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
@@ -30,7 +32,16 @@ def test_send_delete(spark_session: SparkSession) -> None:
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
     parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
-    fhir_server_url: str = "http://fhir:3000/4_0_0"
+    fhir_server_url: str = environ["FHIR_SERVER_URL"]
+    auth_client_id = environ["FHIR_CLIENT_ID"]
+    auth_client_secret = environ["FHIR_CLIENT_SECRET"]
+    auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
+    token_url = TokenHelper.get_auth_server_url_from_well_known_url(
+        well_known_url=auth_well_known_url
+    )
+    assert token_url
+    authorization_header = TokenHelper.get_authorization_header_from_environment()
+
     with ProgressLogger() as progress_logger:
         FhirSender(
             resource="Patient",
@@ -39,6 +50,9 @@ def test_send_delete(spark_session: SparkSession) -> None:
             response_path=initial_state_response_files_dir,
             progress_logger=progress_logger,
             parameters=parameters,
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
+            auth_well_known_url=auth_well_known_url,
         ).transform(df)
 
     # Act
@@ -52,13 +66,20 @@ def test_send_delete(spark_session: SparkSession) -> None:
             operation=FhirSenderOperation.FHIR_OPERATION_DELETE,
             parameters=parameters,
             additional_request_headers={"SampleHeader": "SampleValue"},
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
+            auth_well_known_url=auth_well_known_url,
         ).transform(df)
 
     # Assert
-    response = requests.get(f"{fhir_server_url}/Patient/00100000000")
+    response = requests.get(
+        urljoin(fhir_server_url, "Patient/00100000000"), headers=authorization_header
+    )
     assert response.status_code == 404
 
-    response = requests.get(f"{fhir_server_url}/Patient/00200000000")
+    response = requests.get(
+        urljoin(fhir_server_url, "Patient/00200000000"), headers=authorization_header
+    )
     assert response.ok
     json_text = response.text
     obj = json.loads(json_text)

@@ -63,7 +63,7 @@ class FhirBundleSplitter(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
 
         # Assumes the schema to be BundleSchema.get_schema()
-        df = df.sql_ctx.table(view)
+        df = df.sparkSession.table(view)
 
         # if caller did not pass resource types then get them from the data (albeit pretty slow)
         if resource_types is None:

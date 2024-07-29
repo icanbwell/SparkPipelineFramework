@@ -198,9 +198,9 @@ class HttpDataSender(FrameworkTransformer):
         post_as_json_formatted_string: Optional[bool] = self.getOrDefault(
             self.post_as_json_formatted_string
         )
-        payload_generator: Optional[
-            Callable[[Dict[str, Any]], Dict[str, Any]]
-        ] = self.getOrDefault(self.payload_generator)
+        payload_generator: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = (
+            self.getOrDefault(self.payload_generator)
+        )
         url_generator: Optional[Callable[[Dict[str, Any]], str]] = self.getOrDefault(
             self.url_generator
         )

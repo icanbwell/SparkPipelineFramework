@@ -59,7 +59,7 @@ class FhirResourceLoader(FrameworkTransformer):
 
         schema = BundleSchema.get_schema()
         df_entry: DataFrame = (
-            df.sql_ctx.read.option("multiLine", True)
+            df.sparkSession.read.option("multiLine", True)
             .json(path=str(file_path), schema=schema)  # type: ignore
             .select("entry")
         )

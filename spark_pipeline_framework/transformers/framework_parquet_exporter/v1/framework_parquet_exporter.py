@@ -80,9 +80,9 @@ class FrameworkParquetExporter(FrameworkBaseExporter):
         return "parquet"
 
     def getOptions(self) -> Dict[str, Any]:
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         return {"path": file_path}

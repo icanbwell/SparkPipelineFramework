@@ -404,9 +404,9 @@ class FhirReceiver(FrameworkTransformer):
             self.additional_parameters_view
         )
         id_view: Optional[str] = self.getIdView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         name: Optional[str] = self.getName()
@@ -437,9 +437,9 @@ class FhirReceiver(FrameworkTransformer):
         accept_type: Optional[str] = self.getAcceptType()
         content_type: Optional[str] = self.getContentType()
         accept_encoding: Optional[str] = self.getAcceptEncoding()
-        additional_request_headers: Optional[
-            Dict[str, str]
-        ] = self.getAdditionalRequestHeaders()
+        additional_request_headers: Optional[Dict[str, str]] = (
+            self.getAdditionalRequestHeaders()
+        )
 
         ignore_status_codes: List[int] = self.getIgnoreStatusCodes() or []
         ignore_status_codes.append(200)
@@ -527,7 +527,7 @@ class FhirReceiver(FrameworkTransformer):
                 # created a df for additional_parameters_view
                 # the data in this view MUST have 1 row per each parameter and only 1 column per each row.
                 # e.g. "address-postalcode=10304,11040,11801" for a comma separate postal codes for Person resource
-                df_additional_parameters_view: DataFrame = df.sql_ctx.table(
+                df_additional_parameters_view: DataFrame = df.sparkSession.table(
                     additional_parameters_view
                 )
                 for row in df_additional_parameters_view.collect():
@@ -539,7 +539,7 @@ class FhirReceiver(FrameworkTransformer):
             # if we're calling for individual ids
             # noinspection GrazieInspection
             if id_view:
-                id_df: DataFrame = df.sql_ctx.table(id_view)
+                id_df: DataFrame = df.sparkSession.table(id_view)
                 if spark_is_data_frame_empty(df=id_df):
                     # nothing to do
                     return df
@@ -570,43 +570,43 @@ class FhirReceiver(FrameworkTransformer):
                 result_with_counts_and_responses: DataFrame
                 if run_synchronously:
                     id_rows: List[Row] = id_df.collect()
-                    result_rows: List[
-                        Row
-                    ] = FhirReceiverHelpers.send_partition_request_to_server(
-                        partition_index=0,
-                        rows=id_rows,
-                        batch_size=batch_size,
-                        has_token_col=has_token_col,
-                        server_url=server_url,
-                        log_level=log_level,
-                        action=action,
-                        action_payload=action_payload,
-                        additional_parameters=additional_parameters,
-                        filter_by_resource=filter_by_resource,
-                        filter_parameter=filter_parameter,
-                        sort_fields=sort_fields,
-                        auth_server_url=auth_server_url,
-                        auth_client_id=auth_client_id,
-                        auth_client_secret=auth_client_secret,
-                        auth_login_token=auth_login_token,
-                        auth_scopes=auth_scopes,
-                        include_only_properties=include_only_properties,
-                        separate_bundle_resources=separate_bundle_resources,
-                        expand_fhir_bundle=expand_fhir_bundle,
-                        accept_type=accept_type,
-                        content_type=content_type,
-                        additional_request_headers=additional_request_headers,
-                        accept_encoding=accept_encoding,
-                        slug_column=slug_column,
-                        retry_count=retry_count,
-                        exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                        limit=limit,
-                        auth_access_token=auth_access_token,
-                        resource_type=resource_name,
-                        error_view=error_view,
-                        url_column=url_column,
-                        use_data_streaming=use_data_streaming,
-                        graph_json=graph_json,
+                    result_rows: List[Row] = (
+                        FhirReceiverHelpers.send_partition_request_to_server(
+                            partition_index=0,
+                            rows=id_rows,
+                            batch_size=batch_size,
+                            has_token_col=has_token_col,
+                            server_url=server_url,
+                            log_level=log_level,
+                            action=action,
+                            action_payload=action_payload,
+                            additional_parameters=additional_parameters,
+                            filter_by_resource=filter_by_resource,
+                            filter_parameter=filter_parameter,
+                            sort_fields=sort_fields,
+                            auth_server_url=auth_server_url,
+                            auth_client_id=auth_client_id,
+                            auth_client_secret=auth_client_secret,
+                            auth_login_token=auth_login_token,
+                            auth_scopes=auth_scopes,
+                            include_only_properties=include_only_properties,
+                            separate_bundle_resources=separate_bundle_resources,
+                            expand_fhir_bundle=expand_fhir_bundle,
+                            accept_type=accept_type,
+                            content_type=content_type,
+                            additional_request_headers=additional_request_headers,
+                            accept_encoding=accept_encoding,
+                            slug_column=slug_column,
+                            retry_count=retry_count,
+                            exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                            limit=limit,
+                            auth_access_token=auth_access_token,
+                            resource_type=resource_name,
+                            error_view=error_view,
+                            url_column=url_column,
+                            use_data_streaming=use_data_streaming,
+                            graph_json=graph_json,
+                        )
                     )
                     response_schema = FhirGetResponseSchema.get_schema()
 

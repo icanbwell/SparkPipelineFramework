@@ -22,7 +22,7 @@ def test_fhir_bundle_splitter(spark_session: SparkSession) -> None:
     bundle_schema = BundleSchema.get_schema()
     assert isinstance(bundle_schema, StructType)
     df = (
-        df.sql_ctx.read.schema(bundle_schema)
+        df.sparkSession.read.schema(bundle_schema)
         .option("multiLine", True)
         .json(str(data_dir.joinpath("test.json")))
     )

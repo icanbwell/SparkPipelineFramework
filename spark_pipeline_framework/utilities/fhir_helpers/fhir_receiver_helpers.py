@@ -133,20 +133,24 @@ class FhirReceiverHelpers:
         :return: rows
         """
         resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
-            {
-                "resource_id": r["id"],
-                "access_token": r["token"],
-                url_column: r[url_column],
-                slug_column: r[slug_column],
-                "resourceType": r["resourceType"],
-            }
-            if has_token_col and url_column and slug_column
-            else {
-                "resource_id": r["id"],
-                "access_token": r["token"],
-            }
-            if has_token_col
-            else {"resource_id": r["id"], "access_token": auth_access_token}
+            (
+                {
+                    "resource_id": r["id"],
+                    "access_token": r["token"],
+                    url_column: r[url_column],
+                    slug_column: r[slug_column],
+                    "resourceType": r["resourceType"],
+                }
+                if has_token_col and url_column and slug_column
+                else (
+                    {
+                        "resource_id": r["id"],
+                        "access_token": r["token"],
+                    }
+                    if has_token_col
+                    else {"resource_id": r["id"], "access_token": auth_access_token}
+                )
+            )
             for r in rows
         ]
         result = FhirReceiverHelpers.process_with_token(
@@ -719,9 +723,9 @@ class FhirReceiverHelpers:
             content_type=content_type,
             additional_request_headers=additional_request_headers,
             accept_encoding=accept_encoding,
-            extra_context_to_return={slug_column: service_slug}
-            if slug_column and service_slug
-            else None,
+            extra_context_to_return=(
+                {slug_column: service_slug} if slug_column and service_slug else None
+            ),
             retry_count=retry_count,
             exclude_status_codes_from_retry=exclude_status_codes_from_retry,
             limit=limit,
@@ -898,9 +902,11 @@ class FhirReceiverHelpers:
 
         return (
             await fhir_client.simulate_graph_async(
-                id_=cast(str, resource_id)
-                if not isinstance(resource_id, list)
-                else resource_id[0],
+                id_=(
+                    cast(str, resource_id)
+                    if not isinstance(resource_id, list)
+                    else resource_id[0]
+                ),
                 graph_json=graph_json,
                 contained=False,
                 separate_bundle_resources=separate_bundle_resources,

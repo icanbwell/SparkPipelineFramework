@@ -16,7 +16,9 @@ class ParquetHelper:
         data_dir: Path = Path(file_path).parent
         csv_path: str = f"file://{file_path}"
         parquet_file_name: str = path.splitext(path.basename(file_path))[0]
-        parquet_full_path: str = f"file://{data_dir.joinpath('temp/').joinpath(f'{parquet_file_name}.parquet')}"
+        parquet_full_path: str = (
+            f"file://{data_dir.joinpath('temp/').joinpath(f'{parquet_file_name}.parquet')}"
+        )
 
         ParquetHelper.save_csv_as_parquet(
             spark_session,

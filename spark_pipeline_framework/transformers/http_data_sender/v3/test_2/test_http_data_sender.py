@@ -38,7 +38,7 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
     # noinspection PyTypeChecker
-    spark_session.createDataFrame(
+    spark_session.createDataFrame(  # type:ignore[type-var]
         [
             {
                 "member_id": "e3a3f665-eae5-4046-a241-efdfe5c43919",

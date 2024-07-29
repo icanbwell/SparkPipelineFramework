@@ -53,7 +53,7 @@ class FrameworkPartitioner(FrameworkTransformer):
         partition_by: Optional[List[str]] = self.getPartitionBy()
         force_partition: Optional[bool] = self.getOrDefault(self.force_partition)
 
-        result_df: DataFrame = df.sql_ctx.table(view)
+        result_df: DataFrame = df.sparkSession.table(view)
         num_partitions: int = result_df.rdd.getNumPartitions()
         self.logger.info(f"view {view} has {num_partitions} partitions")
 

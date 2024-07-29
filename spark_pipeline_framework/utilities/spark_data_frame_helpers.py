@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 from pyspark import SparkContext
 from pyspark.rdd import RDD
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.context import SQLContext
 from pyspark.sql.types import StructType, Row
 
 
@@ -91,9 +90,8 @@ def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
         return df._jdf.queryExecution().simpleString()
 
 
-def spark_table_exists(sql_ctx: SQLContext, view: str) -> bool:
-    # noinspection PyBroadException
-    return view in sql_ctx.tableNames()
+def spark_table_exists(session: SparkSession, view: str) -> bool:
+    return view in [t.name for t in session.catalog.listTables()]
 
 
 def sc(df: DataFrame) -> SparkContext:

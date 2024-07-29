@@ -93,9 +93,11 @@ class HttpDataSenderProcessor:
         return Row(
             url=url,
             status=response.status,
-            result=response_processor(json_data, response)
-            if response_processor
-            else response.result,
+            result=(
+                response_processor(json_data, response)
+                if response_processor
+                else response.result
+            ),
             headers=json.dumps(headers, default=str),
             request_type=str(RequestType.POST),
         )

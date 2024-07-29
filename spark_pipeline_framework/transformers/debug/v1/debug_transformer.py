@@ -33,7 +33,7 @@ class DebugTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         print("kwargs: {}".format(self.kwargs))
-        i = df.sql_ctx.table("preprocessed")
+        i = df.sparkSession.table("preprocessed")
 
         i.printSchema()
         i.show()

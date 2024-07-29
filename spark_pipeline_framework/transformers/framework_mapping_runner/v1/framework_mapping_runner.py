@@ -94,7 +94,9 @@ class FrameworkMappingLoader(FrameworkTransformer):
             self.logger.info(
                 f"---- Running AutoMapper {i} of {count} [{automapper}] ----"
             )
-            table_names: List[str] = df.sql_ctx.tableNames()
+            table_names: List[str] = [
+                t.name for t in df.sparkSession.catalog.listTables()
+            ]
 
             # if view exists then drop it
             if (
@@ -104,7 +106,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
                 and automapper.view in table_names
             ):
                 self.logger.info(f"Dropping view {automapper.view}")
-                df.sql_ctx.dropTempTable(tableName=automapper.view)
+                df.sparkSession.catalog.dropTempView(viewName=automapper.view)
 
             progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
             try:

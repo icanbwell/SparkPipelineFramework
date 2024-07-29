@@ -3,6 +3,7 @@ import sys
 import traceback
 from typing import Any, Optional, List
 
+from py4j.protocol import Py4JJavaError
 from pyspark.sql.utils import AnalysisException
 
 from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner_exception import (
@@ -30,9 +31,12 @@ class FriendlySparkException(Exception):
             self.exception: Exception = exception
             self.stage_name: Optional[str] = stage_name
             self.message: str = ""
+            # Spark exceptions: https://spark.apache.org/docs/latest/api/python/reference/pyspark.errors.html#classes
             if isinstance(exception, AnalysisException):
                 self.message = str(exception)
             elif isinstance(exception, FrameworkMappingRunnerException):
+                self.message = str(exception)
+            elif isinstance(exception, Py4JJavaError):
                 self.message = str(exception)
             else:
                 # Summary is a boolean argument
@@ -48,6 +52,10 @@ class FriendlySparkException(Exception):
                 self.message = error_text
 
             # print(f"TEMPO exception type: {type(exception)}")
+            exception_traceback = "".join(
+                traceback.TracebackException.from_exception(exception).format()
+            )
+            self.message += "\n" + exception_traceback
             super().__init__(self.message)
         except KeyError:
             pass

@@ -151,9 +151,9 @@ class FhirReader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         name: Optional[str] = self.getName()
@@ -163,9 +163,9 @@ class FhirReader(FrameworkTransformer):
         ] = self.getBadRecordsPath()
         if callable(bad_records_path):
             bad_records_path = bad_records_path(self.loop_id)
-        create_empty_view_if_file_path_not_found: Optional[
-            bool
-        ] = self.getCreateEmptyViewIfFilePathNotFound()
+        create_empty_view_if_file_path_not_found: Optional[bool] = (
+            self.getCreateEmptyViewIfFilePathNotFound()
+        )
         encoding: Optional[str] = self.getEncoding()
 
         if schema is not None:

@@ -17,7 +17,9 @@ def test_file_downloader() -> None:
     makedirs(temp_folder)
     makedirs(temp_folder.joinpath("data"))
 
-    file_url: str = "https://files.pythonhosted.org/packages/47/6a/62e288da7bcda82b935ff0c6cfe542970f04e29c756b0e147251b2fb251f/wget-3.2.zip"
+    file_url: str = (
+        "https://files.pythonhosted.org/packages/47/6a/62e288da7bcda82b935ff0c6cfe542970f04e29c756b0e147251b2fb251f/wget-3.2.zip"
+    )
     download_path: str = f"file://{os.path.join(temp_folder, 'data')}"
 
     # Act

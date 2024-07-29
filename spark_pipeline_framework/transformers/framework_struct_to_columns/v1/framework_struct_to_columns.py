@@ -48,7 +48,7 @@ class FrameworkStructToColumns(FrameworkTransformer):
         output_view: str = self.getOutputView()
         column_to_explode: str = self.getColumnToExplode()
 
-        source_df = df.sql_ctx.table(view)
+        source_df = df.sparkSession.table(view)
         output_df = source_df.select(
             explode(column_to_explode).alias(column_to_explode)
         )
