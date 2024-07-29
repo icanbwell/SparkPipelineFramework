@@ -57,13 +57,17 @@ def test_fhir_sender_merge(spark_session: SparkSession) -> None:
         ).transform(df)
 
     # Assert
-    response = requests.get(urljoin(fhir_server_url, "Patient/00100000000"))
+    response = requests.get(
+        urljoin(fhir_server_url, "Patient/00100000000"), headers=authorization_header
+    )
     assert response.ok, response.text
     json_text: str = response.text
     obj = json.loads(json_text)
     assert obj["birthDate"] == "2017-01-01"
 
-    response = requests.get(urljoin(fhir_server_url, "Patient/00200000000"))
+    response = requests.get(
+        urljoin(fhir_server_url, "Patient/00200000000"), headers=authorization_header
+    )
     assert response.ok, response.text
     json_text = response.text
     obj = json.loads(json_text)
@@ -111,7 +115,8 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
 
         # for first EOB
         response = requests.get(
-            urljoin(fhir_server_url, "ExplanationOfBenefit/H111-12345")
+            urljoin(fhir_server_url, "ExplanationOfBenefit/H111-12345"),
+            headers=authorization_header,
         )
         assert response.ok, response.text
         json_text = response.text
@@ -122,7 +127,8 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
 
         # for second EOB
         response = requests.get(
-            urljoin(fhir_server_url, "ExplanationOfBenefit/H222-12345")
+            urljoin(fhir_server_url, "ExplanationOfBenefit/H222-12345"),
+            headers=authorization_header,
         )
         assert response.ok, response.text
         json_text = response.text
@@ -133,7 +139,8 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
 
         # for third EOB
         response = requests.get(
-            urljoin(fhir_server_url, "ExplanationOfBenefit/H333-12345")
+            urljoin(fhir_server_url, "ExplanationOfBenefit/H333-12345"),
+            headers=authorization_header,
         )
         assert response.ok, response.text
         json_text = response.text
