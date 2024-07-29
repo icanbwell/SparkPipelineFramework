@@ -54,7 +54,7 @@ def test_fhir_sender_merge(
         client_id=auth_client_id,
         client_secret=auth_client_secret,
         token_url=token_url,
-        scope="user/*.* access/*.*",
+        scope=None,
     )
 
     authorization_header = {"Authorization": f"Bearer {access_token}"}
