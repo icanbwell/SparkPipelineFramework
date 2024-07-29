@@ -78,10 +78,10 @@
         "/user/*.*"
       ],
       "attributes": {
-        "cognito:groups": "${MY_ADMIN_USER_GROUPS}",
-        "custom:scope": "${MY_ADMIN_USER_GROUPS}",
+        "cognito:groups": "${SERVICE_ACCOUNT_GROUPS}",
+        "custom:scope": "${SERVICE_ACCOUNT_SCOPE}",
         "token_use": "access",
-        "username": "service_account"
+        "username": "${SERVICE_ACCOUNT_NAME}"
       }
     },
     {
@@ -116,7 +116,7 @@
       ],
       "attributes": {
         "cognito:groups": "${MY_USER_GROUPS}",
-        "custom:scope": "${MY_USER_GROUPS}",
+        "custom:scope": "${MY_USER_SCOPE}",
         "clientFhirPersonId": "${MY_USER_CLIENT_PERSON_ID}",
         "clientFhirPatientId": "${MY_USER_CLIENT_PATIENT_ID}",
         "bwellFhirPersonId": "${MY_USER_BWELL_PERSON_ID}",
@@ -151,7 +151,7 @@
       ],
       "attributes": {
         "cognito:groups": "${MY_ADMIN_USER_GROUPS}",
-        "custom:scope": "${MY_ADMIN_USER_GROUPS}",
+        "custom:scope": "${MY_ADMIN_USER_SCOPE}",
         "token_use": "access",
         "username": "${MY_ADMIN_USER_TOKEN_USERNAME}"
       }
@@ -216,7 +216,10 @@
             "jsonType.label": "String",
             "id.token.claim": "true",
             "access.token.claim": "true",
-            "userinfo.token.claim": "true"
+            "userinfo.token.claim": "true",
+            "multivalued": "true",
+            "attribute.delimiter": " ",
+            "delimiter": " "
           }
         },
         {
