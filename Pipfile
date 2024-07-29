@@ -59,7 +59,7 @@ more-itertools = ">=9.1.0"
 
 [dev-packages]
 # setuptools is needed for building the package
-setuptools=">=71.1.0"
+setuptools=">=72.0.0"
 # wheel is needed for building the package
 wheel = ">=0.43.0"
 # twine is needed for uploading the package to PyPI
@@ -77,13 +77,13 @@ black = ">=24.4.2"
 # pygments is needed for syntax highlighting
 pygments=">=2.8.1" # not directly required, pinned by Snyk to avoid a vulnerability
 # Sphinx is needed for generating documentation
-Sphinx="==4.1.2"
+Sphinx="==7.4.7"
 # sphinx-autoapi is needed for generating API documentation
-sphinx-autoapi="==1.8.4"
+sphinx-autoapi="==3.2.1"
 # sphinx-rtd-theme is needed for the Read the Docs theme
-sphinx-rtd-theme="==0.5.2"
+sphinx-rtd-theme="==2.0.0"
 # myst-parser is needed for parsing Markdown
-myst-parser="==0.15.1"
+myst-parser="==3.0.1"
 # recodoc is needed for generating documentation
 recommonmark="==0.7.1"
 # py4j is needed for connecting to the JVM from Spark
