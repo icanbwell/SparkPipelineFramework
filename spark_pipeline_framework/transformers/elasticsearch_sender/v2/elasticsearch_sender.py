@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List
 
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -45,6 +45,7 @@ class ElasticSearchSender(FrameworkTransformer):
         multi_line: bool = False,
         operation: str = "index",
         output_path: Optional[Union[Path, str]] = None,
+        run_synchronously: Optional[bool] = None,
     ):
         """
         Sends a folder or a view to an ElasticSearch server
@@ -93,6 +94,11 @@ class ElasticSearchSender(FrameworkTransformer):
         )
         self._setDefault(output_path=output_path)
 
+        self.run_synchronously: Param[Optional[bool]] = Param(
+            self, "run_synchronously", ""
+        )
+        self._setDefault(run_synchronously=run_synchronously)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -106,6 +112,7 @@ class ElasticSearchSender(FrameworkTransformer):
         limit: Optional[int] = self.getLimit()
         operation: str = self.getOperation()
         parameters: Optional[Dict[str, Any]] = self.getParameters()
+        run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
         doc_id_prefix: Optional[str] = None
         if parameters is not None:
             doc_id_prefix = parameters.get("doc_id_prefix", None)
@@ -157,19 +164,34 @@ class ElasticSearchSender(FrameworkTransformer):
                         name=name,
                     )
                 )
-
-                # use mapInPandas
-                # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#map
-                # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
-                # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
-                result_df: DataFrame = json_df.repartition(
-                    desired_partitions
-                ).mapInPandas(
-                    ElasticSearchProcessor.get_process_batch_function(
-                        parameters=sender_parameters
-                    ),
-                    schema=ElasticSearchResult.get_schema(),
-                )
+                if run_synchronously:
+                    rows_to_send: List[Dict[str, Any]] = [
+                        r.asDict(recursive=True) for r in json_df.collect()
+                    ]
+                    result_rows: List[Dict[str, Any] | None] = list(
+                        ElasticSearchProcessor.send_partition_to_server(
+                            partition_index=0,
+                            rows=rows_to_send,
+                            parameters=sender_parameters,
+                        )
+                    )
+                    result_rows = [r for r in result_rows if r is not None]
+                    result_df = (
+                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                            result_rows, schema=ElasticSearchResult.get_schema()
+                        )
+                    )
+                else:
+                    # use mapInPandas
+                    # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#map
+                    # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
+                    # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
+                    result_df = json_df.repartition(desired_partitions).mapInPandas(
+                        ElasticSearchProcessor.get_process_batch_function(
+                            parameters=sender_parameters
+                        ),
+                        schema=ElasticSearchResult.get_schema(),
+                    )
 
                 # select just the columns needed to minimize extra data having to be pulled back to the driver
                 success_df: DataFrame = result_df.where(col("failed") == 0).select(

@@ -67,9 +67,20 @@ class ElasticSearchProcessor:
         rows: Iterable[Dict[str, Any]],
         parameters: ElasticSearchSenderParameters,
     ) -> Iterable[Optional[Dict[str, Any]]]:
+        assert parameters.index is not None
+        assert isinstance(parameters.index, str)
+        assert parameters.operation is not None
+        assert isinstance(parameters.operation, str)
+        assert parameters.doc_id_prefix is None or isinstance(
+            parameters.doc_id_prefix, str
+        )
+
         json_data_list: List[str] = [
             r["value"] for r in rows if "value" in r and r["value"] is not None
         ]
+        assert isinstance(json_data_list, list)
+        assert all(isinstance(j, str) for j in json_data_list)
+
         logger = get_logger(__name__)
 
         if len(json_data_list) > 0:

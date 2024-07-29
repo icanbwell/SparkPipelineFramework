@@ -1,5 +1,6 @@
 from typing import List, Tuple
 
+import pytest
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType
 
@@ -9,7 +10,10 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 )
 
 
-def test_elasticsearch_sender(spark_session: SparkSession) -> None:
+@pytest.mark.parametrize("run_synchronously", [True, False])
+def test_elasticsearch_sender(
+    spark_session: SparkSession, run_synchronously: bool
+) -> None:
     # Given
     data: List[Tuple[str, str]] = [
         ("1", "{'id': '1', 'name': 'name1'}"),
@@ -29,6 +33,7 @@ def test_elasticsearch_sender(spark_session: SparkSession) -> None:
         operation="index",
         parameters={"doc_id_prefix": "test"},
         progress_logger=ProgressLogger(),
+        run_synchronously=run_synchronously,
     )
 
     # When

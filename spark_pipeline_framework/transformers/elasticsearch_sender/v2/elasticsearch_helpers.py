@@ -67,6 +67,14 @@ def send_json_bundle_to_elasticsearch(
     :param logger: logger
     :param doc_id_prefix: a string to be prepended to the _id field for a document
     """
+    assert isinstance(json_data_list, list)
+    assert all(isinstance(j, str) for j in json_data_list)
+    assert index is not None
+    assert isinstance(index, str)
+    assert operation is not None
+    assert isinstance(operation, str)
+    assert doc_id_prefix is None or isinstance(doc_id_prefix, str)
+
     es_connection = ElasticSearchConnection()
     es_client = es_connection.get_elastic_search_client()
     server_url = es_connection.get_elastic_search_host()
