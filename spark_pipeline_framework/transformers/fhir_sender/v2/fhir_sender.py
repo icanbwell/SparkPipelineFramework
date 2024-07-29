@@ -47,7 +47,6 @@ from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.map_functions import remove_field_from_json
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
-    spark_get_execution_plan,
 )
 
 
@@ -496,15 +495,16 @@ class FhirSender(FrameworkTransformer):
                         json_df = json_df.repartition(desired_partitions)
                     # use mapInPandas
                     # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#map
+                    # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
                     result_df = json_df.mapInPandas(
                         FhirSenderProcessor.get_process_batch_function(
                             parameters=sender_parameters
                         ),
                         schema=FhirMergeResponseItemSchema.get_schema(),
                     )
-                    execution_plan: str = spark_get_execution_plan(
-                        df=result_df, extended=True
-                    )
+                    # execution_plan: str = spark_get_execution_plan(
+                    #     df=result_df, extended=True
+                    # )
 
                 if result_df is not None:
                     try:
