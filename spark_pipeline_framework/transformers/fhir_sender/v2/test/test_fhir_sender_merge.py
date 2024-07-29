@@ -4,6 +4,7 @@ from pathlib import Path
 from shutil import rmtree
 
 import pytest
+from helix_fhir_client_sdk.fhir_client import FhirClient
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import IntegerType
 
@@ -78,6 +79,11 @@ def test_fhir_sender_merge_for_custom_parameters(spark_session: SparkSession) ->
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
     fhir_server_url: str = "http://fhir:3000/4_0_0"
+
+    fhir_client: FhirClient = FhirClient().url(fhir_server_url)
+    fhir_client.resource("ExplanationOfBenefit")
+    fhir_client.id_("H111-12345")
+    fhir_client.delete()
 
     environ["LOGLEVEL"] = "DEBUG"
     # Act

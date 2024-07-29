@@ -20,7 +20,7 @@ services:
     working_dir: /SparkpipelineFramework
 
   warehouse:
-    image: mysql:8.0.30
+    image: mysql:8.0.39
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
@@ -33,7 +33,7 @@ services:
       test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
 
   mlflow:
-    image: imranq2/mlflow_server:0.1.18
+    image: imranq2/mlflow_server:0.2.0
     ports:
       - '5050:5000'
     volumes:
@@ -89,8 +89,7 @@ services:
       test: ["CMD-SHELL", "curl --silent --fail localhost:3000/health || exit 1"]
 
   mongo:
-#    image: docker.io/bitnami/mongodb:4.4.9
-    image: mongo:5.0.22
+    image: mongo:5.0.28
     ports:
       - '27017:27017'
     environment:
@@ -104,7 +103,7 @@ services:
 #    image: bitnami/elasticsearch:7.9.3  # AWS ElasticSearch supports upto 7.9
     # using OpenDistro for best compatibility with AWS Managed ElasticSearch:
     # https://opendistro.github.io/for-elasticsearch/downloads.html
-    image: opensearchproject/opensearch:1.3.14
+    image: opensearchproject/opensearch:1.3.18
     container_name: elasticsearch
     environment:
       - cluster.name=odfe-cluster
