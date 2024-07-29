@@ -67,6 +67,7 @@ class FhirSender(FrameworkTransformer):
         auth_client_secret: Optional[str] = None,
         auth_login_token: Optional[str] = None,
         auth_scopes: Optional[List[str]] = None,
+        auth_well_known_url: Optional[str] = None,
         operation: Union[
             FhirSenderOperation, str
         ] = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
@@ -195,6 +196,11 @@ class FhirSender(FrameworkTransformer):
         self.auth_scopes: Param[List[str]] = Param(self, "auth_scopes", "")
         self._setDefault(auth_scopes=None)
 
+        self.auth_well_known_url: Param[Optional[str]] = Param(
+            self, "auth_well_known_url", ""
+        )
+        self._setDefault(auth_well_known_url=None)
+
         self.operation: Param[Union[FhirSenderOperation, str]] = Param(
             self, "operation", ""
         )
@@ -317,6 +323,7 @@ class FhirSender(FrameworkTransformer):
         file_format: str = self.getFileFormat()
         validation_server_url: Optional[str] = self.getValidationServerUrl()
         auth_server_url: Optional[str] = self.getAuthServerUrl()
+        auth_well_known_url: Optional[str] = self.getOrDefault(self.auth_well_known_url)
         auth_client_id: Optional[str] = self.getAuthClientId()
         auth_client_secret: Optional[str] = self.getAuthClientSecret()
         auth_login_token: Optional[str] = self.getAuthLoginToken()
@@ -376,6 +383,7 @@ class FhirSender(FrameworkTransformer):
                 auth_login_token=auth_login_token,
                 auth_scopes=auth_scopes,
                 log_level=log_level,
+                auth_well_known_url=auth_well_known_url,
             )
 
         self.logger.info(
