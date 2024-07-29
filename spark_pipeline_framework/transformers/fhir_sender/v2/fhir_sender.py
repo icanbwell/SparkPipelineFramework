@@ -496,6 +496,7 @@ class FhirSender(FrameworkTransformer):
                     # use mapInPandas
                     # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#map
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
+                    # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
                     result_df = json_df.mapInPandas(
                         FhirSenderProcessor.get_process_batch_function(
                             parameters=sender_parameters
