@@ -218,8 +218,8 @@
             "access.token.claim": "true",
             "userinfo.token.claim": "true",
             "multivalued": "true",
-            "attribute.delimiter": " ",
-            "delimiter": " "
+            "attribute.delimiter": ",",
+            "delimiter": ","
           }
         },
         {
