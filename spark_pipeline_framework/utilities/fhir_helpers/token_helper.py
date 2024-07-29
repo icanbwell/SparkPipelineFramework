@@ -1,7 +1,12 @@
-from typing import Optional, cast
+from os import environ
+from typing import Optional, cast, Any, Dict
 
 import requests
 from requests.auth import HTTPBasicAuth
+
+from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+    get_auth_server_url_from_well_known_url,
+)
 
 
 class TokenHelper:
@@ -31,3 +36,33 @@ class TokenHelper:
             raise Exception(
                 f"Failed to get token: {response.status_code}, {response.text}"
             )
+
+    @staticmethod
+    def get_authorization_header(
+        *, client_id: str, client_secret: str, token_url: str, scope: Optional[str]
+    ) -> Dict[str, Any]:
+        access_token: Optional[str] = TokenHelper.get_oauth_token(
+            client_id=client_id,
+            client_secret=client_secret,
+            token_url=token_url,
+            scope=scope,
+        )
+        assert access_token
+        return {"Authorization": f"Bearer {access_token}"}
+
+    @staticmethod
+    def get_authorization_header_from_environment() -> Dict[str, Any]:
+        auth_client_id = environ["FHIR_CLIENT_ID"]
+        auth_client_secret = environ["FHIR_CLIENT_SECRET"]
+        auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
+
+        token_url: Optional[str] = get_auth_server_url_from_well_known_url(
+            well_known_url=auth_well_known_url
+        )
+        assert token_url
+        return TokenHelper.get_authorization_header(
+            client_id=auth_client_id,
+            client_secret=auth_client_secret,
+            token_url=token_url,
+            scope=None,
+        )

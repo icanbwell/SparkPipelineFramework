@@ -50,14 +50,8 @@ def test_fhir_sender_merge(
         well_known_url=auth_well_known_url
     )
     assert token_url
-    access_token = TokenHelper.get_oauth_token(
-        client_id=auth_client_id,
-        client_secret=auth_client_secret,
-        token_url=token_url,
-        scope=None,
-    )
 
-    authorization_header = {"Authorization": f"Bearer {access_token}"}
+    authorization_header = TokenHelper.get_authorization_header_from_environment()
 
     response = requests.get(
         f"{fhir_server_url}Patient/00100000000", headers=authorization_header
