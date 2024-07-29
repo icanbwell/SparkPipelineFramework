@@ -37,19 +37,19 @@ def test_elasticsearch_sender(
     )
 
     # When
-    result: DataFrame = elasticsearch_sender.transform(df)
+    result_df: DataFrame = elasticsearch_sender.transform(df)
 
     # Then
-    assert result.count() == 2
-    assert result.columns == [
-        "_index",
-        "_id",
-        "_source",
-        "_op_type",
-        "_version",
-        "_seq_no",
-        "_primary_term",
-        "result",
+    result_df.show(truncate=False)
+
+    assert result_df.count() == 1
+    assert result_df.columns == [
+        "url",
+        "success",
+        "failed",
+        "payload",
+        "partition_index",
     ]
-    assert result.collect()[0]["result"] == "created"
-    assert result.collect()[1]["result"] == "created"
+    assert result_df.collect()[0]["success"] == 2
+    assert result_df.collect()[0]["failed"] == 0
+    assert result_df.collect()[0]["url"] == "https://elasticsearch:9200/test_index"

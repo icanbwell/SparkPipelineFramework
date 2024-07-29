@@ -210,7 +210,7 @@ class ElasticSearchSender(FrameworkTransformer):
         self.logger.info(
             f"----- Finished sending {index} (rows={row_count}) to ElasticSearch server  -----"
         )
-        return df
+        return result_df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> Optional[str]:
