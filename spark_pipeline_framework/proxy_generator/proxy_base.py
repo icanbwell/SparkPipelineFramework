@@ -105,6 +105,8 @@ class ProxyBase(FrameworkTransformer):
                     self.my_transformers.append(
                         self.get_python_transformer(f".{file_name_only}", file)
                     )
+            else:
+                self.logger.info(f"Skipping processing for file or directory {file}")
 
         assert len(self.my_transformers) > 0, (
             f"No transformer files found in {self.location}."
