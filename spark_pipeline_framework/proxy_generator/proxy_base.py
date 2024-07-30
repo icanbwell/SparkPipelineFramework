@@ -36,6 +36,7 @@ class ProxyBase(FrameworkTransformer):
         location: Union[str, Path],
         progress_logger: Optional[ProgressLogger] = None,
         verify_count_remains_same: bool = False,
+        files_to_skip: Optional[List[str]] = None,
     ) -> None:
         super().__init__(
             name=self.__class__.__name__,
@@ -53,6 +54,7 @@ class ProxyBase(FrameworkTransformer):
         index_of_module: int = self.location.rfind("/library/")
         module_ = index_of_module + 1
         module_name: str = self.location[module_:].replace("/", ".")
+        files_to_skip = files_to_skip or []
 
         # noinspection Mypy
         self.setParams(
@@ -62,44 +64,47 @@ class ProxyBase(FrameworkTransformer):
         )
 
         for file in files:
-            if file.endswith(".csv"):
-                file_name = file.replace(".csv", "")
-                self.my_transformers.append(
-                    FrameworkCsvLoader(
-                        view=file_name,
-                        file_path=path.join(self.location, file),
-                        delimiter=parameters.get("delimiter", ","),
-                        has_header=parameters.get("has_header", True),
-                        mapping_file_name=file,
+            if file not in files_to_skip:
+                if file.endswith(".csv"):
+                    file_name = file.replace(".csv", "")
+                    self.my_transformers.append(
+                        FrameworkCsvLoader(
+                            view=file_name,
+                            file_path=path.join(self.location, file),
+                            delimiter=parameters.get("delimiter", ","),
+                            has_header=parameters.get("has_header", True),
+                            mapping_file_name=file,
+                        )
                     )
-                )
-            elif file.endswith(".sql"):
-                feature_sql: str = self.read_file_as_string(
-                    path.join(self.location, file)
-                ).format(parameters=parameters)
-                self.my_transformers.append(
-                    FrameworkSqlTransformer(
-                        sql=feature_sql,
-                        name=module_name,
-                        progress_logger=progress_logger,
-                        log_sql=parameters.get("debug_log_sql", False),
-                        view=file.replace(".sql", ""),
-                        verify_count_remains_same=verify_count_remains_same,
-                        mapping_file_name=file,
+                elif file.endswith(".sql"):
+                    feature_sql: str = self.read_file_as_string(
+                        path.join(self.location, file)
+                    ).format(parameters=parameters)
+                    self.my_transformers.append(
+                        FrameworkSqlTransformer(
+                            sql=feature_sql,
+                            name=module_name,
+                            progress_logger=progress_logger,
+                            log_sql=parameters.get("debug_log_sql", False),
+                            view=file.replace(".sql", ""),
+                            verify_count_remains_same=verify_count_remains_same,
+                            mapping_file_name=file,
+                        )
                     )
-                )
-            elif file.endswith("mapping.py"):
-                file_name_only: str = os.path.basename(file)
-                # strip off .py to get the module name
-                import_module_name: str = file_name_only.replace(".py", "")
-                self.my_transformers.append(
-                    self.get_python_mapping_transformer("." + import_module_name, file)
-                )
-            elif file.endswith("calculate.py") or file.endswith("pipeline.py"):
-                file_name_only = file.replace(".py", "")
-                self.my_transformers.append(
-                    self.get_python_transformer(f".{file_name_only}", file)
-                )
+                elif file.endswith("mapping.py"):
+                    file_name_only: str = os.path.basename(file)
+                    # strip off .py to get the module name
+                    import_module_name: str = file_name_only.replace(".py", "")
+                    self.my_transformers.append(
+                        self.get_python_mapping_transformer(
+                            "." + import_module_name, file
+                        )
+                    )
+                elif file.endswith("calculate.py") or file.endswith("pipeline.py"):
+                    file_name_only = file.replace(".py", "")
+                    self.my_transformers.append(
+                        self.get_python_transformer(f".{file_name_only}", file)
+                    )
 
         assert len(self.my_transformers) > 0, (
             f"No transformer files found in {self.location}."
