@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Union, List
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import to_json, struct, col
-from pyspark.sql.utils import AnalysisException
+from pyspark.sql.utils import AnalysisException, PythonException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
@@ -23,6 +23,9 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 )
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
+)
+from spark_pipeline_framework.utilities.FriendlySparkException import (
+    FriendlySparkException,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
@@ -201,11 +204,25 @@ class ElasticSearchSender(FrameworkTransformer):
                     "url", "failed", "payload"
                 )
 
-                self.logger.info("---- Success ----")
-                success_df.show(truncate=False, n=1000)
-                self.logger.info("---- Failed ----")
-                failed_df.show(truncate=False, n=1000)
-                self.logger.info("---- End Reply from server ----")
+                try:
+                    self.logger.info("---- Success ----")
+                    success_df.show(truncate=False, n=1000)
+                    self.logger.info("---- Failed ----")
+                    failed_df.show(truncate=False, n=1000)
+                    self.logger.info("---- End Reply from server ----")
+                except PythonException as e:
+                    print(f"FriendlySparkException : {type(e)}")
+                    if "pyarrow.lib.ArrowTypeError" in e.desc:
+                        raise FriendlySparkException(
+                            exception=e,
+                            message="Exception converting data to Arrow format."
+                            + f" This is usually because the return data did not match the specified schema.",
+                            stage_name=name,
+                        )
+                    else:
+                        raise
+                except Exception as e:
+                    raise FriendlySparkException(exception=e, stage_name=name)
 
         self.logger.info(
             f"----- Finished sending {index} (rows={row_count}) to ElasticSearch server  -----"
