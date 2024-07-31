@@ -996,6 +996,12 @@ class FhirReceiver(FrameworkTransformer):
                     ignore_status_codes=ignore_status_codes,
                 )
 
+                async def on_chunk(
+                    line: bytes, chunk_number: Optional[int] = None
+                ) -> bool:
+                    print(f"Got chunk {chunk_number}: {line.decode('utf-8')}")
+                    return True
+
                 result1 = FhirReceiverProcessor.get_batch_result(
                     page_size=page_size,
                     limit=limit,

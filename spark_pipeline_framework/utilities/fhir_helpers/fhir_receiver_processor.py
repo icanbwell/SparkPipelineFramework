@@ -20,6 +20,7 @@ import pandas as pd
 from furl import furl
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
 from helix_fhir_client_sdk.fhir_client import FhirClient
+from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -406,6 +407,7 @@ class FhirReceiverProcessor:
         page_size: Optional[int] = None,
         last_updated_after: Optional[datetime] = None,
         last_updated_before: Optional[datetime] = None,
+        data_chunk_handler: Optional[HandleStreamingChunkFunction] = None,
     ) -> FhirGetResponse:
         """
         Sends a fhir request to the fhir client sdk
@@ -421,6 +423,7 @@ class FhirReceiverProcessor:
         :param last_updated_before: last updated before date
         :param extra_context_to_return: a dict to return with every row (separate_bundle_resources is set)
                                         or with FhirGetResponse
+        :param data_chunk_handler: function to handle the data chunk
         :return:
         :rtype:
         """
@@ -528,7 +531,7 @@ class FhirReceiverProcessor:
                 separate_bundle_resources=parameters.separate_bundle_resources,
             )
             if parameters.graph_json
-            else await fhir_client.get_async()
+            else await fhir_client.get_async(data_chunk_handler=data_chunk_handler)
         )
 
     @staticmethod
