@@ -587,9 +587,8 @@ class FhirSender(FrameworkTransformer):
                             )
                         else:
                             raise
-
                     except Exception as e:
-                        raise FriendlySparkException(exception=e, stage_name=None)
+                        raise FriendlySparkException(exception=e, stage_name=name)
 
         self.logger.info(
             f"----- Finished sending {resource_name} (rows={row_count}) to FHIR server {server_url}  -----"

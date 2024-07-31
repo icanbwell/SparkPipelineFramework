@@ -827,6 +827,8 @@ class FhirReceiver(FrameworkTransformer):
                         )
                     else:
                         raise
+                except Exception as e:
+                    raise FriendlySparkException(exception=e, stage_name=name)
 
                 if expand_fhir_bundle:
                     # noinspection PyUnresolvedReferences

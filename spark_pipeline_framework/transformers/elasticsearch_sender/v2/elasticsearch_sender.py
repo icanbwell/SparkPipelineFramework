@@ -221,6 +221,8 @@ class ElasticSearchSender(FrameworkTransformer):
                         )
                     else:
                         raise
+                except Exception as e:
+                    raise FriendlySparkException(exception=e, stage_name=name)
 
         self.logger.info(
             f"----- Finished sending {index} (rows={row_count}) to ElasticSearch server  -----"
