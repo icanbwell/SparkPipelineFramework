@@ -9,7 +9,7 @@ from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, get_json_object
 from pyspark.sql.types import Row
-from pyspark.sql.utils import AnalysisException
+from pyspark.sql.utils import AnalysisException, PythonException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
@@ -576,6 +576,18 @@ class FhirSender(FrameworkTransformer):
                                     self.logger.info(
                                         f"------- End Failed validations for {resource_name} ---------"
                                     )
+                    except PythonException as e:
+                        print(f"FriendlySparkException : {type(e)}")
+                        if "pyarrow.lib.ArrowTypeError" in e.desc:
+                            raise FriendlySparkException(
+                                exception=e,
+                                message="Exception converting data to Arrow format."
+                                + f" This is usually because the return data did not match the specified schema.",
+                                stage_name=name,
+                            )
+                        else:
+                            raise
+
                     except Exception as e:
                         raise FriendlySparkException(exception=e, stage_name=None)
 
