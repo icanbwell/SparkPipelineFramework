@@ -45,6 +45,7 @@ class ElasticSearchProcessor:
                 # convert the dataframe to a list of dictionaries
                 pdf_json: str = pdf.to_json(orient="records")
                 rows: List[Dict[str, Any]] = json.loads(pdf_json)
+                # print(f"Processing partition {pdf.index}: {pdf_json}")
                 # print(f"Processing partition {pdf.index} with {len(rows)} rows")
                 # send the partition to the server
                 result_list: Iterable[Dict[str, Any] | None] = (
@@ -55,6 +56,7 @@ class ElasticSearchProcessor:
                 # remove any nulls
                 result_list = [r for r in result_list if r is not None]
                 index += 1
+                # print(f"output: {json.dumps(result_list)}")
                 # yield the result as a dataframe
                 yield pd.DataFrame(result_list)
 
@@ -98,7 +100,7 @@ class ElasticSearchProcessor:
                 doc_id_prefix=parameters.doc_id_prefix,
             )
             response_json.partition_index = partition_index
-            yield response_json.to_dict()
+            yield response_json.to_dict_flatten_payload()
         else:
             logger.info(
                 f"Batch {partition_index}/{parameters.desired_partitions} is empty"

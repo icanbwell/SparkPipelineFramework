@@ -108,7 +108,10 @@ class FrameworkDataFrameAnalyzer(FrameworkTransformer):
                 target_path: str = str(os.path.join(str(output_folder), column_name))
                 if progress_logger:
                     progress_logger.write_to_log(
-                        f"Writing analysis for column {column_name} to {target_path}"
+                        entry_name="framework_data_frame_analyzer",
+                        message="Writing analysis for column {column_name} to {target_path}",
+                        column_name=column_name,
+                        target_path=target_path,
                     )
                 result_df.coalesce(1).write.csv(
                     target_path, header=True, mode="overwrite"

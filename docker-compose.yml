@@ -195,7 +195,29 @@ services:
     volumes:
       - ./keycloak-config/realm-import.json:/opt/keycloak/data/import/realm-import.json
 
+
+  seq:
+    image: datalust/seq:2022.1.7929
+    ports:
+      - '8085:80'
+      - '5341:5341'
+    volumes:
+      - seq_data:/data
+    environment:
+      - ACCEPT_EULA=Y
+#      - SEQ_FIRSTRUN_ADMINPASSWORDHASH=admin
+
+  seq-input-gelf:
+    image: datalust/seq-input-gelf:2.0.322
+    depends_on:
+      - seq
+    ports:
+      - "12201:12201/udp"
+    environment:
+      SEQ_ADDRESS: "http://seq:5341"
+
 volumes:
   mysql_data:
   mongo_data:
+  seq_data:
   es_data:

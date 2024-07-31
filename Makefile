@@ -31,6 +31,7 @@ up: Pipfile.lock
 	if [ "`docker inspect --format {{.State.Health.Status}} sparkpipelineframework-fhir-1`" != "healthy" ]; then docker ps && docker logs sparkpipelineframework-fhir-1 && printf "========== ERROR: sparkpipelineframework-fhir-1 did not start. Run docker logs sparkpipelineframework-fhir-1 =========\n" && exit 1; fi
 	@echo MockServer dashboard: http://localhost:1080/mockserver/dashboard
 	@echo Spark dashboard: http://localhost:8080/
+	@echo Seq Log dashboard http://localhost:8085/
 	@echo Fhir server dashboard http://localhost:3000/
 	@echo Keycloak OAuth dashboard http://admin:password@localhost:8080/
 

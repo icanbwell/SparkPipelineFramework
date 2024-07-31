@@ -127,7 +127,7 @@ class FrameworkPipeline(Transformer):
                         name=str(stage_name) or "unknown",
                     ):
                         self.progress_logger.log_event(
-                            pipeline_name,
+                            event_name=pipeline_name,
                             event_text=f"Running pipeline step {stage_name}",
                         )
                         df = transformer.transform(dataset=df)
@@ -140,7 +140,7 @@ class FrameworkPipeline(Transformer):
                                 f"------------  End Execution Plan for stage {stage_name} -----------"
                             )
                         self.progress_logger.log_event(
-                            pipeline_name,
+                            event_name=pipeline_name,
                             event_text=f"Finished pipeline step {stage_name}",
                         )
                     self.progress_logger.end_mlflow_run()

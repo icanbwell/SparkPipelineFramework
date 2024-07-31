@@ -613,7 +613,9 @@ class FhirReceiverProcessor:
                         page_size=page_size,
                         last_updated_after=last_updated_after,
                         last_updated_before=last_updated_before,
-                        parameters=parameters,
+                        parameters=parameters.clone().set_additional_parameters(
+                            additional_parameters
+                        ),
                     )
                 )
                 result_response: List[str] = []

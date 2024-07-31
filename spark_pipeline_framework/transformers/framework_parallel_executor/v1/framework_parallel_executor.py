@@ -65,9 +65,11 @@ class FrameworkParallelExecutor(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         if progress_logger is not None:
             progress_logger.write_to_log(
-                f"---- Starting parallel run: "
-                + f"max_parallel_tasks: {self.max_parallel_tasks}, "
-                + f" ---------"
+                entry_name=self.getName(),
+                message="---- Starting parallel run: "
+                + "max_parallel_tasks: {max_parallel_tasks}, "
+                + " ---------",
+                max_parallel_tasks=self.max_parallel_tasks,
             )
 
         enable = self.enable(df) if callable(self.enable) else self.enable
@@ -98,9 +100,9 @@ class FrameworkParallelExecutor(FrameworkTransformer):
         else:
             if progress_logger is not None:
                 progress_logger.write_to_log(
-                    self.getName() or "FrameworkTransformerGroup",
-                    f"Skipping stages because enable "
-                    + f"{self.enable or self.enable_if_view_not_empty} did not evaluate to True",
+                    entry_name=self.getName() or "FrameworkTransformerGroup",
+                    message="Skipping stages because enable {enable} did not evaluate to True",
+                    enable=self.enable or self.enable_if_view_not_empty,
                 )
 
         return df

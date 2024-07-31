@@ -70,28 +70,35 @@ class FrameworkLoopTransformer(FrameworkTransformer):
             max_number_of_runs = max_number_of_runs()
         if progress_logger is not None:
             progress_logger.write_to_log(
-                f"---- Starting loop: "
-                + f"sleep_interval_in_seconds: {self.sleep_interval_in_seconds}, "
-                + f"max_time_in_seconds: {self.max_time_in_seconds}, "
-                + f"run_until: {self.run_until}, "
-                + f"max_number_of_runs: {max_number_of_runs} "
-                + f" ---------"
+                entry_name=self.__class__.__name__,
+                message="---- Starting loop: "
+                + "sleep_interval_in_seconds: {sleep_interval_in_seconds}, "
+                + "max_time_in_seconds: {max_time_in_seconds}, "
+                + "run_until: {run_until}, "
+                + "max_number_of_runs: {max_number_of_runs} "
+                + " ---------",
+                sleep_interval_in_seconds=self.sleep_interval_in_seconds,
+                max_time_in_seconds=self.max_time_in_seconds,
+                run_until=self.run_until,
+                max_number_of_runs=self.max_number_of_runs,
             )
 
-        current_run_number: int = 0
+        loop_id: int = 0
         while True:
             # noinspection PyCallingNonCallable
             stages: List[Transformer] = (
                 self.stages if isinstance(self.stages, list) else self.stages()
             )
-            current_run_number += 1
+            loop_id += 1
             if progress_logger is not None:
                 progress_logger.write_to_log(
-                    f"---- Running loop {current_run_number} for {self.getName()} ---------"
+                    entry_name=self.__class__.__name__,
+                    message="---- Running loop {loop_id} ---------",
+                    loop_id=loop_id,
                 )
                 progress_logger.log_event(
                     event_name=f"Started Loop for {self.getName()}",
-                    event_text=str(current_run_number),
+                    event_text=str(loop_id),
                 )
             stage: Transformer
             for stage in stages:
@@ -107,7 +114,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                         run_name=stage_name, is_nested=True
                     )
                 if hasattr(stage, "set_loop_id"):
-                    stage.set_loop_id(str(current_run_number))
+                    stage.set_loop_id(str(loop_id))
 
                 try:
                     # use a new df everytime to avoid keeping data in memory too long
@@ -124,11 +131,11 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     progress_logger.end_mlflow_run()
             if progress_logger is not None:
                 progress_logger.write_to_log(
-                    f"---- Finished loop {current_run_number} for {self.getName()} ---------"
+                    f"---- Finished loop {loop_id} for {self.getName()} ---------"
                 )
                 progress_logger.log_event(
                     event_name=f"Finished Loop for {self.getName()}",
-                    event_text=str(current_run_number),
+                    event_text=str(loop_id),
                 )
             time_elapsed: float = time.time() - start_time
             if (
@@ -137,7 +144,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     or time_elapsed < self.max_time_in_seconds
                 )
                 and (self.run_until is None or datetime.utcnow() < self.run_until)
-                and (not max_number_of_runs or current_run_number < max_number_of_runs)
+                and (not max_number_of_runs or loop_id < max_number_of_runs)
             ):
                 time.sleep(self.sleep_interval_in_seconds)
             else:

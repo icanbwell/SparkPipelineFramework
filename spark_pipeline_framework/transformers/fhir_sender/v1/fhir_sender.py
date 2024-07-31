@@ -411,7 +411,11 @@ class FhirSender(FrameworkTransformer):
             except AnalysisException as e:
                 if str(e).startswith("Path does not exist:"):
                     if progress_logger:
-                        progress_logger.write_to_log(f"Folder {path_to_files} is empty")
+                        progress_logger.write_to_log(
+                            entry_name="fhir_sender",
+                            message="Folder {path_to_files} is empty",
+                            path_to_files=path_to_files,
+                        )
                     return df
                 raise
 

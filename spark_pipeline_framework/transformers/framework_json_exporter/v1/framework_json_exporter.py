@@ -148,7 +148,10 @@ class FrameworkJsonExporter(FrameworkTransformer):
                 if progress_logger:
                     progress_logger.log_param("data_export_path", str(file_path))
                     progress_logger.write_to_log(
-                        f"[{name or view}] written to {file_path}"
+                        entry_name=name or view,
+                        message="[{name}] written to {file_path}",
+                        name=name or view,
+                        file_path=file_path,
                     )
 
             except AnalysisException as e:
