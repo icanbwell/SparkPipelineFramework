@@ -996,22 +996,18 @@ class FhirReceiver(FrameworkTransformer):
                     ignore_status_codes=ignore_status_codes,
                 )
 
-                async def on_chunk(
-                    line: bytes, chunk_number: Optional[int] = None
-                ) -> bool:
-                    print(f"Got chunk {chunk_number}: {line.decode('utf-8')}")
-                    return True
-
-                result1 = FhirReceiverProcessor.get_batch_result(
+                resources: List[str] = []
+                for result1 in FhirReceiverProcessor.get_batch_result(
                     page_size=page_size,
                     limit=limit,
                     server_url=server_url,
                     parameters=receiver_parameters,
                     last_updated_after=last_updated_after,
                     last_updated_before=last_updated_before,
-                )
-                resources = result1.resources
-                errors = result1.errors
+                ):
+                    resources = result1.resources
+                    errors = result1.errors
+
                 list_df: DataFrame = df.sparkSession.createDataFrame(
                     resources, schema=StringType()
                 )

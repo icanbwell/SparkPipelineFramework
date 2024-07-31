@@ -14,6 +14,7 @@ from typing import (
     NamedTuple,
     Coroutine,
     Callable,
+    Generator,
 )
 
 import pandas as pd
@@ -543,7 +544,7 @@ class FhirReceiverProcessor:
         last_updated_after: Optional[datetime],
         last_updated_before: Optional[datetime],
         parameters: FhirReceiverParameters,
-    ) -> GetBatchResult:
+    ) -> Generator[GetBatchResult, None, None]:
         resources: List[str] = []
         errors: List[str] = []
         additional_parameters: Optional[List[str]] = parameters.additional_parameters
@@ -686,4 +687,4 @@ class FhirReceiverProcessor:
                 else:
                     break
 
-        return GetBatchResult(resources=resources, errors=errors)
+        yield GetBatchResult(resources=resources, errors=errors)
