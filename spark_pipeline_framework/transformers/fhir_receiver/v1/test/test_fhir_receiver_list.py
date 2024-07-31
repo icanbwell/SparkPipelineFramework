@@ -40,6 +40,8 @@ def test_fhir_receiver_list(spark_session: SparkSession) -> None:
         url_prefix=f"{test_name}/4_0_0/Patient",
     )
 
+    parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
+
     # Act
     with ProgressLogger() as progress_logger:
         FhirReceiver(
@@ -47,10 +49,12 @@ def test_fhir_receiver_list(spark_session: SparkSession) -> None:
             resource="Patient",
             file_path=patient_json_path,
             progress_logger=progress_logger,
+            parameters=parameters,
+            additional_request_headers={"SampleHeader": "TestValue"},
         ).transform(df)
 
     # Assert
-    json_df: DataFrame = df.sql_ctx.read.json(str(patient_json_path))
+    json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     json_df.show()
     json_df.printSchema()
 

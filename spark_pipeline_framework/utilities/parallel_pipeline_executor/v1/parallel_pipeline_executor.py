@@ -5,7 +5,7 @@ import traceback
 from typing import List, AsyncIterator, Tuple, Any, Dict, Optional, OrderedDict
 
 from bounded_pool_executor import BoundedThreadPoolExecutor
-from pyspark.ml import Pipeline, Transformer
+from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -65,32 +65,41 @@ class ParallelPipelineExecutor:
         """
         number_of_concurrent_tasks = min(self.max_tasks, len(self.dictionary))
 
-        items = [(name, stages) for name, stages in self.dictionary.items()]
+        items: List[Tuple[str, List[Transformer]]] = [
+            (name, stages) for name, stages in self.dictionary.items()
+        ]
 
-        # https://docs.python.org/3.7/library/concurrent.futures.html
-        with BoundedThreadPoolExecutor(
-            max_workers=number_of_concurrent_tasks
-        ) as executor:
-            track_futures = {
-                executor.submit(
-                    self._run_pipeline_transform_async,
-                    name=item[0],
-                    stages=item[1],
-                    df=df,
-                    spark_session=spark_session,
-                    progress_logger=self.progress_logger,
-                )
-                for item in items
-            }
-            for future_item in concurrent.futures.as_completed(track_futures):
-                try:
-                    name, df = future_item.result()
-                    yield name, df
-                except Exception as e:
-                    self.logger.info("ERROR transform_async {0}".format(str(e)))
-                    err = traceback.format_exc()
-                    self.logger.info("TRACEBACK: {0}".format(err))
-                    raise
+        if number_of_concurrent_tasks > 1:
+            # https://docs.python.org/3.7/library/concurrent.futures.html
+            with BoundedThreadPoolExecutor(
+                max_workers=number_of_concurrent_tasks
+            ) as executor:
+                track_futures = {
+                    executor.submit(
+                        self._run_pipeline_transform_async,
+                        name=item[0],
+                        stages=item[1],
+                        df=df,
+                        spark_session=spark_session,
+                        progress_logger=self.progress_logger,
+                    )
+                    for item in items
+                }
+                for future_item in concurrent.futures.as_completed(track_futures):
+                    try:
+                        name, df = future_item.result()
+                        yield name, df
+                    except Exception as e:
+                        self.logger.info("ERROR transform_async {0}".format(str(e)))
+                        err = traceback.format_exc()
+                        self.logger.info("TRACEBACK: {0}".format(err))
+                        raise
+        else:
+            item: Tuple[str, List[Transformer]]
+            for item in items:
+                transformer_name: str = item[0]
+                for transformer in item[1]:
+                    yield transformer_name, transformer.transform(df)
 
     def _run_pipeline_transform_async(
         self,
@@ -138,12 +147,35 @@ class ParallelPipelineExecutor:
             if parallel_mode:
                 result_df = ParallelPipelineExecutor._handle_transform_mode(df, stages)
             else:
-                result_df = Pipeline(stages=stages).fit(df).transform(df)
+                for stage in stages:
+                    if hasattr(stage, "getName"):
+                        # noinspection Mypy
+                        stage_name = stage.getName()
+                    else:
+                        stage_name = stage.__class__.__name__
+                    try:
+                        result_df = stage.transform(df)
+                    except Exception as e:
+                        if len(e.args) >= 1:
+                            # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                            e.args = (f"In Stage ({stage_name})", *e.args)
+                        raise e
             return result_df
 
     @staticmethod
     def _handle_transform_mode(df: DataFrame, stages: List[Transformer]) -> DataFrame:
-        new_df = df
-        model = Pipeline(stages=stages).fit(new_df)
-        result_df = model.transform(new_df)
+        result_df = df
+        for stage in stages:
+            if hasattr(stage, "getName"):
+                # noinspection Mypy
+                stage_name = stage.getName()
+            else:
+                stage_name = stage.__class__.__name__
+            try:
+                result_df = stage.transform(result_df)
+            except Exception as e:
+                if len(e.args) >= 1:
+                    # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                    e.args = (f"In Stage ({stage_name})", *e.args)
+                raise e
         return result_df

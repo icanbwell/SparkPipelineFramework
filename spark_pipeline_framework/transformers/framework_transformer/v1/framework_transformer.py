@@ -1,16 +1,12 @@
 import json
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, TypeVar
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-# noinspection PyPackageRequirements
 from pyspark.ml.base import Transformer
 
-# noinspection PyPackageRequirements
 from pyspark.ml.param import Param
 
-# noinspection PyPackageRequirements
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 
-# noinspection PyPackageRequirements
 from pyspark.sql.dataframe import DataFrame
 from typing_extensions import final
 
@@ -18,15 +14,12 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 
-T = TypeVar("T")
-
 
 class FrameworkTransformer(
     Transformer,
     DefaultParamsReadable,  # type: ignore
     DefaultParamsWritable,
 ):
-    # noinspection PyUnusedLocal
     def __init__(
         self,
         name: Optional[str] = None,
@@ -112,17 +105,12 @@ class FrameworkTransformer(
     def getSql(self) -> Optional[str]:
         return None
 
-    # # This is here to avoid mypy from complaining since this is a protected member
-    # noinspection PyPep8Naming
-    def _setDefault(self, **kwargs: Any) -> None:
-        # noinspection PyUnresolvedReferences,PyProtectedMember
-        super()._setDefault(**kwargs)
-
-    def _set(self, **kwargs: Any) -> None:
+    def _set(self, **kwargs: Any) -> "FrameworkTransformer":
         # filter out any args that don't have parameters
         kwargs = {key: value for key, value in kwargs.items() if self.hasParam(key)}
         # noinspection PyUnresolvedReferences,PyProtectedMember
         super()._set(**kwargs)
+        return self
 
     def __str__(self) -> str:
         return json.dumps(self.as_dict(), default=str)
@@ -134,13 +122,15 @@ class FrameworkTransformer(
             "type": ClassHelpers.get_full_name_of_instance(self),
             "params": {
                 k.name: (
-                    self.getOrDefault(k)
-                    if not hasattr(self.getOrDefault(k), "as_dict")
-                    else self.getOrDefault(k).as_dict()
-                )
-                if not callable(self.getOrDefault(k))
-                else ClassHelpers.get_function_as_text(
-                    fn=self.getOrDefault(k), strip=f"{k.name}="
+                    (
+                        self.getOrDefault(k)
+                        if not hasattr(self.getOrDefault(k), "as_dict")
+                        else self.getOrDefault(k).as_dict()
+                    )
+                    if not callable(self.getOrDefault(k))
+                    else ClassHelpers.get_function_as_text(
+                        fn=self.getOrDefault(k), strip=f"{k.name}="
+                    )
                 )
                 for k, v in self._paramMap.items()
                 if k.name not in ["progress_logger"]
@@ -152,12 +142,6 @@ class FrameworkTransformer(
             for key, value in dictionary.items():
                 setattr(self, key, value)
         return self
-
-    # Have to re-declare here because MyPy does not seem to pick up the overload from base class (Params)
-    def getOrDefault(self, param: Param[T]) -> T:
-        # noinspection PyUnresolvedReferences
-        # return super(Params, self).getOrDefault(param)  # type: ignore
-        return super().getOrDefault(param)  # type: ignore
 
     def set_loop_id(self, loop_id: str) -> None:
         """

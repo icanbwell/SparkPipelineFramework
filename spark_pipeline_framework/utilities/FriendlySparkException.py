@@ -3,6 +3,7 @@ import sys
 import traceback
 from typing import Any, Optional, List
 
+from py4j.protocol import Py4JJavaError
 from pyspark.sql.utils import AnalysisException
 
 from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner_exception import (
@@ -16,7 +17,12 @@ from spark_pipeline_framework.utilities.cannot_cast_exception_parser import (
 class FriendlySparkException(Exception):
     # noinspection PyUnusedLocal
     def __init__(
-        self, exception: Exception, stage_name: Optional[str], *args: Any, **kwargs: Any
+        self,
+        exception: Exception,
+        stage_name: Optional[str],
+        message: Optional[str] = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         """
         This exception wraps Spark Exceptions to extract out all the messages and show them
@@ -29,11 +35,14 @@ class FriendlySparkException(Exception):
         try:
             self.exception: Exception = exception
             self.stage_name: Optional[str] = stage_name
-            self.message: str = ""
+            self.message: str = f"{message}\n" if message else ""
+            # Spark exceptions: https://spark.apache.org/docs/latest/api/python/reference/pyspark.errors.html#classes
             if isinstance(exception, AnalysisException):
-                self.message = str(exception)
+                self.message += str(exception)
             elif isinstance(exception, FrameworkMappingRunnerException):
-                self.message = str(exception)
+                self.message += str(exception)
+            elif isinstance(exception, Py4JJavaError):
+                self.message += str(exception)
             else:
                 # Summary is a boolean argument
                 # If True, it prints the exception summary
@@ -45,9 +54,13 @@ class FriendlySparkException(Exception):
                     # + ": "
                     # + FriendlySparkException.exception_summary()
                 )
-                self.message = error_text
+                self.message += error_text
 
             # print(f"TEMPO exception type: {type(exception)}")
+            exception_traceback = "".join(
+                traceback.TracebackException.from_exception(exception).format()
+            )
+            self.message += "\n" + exception_traceback
             super().__init__(self.message)
         except KeyError:
             pass

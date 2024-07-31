@@ -65,7 +65,7 @@ class HttpDataReceiver(FrameworkTransformer):
             name=f"{name}_http_data_receiver", progress_logger=progress_logger
         ):
             response: Response = requests.get(
-                url, headers={"User-Agent": "helix/1.0.0"}, verify=False
+                url, headers={"User-Agent": "helix/1.0.0"}
             )
 
             if response.ok:
@@ -73,7 +73,7 @@ class HttpDataReceiver(FrameworkTransformer):
 
                 text = response.text
                 self.logger.info(text)
-                df2 = df.sql_ctx.read.json(sc.parallelize([text]))
+                df2 = df.sparkSession.read.json(sc.parallelize([text]))
 
                 df2.createOrReplaceTempView(view)
             else:

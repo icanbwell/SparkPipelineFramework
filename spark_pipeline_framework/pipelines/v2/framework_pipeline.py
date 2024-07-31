@@ -1,9 +1,13 @@
+import json
+import os
 from typing import Any, Dict, List, Optional, Union
 
 # noinspection PyPackageRequirements
 from mlflow.entities import RunStatus  # type: ignore
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
+
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter import (
     FrameworkCsvExporter,
 )
@@ -19,9 +23,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer import (
     pipeline_validation_df_name,
 )
-from spark_pipeline_framework.utilities.FriendlySparkException import (
-    FriendlySparkException,
-)
+from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
@@ -35,6 +37,7 @@ class FrameworkPipeline(Transformer):
         vendor_name: Optional[str] = None,
         data_lake_path: Optional[str] = None,
         validation_output_path: Optional[str] = None,
+        log_level: Optional[Union[int, str]] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -61,6 +64,9 @@ class FrameworkPipeline(Transformer):
 
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
+        self.log_level: Optional[Union[int, str]] = log_level or os.environ.get(
+            "LOGLEVEL"
+        )
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -87,8 +93,12 @@ class FrameworkPipeline(Transformer):
 
             self.progress_logger.log_event(
                 event_name=pipeline_name,
-                event_text=f"Starting Pipeline {pipeline_name}",
-                pipeline_name=pipeline_name,
+                event_text=(
+                    f"Starting Pipeline {pipeline_name}" + f"_{self._run_id}"
+                    if self._run_id
+                    else ""
+                ),
+                log_level=LogLevel.INFO,
             )
             self.progress_logger.log_params(params=self.__parameters)
 
@@ -97,6 +107,9 @@ class FrameworkPipeline(Transformer):
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
                     stage_name = transformer.getName()
+                    # check that there is a value in case it is set to empty string
+                    if not stage_name:
+                        stage_name = transformer.__class__.__name__
                 else:
                     stage_name = transformer.__class__.__name__
                 try:
@@ -106,7 +119,7 @@ class FrameworkPipeline(Transformer):
                         f"({i} of {count_of_transformers}) ----"
                     )
                     self.progress_logger.start_mlflow_run(
-                        run_name=str(stage_name), is_nested=True
+                        run_name=stage_name, is_nested=True
                     )
 
                     with ProgressLogMetric(
@@ -118,6 +131,14 @@ class FrameworkPipeline(Transformer):
                             event_text=f"Running pipeline step {stage_name}",
                         )
                         df = transformer.transform(dataset=df)
+                        if self.log_level and self.log_level == "DEBUG":
+                            print(
+                                f"------------  Start Execution Plan for stage {stage_name} -----------"
+                            )
+                            df.explain(extended="cost")
+                            print(
+                                f"------------  End Execution Plan for stage {stage_name} -----------"
+                            )
                         self.progress_logger.log_event(
                             event_name=pipeline_name,
                             event_text=f"Finished pipeline step {stage_name}",
@@ -129,16 +150,16 @@ class FrameworkPipeline(Transformer):
                         + f"[{stage_name}] threw exception !!!!!!!!!!!!!"
                     )
                     # use exception chaining to add stage name but keep original exception
-                    friendly_spark_exception: FriendlySparkException = (
-                        FriendlySparkException(exception=e, stage_name=stage_name)
-                    )
-                    error_messages: List[str] = (
-                        friendly_spark_exception.message.split("\n")
-                        if friendly_spark_exception.message
-                        else []
-                    )
-                    for error_message in error_messages:
-                        logger.error(event=error_message)
+                    # friendly_spark_exception: FriendlySparkException = (
+                    #     FriendlySparkException(exception=e, stage_name=stage_name)
+                    # )
+                    # error_messages: List[str] = (
+                    #     friendly_spark_exception.message.split("\n")
+                    #     if friendly_spark_exception.message
+                    #     else []
+                    # )
+                    # for error_message in error_messages:
+                    #     logger.error(msg=error_message)
 
                     if hasattr(transformer, "getSql"):
                         # noinspection Mypy
@@ -146,27 +167,34 @@ class FrameworkPipeline(Transformer):
                     logger.error(
                         "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                     )
+                    if len(e.args) >= 1:
+                        # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                        e.args = (f"In Stage ({stage_name})", *e.args)
                     self.progress_logger.log_exception(
                         event_name=pipeline_name,
-                        event_text=f"Exception in Stage={stage_name} -- {'-'.join(error_messages)}",
+                        event_text=str(e),
                         ex=e,
                     )
                     self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)
-                    raise friendly_spark_exception from e
+
+                    raise e
 
             self.progress_logger.log_event(
                 event_name=pipeline_name,
                 event_text=f"Finished Pipeline {pipeline_name}",
+                log_level=LogLevel.INFO,
             )
             return df
         finally:
             self._check_validation(df)
 
     def _check_validation(self, df: DataFrame) -> None:
-        tables_df = df.sql_ctx.tables().filter(
-            f"tableName ='{pipeline_validation_df_name}'"
-        )
-        if tables_df.count() == 1 and self.validation_output_path:
+        tables = [
+            t.name
+            for t in df.sparkSession.catalog.listTables()
+            if t.name == pipeline_validation_df_name
+        ]
+        if len(tables) == 1 and self.validation_output_path:
             FrameworkCsvExporter(
                 view=pipeline_validation_df_name,
                 file_path=self.validation_output_path,
@@ -174,7 +202,7 @@ class FrameworkPipeline(Transformer):
                 parameters=self.parameters,
                 progress_logger=self.progress_logger,
             ).transform(df)
-            errors_df = df.sql_ctx.sql(
+            errors_df = df.sparkSession.sql(
                 f"SELECT * from {pipeline_validation_df_name} where is_failed == 1"
             )
             error_count = errors_df.count()
@@ -197,3 +225,21 @@ class FrameworkPipeline(Transformer):
 
     def finalize(self) -> None:
         pass
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "short_type": self.__class__.__name__,
+            "type": ClassHelpers.get_full_name_of_instance(self),
+            # self.parameters is a subclass of dict so json.dumps thinks it can't serialize it
+            "params": {
+                k: v if not hasattr(v, "as_dict") else v.as_dict()
+                for k, v in self.parameters.items()
+            },
+            "steps": [
+                s.as_dict() if not isinstance(s, list) else [s1.as_dict() for s1 in s]  # type: ignore
+                for s in self.steps
+            ],
+        }
+
+    def __str__(self) -> str:
+        return json.dumps(self.as_dict(), default=str)

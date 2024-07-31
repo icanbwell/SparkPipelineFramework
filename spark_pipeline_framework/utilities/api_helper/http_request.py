@@ -1,10 +1,11 @@
 """
 helper functions to abstract http requests so we have less repetitive boilerplate code
 """
+
 import json
 from enum import Enum
 from os import environ
-from typing import Optional, Dict, Any, List, Callable, Union, NamedTuple
+from typing import Optional, Dict, Any, List, Callable, Union, NamedTuple, Tuple
 from urllib import parse
 from urllib.parse import SplitResult, SplitResultBytes
 
@@ -54,6 +55,7 @@ class HelixHttpRequest:
     :param backoff_factor: {backoff factor} * (2 ** ({number of total retries} - 1))
     :param retry_on_status: A set of integer HTTP status codes that we should force a retry on
     :param post_as_json_formatted_string: If true will set the post data to a json string
+    :param raise_error: Raise error when request is not successful
     """
 
     # noinspection PyDefaultArgument
@@ -69,6 +71,9 @@ class HelixHttpRequest:
         retry_on_status: List[int] = [429, 500, 502, 503, 504],
         logger: Optional[Logger] = None,
         post_as_json_formatted_string: Optional[bool] = None,
+        raise_error: bool = True,
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ):
         self.url: str = url
         self.request_type = request_type
@@ -78,9 +83,15 @@ class HelixHttpRequest:
         self.retry_count: int = retry_count
         self.backoff_factor: float = backoff_factor
         self.retry_on_status: List[int] = retry_on_status
-        self.post_as_json_formatted_string: Optional[
-            bool
-        ] = post_as_json_formatted_string
+        self.post_as_json_formatted_string: Optional[bool] = (
+            post_as_json_formatted_string
+        )
+        self.raise_error = raise_error
+        self.cert = cert
+        self.verify = verify
+
+    def set_raise_error(self, flag: bool) -> None:
+        self.raise_error = flag
 
     def get_result(self) -> SingleJsonResult:
         """
@@ -134,7 +145,12 @@ class HelixHttpRequest:
         :return: the Response object
         """
         session = self._get_session(
-            self.retry_count, self.backoff_factor, self.retry_on_status
+            self.retry_count,
+            self.backoff_factor,
+            self.retry_on_status,
+            self.raise_error,
+            self.cert,
+            self.verify,
         )
         arguments = {"headers": self.headers}
         request_function = None
@@ -155,13 +171,20 @@ class HelixHttpRequest:
         # remove None arguments
         arguments = {k: v for k, v in arguments.items() if v is not None}
 
-        response = self._send_request(request_function, arguments=arguments)  # type: ignore
-        try:
-            response.raise_for_status()
-        except HTTPError as e:
-            raise Exception(
-                f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {e.response.status_code}: {e.response.content}. Error= {e}"
-            ) from e
+        response = self._send_request(request_function, arguments=arguments)
+        if self.raise_error:
+            try:
+                response.raise_for_status()
+            except HTTPError as e:
+                if self.logger:
+                    error_text = f"Request to {self.url} with arguments {json.dumps(arguments)} failed"
+                    if e.response:
+                        error_text += (
+                            f" with {e.response.status_code}: {e.response.content!r}."
+                        )
+                    error_text += f" Error= {e}"
+                    self.logger.error(error_text)
+                raise e
 
         return response
 
@@ -196,12 +219,22 @@ class HelixHttpRequest:
         retry_count: int = 3,
         backoff_factor: float = 0.1,
         retry_on_status: List[int] = [429, 500, 502, 503, 504],
+        raise_error: bool = True,
+        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        verify: Optional[Union[bool, str]] = None,
     ) -> Session:
         session = requests.session()
+        if cert:
+            session.cert = cert
+
+        if verify is not None:
+            session.verify = verify
+
         retries = Retry(
             total=retry_count,
             backoff_factor=backoff_factor,
             status_forcelist=retry_on_status,
+            raise_on_status=raise_error,
         )
         session.mount("http://", HTTPAdapter(max_retries=retries))
         session.mount("https://", HTTPAdapter(max_retries=retries))

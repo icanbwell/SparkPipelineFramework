@@ -51,9 +51,9 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             Union[str, Callable[[Optional[str]], str]]
         ] = enable_if_view_not_empty
 
-        self.enable_sql: Optional[
-            Union[str, Callable[[Optional[str]], str]]
-        ] = enable_sql
+        self.enable_sql: Optional[Union[str, Callable[[Optional[str]], str]]] = (
+            enable_sql
+        )
 
         self.stages: Union[List[Transformer], Callable[[], List[Transformer]]] = stages
         self.else_stages: Optional[
@@ -104,16 +104,30 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             stages = (
                 []
                 if self.else_stages is None
-                else self.else_stages
-                if isinstance(self.else_stages, list)
-                else self.else_stages()
+                else (
+                    self.else_stages
+                    if isinstance(self.else_stages, list)
+                    else self.else_stages()
+                )
             )
         for stage in stages:
+            if hasattr(stage, "getName"):
+                # noinspection Mypy
+                stage_name = stage.getName()
+            else:
+                stage_name = stage.__class__.__name__
             if progress_logger is not None:
-                progress_logger.start_mlflow_run(run_name=str(stage), is_nested=True)
+                progress_logger.start_mlflow_run(run_name=stage_name, is_nested=True)
             if hasattr(stage, "set_loop_id"):
                 stage.set_loop_id(self.loop_id)
-            df = stage.transform(df)
+            try:
+                df = stage.transform(df)
+            except Exception as e:
+                if len(e.args) >= 1:
+                    # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                    e.args = (f"In Stage ({stage_name})", *e.args)
+                raise e
+
             if progress_logger is not None:
                 progress_logger.end_mlflow_run()
         return df
@@ -124,10 +138,14 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
             "enable": self.enable,
             "enable_if_view_not_empty": self.enable_if_view_not_empty,
             "enable_sql": self.enable_sql,
-            "stages": [s.as_dict() for s in self.stages]
-            if not callable(self.stages)
-            else str(self.stages),
-            "else_stages": [s.as_dict() for s in self.else_stages]
-            if self.else_stages and not callable(self.else_stages)
-            else str(self.else_stages),
+            "stages": (
+                [s.as_dict() for s in self.stages]  # type: ignore
+                if not callable(self.stages)
+                else str(self.stages)
+            ),
+            "else_stages": (
+                [s.as_dict() for s in self.else_stages]  # type: ignore
+                if self.else_stages and not callable(self.else_stages)
+                else str(self.else_stages)
+            ),
         }

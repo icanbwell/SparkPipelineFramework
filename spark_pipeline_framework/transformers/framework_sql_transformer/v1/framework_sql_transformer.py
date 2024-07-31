@@ -1,5 +1,6 @@
 from typing import Optional, Dict, Any
 
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -12,7 +13,10 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
+from spark_pipeline_framework.utilities.pretty_print import (
+    get_pretty_data_frame,
+    get_data_frame_as_csv,
+)
 
 
 class FrameworkSqlTransformer(FrameworkTransformer):
@@ -30,9 +34,13 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         verify_count_remains_same: bool = False,
         mapping_file_name: Optional[str] = None,
         log_event: Optional[bool] = None,
+        log_event_level: Optional[LogLevel] = None,
+        log_limit: Optional[int] = None,
+        desired_partitions: Optional[int] = None,
+        append_to_view: Optional[bool] = None,
     ) -> None:
         """
-        Runs the provided SQL
+        Runs the provided SQL and stores the result in the view parameter
 
 
         :param sql: SQL to run
@@ -40,7 +48,16 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         :param log_sql: whether to log the SQL to progress_logger
         :param log_result: whether to log the result to progress_logger
         :param verify_count_remains_same: whether to confirm the count of the rows remains the same after running SQL
-        :param log_event: whether to log an event with progress_logger with the contents of the output view
+        :param log_event: whether to log an event at TRACE level with progress_logger with the contents of
+                            the output view
+        :param log_event_level: the level to use for logging the event
+        :param desired_partitions: (Optional) Repartition the data after executing the sql
+        :param append_to_view: (Optional) Append to the view instead of overwriting it
+        :param mapping_file_name: (Optional) Name of the mapping file to use for logging the result
+        :param log_limit: (Optional) Limit the number of rows logged
+        :param name: (Optional) Name of the transformer
+        :param parameters: (Optional) Parameters for the transformer
+        :param progress_logger: (Optional) ProgressLogger to use
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -70,6 +87,9 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         self.log_result: Param[bool] = Param(self, "log_result", "")
         self._setDefault(log_result=False)
 
+        self.log_limit: Param[Optional[int]] = Param(self, "log_limit", "")
+        self._setDefault(log_limit=None)
+
         self.verify_count_remains_same: Param[bool] = Param(
             self, "verify_count_remains_same", ""
         )
@@ -77,6 +97,19 @@ class FrameworkSqlTransformer(FrameworkTransformer):
 
         self.log_event: Param[Optional[bool]] = Param(self, "log_event", "")
         self._setDefault(log_event=None)
+
+        self.log_event_level: Param[Optional[LogLevel]] = Param(
+            self, "log_event_level", ""
+        )
+        self._setDefault(log_event_level=None)
+
+        self.desired_partitions: Param[Optional[int]] = Param(
+            self, "desired_partitions", ""
+        )
+        self._setDefault(desired_partitions=desired_partitions)
+
+        self.append_to_view: Param[Optional[bool]] = Param(self, "append_to_view", "")
+        self._setDefault(append_to_view=append_to_view)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -88,6 +121,10 @@ class FrameworkSqlTransformer(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         log_result: bool = self.getLogResult()
         log_event: Optional[bool] = self.getOrDefault(self.log_event)
+        log_event_level: Optional[LogLevel] = self.getOrDefault(self.log_event_level)
+        log_limit: Optional[int] = self.getOrDefault(self.log_limit)
+        desired_partitions: Optional[int] = self.getOrDefault(self.desired_partitions)
+        append_to_view: Optional[bool] = self.getOrDefault(self.append_to_view)
 
         assert sql_text
         with ProgressLogMetric(
@@ -100,34 +137,58 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                     entry_name=name, message="{sql_text}", sql_text=sql_text
                 )
             try:
-                df = df.sql_ctx.sql(sql_text)
+                progress_logger.write_to_log(
+                    entry_name=name, message="{sql_text}", sql_text=sql_text
+                )
+                df = df.sparkSession.sql(sql_text)
             except Exception:
                 self.logger.info(f"Error in {name}")
                 self.logger.info(sql_text)
                 raise
 
+            if desired_partitions is not None:
+                num_partitions: int = df.rdd.getNumPartitions()
+                if num_partitions != desired_partitions:
+                    df = df.repartition(desired_partitions)
+
             if log_result:
-                limit = 100
-                message = (
-                    (name or view or "")
-                    + "\n"
-                    + get_pretty_data_frame(df, limit, sql_text)
-                )
-                self.logger.info(message)
-                if progress_logger:
-                    progress_logger.write_to_log(
-                        entry_name=name or view, message="{data}", data=message
+                log_limit = 10 if log_limit is None else log_limit
+                if log_limit and log_limit > 0:
+                    message = (
+                        "\n"
+                        + (name or view or "")
+                        + f" (LIMIT {log_limit})"
+                        + "\n"
+                        + get_pretty_data_frame(df, log_limit, sql_text)
                     )
-                    if log_event:
-                        progress_logger.log_event(
-                            event_name=name or view or self.__class__.__name__,
-                            event_text=message,
+                    self.logger.info(message)
+                    if progress_logger:
+                        progress_logger.write_to_log(
+                            entry_name=name or view, message="{data}", data=message
                         )
-                    progress_logger.log_artifact(
-                        key=f"{name or view}.csv", contents=message
-                    )
+                        if log_event or log_event_level:
+                            if log_event_level:
+                                progress_logger.log_event(
+                                    event_name=name or view or self.__class__.__name__,
+                                    event_text=message,
+                                    log_level=log_event_level,
+                                )
+                            else:
+                                progress_logger.log_event(
+                                    event_name=name or view or self.__class__.__name__,
+                                    event_text=message,
+                                )
+
+                        progress_logger.log_artifact(
+                            key=f"{name or view}.csv",
+                            contents=get_data_frame_as_csv(df=df, limit=log_limit),
+                        )
 
             if view:
+                if append_to_view:
+                    original_df: DataFrame = df.sparkSession.table(view)
+                    df = original_df.union(df)
+                # now point the view back to it
                 df.createOrReplaceTempView(view)
             self.logger.info(f"GenericSqlTransformer [{name}] finished running SQL")
 

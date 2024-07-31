@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Union
 
-# noinspection PyProtectedMember
+# noinspection PyProtectedMember,PyPackageRequirements
 from mlflow.entities import RunStatus  # type: ignore
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
@@ -94,7 +94,9 @@ class FrameworkMappingLoader(FrameworkTransformer):
             self.logger.info(
                 f"---- Running AutoMapper {i} of {count} [{automapper}] ----"
             )
-            table_names: List[str] = df.sql_ctx.tableNames()
+            table_names: List[str] = [
+                t.name for t in df.sparkSession.catalog.listTables()
+            ]
 
             # if view exists then drop it
             if (
@@ -104,16 +106,23 @@ class FrameworkMappingLoader(FrameworkTransformer):
                 and automapper.view in table_names
             ):
                 self.logger.info(f"Dropping view {automapper.view}")
-                df.sql_ctx.dropTempTable(tableName=automapper.view)
+                df.sparkSession.catalog.dropTempView(viewName=automapper.view)
 
             progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
             try:
-                if progress_logger is not None:
-                    progress_logger.start_mlflow_run(
-                        run_name=str(automapper), is_nested=True
-                    )
+                stage_name = automapper.__class__.__name__
 
-                automapper.transform(df=df)
+                run_name = f"{stage_name} map view - {automapper.view}"
+
+                if progress_logger is not None:
+                    progress_logger.start_mlflow_run(run_name=run_name, is_nested=True)
+
+                try:
+                    automapper.transform(df=df)
+                except Exception as e:
+                    if len(e.args) >= 1:
+                        e.args = (f"In AutoMapper ({stage_name})", *e.args)
+                    raise e
 
                 if progress_logger is not None:
                     progress_logger.end_mlflow_run()

@@ -144,6 +144,10 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         stream: bool = self.getStream()
 
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        file_format: str = "delta" if delta_lake_table else "json"
+
         if not file_path:
             raise ValueError(f"file_path is empty: {file_path}")
 
@@ -185,14 +189,15 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
         self.preprocess(df=df, absolute_paths=absolute_paths)
 
         df_reader: Union[DataFrameReader, DataStreamReader] = (
-            df.sql_ctx.read if not stream else df.sql_ctx.readStream
+            df.sparkSession.read if not stream else df.sparkSession.readStream
         )
-        df_reader = df_reader.option("mode", self.getMode())
+        mode = self.getMode()
+        df_reader = df_reader.option("mode", mode)
 
         if schema:
             df_reader = df_reader.schema(schema)
         elif use_schema_from_view:
-            df_source_view_for_schema = df.sql_ctx.table(use_schema_from_view)
+            df_source_view_for_schema = df.sparkSession.table(use_schema_from_view)
             df_reader = df_reader.schema(df_source_view_for_schema.schema)
         elif infer_schema:
             df_reader = df_reader.option("inferSchema", "true")
@@ -200,7 +205,8 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             df_reader = df_reader.option("inferSchema", "false")
 
         df2: DataFrame
-        df_reader = df_reader.format(self.getReaderFormat())
+        file_format = "delta" if delta_lake_table else self.getReaderFormat()
+        df_reader = df_reader.format(file_format)
 
         for k, v in self.getReaderOptions().items():
             df_reader = df_reader.option(k, v)
@@ -230,7 +236,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
         if cache_table:
             self.logger.info(f"Caching table {view}")
-            df.sql_ctx.sql(f"CACHE TABLE {view}")
+            df.sparkSession.sql(f"CACHE TABLE {view}")
 
         progress_logger and progress_logger.write_to_log(
             entry_name=self.__class__.__name__,
@@ -292,7 +298,7 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> str:
-        return self.getView()
+        return super().getName() or self.getView()
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getReaderFormat(self) -> str:

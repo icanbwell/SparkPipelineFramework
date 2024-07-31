@@ -1,4 +1,5 @@
 import re
+from os import environ
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -11,6 +12,7 @@ import mlflow  # type: ignore
 from mlflow.entities import Experiment, RunStatus  # type: ignore
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
 
@@ -29,6 +31,15 @@ class MlFlowConfig:
         self.flow_run_name = flow_run_name
         self.parameters = parameters
 
+    def clone(self) -> "MlFlowConfig":
+        return MlFlowConfig(
+            mlflow_tracking_url=self.mlflow_tracking_url,
+            artifact_url=self.artifact_url,
+            experiment_name=self.experiment_name,
+            flow_run_name=self.flow_run_name,
+            parameters=self.parameters.copy(),
+        )
+
 
 class ProgressLogger:
     def __init__(
@@ -39,33 +50,34 @@ class ProgressLogger:
         self.logger = get_logger(__name__)
         self.event_loggers: Optional[List[EventLogger]] = event_loggers
         self.mlflow_config: Optional[MlFlowConfig] = mlflow_config
+        system_log_level_text: Optional[str] = environ.get("LOGLEVEL")
+        self.system_log_level: Optional[LogLevel] = (
+            LogLevel.from_str(system_log_level_text)
+            if system_log_level_text is not None
+            else None
+        )
 
     def __enter__(self) -> "ProgressLogger":
         if self.mlflow_config is None:
             self.logger.info("MLFLOW IS NOT ENABLED")
             return self
         self.logger.info("MLFLOW IS ENABLED")
-        mlflow.set_tracking_uri(self.mlflow_config.mlflow_tracking_url)
-        self.logger.info(f"MLFLOW TRACKING URL: {mlflow.get_tracking_uri()}")
 
-        # get or create experiment
-        experiment: Experiment = mlflow.get_experiment_by_name(
-            name=self.mlflow_config.experiment_name
-        )
-
-        if experiment is None:
-            experiment_id: str = mlflow.create_experiment(
-                name=self.mlflow_config.experiment_name,
-                artifact_location=self.mlflow_config.artifact_url,
+        try:
+            mlflow.set_tracking_uri(self.mlflow_config.mlflow_tracking_url)
+            self.logger.info(f"MLFLOW TRACKING URL: {mlflow.get_tracking_uri()}")
+            self.start_mlflow_run(
+                run_name=self.mlflow_config.flow_run_name, is_nested=False
             )
-        else:
-            experiment_id = experiment.experiment_id
-        mlflow.set_experiment(experiment_id=experiment_id)
-
-        mlflow.start_run(run_name=self.mlflow_config.flow_run_name)
-        self.logger.info(f"MLFLOW ARTIFACTS URL: {mlflow.get_artifact_uri()}")
-        # set the parameters used in the pipeline run
-        self.log_params(params=self.mlflow_config.parameters)
+            # set the parameters used in the pipeline run
+            self.log_params(params=self.mlflow_config.parameters)
+        except Exception as e:
+            self.log_event(
+                "mlflow initialization error. suppressing and continuing.",
+                str({e}),
+                log_level=LogLevel.ERROR,
+            )
+            self.mlflow_config = None  # since there are checks for this everywhere, quick way to bypass MLFlow
 
         return self
 
@@ -85,13 +97,32 @@ class ProgressLogger:
     def start_mlflow_run(self, run_name: str, is_nested: bool = True) -> None:
         if self.mlflow_config is None:
             return
+        # get or create experiment
+        experiment: Experiment = mlflow.get_experiment_by_name(
+            name=self.mlflow_config.experiment_name
+        )
+
+        if experiment is None:
+            experiment_id: str = mlflow.create_experiment(
+                name=self.mlflow_config.experiment_name,
+                artifact_location=self.mlflow_config.artifact_url,
+            )
+        else:
+            experiment_id = experiment.experiment_id
+        mlflow.set_experiment(experiment_id=experiment_id)
+
         mlflow.start_run(run_name=run_name, nested=is_nested)
 
     # noinspection PyMethodMayBeStatic
     def end_mlflow_run(self, status: RunStatus = RunStatus.FINISHED) -> None:
         mlflow.end_run(status=RunStatus.to_string(status))
 
-    def log_metric(self, name: str, time_diff_in_minutes: float) -> None:
+    def log_metric(
+        self,
+        name: str,
+        time_diff_in_minutes: float,
+        log_level: LogLevel = LogLevel.TRACE,
+    ) -> None:
         self.logger.info(f"{name}: {time_diff_in_minutes} min")
         if self.mlflow_config is not None:
             try:
@@ -100,10 +131,14 @@ class ProgressLogger:
                 )
             except Exception as e:
                 self.log_event(
-                    event_name="mlflow log metric error", event_text=str({e})
+                    event_name="mlflow log metric error",
+                    event_text=str({e}),
+                    log_level=log_level,
                 )
 
-    def log_param(self, key: str, value: str) -> None:
+    def log_param(
+        self, key: str, value: str, log_level: LogLevel = LogLevel.TRACE
+    ) -> None:
         self.write_to_log(entry_name=key, message=value)
         if self.mlflow_config is not None:
             try:
@@ -112,16 +147,22 @@ class ProgressLogger:
                     value=self.__mlflow_clean_param_value(value),
                 )
             except Exception as e:
-                self.log_event(event_name="mlflow log param error", event_text=str({e}))
+                self.log_event(
+                    event_name="mlflow log param error",
+                    event_text=str({e}),
+                    log_level=log_level,
+                )
 
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(
+        self, params: Dict[str, Any], log_level: LogLevel = LogLevel.TRACE
+    ) -> None:
         if self.mlflow_config is not None:
             # intentionally not using mlflow.log_params due to issues with its SqlAlchemy implementation
             for key, value in params.items():
-                self.log_param(key=key, value=value)
+                self.log_param(key=key, value=value, log_level=log_level)
 
-    # noinspection PyMethodMayBeStatic
-    def __mlflow_clean_string(self, value: str) -> str:
+    @staticmethod
+    def __mlflow_clean_string(value: str) -> str:
         """
 
         MLFlow keys may only contain alphanumerics, underscores (_),
@@ -129,15 +170,17 @@ class ProgressLogger:
 
 
         mlflow run metric names through https://docs.python.org/3/library/os.path.html#os.path.normpath when validating
-        metric names (https://github.com/mlflow/mlflow/blob/217799b10780b22f787137f80f5cf5c2b5cf85b1/mlflow/utils/validation.py#L95).
-        one side effect of this is if the value contains `//` it will be changed to `/` and fail the _validate_metric_name check.
+        metric names
+        (https://github.com/mlflow/mlflow/blob/217799b10780b22f787137f80f5cf5c2b5cf85b1/mlflow/utils/validation.py#L95).
+        one side effect of this is if the value contains `//` it will be changed to `/`
+        and fail the _validate_metric_name check.
         """
         value = str(value).replace("//", "/")
         # noinspection RegExpRedundantEscape
         return re.sub(r"[^\w\-\.\s\/]", "-", value)
 
-    # noinspection PyMethodMayBeStatic
-    def __mlflow_clean_param_value(self, param_value: str) -> str:
+    @staticmethod
+    def __mlflow_clean_param_value(param_value: str) -> str:
         """
         replace sensitive values in the string with asterisks
         """
@@ -153,32 +196,51 @@ class ProgressLogger:
     def log_artifact(
         self, key: str, contents: str, folder_path: Optional[str] = None
     ) -> None:
-        try:
-            with TemporaryDirectory() as temp_dir_name:
-                data_dir: Path = Path(temp_dir_name)
-                file_path: Path = data_dir.joinpath(key)
-                with open(file_path, "w") as file:
-                    file.write(contents)
-                    self.logger.info(f"Wrote sql to {file_path}")
+        if self.mlflow_config is not None:
+            try:
+                with TemporaryDirectory() as temp_dir_name:
+                    data_dir: Path = Path(temp_dir_name)
+                    file_path: Path = data_dir.joinpath(key)
+                    file_path.parent.mkdir(exist_ok=True, parents=True)
+                    with open(file_path, "w") as file:
+                        file.write(contents)
+                        self.logger.info(f"Wrote sql to {file_path}")
 
-                if self.mlflow_config is not None:
-                    mlflow.log_artifact(local_path=str(file_path))
+                    if self.mlflow_config is not None:
+                        mlflow.log_artifact(local_path=str(file_path))
 
-        except Exception as e:
-            self.log_event(
-                event_name="Error in log_artifact writing to mlflow", event_text=str(e)
-            )
+            except Exception as e:
+                self.log_event(
+                    event_name="Error in log_artifact writing to mlflow",
+                    event_text=str(e),
+                )
 
     def write_to_log(
-        self, *, entry_name: Optional[str], message: str = "", **kwargs: Any
+        self,
+        *,
+        entry_name: Optional[str],
+        message: str = "",
+        log_level: LogLevel = LogLevel.INFO,
     ) -> bool:
         if entry_name:
-            self.logger.info(
-                (f"{entry_name}: " + str(message)).format(**kwargs),
-                **{entry_name: entry_name, **kwargs},
-            )
+            if log_level == LogLevel.ERROR:
+                self.logger.error(
+                    (f"{entry_name}: " + str(message)).format(**kwargs),
+                    **{entry_name: entry_name, **kwargs},
+                )
+            elif log_level == LogLevel.INFO:
+                self.logger.info(
+                    (f"{entry_name}: " + str(message)).format(**kwargs),
+                    **{entry_name: entry_name, **kwargs},
+                )
+            else:
+                self.logger.debug(
+                    (f"{entry_name}: " + str(message)).format(**kwargs),
+                    **{entry_name: entry_name, **kwargs},
+                )
         else:
             self.logger.info(str(message).format(**kwargs), **kwargs)
+
         return True
 
     def write_error_to_log(
@@ -211,26 +273,57 @@ class ProgressLogger:
         total: int,
         event_format_string: str,
         backoff: bool = True,
+        log_level: LogLevel = LogLevel.TRACE,
         **kwargs: Any,
     ) -> None:
         self.logger.info(
             event_format_string.format(event_name, current, total),
             **{"isProgressEvent": True, **kwargs},  # type: ignore
         )
-        if self.event_loggers:
-            for event_logger in self.event_loggers:
-                event_logger.log_progress_event(
-                    event_name=event_name,
-                    current=current,
-                    total=total,
-                    event_format_string=event_format_string,
-                    backoff=backoff,
-                )
+        if not self.system_log_level or self.system_log_level == LogLevel.INFO:
+            if (
+                log_level == LogLevel.INFO or log_level == LogLevel.ERROR
+            ):  # log only INFO messages
+                if self.event_loggers:
+                    for event_logger in self.event_loggers:
+                        event_logger.log_progress_event(
+                            event_name=event_name,
+                            current=current,
+                            total=total,
+                            event_format_string=event_format_string,
+                            backoff=backoff,
+                        )
+        else:  # LOGLEVEL is lower than INFO
+            if self.event_loggers:
+                for event_logger in self.event_loggers:
+                    event_logger.log_progress_event(
+                        event_name=event_name,
+                        current=current,
+                        total=total,
+                        event_format_string=event_format_string,
+                        backoff=backoff,
+                    )
 
-    def log_event(self, *, event_name: str, event_text: str, **kwargs: Any) -> None:
+    def log_event(
+        self,
+        event_name: str,
+        event_text: str,
+        log_level: LogLevel = LogLevel.TRACE,
+        **kwargs: Any,
+    ) -> None:
         self.write_to_log(
             entry_name=event_name, message=event_text, **{"isEvent": True, **kwargs}
         )
-        if self.event_loggers:
-            for event_logger in self.event_loggers:
-                event_logger.log_event(event_name=event_name, event_text=event_text)
+        if not self.system_log_level or self.system_log_level == LogLevel.INFO:
+            if (
+                log_level == LogLevel.INFO or log_level == LogLevel.ERROR
+            ):  # log only INFO messages
+                if self.event_loggers:
+                    for event_logger in self.event_loggers:
+                        event_logger.log_event(
+                            event_name=event_name, event_text=event_text
+                        )
+        else:
+            if self.event_loggers:
+                for event_logger in self.event_loggers:
+                    event_logger.log_event(event_name=event_name, event_text=event_text)

@@ -13,6 +13,7 @@ class FhirParserException(Exception):
         json_data: str,
         message: str,
         response_status_code: Optional[int],
+        request_id: Optional[str],
     ) -> None:
         self.url: str = url
         self.data: str = json_data
@@ -21,6 +22,7 @@ class FhirParserException(Exception):
             "url": url,
             "status_code": response_status_code,
             "json_data": json_data,
+            "request_id": request_id,
         }
 
         super().__init__(convert_dict_to_str(json))

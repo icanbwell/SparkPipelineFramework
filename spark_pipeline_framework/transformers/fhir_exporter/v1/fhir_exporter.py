@@ -32,6 +32,7 @@ class FhirExporter(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         limit: int = -1,
         mode: str = FileWriteModes.MODE_ERROR,
+        delta_lake_table: Optional[str] = None,
     ):
         """
         Converts a dataframe to FHIR JSON
@@ -39,6 +40,7 @@ class FhirExporter(FrameworkTransformer):
         :param file_path: where to store the generated json
         :param view: where to read the source data frame
         :param mode: file write mode
+        :param delta_lake_table: use delta lake format
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -70,19 +72,28 @@ class FhirExporter(FrameworkTransformer):
         self.mode: Param[str] = Param(self, "mode", "")
         self._setDefault(mode=mode)
 
+        self.delta_lake_table: Param[Optional[str]] = Param(
+            self, "delta_lake_table", ""
+        )
+        self._setDefault(delta_lake_table=delta_lake_table)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         # limit: int = self.getLimit()
+
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        file_format: str = "delta" if delta_lake_table else "json"
 
         self.logger.info(
             f"---- Started exporting for {name or view} to {file_path} ------"
@@ -92,12 +103,16 @@ class FhirExporter(FrameworkTransformer):
             name=f"{name or view}_fhir_exporter", progress_logger=progress_logger
         ):
             try:
+                mode = self.getMode()
+                file_path_text = str(file_path)
                 if view:
-                    df_view: DataFrame = df.sql_ctx.table(view)
+                    df_view: DataFrame = df.sparkSession.table(view)
                     if not spark_is_data_frame_empty(df=df_view):
                         self.logger.info(f"---- Reading from view {view} ------")
                         assert not spark_is_data_frame_empty(df=df_view), view
-                        df_view.write.mode(self.getMode()).json(path=str(file_path))
+                        df_view.write.format(file_format).mode(mode).save(
+                            path=file_path_text
+                        )
                     else:
                         self.logger.info(
                             f"---- Skipped exporting for {name or view} to {file_path} "
@@ -105,7 +120,9 @@ class FhirExporter(FrameworkTransformer):
                         )
                 else:
                     assert not spark_is_data_frame_empty(df=df)
-                    df.write.json(path=str(file_path), ignoreNullFields=True)
+                    df.write.format(file_format).mode(mode).option(
+                        "ignoreNullFields", True
+                    ).save(path=file_path_text)
 
             except AnalysisException as e:
                 self.logger.exception(

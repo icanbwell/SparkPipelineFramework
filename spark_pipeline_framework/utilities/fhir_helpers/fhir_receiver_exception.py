@@ -14,6 +14,7 @@ class FhirReceiverException(Exception):
         response_text: Optional[str],
         response_status_code: Optional[int],
         message: str,
+        request_id: Optional[str],
     ) -> None:
         self.url: str = url
         self.data: str = json_data
@@ -23,6 +24,7 @@ class FhirReceiverException(Exception):
             "status_code": response_status_code,
             "response_text": response_text,
             "json_data": json_data,
+            "request_id": request_id,
         }
 
         super().__init__(convert_dict_to_str(json))

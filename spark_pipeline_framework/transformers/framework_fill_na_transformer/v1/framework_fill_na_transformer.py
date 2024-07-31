@@ -53,13 +53,12 @@ class FrameworkFillNaTransformer(FrameworkTransformer):
             self.logger.info(
                 f"filling rows if any null values with replacement_value found for columns: {list(column_mapping.keys())}"
             )
-            df_with_na: DataFrame = df.sql_ctx.table(view)
+            df_with_na: DataFrame = df.sparkSession.table(view)
             df_with_filled_na = df_with_na
             data_types = get_dtype(df_with_na, list(column_mapping.keys()))
 
             value: Union[bool, int, float, str]
             for col, value in column_mapping.items():
-
                 if data_types[col] != "string":
                     try:
                         value = float(value)

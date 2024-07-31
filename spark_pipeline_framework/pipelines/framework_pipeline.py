@@ -1,9 +1,11 @@
 import json
+import os
 from typing import Any, Dict, List, Union, Optional
 
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
+from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
@@ -12,16 +14,17 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.FriendlySparkException import (
-    FriendlySparkException,
-)
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 
 
 class FrameworkPipeline(Transformer):
     def __init__(
-        self, parameters: Dict[str, Any], progress_logger: ProgressLogger
+        self,
+        parameters: Dict[str, Any],
+        progress_logger: ProgressLogger,
+        run_id: Optional[str] = None,
+        log_level: Optional[Union[int, str]] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -30,10 +33,14 @@ class FrameworkPipeline(Transformer):
         """
         super(FrameworkPipeline, self).__init__()
         self.transformers: List[Transformer] = []
+        self._run_id: Optional[str] = run_id
         self.steps: List[Union[Transformer, List[Transformer]]] = []
         self.__parameters: Dict[str, Any] = parameters
         self.progress_logger: ProgressLogger = progress_logger
         self.loop_id: Optional[str] = None
+        self.log_level: Optional[Union[int, str]] = log_level or os.environ.get(
+            "LOGLEVEL"
+        )
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -53,7 +60,13 @@ class FrameworkPipeline(Transformer):
         i: int = 0
         pipeline_name: str = self.__class__.__name__
         self.progress_logger.log_event(
-            event_name=pipeline_name, event_text=f"Starting Pipeline {pipeline_name}"
+            event_name=pipeline_name,
+            event_text=(
+                f"Starting Pipeline {pipeline_name}" + f"_{self._run_id}"
+                if self._run_id
+                else ""
+            ),
+            log_level=LogLevel.INFO,
         )
         for transformer in self.transformers:
             assert isinstance(transformer, Transformer), type(transformer)
@@ -73,28 +86,37 @@ class FrameworkPipeline(Transformer):
 
                 with ProgressLogMetric(
                     progress_logger=self.progress_logger,
-                    name=str(transformer) or "unknown",
+                    name=str(stage_name) or "unknown",
                 ):
                     self.progress_logger.log_event(
                         event_name=pipeline_name,
                         event_text=f"Running pipeline step {stage_name}",
                     )
                     df = transformer.transform(dataset=df)
+                    if self.log_level and self.log_level == "DEBUG":
+                        print(
+                            f"------------  Start Execution Plan for stage {stage_name} -----------"
+                        )
+                        df.explain(extended="cost")
+                        print(
+                            f"------------  End Execution Plan for stage {stage_name} -----------"
+                        )
+
             except Exception as e:
                 logger.error(
                     f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
                 )
                 # use exception chaining to add stage name but keep original exception
-                friendly_spark_exception: FriendlySparkException = (
-                    FriendlySparkException(exception=e, stage_name=stage_name)
-                )
-                error_messages: List[str] = (
-                    friendly_spark_exception.message.split("\n")
-                    if friendly_spark_exception.message
-                    else []
-                )
-                for error_message in error_messages:
-                    logger.error(msg=error_message)
+                # friendly_spark_exception: FriendlySparkException = (
+                #     FriendlySparkException(exception=e, stage_name=stage_name)
+                # )
+                # error_messages: List[str] = (
+                #     friendly_spark_exception.message.split("\n")
+                #     if friendly_spark_exception.message
+                #     else []
+                # )
+                # for error_message in error_messages:
+                #     logger.error(msg=error_message)
 
                 if hasattr(transformer, "getSql"):
                     # noinspection Mypy
@@ -107,9 +129,16 @@ class FrameworkPipeline(Transformer):
                     event_text=f"Exception in Stage={stage_name}",
                     ex=e,
                 )
-                raise friendly_spark_exception from e
+                # if hasattr(e, "message"):
+                #     e.message = f"Exception in stage {stage_name}" + e.message
+                if len(e.args) >= 1:
+                    # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                    e.args = (f"In Stage ({stage_name})", *e.args)
+                raise e
         self.progress_logger.log_event(
-            event_name=pipeline_name, event_text=f"Finished Pipeline {pipeline_name}"
+            event_name=pipeline_name,
+            event_text=f"Finished Pipeline {pipeline_name}",
+            log_level=LogLevel.INFO,
         )
         return df
 
@@ -139,7 +168,7 @@ class FrameworkPipeline(Transformer):
                 for k, v in self.parameters.items()
             },
             "steps": [
-                s.as_dict() if not isinstance(s, list) else [s1.as_dict() for s1 in s]
+                s.as_dict() if not isinstance(s, list) else [s1.as_dict() for s1 in s]  # type: ignore
                 for s in self.steps
             ],
         }

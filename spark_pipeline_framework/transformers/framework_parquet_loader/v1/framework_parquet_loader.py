@@ -93,9 +93,9 @@ class FrameworkParquetLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         name: Optional[str] = self.getName()
@@ -103,6 +103,10 @@ class FrameworkParquetLoader(FrameworkTransformer):
         merge_schema: bool = self.getMergeSchema()
         limit: Optional[int] = self.getLimit()
         stream: bool = self.getStream()
+
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        format_ = "delta" if delta_lake_table else "parquet"
 
         if progress_logger:
             progress_logger.write_to_log(
@@ -118,19 +122,20 @@ class FrameworkParquetLoader(FrameworkTransformer):
         ):
             try:
                 df_reader: Union[DataFrameReader, DataStreamReader] = (
-                    df.sql_ctx.read if not stream else df.sql_ctx.readStream
+                    df.sparkSession.read if not stream else df.sparkSession.readStream
                 )
 
-                df_reader = df_reader.option("mode", self.getMode())
+                mode = self.getMode()
+                df_reader = df_reader.option("mode", mode)
 
                 if merge_schema is True:
                     final_df = (
                         df_reader.option("mergeSchema", "true")
-                        .format("parquet")
+                        .format(format_)
                         .load(path=str(file_path))
                     )
                 else:
-                    final_df = df_reader.format("parquet").load(path=str(file_path))
+                    final_df = df_reader.format(format_).load(path=str(file_path))
 
                 assert (
                     "_corrupt_record" not in final_df.columns

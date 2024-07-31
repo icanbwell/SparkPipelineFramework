@@ -49,7 +49,6 @@ def extract_resource_from_json(
     file_name: str = file_path.split("/")[-1].replace(".gz", "")
 
     try:
-
         logger.info(
             f"Extracting resources from {file_path} and using file name {file_name}"
         )

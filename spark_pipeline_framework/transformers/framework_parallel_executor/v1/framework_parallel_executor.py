@@ -14,6 +14,9 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.parallel_pipeline_executor.v1.parallel_pipeline_executor import (
     ParallelPipelineExecutor,
 )
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    create_empty_dataframe,
+)
 
 
 class FrameworkParallelExecutor(FrameworkTransformer):
@@ -88,9 +91,12 @@ class FrameworkParallelExecutor(FrameworkTransformer):
                 self.stages if not callable(self.stages) else self.stages()
             )
             if stages and len(stages) > 0:
-                asyncio.run(
-                    self._process_async(df, stages, progress_logger=progress_logger)
-                )
+                if self.max_parallel_tasks > 1:
+                    asyncio.run(
+                        self._process_async(df, stages, progress_logger=progress_logger)
+                    )
+                else:
+                    self._process_sync(df, stages, progress_logger=progress_logger)
         else:
             if progress_logger is not None:
                 progress_logger.write_to_log(
@@ -133,16 +139,51 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             # convert each stage into a list of stages, so it can run in parallel
             pipeline_executor.append(name=stage_name, list_of_stages=[stage])
 
+        # use a new df everytime to avoid keeping data in memory too long
+        df.unpersist(blocking=True)
+        df = create_empty_dataframe(df.sparkSession)
+
         async for name, _ in pipeline_executor.transform_async(df, df.sparkSession):
             if name:
-                logger.info(f"Finished running {name}")
+                logger.info(f"Finished running parallel stage {name}")
 
         logger.info("Finished process_async")
+
+    def _process_sync(
+        self,
+        df: DataFrame,
+        stages: List[Transformer],
+        progress_logger: Optional[ProgressLogger],
+    ) -> None:
+        """
+        Saves the output asynchronously
+        :param progress_logger:
+        :param stages:
+        :param df:
+        """
+        logger = get_logger(__name__)
+        logger.info("Started process_sync")
+
+        for stage in stages:
+            stage_name: str = (
+                stage.getName() if hasattr(stage, "getName") else "Unknown Transformer"
+            )
+            if hasattr(stage, "set_loop_id"):
+                stage.set_loop_id(self.loop_id)
+
+            assert (
+                stage_name
+            ), f"name must be set on every transformer in FrameworkParallelExecutor: f{json.dumps(stage, default=str)}"
+            df = stage.transform(df)
+
+        logger.info("Finished process_sync")
 
     def as_dict(self) -> Dict[str, Any]:
         return {
             **(super().as_dict()),
-            "stages": [s.as_dict() for s in self.stages]
-            if not callable(self.stages)
-            else str(self.stages),
+            "stages": (
+                [s.as_dict() for s in self.stages]  # type: ignore
+                if not callable(self.stages)
+                else str(self.stages)
+            ),
         }

@@ -28,7 +28,7 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
     # noinspection PyTypeChecker
-    spark_session.createDataFrame(
+    spark_session.createDataFrame(  # type:ignore[type-var]
         [
             {
                 "member_id": "e3a3f665-eae5-4046-a241-efdfe5c43919",
@@ -61,6 +61,7 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
             source_view="my_view",
             view="output_view",
             url=f"{server_url}",
+            parse_response_as_json=False,
         ).transform(df)
 
     # Assert
@@ -68,12 +69,14 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    assert json.loads(result_df.collect()[0]["result"]) == {
+    result_ = json.loads(result_df.collect()[0]["result"])
+    assert result_ == {
         "token_type": "bearer",
         "access_token": "fake access_token",
         "expires_in": 54000,
     }
-    assert json.loads(result_df.collect()[1]["result"]) == {
+    result_ = json.loads(result_df.collect()[1]["result"])
+    assert result_ == {
         "token_type": "bearer",
         "access_token": "fake access_token2",
         "expires_in": 54000,

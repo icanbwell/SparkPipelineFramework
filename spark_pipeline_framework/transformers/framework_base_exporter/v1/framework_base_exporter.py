@@ -68,13 +68,17 @@ class FrameworkBaseExporter(FrameworkTransformer):
         stream: bool = self.getStream()
         limit: Optional[int] = self.getLimit()
 
+        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
+
+        format_ = "delta" if delta_lake_table else format_
+
         with ProgressLogMetric(
             name=f"{name or view}_{format_}_exporter", progress_logger=progress_logger
         ):
             try:
                 writer: Union[DataFrameWriter, DataStreamWriter]
                 if view:
-                    df = df.sql_ctx.table(view)
+                    df = df.sparkSession.table(view)
                 if limit is not None and limit >= 0:
                     df = df.limit(limit)
                 writer = df.write if not stream else df.writeStream
@@ -82,7 +86,8 @@ class FrameworkBaseExporter(FrameworkTransformer):
                 writer = writer.format(format_)
 
                 if isinstance(writer, DataFrameWriter):
-                    writer = writer.mode(self.getMode())
+                    mode = self.getMode()
+                    writer = writer.mode(mode)
 
                 for k, v in self.getOptions().items():
                     writer.option(k, v)

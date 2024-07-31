@@ -61,6 +61,8 @@ class FrameworkXmlLoader(FrameworkTransformer):
         self.row_tag: Param[str] = Param(self, "row_tag", "")
         self._setDefault(row_tag=None)
 
+        assert row_tag, f"row_tag must be set"
+
         self.schema: Param[StructType] = Param(self, "schema", "")
         self._setDefault(schema=None)
 
@@ -78,9 +80,9 @@ class FrameworkXmlLoader(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         view = self.getView()
-        file_path: Union[
-            Path, str, Callable[[Optional[str]], Union[Path, str]]
-        ] = self.getFilePath()
+        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+            self.getFilePath()
+        )
         if callable(file_path):
             file_path = file_path(self.loop_id)
         row_tag: str = self.getRowTag()
@@ -94,7 +96,7 @@ class FrameworkXmlLoader(FrameworkTransformer):
             paths=paths,
         )
 
-        df_xml_reader: DataFrameReader = df.sql_ctx.read.format("xml").options(
+        df_xml_reader: DataFrameReader = df.sparkSession.read.format("xml").options(
             rowTag=row_tag
         )
         if schema:

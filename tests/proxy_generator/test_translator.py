@@ -11,9 +11,9 @@ from library.translators.my_translator.translators_my_translator import (
 
 
 def test_translator() -> None:
-    my_dict: Dict[
-        AutoMapperTextInputType, AutoMapperAnyDataType
-    ] = TranslatorsMyTranslator().get_mapping()
+    my_dict: Dict[AutoMapperTextInputType, AutoMapperAnyDataType] = (
+        TranslatorsMyTranslator().get_mapping()
+    )
     print(my_dict)
 
     assert my_dict == {"foo1": "bar1", "foo2": "bar2"}

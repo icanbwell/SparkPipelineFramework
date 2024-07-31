@@ -63,7 +63,7 @@ class ResourceConverter(FrameworkTransformer):
                 message="Converting string json to StructType resource...",
             )
 
-        df_source: DataFrame = df.sql_ctx.table(view_source)
+        df_source: DataFrame = df.sparkSession.table(view_source)
 
         df_source = df_source.withColumn(
             colName="struct_type_resource",

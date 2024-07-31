@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 from pyspark import SparkContext
 from pyspark.rdd import RDD
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.context import SQLContext
 from pyspark.sql.types import StructType, Row
 
 
@@ -51,11 +50,11 @@ def create_dataframe_from_dictionary(
     return df
 
 
-def create_empty_dataframe(spark_session: SparkSession) -> DataFrame:
-    schema = StructType([])
-
+def create_empty_dataframe(
+    spark_session: SparkSession, schema: Optional[StructType] = None
+) -> DataFrame:
     df: DataFrame = spark_session.createDataFrame(
-        spark_session.sparkContext.emptyRDD(), schema
+        spark_session.sparkContext.emptyRDD(), schema or StructType([])
     )
 
     return df
@@ -75,7 +74,11 @@ def spark_is_data_frame_empty(df: DataFrame) -> bool:
     """
     # from: https://stackoverflow.com/questions/32707620/how-to-check-if-spark-dataframe-is-empty
     # Spark 3.3 adds native function: https://github.com/apache/spark/pull/34483
-    return df.isEmpty()
+    # Performance improvements
+    #  - from https://stackoverflow.com/questions/74904389/how-to-check-if-pyspark-dataframe-is-empty-quickly
+    #  - direct df.isEmpty() is a very expensive operation to perform lazy eval,
+    #    hence to be more performant, limiting to only 1 row and adding rdd before invoking the .isEmpty() method
+    return df.limit(1).rdd.isEmpty()
 
 
 def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
@@ -87,9 +90,8 @@ def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
         return df._jdf.queryExecution().simpleString()
 
 
-def spark_table_exists(sql_ctx: SQLContext, view: str) -> bool:
-    # noinspection PyBroadException
-    return view in sql_ctx.tableNames()
+def spark_table_exists(session: SparkSession, view: str) -> bool:
+    return view in [t.name for t in session.catalog.listTables()]
 
 
 def sc(df: DataFrame) -> SparkContext:

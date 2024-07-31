@@ -4,62 +4,139 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+# logging is needed for logging
 logger = ">=1.4"
-protobuf=">=3.20.*"
-pyspark = ">=3.1.1"
-sparkautomapper = ">=1.0.19"
-pymysql="==1.0.2"
+# protobuf is needed for serializing data
+protobuf=">=3"
+# PySpark has to match the version of Spark we use for testing
+pyspark = "==3.3.0"
+# pyarrow is needed for Pandas UDF and mapInPandas
+pyarrow=">=17.0.0" # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#recommended-pandas-and-pyarrow-versions
+# delta-spark is needed for Delta Lake
+delta-spark="==2.3.0"
+# sparkautomapper is needed for mapping data in Spark
+sparkautomapper = ">=2.0.7"
+# pymysql is needed for connecting to MySQL
+pymysql=">=1.0.3"
+# furl is needed for parsing URLs
 furl = ">=2.1.3"
-requests = ">=2.27.1"
-boto3 = ">=1.21.32"
-types-requests=">=0.1.11"
-types-PyMySQL=">=0.1.5"
-chardet=">=4.0.0"
-slack_sdk = ">=3.15.2"
-smart_open = { extras = ['s3'], version = ">=5.2.1" }
-mlflow-skinny = ">=1.26.0"
+# requests is needed for making HTTP requests
+requests = ">=2.31.0"
+# boto3 is needed for interacting with AWS services
+boto3 = ">=1.34.140"
+# chardet is needed for detecting character encoding
+chardet="*"
+# slack_sdk is needed for sending messages to Slack
+slack_sdk = ">=3.22.0"
+# smart_open is needed for reading and writing files
+smart_open = { extras = ['s3'], version = ">=6.3.0" }
+# mlflow is needed for tracking experiments in MLFlow
+mlflow-skinny = ">=2.15.0"
+# sqlalchemy is needed for interacting with databases
 SQLAlchemy = ">=1.4.37"
-alembic = ">=1.8.0"
-sqlparse = ">=0.4.2"
+# alembic is needed for database migrations
+alembic = ">=1.10.0"
+# sqlparse is needed for parsing SQL
+sqlparse = ">=0.4.4"
+# bounded-pool-executor is needed for creating a bounded thread pool to run in parallel
 bounded-pool-executor = ">=0.0.3"
-fastjsonschema= "*"
-"helix.fhir.client.sdk" = ">=1.0.23"
-opensearch-py= "*"
-pyathena = "*"
+# fastjsonschema is needed for validating JSON
+fastjsonschema= ">=2.18.0"
+# helix.fhir.client.sdk is needed for interacting with FHIR servers
+"helix.fhir.client.sdk" = ">=2.0.8"
+# opensearch-py is needed for interacting with OpenSearch
+opensearch-py= ">=1.1.0"
+# pyathena is needed for interacting with Athena in AWS
+pyathena = ">2.14.0"
+# spark-nlp is needed for natural language processing
+spark-nlp = ">=4.2.3"
+# pymongo is needed for interacting with MongoDB
+pymongo=">=4.8.0"
+# more-itertools is needed for additional iterators
+more-itertools = ">=9.1.0"
+# pandas is needed for Pandas UDF and mapInPandas
+pandas = ">=2.2.2"
+# numexpr is needed for working with numerical expressions.  pandas requires this minimum version.
+numexpr = ">=2.8.4"
+# bottleneck is needed for working with numerical data. pandas requires this minimum version.
+bottleneck = ">=1.3.6"
 structlog = ">=22.1.0"
 
 [dev-packages]
-setuptools=">=61.3.1"
-wheel=">=0.37.1"
-twine=">=3.8.0"
-pre-commit=">=2.20.0"
-autoflake=">=1.4"
-mypy = "==0.982"
-pytest = ">=7.1.3"
-black = ">=22.10.0"
+# setuptools is needed for building the package
+setuptools=">=72.0.0"
+# wheel is needed for building the package
+wheel = ">=0.43.0"
+# twine is needed for uploading the package to PyPI
+twine=">=5.1.1"
+# pre-commit is needed for running code quality checks
+pre-commit=">=3.7.1"
+# autoflake is needed for removing unused imports
+autoflake=">=2.3.1"
+# mypy is needed for type checking
+mypy = ">=1.10.1"
+# pytest is needed for running tests
+pytest = ">=8.2.2"
+# black is needed for formatting code
+black = ">=24.4.2"
+# pygments is needed for syntax highlighting
 pygments=">=2.8.1" # not directly required, pinned by Snyk to avoid a vulnerability
-Sphinx="==4.1.2"
-sphinx-autoapi="==1.8.4"
-sphinx-rtd-theme="==0.5.2"
-myst-parser="==0.15.1"
+# Sphinx is needed for generating documentation
+Sphinx="==7.4.7"
+# sphinx-autoapi is needed for generating API documentation
+sphinx-autoapi="==3.2.1"
+# sphinx-rtd-theme is needed for the Read the Docs theme
+sphinx-rtd-theme="==2.0.0"
+# myst-parser is needed for parsing Markdown
+myst-parser="==3.0.1"
+# recodoc is needed for generating documentation
 recommonmark="==0.7.1"
+# py4j is needed for connecting to the JVM from Spark
 py4j = "==0.10.9.5" # https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
+# pyspark is needed for running Spark jobs
 pyspark="==3.3.0"  # should match the version of spark we use for testing
-pipenv-setup = ">=3.2.0"
-Deprecated = "==1.2.12"
-sparkdataframecomparer = "==1.0.7"
-pytest-asyncio = ">=0.19.0"
-vistir="==0.6.1" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
-helix-mockserver-client=">=1.0.0"
-"sparkfhirschemas" = "==1.0.14"
-types-boto3 = ">=1.0.2"
-moto = ">=4.0.7"
+# Deprecated is needed for marking deprecated functions
+Deprecated = ">=1.2.13"
+# sparkdataframecomparer is needed for comparing Spark DataFrames
+sparkdataframecomparer = ">=2.0.2"
+# pytest-ayncio is needed for running async tests
+pytest-asyncio = ">=0.23.8"
+# helix-mockserver-client is needed for mocking servers
+helix-mockserver-client=">=1.2.1"
+# sparkfhirschemas is needed for FHIR schemas
+sparkfhirschemas = ">=1.0.17"
 pygelf = ">=0.4.2"
 seqlog = ">=0.3.20"
 better-exceptions = ">=0.3.3"
+# types-boto3 is needed for type hints for boto3
+types-boto3 = ">=1.0.2"
+# moto is needed for mocking AWS services
+moto = { extras = ['all'], version = ">=5.0.11" }
+# types-requests is needed for type hints for requests
+types-requests=">=2.31.0"
+# types-PyMySQL is needed for type hints for PyMySQL
+types-PyMySQL=">=0.1.6"
+# types-urllib3 is needed for type hints for urllib3
+types-urllib3=">=1.26.0"
+# types-python-dateutil is needed for type hints for python-dateutil
+types-python-dateutil=">=2.8.19.14"
+# pandas-stubs is needed for type hints for pandas
+pandas-stubs=">=2.2.2"
+# types-pytz is needed for type hints for pytz
+types-pytz=">=2024.1.0"
+
+# These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
+# only when running pipenv-setup
+[pipenvsetup]
+# vistr is needed for visualizing the dependency graph
+vistir=">=0.6.1, <0.7.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
+# plete is needed for tab completion
+plette = "<1.0.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
+# pipenv-setup is needed for updating setup.py with the dependencies for anyone installing this package
+pipenv-setup = ">=3.2.0"
 
 [requires]
-python_version = "3.7"
+python_version = "3.10"
 
 [pipenv]
 allow_prereleases = false

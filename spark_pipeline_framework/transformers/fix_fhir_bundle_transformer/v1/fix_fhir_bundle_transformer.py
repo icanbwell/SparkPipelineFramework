@@ -59,7 +59,7 @@ class FixFhirBundleTransformer(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         # init
-        spark_session: SparkSession = df.sql_ctx.sparkSession
+        spark_session: SparkSession = df.sparkSession
         input_path: str = self.getInputPath()
         output_path: str = self.getOutputPath()
         resources_to_extract: List[str] = self.getResourcesToExtract()
@@ -67,9 +67,9 @@ class FixFhirBundleTransformer(FrameworkTransformer):
         self.logger.info(f"Reading from {input_path}")
         # separate bundles.
         # This returns one row per file where the key is the name of the file and the value is the contents
-        whole_text_rdd: RDD[
-            Tuple[str, str]
-        ] = spark_session.sparkContext.wholeTextFiles(input_path)
+        whole_text_rdd: RDD[Tuple[str, str]] = (
+            spark_session.sparkContext.wholeTextFiles(input_path)
+        )
 
         resource_list_rdd: RDD[Iterable[Row]] = whole_text_rdd.map(
             lambda x: extract_resource_from_json(

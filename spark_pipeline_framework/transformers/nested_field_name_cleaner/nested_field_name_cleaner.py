@@ -59,7 +59,7 @@ class FrameworkNestedFieldNameCleaner(FrameworkTransformer):
         # name: Optional[str] = self.getName()
 
         if view:
-            df = df.sql_ctx.table(view)
+            df = df.sparkSession.table(view)
 
         df = replace_characters_in_nested_fields(df=df, column_name=column_name)
 
