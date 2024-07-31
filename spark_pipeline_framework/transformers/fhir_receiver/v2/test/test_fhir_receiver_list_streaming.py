@@ -1,4 +1,4 @@
-from os import path, makedirs
+from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
 
@@ -15,7 +15,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
-def test_fhir_receiver_list(spark_session: SparkSession) -> None:
+def test_fhir_receiver_list_streaming(spark_session: SparkSession) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -29,7 +29,9 @@ def test_fhir_receiver_list(spark_session: SparkSession) -> None:
 
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
-    test_name = "test_fhir_receiver_list"
+    environ["LOGLEVEL"] = "DEBUG"
+
+    test_name = "test_fhir_receiver_list_streaming"
     fhir_server_url = f"http://mock-server:1080/{test_name}/4_0_0"
     client = MockServerFriendlyClient("http://mock-server:1080")
     client.clear(test_name)
@@ -52,6 +54,7 @@ def test_fhir_receiver_list(spark_session: SparkSession) -> None:
             parameters=parameters,
             additional_request_headers={"SampleHeader": "TestValue"},
             run_synchronously=True,
+            use_data_streaming=True,
         ).transform(df)
 
     # Assert

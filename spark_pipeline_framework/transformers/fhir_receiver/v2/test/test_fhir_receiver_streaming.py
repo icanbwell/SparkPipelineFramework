@@ -2,7 +2,7 @@ from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
 
-from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
+from mockserver_client.mock_requests_loader import load_mock_fhir_requests_from_folder
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
@@ -15,7 +15,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
-def test_fhir_receiver_list(spark_session: SparkSession) -> None:
+def test_fhir_receiver_streaming(spark_session: SparkSession) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -29,15 +29,24 @@ def test_fhir_receiver_list(spark_session: SparkSession) -> None:
 
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
-    test_name = "test_fhir_receiver_list"
+    spark_session.createDataFrame(
+        [
+            ("00100000000", "Qureshi"),
+            ("00200000000", "Vidal"),
+        ],
+        ["id", "name"],
+    ).createOrReplaceTempView("fhir_ids")
+
+    test_name = "test_fhir_receiver"
     fhir_server_url = f"http://mock-server:1080/{test_name}/4_0_0"
     client = MockServerFriendlyClient("http://mock-server:1080")
     client.clear(test_name)
 
-    load_mock_source_api_json_responses(
-        folder=data_dir.joinpath("fhir_list_calls"),
+    load_mock_fhir_requests_from_folder(
+        folder=data_dir.joinpath("fhir_calls"),
         mock_client=client,
-        url_prefix=f"{test_name}/4_0_0/Patient",
+        method="GET",
+        url_prefix=f"{test_name}",
     )
 
     parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
@@ -47,10 +56,11 @@ def test_fhir_receiver_list(spark_session: SparkSession) -> None:
         FhirReceiver(
             server_url=fhir_server_url,
             resource="Patient",
+            id_view="fhir_ids",
             file_path=patient_json_path,
             progress_logger=progress_logger,
             parameters=parameters,
-            additional_request_headers={"SampleHeader": "TestValue"},
+            use_data_streaming=True,
             run_synchronously=True,
         ).transform(df)
 
@@ -60,3 +70,4 @@ def test_fhir_receiver_list(spark_session: SparkSession) -> None:
     json_df.printSchema()
 
     assert json_df.select("resourceType").collect()[0][0] == "Patient"
+    assert json_df.select("resourceType").collect()[1][0] == "Patient"

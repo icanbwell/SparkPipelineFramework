@@ -272,9 +272,7 @@ class FhirReceiverProcessor:
             )
             resp_result: str = result1.responses.replace("\n", "")
             try:
-                responses_from_fhir = FhirReceiverProcessor.json_str_to_list_str(
-                    resp_result
-                )
+                responses_from_fhir = [json.dumps(r) for r in result1.get_resources()]
             except JSONDecodeError as e2:
                 if parameters.error_view:
                     result1.error = f"{(result1.error or '')}: {str(e2)}"
@@ -326,7 +324,7 @@ class FhirReceiverProcessor:
         resource_id_with_token_list: List[Dict[str, Optional[str]]],
         parameters: FhirReceiverParameters,
     ) -> List[Dict[str, Any]]:
-        result1 = asyncio.run(
+        result1: FhirGetResponse = asyncio.run(
             FhirReceiverProcessor.send_simple_fhir_request_async(
                 id_=[cast(str, r["resource_id"]) for r in resource_id_with_token_list],
                 server_url=parameters.server_url,
@@ -334,12 +332,9 @@ class FhirReceiverProcessor:
                 parameters=parameters,
             )
         )
-        resp_result: str = result1.responses.replace("\n", "")
         responses_from_fhir = []
         try:
-            responses_from_fhir = FhirReceiverProcessor.json_str_to_list_str(
-                resp_result
-            )
+            responses_from_fhir = [json.dumps(r) for r in result1.get_resources()]
         except JSONDecodeError as e1:
             if parameters.error_view:
                 result1.error = f"{(result1.error or '')}: {str(e1)}"
@@ -537,19 +532,6 @@ class FhirReceiverProcessor:
         )
 
     @staticmethod
-    def json_str_to_list_str(json_str: str) -> List[str]:
-        """
-        at some point helix.fhir.client.sdk changed, and now it sends json string instead of list of json strings
-        the PR: https://github.com/icanbwell/helix.fhir.client.sdk/pull/5
-        this function converts the new returning format to old one
-        """
-        full_json = json.loads(json_str) if json_str else []
-        if isinstance(full_json, list):
-            return [json.dumps(item) for item in full_json]
-        else:
-            return [json_str]
-
-    @staticmethod
     def get_batch_result(
         *,
         page_size: Optional[int],
@@ -581,7 +563,7 @@ class FhirReceiverProcessor:
                 )
             )
             try:
-                resources = FhirReceiverProcessor.json_str_to_list_str(result.responses)
+                resources = [json.dumps(r) for r in result.get_resources()]
             except JSONDecodeError as e:
                 if parameters.error_view:
                     errors.append(
@@ -620,9 +602,7 @@ class FhirReceiverProcessor:
                 )
                 result_response: List[str] = []
                 try:
-                    result_response = FhirReceiverProcessor.json_str_to_list_str(
-                        result.responses
-                    )
+                    result_response = [json.dumps(r) for r in result.get_resources()]
                 except JSONDecodeError as e:
                     if parameters.error_view:
                         errors.append(
