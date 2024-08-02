@@ -573,6 +573,7 @@ class FhirReceiverProcessor:
                 resources=resources,
                 server_url=server_url,
             )
+            yield GetBatchResult(resources=resources, errors=errors)
         else:
             while True:
                 result = asyncio.run(
@@ -673,8 +674,7 @@ class FhirReceiverProcessor:
                             )
                 else:
                     break
-
-        yield GetBatchResult(resources=resources, errors=errors)
+            yield GetBatchResult(resources=resources, errors=errors)
 
     @staticmethod
     def get_batch_result_streaming(
