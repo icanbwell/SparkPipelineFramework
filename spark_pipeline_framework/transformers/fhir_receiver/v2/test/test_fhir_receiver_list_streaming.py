@@ -63,4 +63,5 @@ def test_fhir_receiver_list_streaming(spark_session: SparkSession) -> None:
     json_df.show()
     json_df.printSchema()
 
+    assert json_df.count() == 1
     assert json_df.select("resourceType").collect()[0][0] == "Patient"
