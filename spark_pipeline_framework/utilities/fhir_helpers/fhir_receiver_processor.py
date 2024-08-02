@@ -15,6 +15,7 @@ from typing import (
     Coroutine,
     Callable,
     Generator,
+    AsyncGenerator,
 )
 
 import pandas as pd
@@ -262,8 +263,8 @@ class FhirReceiverProcessor:
         responses_from_fhir: List[str] = []
         extra_context_to_return: Optional[Dict[str, Any]] = None
         try:
-            result1: FhirGetResponse = (
-                await FhirReceiverProcessor.send_simple_fhir_request_async(
+            result1: FhirGetResponse = await FhirGetResponse.from_async_generator(
+                FhirReceiverProcessor.send_simple_fhir_request_async(
                     id_=id_,
                     server_url_=url_ or parameters.server_url,
                     service_slug=service_slug,
@@ -327,11 +328,15 @@ class FhirReceiverProcessor:
         parameters: FhirReceiverParameters,
     ) -> List[Dict[str, Any]]:
         result1: FhirGetResponse = asyncio.run(
-            FhirReceiverProcessor.send_simple_fhir_request_async(
-                id_=[cast(str, r["resource_id"]) for r in resource_id_with_token_list],
-                server_url=parameters.server_url,
-                server_url_=parameters.server_url,
-                parameters=parameters,
+            FhirGetResponse.from_async_generator(
+                FhirReceiverProcessor.send_simple_fhir_request_async(
+                    id_=[
+                        cast(str, r["resource_id"]) for r in resource_id_with_token_list
+                    ],
+                    server_url=parameters.server_url,
+                    server_url_=parameters.server_url,
+                    parameters=parameters,
+                )
             )
         )
         responses_from_fhir = []
@@ -381,10 +386,10 @@ class FhirReceiverProcessor:
         server_url_: Optional[str],
         service_slug: Optional[str] = None,
         parameters: FhirReceiverParameters,
-    ) -> FhirGetResponse:
+    ) -> AsyncGenerator[FhirGetResponse, None]:
         url = server_url_ or server_url
         assert url
-        return await FhirReceiverProcessor.send_fhir_request_async(
+        async for r in FhirReceiverProcessor.send_fhir_request_async(
             logger=get_logger(__name__),
             resource_id=id_,
             server_url=url,
@@ -394,7 +399,8 @@ class FhirReceiverProcessor:
                 else None
             ),
             parameters=parameters,
-        )
+        ):
+            yield r
 
     @staticmethod
     async def send_fhir_request_async(
@@ -409,7 +415,7 @@ class FhirReceiverProcessor:
         last_updated_after: Optional[datetime] = None,
         last_updated_before: Optional[datetime] = None,
         data_chunk_handler: Optional[HandleStreamingChunkFunction] = None,
-    ) -> FhirGetResponse:
+    ) -> AsyncGenerator[FhirGetResponse, None]:
         """
         Sends a fhir request to the fhir client sdk
 
@@ -520,8 +526,8 @@ class FhirReceiverProcessor:
                 parameters.refresh_token_function
             )
 
-        return (
-            await fhir_client.simulate_graph_async(
+        if parameters.graph_json:
+            async for r in fhir_client.simulate_graph_streaming_async(
                 id_=(
                     cast(str, resource_id)
                     if not isinstance(resource_id, list)
@@ -530,10 +536,13 @@ class FhirReceiverProcessor:
                 graph_json=parameters.graph_json,
                 contained=False,
                 separate_bundle_resources=parameters.separate_bundle_resources,
-            )
-            if parameters.graph_json
-            else await fhir_client.get_async(data_chunk_handler=data_chunk_handler)
-        )
+            ):
+                yield r
+        else:
+            async for r in fhir_client.get_streaming_async(
+                data_chunk_handler=data_chunk_handler
+            ):
+                yield r
 
     @staticmethod
     def get_batch_result(
@@ -557,13 +566,15 @@ class FhirReceiverProcessor:
         result: FhirGetResponse
         if parameters.use_data_streaming:
             result = asyncio.run(
-                FhirReceiverProcessor.send_fhir_request_async(
-                    logger=get_logger(__name__),
-                    parameters=parameters,
-                    resource_id=None,
-                    server_url=server_url,
-                    last_updated_after=last_updated_after,
-                    last_updated_before=last_updated_before,
+                FhirGetResponse.from_async_generator(
+                    FhirReceiverProcessor.send_fhir_request_async(
+                        logger=get_logger(__name__),
+                        parameters=parameters,
+                        resource_id=None,
+                        server_url=server_url,
+                        last_updated_after=last_updated_after,
+                        last_updated_before=last_updated_before,
+                    )
                 )
             )
             try:
@@ -591,17 +602,19 @@ class FhirReceiverProcessor:
         else:
             while True:
                 result = asyncio.run(
-                    FhirReceiverProcessor.send_fhir_request_async(
-                        logger=get_logger(__name__),
-                        resource_id=None,
-                        server_url=server_url,
-                        page_number=server_page_number,  # since we're setting id:above we can leave this as 0
-                        page_size=page_size,
-                        last_updated_after=last_updated_after,
-                        last_updated_before=last_updated_before,
-                        parameters=parameters.clone().set_additional_parameters(
-                            additional_parameters
-                        ),
+                    FhirGetResponse.from_async_generator(
+                        FhirReceiverProcessor.send_fhir_request_async(
+                            logger=get_logger(__name__),
+                            resource_id=None,
+                            server_url=server_url,
+                            page_number=server_page_number,  # since we're setting id:above we can leave this as 0
+                            page_size=page_size,
+                            last_updated_after=last_updated_after,
+                            last_updated_before=last_updated_before,
+                            parameters=parameters.clone().set_additional_parameters(
+                                additional_parameters
+                            ),
+                        )
                     )
                 )
                 result_response: List[str] = []
