@@ -24,6 +24,8 @@ from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderExc
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
+from pyspark.sql import DataFrame
+from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
@@ -699,8 +701,9 @@ class FhirReceiverProcessor:
         last_updated_after: Optional[datetime],
         last_updated_before: Optional[datetime],
         parameters: FhirReceiverParameters,
-        server_url: str,
+        server_url: Optional[str],
     ) -> Generator[GetBatchResult, None, None]:
+        assert server_url
         errors: List[str] = []
         resources: List[str] = []
         result = asyncio.run(
@@ -738,3 +741,39 @@ class FhirReceiverProcessor:
                     request_id=result.request_id,
                 ) from e
         yield GetBatchResult(resources=resources, errors=errors)
+
+    @staticmethod
+    async def collect_async_data(
+        *, async_gen: AsyncGenerator[Dict[str, Any], None], chunk_size: int
+    ) -> AsyncGenerator[List[Dict[str, Any]], None]:
+        chunk1 = []
+        async for item in async_gen:
+            chunk1.append(item)
+            if len(chunk1) >= chunk_size:
+                yield chunk1
+                chunk1 = []
+        if chunk1:
+            yield chunk1
+
+    @staticmethod
+    async def async_generator_to_dataframe(
+        df: DataFrame,
+        async_gen: AsyncGenerator[Dict[str, Any], None],
+        schema: StructType,
+    ) -> DataFrame:
+        collected_data = []
+        async for chunk in FhirReceiverProcessor.collect_async_data(
+            async_gen=async_gen, chunk_size=1
+        ):
+            df_chunk = df.sparkSession.createDataFrame(chunk, schema)  # type: ignore[type-var]
+            collected_data.append(df_chunk)
+            df_chunk.show()  # Show each chunk as it is processed
+
+        # Combine all chunks into a single DataFrame
+        if collected_data:
+            final_df = collected_data[0]
+            for df in collected_data[1:]:
+                final_df = final_df.union(df)
+            return final_df
+        else:
+            return df.sparkSession.createDataFrame([], schema)

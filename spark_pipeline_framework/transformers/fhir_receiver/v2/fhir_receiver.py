@@ -997,20 +997,35 @@ class FhirReceiver(FrameworkTransformer):
                 )
 
                 resources: List[str] = []
-                for result1 in FhirReceiverProcessor.get_batch_result(
-                    page_size=page_size,
-                    limit=limit,
-                    server_url=server_url,
-                    parameters=receiver_parameters,
-                    last_updated_after=last_updated_after,
-                    last_updated_before=last_updated_before,
-                ):
-                    resources = result1.resources
-                    errors = result1.errors
+                if receiver_parameters.use_data_streaming:
+                    for result1 in FhirReceiverProcessor.get_batch_result_streaming(
+                        server_url=server_url,
+                        parameters=receiver_parameters,
+                        last_updated_after=last_updated_after,
+                        last_updated_before=last_updated_before,
+                    ):
+                        resources = result1.resources
+                        errors = result1.errors
 
-                list_df: DataFrame = df.sparkSession.createDataFrame(
-                    resources, schema=StringType()
-                )
+                    list_df: DataFrame = df.sparkSession.createDataFrame(
+                        resources, schema=StringType()
+                    )
+                else:
+                    for result1 in FhirReceiverProcessor.get_batch_result(
+                        page_size=page_size,
+                        limit=limit,
+                        server_url=server_url,
+                        parameters=receiver_parameters,
+                        last_updated_after=last_updated_after,
+                        last_updated_before=last_updated_before,
+                    ):
+                        resources = result1.resources
+                        errors = result1.errors
+
+                    list_df = df.sparkSession.createDataFrame(
+                        resources, schema=StringType()
+                    )
+
                 file_format = "delta" if delta_lake_table else "text"
                 list_df.write.format(file_format).mode(mode).save(str(file_path))
                 list_df = df.sparkSession.read.format(file_format).load(str(file_path))
