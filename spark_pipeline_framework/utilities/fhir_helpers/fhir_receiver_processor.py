@@ -565,40 +565,14 @@ class FhirReceiverProcessor:
         assert server_url
         result: FhirGetResponse
         if parameters.use_data_streaming:
-            result = asyncio.run(
-                FhirGetResponse.from_async_generator(
-                    FhirReceiverProcessor.send_fhir_request_async(
-                        logger=get_logger(__name__),
-                        parameters=parameters,
-                        resource_id=None,
-                        server_url=server_url,
-                        last_updated_after=last_updated_after,
-                        last_updated_before=last_updated_before,
-                    )
-                )
+            resources = FhirReceiverProcessor.get_batch_result_streaming(
+                errors=errors,
+                last_updated_after=last_updated_after,
+                last_updated_before=last_updated_before,
+                parameters=parameters,
+                resources=resources,
+                server_url=server_url,
             )
-            try:
-                resources = [json.dumps(r) for r in result.get_resources()]
-            except JSONDecodeError as e:
-                if parameters.error_view:
-                    errors.append(
-                        json.dumps(
-                            {
-                                "url": result.url,
-                                "status_code": result.status,
-                                "error_text": str(e) + " : " + result.responses,
-                            },
-                            default=str,
-                        )
-                    )
-                else:
-                    raise FhirParserException(
-                        url=result.url,
-                        message="Parsing result as json failed",
-                        json_data=result.responses,
-                        response_status_code=result.status,
-                        request_id=result.request_id,
-                    ) from e
         else:
             while True:
                 result = asyncio.run(
@@ -701,3 +675,49 @@ class FhirReceiverProcessor:
                     break
 
         yield GetBatchResult(resources=resources, errors=errors)
+
+    @staticmethod
+    def get_batch_result_streaming(
+        *,
+        errors: List[str],
+        last_updated_after: Optional[datetime],
+        last_updated_before: Optional[datetime],
+        parameters: FhirReceiverParameters,
+        resources: List[str],
+        server_url: str,
+    ) -> List[str]:
+        result = asyncio.run(
+            FhirGetResponse.from_async_generator(
+                FhirReceiverProcessor.send_fhir_request_async(
+                    logger=get_logger(__name__),
+                    parameters=parameters,
+                    resource_id=None,
+                    server_url=server_url,
+                    last_updated_after=last_updated_after,
+                    last_updated_before=last_updated_before,
+                )
+            )
+        )
+        try:
+            resources = [json.dumps(r) for r in result.get_resources()]
+        except JSONDecodeError as e:
+            if parameters.error_view:
+                errors.append(
+                    json.dumps(
+                        {
+                            "url": result.url,
+                            "status_code": result.status,
+                            "error_text": str(e) + " : " + result.responses,
+                        },
+                        default=str,
+                    )
+                )
+            else:
+                raise FhirParserException(
+                    url=result.url,
+                    message="Parsing result as json failed",
+                    json_data=result.responses,
+                    response_status_code=result.status,
+                    request_id=result.request_id,
+                ) from e
+        return resources
