@@ -49,6 +49,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_processor import (
     FhirReceiverProcessor,
+    GetBatchResult,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -998,20 +999,18 @@ class FhirReceiver(FrameworkTransformer):
 
                 resources: List[str] = []
                 if receiver_parameters.use_data_streaming:
-                    for result1 in FhirReceiverProcessor.get_batch_result_streaming(
-                        server_url=server_url,
-                        parameters=receiver_parameters,
-                        last_updated_after=last_updated_after,
-                        last_updated_before=last_updated_before,
-                    ):
-                        resources = result1.resources
-                        errors = result1.errors
-
-                    list_df: DataFrame = df.sparkSession.createDataFrame(
-                        resources, schema=StringType()
+                    list_df: DataFrame = (
+                        FhirReceiverProcessor.get_batch_result_streaming_dataframe(
+                            df=df,
+                            server_url=server_url,
+                            parameters=receiver_parameters,
+                            last_updated_after=last_updated_after,
+                            last_updated_before=last_updated_before,
+                            schema=GetBatchResult.get_schema(),
+                        )
                     )
                 else:
-                    for result1 in FhirReceiverProcessor.get_batch_result(
+                    for result1 in FhirReceiverProcessor.get_batch_results_paging(
                         page_size=page_size,
                         limit=limit,
                         server_url=server_url,
@@ -1026,7 +1025,7 @@ class FhirReceiver(FrameworkTransformer):
                         resources, schema=StringType()
                     )
 
-                file_format = "delta" if delta_lake_table else "text"
+                file_format = "delta" if delta_lake_table else "json"
                 list_df.write.format(file_format).mode(mode).save(str(file_path))
                 list_df = df.sparkSession.read.format(file_format).load(str(file_path))
 
