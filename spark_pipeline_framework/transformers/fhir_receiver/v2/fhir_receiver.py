@@ -1009,6 +1009,7 @@ class FhirReceiver(FrameworkTransformer):
                             last_updated_after=last_updated_after,
                             last_updated_before=last_updated_before,
                             schema=GetBatchResult.get_schema(),
+                            results_per_batch=batch_size,
                         )
                     )
                     resource_df = list_df.select(

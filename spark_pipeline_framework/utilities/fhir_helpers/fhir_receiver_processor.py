@@ -731,7 +731,7 @@ class FhirReceiverProcessor:
         last_updated_before: Optional[datetime],
         parameters: FhirReceiverParameters,
         server_url: Optional[str],
-        results_per_batch: int = 1,
+        results_per_batch: Optional[int],
     ) -> DataFrame:
         """
         Converts the results from a batch streaming request to a DataFrame iteratively using
@@ -786,7 +786,7 @@ class FhirReceiverProcessor:
         df: DataFrame,
         async_gen: AsyncGenerator[Any, None],
         schema: StructType | AtomicType,
-        results_per_batch: int = 1,
+        results_per_batch: Optional[int],
     ) -> DataFrame:
         """
         Takes an async generator, adds it to the dataframe in batches of size `results_per_batch`
@@ -802,7 +802,7 @@ class FhirReceiverProcessor:
         # iterate through the async generator and collect the data in chunks
         collected_data = []
         async for chunk in FhirReceiverProcessor.collect_async_data(
-            async_gen=async_gen, chunk_size=results_per_batch
+            async_gen=async_gen, chunk_size=results_per_batch or 1
         ):
             df_chunk = df.sparkSession.createDataFrame(chunk, schema)
             collected_data.append(df_chunk)
