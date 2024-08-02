@@ -37,7 +37,7 @@ def test_fhir_receiver_list_streaming(spark_session: SparkSession) -> None:
     client.clear(test_name)
 
     load_mock_source_api_json_responses(
-        folder=data_dir.joinpath("fhir_list_calls"),
+        folder=data_dir.joinpath("fhir_list_streaming_calls"),
         mock_client=client,
         url_prefix=f"{test_name}/4_0_0/Patient",
     )
@@ -58,6 +58,7 @@ def test_fhir_receiver_list_streaming(spark_session: SparkSession) -> None:
         ).transform(df)
 
     # Assert
+    print("Result DataFrame")
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     json_df.show()
     json_df.printSchema()

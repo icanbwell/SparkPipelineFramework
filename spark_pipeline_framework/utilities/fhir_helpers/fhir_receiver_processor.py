@@ -806,7 +806,8 @@ class FhirReceiverProcessor:
         ):
             df_chunk = df.sparkSession.createDataFrame(chunk, schema)
             collected_data.append(df_chunk)
-            df_chunk.show()  # Show each chunk as it is processed
+            print("Async chunk collected")
+            df_chunk.show(truncate=False)  # Show each chunk as it is processed
 
         # Combine all chunks into a single DataFrame
         if collected_data:
