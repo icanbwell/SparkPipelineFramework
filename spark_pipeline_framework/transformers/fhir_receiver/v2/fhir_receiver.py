@@ -999,7 +999,6 @@ class FhirReceiver(FrameworkTransformer):
 
                 file_format = "delta" if delta_lake_table else "text"
 
-                resources: List[str] = []
                 if receiver_parameters.use_data_streaming:
                     list_df: DataFrame = (
                         FhirReceiverProcessor.get_batch_result_streaming_dataframe(
@@ -1020,6 +1019,8 @@ class FhirReceiver(FrameworkTransformer):
                         str(file_path)
                     )
                 else:
+                    resources: List[str] = []
+                    errors: List[str] = []
                     for result1 in FhirReceiverProcessor.get_batch_results_paging(
                         page_size=page_size,
                         limit=limit,
@@ -1028,13 +1029,17 @@ class FhirReceiver(FrameworkTransformer):
                         last_updated_after=last_updated_after,
                         last_updated_before=last_updated_before,
                     ):
-                        resources = result1.resources
-                        errors = result1.errors
+                        resources.extend(result1.resources)
+                        errors.extend(result1.errors)
 
                     list_df = df.sparkSession.createDataFrame(
                         resources, schema=StringType()
                     )
-                    errors_df = sc(df).parallelize(errors).toDF().cache()
+                    errors_df = (
+                        sc(df).parallelize(errors).toDF().cache()
+                        if errors
+                        else df.sparkSession.createDataFrame([], schema=StringType())
+                    )
                     list_df.write.format(file_format).mode(mode).save(str(file_path))
 
                 list_df = df.sparkSession.read.format(file_format).load(str(file_path))
