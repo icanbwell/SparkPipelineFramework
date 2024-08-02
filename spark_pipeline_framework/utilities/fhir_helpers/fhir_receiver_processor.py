@@ -554,27 +554,26 @@ class FhirReceiverProcessor:
         last_updated_before: Optional[datetime],
         parameters: FhirReceiverParameters,
     ) -> Generator[GetBatchResult, None, None]:
-        resources: List[str] = []
-        errors: List[str] = []
-        additional_parameters: Optional[List[str]] = parameters.additional_parameters
-        if not page_size:
-            page_size = limit
-        # if paging is requested then iterate through the pages until the response is empty
-        page_number: int = 0
-        server_page_number: int = 0
         assert server_url
-        result: FhirGetResponse
         if parameters.use_data_streaming:
-            resources = FhirReceiverProcessor.get_batch_result_streaming(
-                errors=errors,
+            for r in FhirReceiverProcessor.get_batch_result_streaming(
                 last_updated_after=last_updated_after,
                 last_updated_before=last_updated_before,
                 parameters=parameters,
-                resources=resources,
                 server_url=server_url,
-            )
-            yield GetBatchResult(resources=resources, errors=errors)
+            ):
+                yield r
         else:
+            resources: List[str] = []
+            errors: List[str] = []
+            additional_parameters: Optional[List[str]] = (
+                parameters.additional_parameters
+            )
+            if not page_size:
+                page_size = limit
+            # if paging is requested then iterate through the pages until the response is empty
+            page_number: int = 0
+            server_page_number: int = 0
             while True:
                 result = asyncio.run(
                     FhirGetResponse.from_async_generator(
@@ -679,13 +678,13 @@ class FhirReceiverProcessor:
     @staticmethod
     def get_batch_result_streaming(
         *,
-        errors: List[str],
         last_updated_after: Optional[datetime],
         last_updated_before: Optional[datetime],
         parameters: FhirReceiverParameters,
-        resources: List[str],
         server_url: str,
-    ) -> List[str]:
+    ) -> Generator[GetBatchResult, None, None]:
+        errors: List[str] = []
+        resources: List[str] = []
         result = asyncio.run(
             FhirGetResponse.from_async_generator(
                 FhirReceiverProcessor.send_fhir_request_async(
@@ -720,4 +719,4 @@ class FhirReceiverProcessor:
                     response_status_code=result.status,
                     request_id=result.request_id,
                 ) from e
-        return resources
+        yield GetBatchResult(resources=resources, errors=errors)
