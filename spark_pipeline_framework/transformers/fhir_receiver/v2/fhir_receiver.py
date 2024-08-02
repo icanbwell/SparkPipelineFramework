@@ -1030,7 +1030,7 @@ class FhirReceiver(FrameworkTransformer):
                 )
                 errors_df = list_df.select(explode(col("errors")).alias("resource"))
                 resource_df.write.format(file_format).mode(mode).save(str(file_path))
-                df = df.sparkSession.read.format(file_format).load(str(file_path))
+                list_df = df.sparkSession.read.format(file_format).load(str(file_path))
 
                 self.logger.info(f"Wrote FHIR data to {file_path}")
 
@@ -1050,7 +1050,7 @@ class FhirReceiver(FrameworkTransformer):
                     )
 
                 if view:
-                    df.createOrReplaceTempView(view)
+                    list_df.createOrReplaceTempView(view)
                 if error_view:
                     errors_df.createOrReplaceTempView(error_view)
                     if progress_logger and not spark_is_data_frame_empty(errors_df):
