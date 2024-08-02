@@ -731,7 +731,22 @@ class FhirReceiverProcessor:
         last_updated_before: Optional[datetime],
         parameters: FhirReceiverParameters,
         server_url: Optional[str],
+        results_per_batch: int = 1,
     ) -> DataFrame:
+        """
+        Converts the results from a batch streaming request to a DataFrame iteratively using
+        batches of size `results_per_batch`
+
+        :param df: DataFrame
+        :param schema: StructType | AtomicType
+        :param last_updated_after: Optional[datetime]
+        :param last_updated_before: Optional[datetime]
+        :param parameters: FhirReceiverParameters
+        :param server_url: Optional[str]
+        :param results_per_batch: int
+        :return: DataFrame
+        """
+        # Have to run in asyncio.run since we want to process async functions but return synchronously
         return asyncio.run(
             FhirReceiverProcessor.async_generator_to_dataframe(
                 df=df,
@@ -742,6 +757,7 @@ class FhirReceiverProcessor:
                     server_url=server_url,
                 ),
                 schema=schema,
+                results_per_batch=results_per_batch,
             )
         )
 
@@ -749,6 +765,13 @@ class FhirReceiverProcessor:
     async def collect_async_data(
         *, async_gen: AsyncGenerator[Any, None], chunk_size: int
     ) -> AsyncGenerator[List[Any], None]:
+        """
+        Collects data from an async generator in chunks of size `chunk_size`
+
+        :param async_gen: AsyncGenerator
+        :param chunk_size: int
+        :return: AsyncGenerator
+        """
         chunk1 = []
         async for item in async_gen:
             chunk1.append(item)
@@ -763,10 +786,23 @@ class FhirReceiverProcessor:
         df: DataFrame,
         async_gen: AsyncGenerator[Any, None],
         schema: StructType | AtomicType,
+        results_per_batch: int = 1,
     ) -> DataFrame:
+        """
+        Takes an async generator, adds it to the dataframe in batches of size `results_per_batch`
+        and returns the dataframe
+
+        :param df: DataFrame
+        :param async_gen: AsyncGenerator
+        :param schema: StructType | AtomicType
+        :param results_per_batch: int
+        :return: DataFrame
+        """
+
+        # iterate through the async generator and collect the data in chunks
         collected_data = []
         async for chunk in FhirReceiverProcessor.collect_async_data(
-            async_gen=async_gen, chunk_size=1
+            async_gen=async_gen, chunk_size=results_per_batch
         ):
             df_chunk = df.sparkSession.createDataFrame(chunk, schema)
             collected_data.append(df_chunk)
@@ -774,9 +810,11 @@ class FhirReceiverProcessor:
 
         # Combine all chunks into a single DataFrame
         if collected_data:
+            # if data was already collected, combine it into a single DataFrame
             final_df = collected_data[0]
             for df in collected_data[1:]:
                 final_df = final_df.union(df)
             return final_df
         else:
+            # create a DataFrame with the schema but no data
             return df.sparkSession.createDataFrame([], schema)

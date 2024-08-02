@@ -55,6 +55,7 @@ from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
+    sc,
 )
 
 
@@ -996,6 +997,8 @@ class FhirReceiver(FrameworkTransformer):
                     ignore_status_codes=ignore_status_codes,
                 )
 
+                file_format = "delta" if delta_lake_table else "text"
+
                 resources: List[str] = []
                 if receiver_parameters.use_data_streaming:
                     list_df: DataFrame = (
@@ -1007,6 +1010,13 @@ class FhirReceiver(FrameworkTransformer):
                             last_updated_before=last_updated_before,
                             schema=GetBatchResult.get_schema(),
                         )
+                    )
+                    resource_df = list_df.select(
+                        explode(col("resources")).alias("resource")
+                    )
+                    errors_df = list_df.select(explode(col("errors")).alias("resource"))
+                    resource_df.write.format(file_format).mode(mode).save(
+                        str(file_path)
                     )
                 else:
                     for result1 in FhirReceiverProcessor.get_batch_results_paging(
@@ -1023,13 +1033,9 @@ class FhirReceiver(FrameworkTransformer):
                     list_df = df.sparkSession.createDataFrame(
                         resources, schema=StringType()
                     )
+                    errors_df = sc(df).parallelize(errors).toDF().cache()
+                    list_df.write.format(file_format).mode(mode).save(str(file_path))
 
-                file_format = "delta" if delta_lake_table else "text"
-                resource_df = list_df.select(
-                    explode(col("resources")).alias("resource")
-                )
-                errors_df = list_df.select(explode(col("errors")).alias("resource"))
-                resource_df.write.format(file_format).mode(mode).save(str(file_path))
                 list_df = df.sparkSession.read.format(file_format).load(str(file_path))
 
                 self.logger.info(f"Wrote FHIR data to {file_path}")
