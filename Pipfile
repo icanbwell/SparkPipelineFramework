@@ -43,7 +43,7 @@ bounded-pool-executor = ">=0.0.3"
 # fastjsonschema is needed for validating JSON
 fastjsonschema= ">=2.18.0"
 # helix.fhir.client.sdk is needed for interacting with FHIR servers
-"helix.fhir.client.sdk" = ">=2.0.11"
+"helix.fhir.client.sdk" = ">=2.0.12"
 # opensearch-py is needed for interacting with OpenSearch
 opensearch-py= ">=1.1.0"
 # pyathena is needed for interacting with Athena in AWS
@@ -101,7 +101,7 @@ sparkdataframecomparer = ">=2.0.2"
 # pytest-ayncio is needed for running async tests
 pytest-asyncio = ">=0.23.8"
 # helix-mockserver-client is needed for mocking servers
-helix-mockserver-client=">=1.2.1"
+helix-mockserver-client=">=1.3.0"
 # sparkfhirschemas is needed for FHIR schemas
 sparkfhirschemas = ">=1.0.17"
 # types-boto3 is needed for type hints for boto3
