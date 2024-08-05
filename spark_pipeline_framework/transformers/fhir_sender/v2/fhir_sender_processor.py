@@ -333,7 +333,7 @@ class FhirSenderProcessor:
                         "deleted": False,
                         "id": None,
                         "uuid": None,
-                        "resourceType": None,
+                        "resourceType": parameters.resource_name,
                         "sourceAssigningAuthority": None,
                         "resource_version": None,
                         "message": str(e),
