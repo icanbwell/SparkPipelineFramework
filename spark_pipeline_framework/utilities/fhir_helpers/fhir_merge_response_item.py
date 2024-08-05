@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Any, Optional
 
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
@@ -25,6 +26,8 @@ class FhirMergeResponseItem:
         )
         self.message: Optional[str] = item.get(FhirMergeResponseItemSchema.message)
         self.issue: Optional[str] = item.get(FhirMergeResponseItemSchema.issue)
+        if not isinstance(self.issue, str):
+            self.issue = json.dumps(self.issue)
         self.error: Optional[str] = item.get(FhirMergeResponseItemSchema.error)
         self.token: Optional[str] = item.get(FhirMergeResponseItemSchema.token)
         self.resource_json: Optional[str] = item.get(
