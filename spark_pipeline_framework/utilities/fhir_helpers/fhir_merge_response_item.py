@@ -33,7 +33,41 @@ class FhirMergeResponseItem:
         self.status: Optional[int] = status
 
     def to_dict(self) -> Dict[str, Any]:
-        return self.__dict__
+        return {
+            FhirMergeResponseItemSchema.created: self.created,
+            FhirMergeResponseItemSchema.updated: self.updated,
+            FhirMergeResponseItemSchema.deleted: self.deleted,
+            FhirMergeResponseItemSchema.id_: self.id,
+            FhirMergeResponseItemSchema.uuid: self.uuid,
+            FhirMergeResponseItemSchema.resourceType: self.resourceType,
+            FhirMergeResponseItemSchema.sourceAssigningAuthority: self.sourceAssigningAuthority,
+            FhirMergeResponseItemSchema.resource_version: self.resource_version,
+            FhirMergeResponseItemSchema.message: self.message,
+            FhirMergeResponseItemSchema.issue: self.issue,
+            FhirMergeResponseItemSchema.error: self.error,
+            FhirMergeResponseItemSchema.token: self.token,
+            FhirMergeResponseItemSchema.resource_json: self.resource_json,
+        }
+
+    @staticmethod
+    def from_error(e: Exception, resource_type: str) -> "FhirMergeResponseItem":
+        return FhirMergeResponseItem(
+            item={
+                FhirMergeResponseItemSchema.created: False,
+                FhirMergeResponseItemSchema.updated: False,
+                FhirMergeResponseItemSchema.deleted: False,
+                FhirMergeResponseItemSchema.id_: None,
+                FhirMergeResponseItemSchema.uuid: None,
+                FhirMergeResponseItemSchema.resourceType: resource_type,
+                FhirMergeResponseItemSchema.sourceAssigningAuthority: None,
+                FhirMergeResponseItemSchema.resource_version: None,
+                FhirMergeResponseItemSchema.message: str(e),
+                FhirMergeResponseItemSchema.issue: None,
+                FhirMergeResponseItemSchema.error: str(e),
+                FhirMergeResponseItemSchema.token: None,
+                FhirMergeResponseItemSchema.resource_json: None,
+            }
+        )
 
     def get_resource(self) -> Optional[Dict[str, Any]]:
         if not self.resource_json:

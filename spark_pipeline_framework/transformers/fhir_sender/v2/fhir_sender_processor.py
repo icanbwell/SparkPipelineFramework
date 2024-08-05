@@ -63,6 +63,7 @@ class FhirSenderProcessor:
                     )
                 )
                 index += 1
+                print(f"Got result {result_list}")
                 # yield the result as a dataframe
                 yield pd.DataFrame(result_list)
 
@@ -326,22 +327,8 @@ class FhirSenderProcessor:
             ]
         except Exception as e:
             parsed_responses = [
-                FhirMergeResponseItem(
-                    item={
-                        "created": False,
-                        "updated": False,
-                        "deleted": False,
-                        "id": None,
-                        "uuid": None,
-                        "resourceType": parameters.resource_name,
-                        "sourceAssigningAuthority": None,
-                        "resource_version": None,
-                        "message": str(e),
-                        "issue": None,
-                        "error": str(e),
-                        "token": None,
-                        "resource_json": None,
-                    }
+                FhirMergeResponseItem.from_error(
+                    e=e, resource_type=parameters.resource_name
                 )
             ]
 
