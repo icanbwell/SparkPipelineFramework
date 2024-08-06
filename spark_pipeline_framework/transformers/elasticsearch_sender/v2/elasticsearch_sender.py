@@ -211,8 +211,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     failed_df.show(truncate=False, n=1000)
                     self.logger.info("---- End Reply from server ----")
                 except PythonException as e:
-                    print(f"FriendlySparkException : {type(e)}")
-                    if "pyarrow.lib.ArrowTypeError" in e.desc:
+                    if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
                         raise FriendlySparkException(
                             exception=e,
                             message="Exception converting data to Arrow format."
