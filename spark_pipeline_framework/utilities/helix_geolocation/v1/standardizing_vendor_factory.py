@@ -1,7 +1,9 @@
-import inspect
-import sys
-from typing import Dict, Type
+from pathlib import Path
+from typing import Dict, Type, List
 
+from spark_pipeline_framework.utilities.dynamic_class_loader.v1.dynamic_class_loader import (
+    DynamicClassLoader,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
 )
@@ -15,9 +17,16 @@ class StandardizingVendorFactory:
         """
         to create a map of vendor classes by name for fast lookup
         """
-        for name, obj in inspect.getmembers(sys.modules[__name__]):
-            if inspect.isclass(obj) and issubclass(obj, StandardizingVendor):
-                StandardizingVendorFactory.vendor_class_map[obj.get_vendor_name()] = obj
+        data_dir: Path = Path(__file__).parent.joinpath("./")
+        standardizing_vendor_path = data_dir.joinpath("vendors")
+        sub_classes: List[Type[StandardizingVendor]] = DynamicClassLoader[
+            StandardizingVendor
+        ](StandardizingVendor, standardizing_vendor_path).find_subclasses()
+
+        for sub_class in sub_classes:
+            StandardizingVendorFactory.vendor_class_map[sub_class.get_vendor_name()] = (
+                sub_class
+            )
 
     @staticmethod
     def get_vendor_class(vendor_name: str) -> Type[StandardizingVendor]:
