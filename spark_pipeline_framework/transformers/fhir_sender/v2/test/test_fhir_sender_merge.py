@@ -67,9 +67,17 @@ def test_fhir_sender_merge(
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             auth_well_known_url=auth_well_known_url,
+            view="result_view",
+            error_view="error_view",
         ).transform(df)
 
     # Assert
+    error_df = spark_session.read.table("error_view")
+    result_df = spark_session.read.table("result_view")
+    # Assert
+    assert error_df.count() == 0
+    assert result_df.count() == 2
+
     response = requests.get(
         urljoin(fhir_server_url, "Patient/00100000000"), headers=authorization_header
     )

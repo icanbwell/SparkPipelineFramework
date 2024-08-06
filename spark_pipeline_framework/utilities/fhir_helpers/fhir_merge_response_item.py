@@ -26,7 +26,7 @@ class FhirMergeResponseItem:
         )
         self.message: Optional[str] = item.get(FhirMergeResponseItemSchema.message)
         self.issue: Optional[str] = item.get(FhirMergeResponseItemSchema.issue)
-        if not isinstance(self.issue, str):
+        if self.issue is not None and not isinstance(self.issue, str):
             self.issue = json.dumps(self.issue)
         self.error: Optional[str] = item.get(FhirMergeResponseItemSchema.error)
         self.token: Optional[str] = item.get(FhirMergeResponseItemSchema.token)

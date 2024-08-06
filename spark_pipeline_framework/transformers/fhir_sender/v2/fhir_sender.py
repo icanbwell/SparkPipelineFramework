@@ -29,7 +29,6 @@ from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
 
-# noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
@@ -576,6 +575,17 @@ class FhirSender(FrameworkTransformer):
                                     self.logger.info(
                                         f"------- End Failed validations for {resource_name} ---------"
                                     )
+                            else:
+                                if error_view:
+                                    df.sparkSession.createDataFrame(
+                                        [],
+                                        schema=FhirMergeResponseItemSchema.get_schema(),
+                                    ).createOrReplaceTempView(error_view)
+                        else:
+                            if error_view:
+                                df.sparkSession.createDataFrame(
+                                    [], schema=FhirMergeResponseItemSchema.get_schema()
+                                ).createOrReplaceTempView(error_view)
                     except PythonException as e:
                         print(f"FriendlySparkException : {type(e)}")
                         if (
