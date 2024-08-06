@@ -17,12 +17,13 @@ def test_dynamic_class_loader() -> None:
     sub_classes: List[Type[StandardizingVendor]] = DynamicClassLoader[
         StandardizingVendor
     ](StandardizingVendor, standardizing_vendor_path).find_subclasses()
-    assert len(sub_classes) == 3
+    assert len(sub_classes) == 4
 
     assert sorted([sub_class.__name__ for sub_class in sub_classes]) == sorted(
         [
             "GeocodioStandardizingVendor",
             "MelissaStandardizingVendor",
             "MockStandardizingVendor",
+            "CensusStandardizingVendor",
         ]
     )
