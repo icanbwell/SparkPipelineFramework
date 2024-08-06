@@ -81,7 +81,7 @@ class CensusStandardizingVendor(StandardizingVendor):
         response_json: Dict[str, Any],
     ) -> Optional[StdAddress]:
         """
-        Parse the JSON response from the US Census API and return a standardized FHIR Address object
+        Parse the JSON response from the US Census API and return a standardized address object
 
         :param response_json: JSON response
         :return: Standardized FHIR Address object
@@ -89,6 +89,49 @@ class CensusStandardizingVendor(StandardizingVendor):
         if not response_json:
             return None
 
+        # Example response
+        # {
+        #      "result": {
+        #           "input": {
+        #                "address": {
+        #                     "address": "4600 Silver Hill Rd, Washington, DC 20233"
+        #                },
+        #                "benchmark": {
+        #                     "isDefault": true,
+        #                     "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        #                     "id": "4",
+        #                     "benchmarkName": "Public_AR_Current"
+        #                }
+        #           },
+        #           "addressMatches": [
+        #                {
+        #                     "tigerLine": {
+        #                          "side": "L",
+        #                          "tigerLineId": "76355984"
+        #                     },
+        #                     "coordinates": {
+        #                          "x": -76.92748724230096,
+        #                          "y": 38.84601622386617
+        #                     },
+        #                     "addressComponents": {
+        #                          "zip": "20233",
+        #                          "streetName": "SILVER HILL",
+        #                          "preType": "",
+        #                          "city": "WASHINGTON",
+        #                          "preDirection": "",
+        #                          "suffixDirection": "",
+        #                          "fromAddress": "4600",
+        #                          "state": "DC",
+        #                          "suffixType": "RD",
+        #                          "toAddress": "4700",
+        #                          "suffixQualifier": "",
+        #                          "preQualifier": ""
+        #                     },
+        #                     "matchedAddress": "4600 SILVER HILL RD, WASHINGTON, DC, 20233"
+        #                }
+        #           ]
+        #      }
+        # }
         # Get the result
         result: Dict[str, Any] | None = cast(
             Dict[str, Any] | None, response_json.get("result")
