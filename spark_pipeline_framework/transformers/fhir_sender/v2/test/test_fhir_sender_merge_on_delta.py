@@ -4,6 +4,9 @@ from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urljoin
 
+import pytest
+from helix_fhir_client_sdk.fhir_client import FhirClient
+from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from pyspark.sql import SparkSession, DataFrame
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -16,7 +19,10 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 import requests
 
 
-def test_fhir_sender_merge_on_delta(spark_session: SparkSession) -> None:
+@pytest.mark.parametrize("run_synchronously", [True, False])
+async def test_fhir_sender_merge_on_delta(
+    spark_session: SparkSession, run_synchronously: bool
+) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("./temp")
@@ -41,6 +47,21 @@ def test_fhir_sender_merge_on_delta(spark_session: SparkSession) -> None:
     auth_client_id = environ["FHIR_CLIENT_ID"]
     auth_client_secret = environ["FHIR_CLIENT_SECRET"]
     auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
+
+    # first delete any existing resources
+    fhir_client = FhirClient()
+    fhir_client = fhir_client.client_credentials(
+        client_id=auth_client_id, client_secret=auth_client_secret
+    )
+    fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
+    fhir_client = fhir_client.url(fhir_server_url).resource("Patient")
+    delete_response: FhirDeleteResponse = await fhir_client.id_(
+        "00100000000"
+    ).delete_async()
+    assert delete_response.status == 204
+    delete_response = await fhir_client.id_("00200000000").delete_async()
+    assert delete_response.status == 204
+
     token_url = TokenHelper.get_auth_server_url_from_well_known_url(
         well_known_url=auth_well_known_url
     )
@@ -60,6 +81,7 @@ def test_fhir_sender_merge_on_delta(spark_session: SparkSession) -> None:
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             auth_well_known_url=auth_well_known_url,
+            run_synchronously=run_synchronously,
         ).transform(df)
 
     # Assert

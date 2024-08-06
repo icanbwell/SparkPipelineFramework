@@ -4,6 +4,8 @@ from shutil import rmtree
 from urllib.parse import urljoin
 
 import pytest
+from helix_fhir_client_sdk.fhir_client import FhirClient
+from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from pyspark.sql import SparkSession, DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -18,7 +20,7 @@ import requests
 
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
-def test_fhir_sender_merge_error(
+async def test_fhir_sender_merge_error(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:
     # Arrange
@@ -38,6 +40,20 @@ def test_fhir_sender_merge_error(
     auth_client_id = environ["FHIR_CLIENT_ID"]
     auth_client_secret = environ["FHIR_CLIENT_SECRET"]
     auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
+
+    # first delete any existing resources
+    fhir_client = FhirClient()
+    fhir_client = fhir_client.client_credentials(
+        client_id=auth_client_id, client_secret=auth_client_secret
+    )
+    fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
+    fhir_client = fhir_client.url(fhir_server_url).resource("Patient")
+    delete_response: FhirDeleteResponse = await fhir_client.id_(
+        "00100000001"
+    ).delete_async()
+    assert delete_response.status == 204
+    delete_response = await fhir_client.id_("00200000001").delete_async()
+    assert delete_response.status == 204
 
     logger = get_logger(__name__)
 
