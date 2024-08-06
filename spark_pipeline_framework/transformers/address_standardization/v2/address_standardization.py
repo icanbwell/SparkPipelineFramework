@@ -32,7 +32,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address import (
     StandardizeAddr,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
@@ -230,10 +230,13 @@ class AddressStandardization(FrameworkTransformer):
                 """
                 Apply the custom function `standardize_batch` to the input batch iterator.
                 This is a vectorized Pandas UDF, which means that it processes the input data in batches.
+                This function will be called for each partition in Spark.  It will run on worker nodes in parallel.
+                Within each partition, the input data will be processed in batches using Pandas.  The size of the batches
+                is controlled by the `spark.sql.execution.arrow.maxRecordsPerBatch` configuration.
 
                 https://learn.microsoft.com/en-us/azure/databricks/udf/pandas
 
-                :param batch_iter: iterator of batches of input data
+                :param batch_iter: iterator of batches of input data.
                 :return: iterator of batches of output data
                 """
                 for x in batch_iter:

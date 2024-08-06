@@ -2,7 +2,7 @@ import inspect
 import sys
 from typing import Dict, Type
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
 )
 

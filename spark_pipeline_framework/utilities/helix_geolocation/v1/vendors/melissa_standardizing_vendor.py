@@ -11,13 +11,13 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
     RawAddress,
     StdAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.vendor_response import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response import (
     VendorResponse,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.vendor_response_key_error import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response_key_error import (
     VendorResponseKeyError,
 )
 
@@ -25,7 +25,8 @@ logger = structlog.get_logger(__file__)
 
 
 class MelissaStandardizingVendor(StandardizingVendor):
-    _RESPONSE_KEY_ERROR_THRESHOLD = 2  # number of times Melissa is allowed to send bad response until we cancel rest of requests
+    _RESPONSE_KEY_ERROR_THRESHOLD = 2
+    # number of times Melissa is allowed to send bad response until we cancel rest of requests
 
     def __init__(
         self,

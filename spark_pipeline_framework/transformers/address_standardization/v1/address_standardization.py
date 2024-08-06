@@ -28,7 +28,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address import (
     StandardizeAddr,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (

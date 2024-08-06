@@ -31,14 +31,14 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.mock_cache_ha
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address import (
     StandardizeAddr,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response_key_error import (
+    VendorResponseKeyError,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.melissa_standardizing_vendor import (
     MelissaStandardizingVendor,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.mock_standardizing_vendor import (
     MockStandardizingVendor,
-)
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.vendor_response_key_error import (
-    VendorResponseKeyError,
 )
 
 mongo_address = r"mongodb://mongo:27017/"

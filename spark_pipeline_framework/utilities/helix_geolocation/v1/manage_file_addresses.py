@@ -7,10 +7,10 @@ import json
 import csv
 
 from spark_pipeline_framework.utilities.helix_geolocation.v1.address import RawAddress
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.vendor_response import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response import (
     VendorResponse,
 )
 

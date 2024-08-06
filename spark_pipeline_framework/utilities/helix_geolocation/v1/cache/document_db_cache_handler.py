@@ -17,13 +17,13 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_result import (
     CacheResult,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor_factory import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor_factory import (
     StandardizingVendorFactory,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.vendor_response import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response import (
     VendorResponse,
 )
 

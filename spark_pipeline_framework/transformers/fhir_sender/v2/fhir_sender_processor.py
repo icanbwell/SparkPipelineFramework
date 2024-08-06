@@ -38,11 +38,13 @@ class FhirSenderProcessor:
         :return: pandas_udf
         """
 
-        def process_batch(
+        def process_partition(
             batch_iter: Iterable[pd.DataFrame],
         ) -> Iterable[pd.DataFrame]:
             """
-            This function is passed a list of dataframes, each dataframe is a partition
+            This function will be called for each partition in Spark.  It will run on worker nodes in parallel.
+            Within each partition, the input data will be processed in batches using Pandas.  The size of the batches
+            is controlled by the `spark.sql.execution.arrow.maxRecordsPerBatch` configuration.
 
             :param batch_iter: Iterable[pd.DataFrame]
             :return: Iterable[pd.DataFrame]
@@ -79,7 +81,7 @@ class FhirSenderProcessor:
                         ]
                     )
 
-        return process_batch
+        return process_partition
 
     @staticmethod
     # function that is called for each partition
