@@ -1,10 +1,8 @@
-import abc
-from abc import ABCMeta
-from typing import List, NamedTuple, Set, Tuple, Type, Optional, Any, Dict
-import pymongo
-from pymongo import UpdateOne, MongoClient
+from typing import List, Set, Tuple, Type, Optional, Any, Dict
 
+import pymongo
 import structlog
+from pymongo import UpdateOne, MongoClient
 
 from spark_pipeline_framework.utilities.document_db_connection.v1.document_db_connection import (
     DocumentDbServerUrl,
@@ -12,6 +10,12 @@ from spark_pipeline_framework.utilities.document_db_connection.v1.document_db_co
 from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
     StdAddress,
     RawAddress,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler import (
+    CacheHandler,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_result import (
+    CacheResult,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
     StandardizingVendor,
@@ -24,41 +28,6 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.vendor_resp
 )
 
 logger = structlog.get_logger(__file__)
-
-
-class CacheResult(NamedTuple):
-    found: List[StdAddress]
-    not_found: List[RawAddress]
-
-
-class CacheHandler(metaclass=ABCMeta):
-    """
-    read vendor specific addresses form cache and return standard addresses
-    """
-
-    @abc.abstractmethod
-    def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
-        """
-        returns {'found': <list of addresses found in cache>, 'not_found': <list of addresses not found in cache>}
-        """
-
-    @abc.abstractmethod
-    def save_to_cache(self, vendor_responses: List[VendorResponse]) -> None:
-        pass
-
-    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor]:
-        return StandardizingVendor
-
-
-class MockCacheHandler(CacheHandler):
-    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor]:
-        return StandardizingVendor
-
-    def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
-        return CacheResult(found=[], not_found=raw_addresses)
-
-    def save_to_cache(self, vendor_responses: List[VendorResponse]) -> None:
-        pass
 
 
 class DocumentDBCacheHandler(CacheHandler):

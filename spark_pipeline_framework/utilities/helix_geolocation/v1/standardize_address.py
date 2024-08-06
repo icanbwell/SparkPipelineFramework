@@ -5,8 +5,10 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
     RawAddress,
     StdAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.cache import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler import (
     CacheHandler,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_result import (
     CacheResult,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (

@@ -8,7 +8,7 @@ from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.transformers.address_standardization.v1.address_standardization import (
     AddressStandardization,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.cache import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.mock_cache_handler import (
     MockCacheHandler,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.mock_standardizing_vendor import (

@@ -26,7 +26,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
     RawAddress,
     StdAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.cache import CacheHandler
+from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler import (
+    CacheHandler,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address import (
     StandardizeAddr,
 )
