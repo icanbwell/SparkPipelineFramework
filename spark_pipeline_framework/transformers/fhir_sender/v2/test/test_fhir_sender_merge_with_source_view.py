@@ -40,6 +40,8 @@ def test_fhir_sender_merge_with_source_view(
     source_df = spark_session.read.text(
         str(test_files_dir), pathGlobFilter="*.json", recursiveFileLookup=True
     )
+    source_df.printSchema()
+    source_df.show(truncate=False)
     source_df.createOrReplaceTempView("source_view")
 
     # Define a simple pandas function for mapInPandas
@@ -47,8 +49,12 @@ def test_fhir_sender_merge_with_source_view(
         batch_iter: Iterable[pd.DataFrame],
     ) -> Iterable[pd.DataFrame]:
         for pdf in batch_iter:
+            print(f"Processing test pdf type: {type(pdf)}")
+            print(f"Processing test pdf: {pdf}")
             pdf_json: str = pdf.to_json(orient="records")
+            print(f"Processing test pdf_json: {type(pdf_json)} {pdf_json}")
             rows: List[Dict[str, Any]] = json.loads(pdf_json)
+            print(f"Processing test partition  {type(rows)} {rows}")
             yield pd.DataFrame([{"birthDate": "1990-01-01"}])
 
     # Apply mapInPandas
