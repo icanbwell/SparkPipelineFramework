@@ -13,10 +13,14 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
     StdAddress,
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors import (
-    VendorResponse,
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
     StandardizingVendor,
-    get_vendor_class,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor_factory import (
+    StandardizingVendorFactory,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.vendor_response import (
+    VendorResponse,
 )
 
 logger = structlog.get_logger(__file__)
@@ -162,8 +166,10 @@ class DocumentDBCacheHandler(CacheHandler):
         std_addresses: List[StdAddress] = []
         found_ids: List[str] = []
         for vr in vendor_responses:
-            vendor_obj: Type[StandardizingVendor] = get_vendor_class(vr.vendor_name)
-            std_addresses.append(  # vendor_specific_to_std works with list but we just sending one
+            vendor_obj: Type[StandardizingVendor] = (
+                StandardizingVendorFactory.get_vendor_class(vr.vendor_name)
+            )
+            std_addresses.append(  # vendor_specific_to_std works with list but we are just sending one
                 vendor_obj.vendor_specific_to_std(
                     [
                         VendorResponse(

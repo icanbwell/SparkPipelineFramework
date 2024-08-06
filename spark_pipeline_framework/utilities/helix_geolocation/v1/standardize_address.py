@@ -9,8 +9,10 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.cache import (
     CacheHandler,
     CacheResult,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
     StandardizingVendor,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.vendor_response import (
     VendorResponse,
 )
 

@@ -30,7 +30,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.cache import CacheH
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address import (
     StandardizeAddr,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.standardizing_vendor import (
     StandardizingVendor,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (

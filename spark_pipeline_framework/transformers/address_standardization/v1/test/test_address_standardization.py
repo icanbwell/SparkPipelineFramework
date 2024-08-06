@@ -11,7 +11,7 @@ from spark_pipeline_framework.transformers.address_standardization.v1.address_st
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache import (
     MockCacheHandler,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.vendors.mock_standardizing_vendor import (
     MockStandardizingVendor,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
