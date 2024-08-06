@@ -6,7 +6,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import 
     RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
@@ -31,9 +31,9 @@ class CensusStandardizingVendor(StandardizingVendor):
         """
         returns the vendor specific response from the vendor
         """
-        vendor_specific_addresses: List[StdAddress] = []
+        vendor_specific_addresses: List[StandardizedAddress] = []
         for address in raw_addresses:
-            address_dict = StdAddress.from_raw_address(address)
+            address_dict = StandardizedAddress.from_raw_address(address)
 
             vendor_specific_addresses.append(address_dict)
             print("vendor specific address json")
@@ -79,7 +79,7 @@ class CensusStandardizingVendor(StandardizingVendor):
     def _parse_geolocation_response(
         *,
         response_json: Dict[str, Any],
-    ) -> Optional[StdAddress]:
+    ) -> Optional[StandardizedAddress]:
         """
         Parse the JSON response from the US Census API and return a standardized address object
 
@@ -206,7 +206,7 @@ class CensusStandardizingVendor(StandardizingVendor):
         matched_address: Optional[str] = first_address_match.get("matchedAddress")
 
         # Create a new address object
-        standardized_address: StdAddress = StdAddress(
+        standardized_address: StandardizedAddress = StandardizedAddress(
             address_id="",
             line1=address_line,
             line2="",

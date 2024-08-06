@@ -18,7 +18,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import 
     RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
@@ -90,7 +90,7 @@ class DocumentDBCacheHandler(CacheHandler):
                 ]
             )
 
-        found_std_addr: List[StdAddress]
+        found_std_addr: List[StandardizedAddress]
         found_ids: List[str]
         found_std_addr, found_ids = self._convert_to_std_address(found_vendor_response)
         # filter raw_addresses to create a not_found
@@ -131,12 +131,12 @@ class DocumentDBCacheHandler(CacheHandler):
     @staticmethod
     def _convert_to_std_address(
         vendor_responses: List[VendorResponse],
-    ) -> Tuple[List[StdAddress], List[str]]:
+    ) -> Tuple[List[StandardizedAddress], List[str]]:
         """
         get vendor responses (possibly from different vendors) turn it to StdAddress
         for faster filtering we also combine a list found RecordIds
         """
-        std_addresses: List[StdAddress] = []
+        std_addresses: List[StandardizedAddress] = []
         found_ids: List[str] = []
         for vr in vendor_responses:
             vendor_obj: Type[StandardizingVendor] = (

@@ -6,12 +6,12 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import 
     RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 
 logger = structlog.get_logger(__file__)
 
 
 class CacheResult(NamedTuple):
-    found: List[StdAddress]
+    found: List[StandardizedAddress]
     not_found: List[RawAddress]

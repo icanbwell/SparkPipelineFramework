@@ -6,7 +6,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import 
 
 
 @dataclass
-class StdAddress(RawAddress):
+class StandardizedAddress(RawAddress):
     county: str = ""
     latitude: str = ""
     longitude: str = ""
@@ -20,7 +20,7 @@ class StdAddress(RawAddress):
             return super().to_str()
 
     @classmethod
-    def from_raw_address(cls, raw_address: RawAddress) -> "StdAddress":
+    def from_raw_address(cls, raw_address: RawAddress) -> "StandardizedAddress":
         return cls(
             address_id=raw_address.get_id(),
             line1=raw_address.line1,

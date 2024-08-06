@@ -29,7 +29,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address
     StandardizeAddr,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
@@ -168,7 +168,7 @@ class AddressStandardization(FrameworkTransformer):
                         for raw_address in raw_addresses
                     ]
                     standard_addresses: List[
-                        StdAddress
+                        StandardizedAddress
                     ] = StandardizeAddr().standardize(
                         raw_addresses=raw_address_list,
                         cache_handler_obj=cache_handler,

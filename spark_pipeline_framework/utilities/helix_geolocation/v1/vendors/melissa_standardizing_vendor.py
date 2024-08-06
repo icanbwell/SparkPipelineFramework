@@ -11,7 +11,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import 
     RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
@@ -75,7 +75,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
     @staticmethod
     def vendor_specific_to_std(
         vendor_specific_addresses: List[VendorResponse],
-    ) -> List[StdAddress]:
+    ) -> List[StandardizedAddress]:
         """
         Each vendor class knows how to convert its response to StdAddress
         Note: to interpret the standardize address. reference (https://www.melissa.com/quickstart-guides/global-address)
@@ -84,7 +84,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
         """
 
         std_addresses = [
-            StdAddress(
+            StandardizedAddress(
                 address_id=(
                     a.related_raw_address.get_id()
                     if a.related_raw_address
@@ -105,7 +105,9 @@ class MelissaStandardizingVendor(StandardizingVendor):
         ]
         return std_addresses
 
-    def _call_std_addr_api(self, raw_addresses: List[RawAddress]) -> List[StdAddress]:
+    def _call_std_addr_api(
+        self, raw_addresses: List[RawAddress]
+    ) -> List[StandardizedAddress]:
         """
         Please check https://www.melissa.com/quickstart-guides/global-address for more info
         Please make sure "License Key" is available https://www.melissa.com/user/user_account.aspx
@@ -142,7 +144,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
             return []
 
         return [
-            StdAddress(
+            StandardizedAddress(
                 address_id=a["RecordID"],
                 line1=a["AddressLine1"],
                 line2="",

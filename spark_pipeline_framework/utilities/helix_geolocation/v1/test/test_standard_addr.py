@@ -32,7 +32,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address
     StandardizeAddr,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response_key_error import (
     VendorResponseKeyError,
@@ -67,7 +67,7 @@ raw_addr_obj2 = RawAddress(
     address_id="11", line1="1137 Huntington Drive Ste B1, South Pasadena, CA 91030"
 )
 
-std_addr_obj = StdAddress(
+std_addr_obj = StandardizedAddress(
     address_id="10",
     line1="8300 N Lamar Blvd",
     city="Austin",
@@ -79,7 +79,7 @@ std_addr_obj = StdAddress(
     formatted_address="8300 North Lamar Boulevard;Austin, TX 78753-5976",
 )
 
-std_addr_obj1 = StdAddress(
+std_addr_obj1 = StandardizedAddress(
     address_id="10",
     line1="8300 N Lamar Blvd",
     city="Austin",
@@ -91,7 +91,7 @@ std_addr_obj1 = StdAddress(
     formatted_address="8300 North Lamar Boulevard;Austin, TX 78753-5976",
 )
 
-std_addr_obj2 = StdAddress(
+std_addr_obj2 = StandardizedAddress(
     address_id="11",
     line1="1137 Huntington Drive Ste B1",
     city="Los Angeles",
@@ -245,7 +245,7 @@ def test_address_api_call(mocked_session: MagicMock) -> None:
         response.raw = BytesIO(json.dumps(response_data).encode())
         mocked_session.return_value = response
         # act
-        r: List[StdAddress] = StandardizeAddr().standardize(
+        r: List[StandardizedAddress] = StandardizeAddr().standardize(
             raw_addrs,
             vendor_obj=MockStandardizingVendor(),
             cache_handler_obj=DocumentDBCacheHandler(),
@@ -265,7 +265,7 @@ def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> None:
     arrange_mongo()
 
     # act
-    r: List[StdAddress] = StandardizeAddr().standardize(
+    r: List[StandardizedAddress] = StandardizeAddr().standardize(
         raw_addrs,
         cache_handler_obj=MockCacheHandler(),
         vendor_obj=MelissaStandardizingVendor(

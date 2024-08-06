@@ -6,7 +6,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import 
     RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
@@ -22,9 +22,11 @@ class MockStandardizingVendor(StandardizingVendor):
     def standardize(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
     ) -> List[VendorResponse]:
-        vendor_specific_addresses: List[StdAddress] = []
+        vendor_specific_addresses: List[StandardizedAddress] = []
         for address in raw_addresses:
-            address_dict: StdAddress = StdAddress.from_raw_address(address)
+            address_dict: StandardizedAddress = StandardizedAddress.from_raw_address(
+                address
+            )
             address_dict.set_id(address_dict.address_id)
             address_dict.latitude = "39.406215"
             address_dict.longitude = "-76.450524"
@@ -44,12 +46,12 @@ class MockStandardizingVendor(StandardizingVendor):
     @staticmethod
     def vendor_specific_to_std(
         vendor_specific_addresses: List[VendorResponse],
-    ) -> List[StdAddress]:
+    ) -> List[StandardizedAddress]:
         """
         each vendor class knows how to convert its response to StdAddress
         """
         std_addresses = [
-            StdAddress(
+            StandardizedAddress(
                 address_id=a.api_call_response["address_id"],
                 line1=a.api_call_response["line1"],
                 line2=a.api_call_response["line2"],

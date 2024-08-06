@@ -12,7 +12,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import 
     RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
@@ -31,7 +31,7 @@ class StandardizeAddr:
         raw_addresses: List[RawAddress],
         cache_handler_obj: CacheHandler,
         vendor_obj: StandardizingVendor,
-    ) -> List[StdAddress]:
+    ) -> List[StandardizedAddress]:
         # check cache if exists
 
         self.logger.info(
@@ -46,7 +46,7 @@ class StandardizeAddr:
         # check api for non-cached (for every 100 records)
         # do the batching here, sending max batch count of each one to the api and then cache the results of each batch
         max_requests = vendor_obj.batch_request_max_size()
-        new_std_addresses: List[StdAddress] = []
+        new_std_addresses: List[StandardizedAddress] = []
         for i in range(0, len(cache_lookup_result.not_found), max_requests):
             vendor_responses_batch: List[VendorResponse] = vendor_obj.standardize(
                 cache_lookup_result.not_found[i : i + max_requests]

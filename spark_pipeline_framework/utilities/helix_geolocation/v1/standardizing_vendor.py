@@ -7,7 +7,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import 
     RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StdAddress,
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response import (
     VendorResponse,
@@ -36,7 +36,7 @@ class StandardizingVendor(metaclass=ABCMeta):
     @staticmethod
     def vendor_specific_to_std(
         vendor_specific_addresses: List[VendorResponse],
-    ) -> List[StdAddress]:
+    ) -> List[StandardizedAddress]:
         """
         each vendor class knows how to convert its response to StdAddress
         """
@@ -68,7 +68,7 @@ class StandardizingVendor(metaclass=ABCMeta):
 
     @staticmethod
     def _to_vendor_response(
-        vendor_response: List[StdAddress],
+        vendor_response: List[StandardizedAddress],
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,
