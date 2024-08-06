@@ -63,7 +63,7 @@ class FhirSenderProcessor:
                     )
                 )
                 index += 1
-                print(f"Got result {result_list}")
+                # print(f"Got result {result_list}")
                 # yield the result as a dataframe
                 yield pd.DataFrame(result_list)
 

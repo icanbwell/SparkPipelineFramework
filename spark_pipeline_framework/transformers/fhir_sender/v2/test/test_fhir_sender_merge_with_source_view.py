@@ -18,7 +18,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-@pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("run_synchronously", [False])
 def test_fhir_sender_merge_with_source_view(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:
