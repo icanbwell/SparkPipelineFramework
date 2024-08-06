@@ -2,6 +2,7 @@ from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
 
+import pytest
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -15,7 +16,10 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
-def test_fhir_receiver_list_streaming(spark_session: SparkSession) -> None:
+@pytest.mark.parametrize("run_synchronously", [True, False])
+def test_fhir_receiver_list_streaming(
+    spark_session: SparkSession, run_synchronously: bool
+) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -53,7 +57,7 @@ def test_fhir_receiver_list_streaming(spark_session: SparkSession) -> None:
             progress_logger=progress_logger,
             parameters=parameters,
             additional_request_headers={"SampleHeader": "TestValue"},
-            run_synchronously=True,
+            run_synchronously=run_synchronously,
             use_data_streaming=True,
         ).transform(df)
 

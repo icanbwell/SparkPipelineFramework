@@ -2,6 +2,7 @@ from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
 
+import pytest
 from mockserver_client.mock_requests_loader import (
     load_mock_fhir_requests_from_folder,
     load_mock_source_api_json_responses,
@@ -55,8 +56,9 @@ slot_practitioner_graph = {
 }
 
 
+@pytest.mark.parametrize("run_synchronously", [True, False])
 def test_fhir_receiver_graph_synthetic_run_in_parallel(
-    spark_session: SparkSession,
+    spark_session: SparkSession, run_synchronously: bool
 ) -> None:
     # Arrange
     print()
@@ -121,6 +123,7 @@ def test_fhir_receiver_graph_synthetic_run_in_parallel(
             # expand_fhir_bundle=True,
             graph_json=slot_practitioner_graph,
             separate_bundle_resources=True,
+            run_synchronously=run_synchronously,
         ).transform(df)
 
     # Assert

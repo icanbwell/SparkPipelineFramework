@@ -2,6 +2,7 @@ from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
 
+import pytest
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -52,7 +53,10 @@ slot_practitioner_graph = {
 }
 
 
-def test_fhir_receiver_graph(spark_session: SparkSession) -> None:
+@pytest.mark.parametrize("run_synchronously", [True, False])
+def test_fhir_receiver_graph(
+    spark_session: SparkSession, run_synchronously: bool
+) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -100,6 +104,7 @@ def test_fhir_receiver_graph(spark_session: SparkSession) -> None:
             additional_parameters=["contained=true"],
             action_payload=slot_practitioner_graph,
             expand_fhir_bundle=True,
+            run_synchronously=run_synchronously,
         ).transform(df)
 
     # Assert

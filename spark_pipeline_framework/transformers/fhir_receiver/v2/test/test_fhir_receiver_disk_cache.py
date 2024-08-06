@@ -2,6 +2,7 @@ from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
 
+import pytest
 from mockserver_client.mock_requests_loader import load_mock_fhir_requests_from_folder
 from pyspark import StorageLevel
 from pyspark.sql import SparkSession, DataFrame
@@ -16,7 +17,10 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
-def test_fhir_receiver_disk_cache(spark_session: SparkSession) -> None:
+@pytest.mark.parametrize("run_synchronously", [True, False])
+def test_fhir_receiver_disk_cache(
+    spark_session: SparkSession, run_synchronously: bool
+) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -59,6 +63,7 @@ def test_fhir_receiver_disk_cache(spark_session: SparkSession) -> None:
             file_path=patient_json_path,
             progress_logger=progress_logger,
             cache_storage_level=StorageLevel.DISK_ONLY,
+            run_synchronously=run_synchronously,
         ).transform(df)
 
     # Assert
