@@ -1,6 +1,9 @@
+import csv
+from io import StringIO
 from typing import List, Dict, Any, Optional, cast
 
 import requests
+from helix_fhir_client_sdk.utilities.list_chunker import ListChunker
 
 from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
@@ -17,13 +20,19 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response imp
 
 
 class CensusStandardizingVendor(StandardizingVendor):
+    def __init__(self, use_bulk_api: bool = True) -> None:
+        super().__init__(version="1")
+        self._use_bulk_api: bool = use_bulk_api
+
     @staticmethod
     def get_vendor_name() -> str:
         return "census"
 
     @staticmethod
     def batch_request_max_size() -> int:
-        return 100
+        # The Census service has a limit of 10,000 addresses per batch
+        # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
+        return 9000
 
     def standardize(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
@@ -31,26 +40,41 @@ class CensusStandardizingVendor(StandardizingVendor):
         """
         returns the vendor specific response from the vendor
         """
-        vendor_specific_addresses: List[Dict[str, Any]] = []
-        for address in raw_addresses:
-            address_dict = address.to_dict()
-            standardized_address_dict = self._api_call(
-                one_line_address=address.to_str()
-            )
-            standardized_address: Optional[StandardizedAddress] = (
-                self._parse_geolocation_response(
-                    response_json=standardized_address_dict, record_id=address.get_id()
-                )
-                if standardized_address_dict
-                else None
-            )
-            if standardized_address:
-                vendor_specific_addresses.append(standardized_address.to_dict())
-            else:
-                vendor_specific_addresses.append(address_dict)
-            print("vendor specific address json")
-            print(address_dict)
+        standardized_address_dicts: List[StandardizedAddress] = []
 
+        if not self._use_bulk_api:
+            for chunk in ListChunker().divide_into_chunks(
+                raw_addresses, self.batch_request_max_size()
+            ):
+                standardized_address_dicts.extend(
+                    self._bulk_api_call(raw_addresses=chunk)
+                )
+        else:
+            for address in raw_addresses:
+                address_dict = address.to_dict()
+                standardized_address_dict = self._api_call(
+                    one_line_address=address.to_str()
+                )
+                standardized_address: Optional[StandardizedAddress] = (
+                    self._parse_geolocation_response(
+                        response_json=standardized_address_dict,
+                        record_id=address.get_id(),
+                    )
+                    if standardized_address_dict
+                    else None
+                )
+                if standardized_address:
+                    standardized_address_dicts.append(standardized_address)
+                else:
+                    standardized_address_dicts.append(
+                        StandardizedAddress.from_raw_address(address)
+                    )
+
+        # Now convert to vendor response
+        vendor_specific_addresses: List[Dict[str, Any]] = [
+            standardized_address.to_dict()
+            for standardized_address in standardized_address_dicts
+        ]
         vendor_responses: List[VendorResponse] = super()._to_vendor_response(
             vendor_response=vendor_specific_addresses,
             raw_addresses=raw_addresses,
@@ -58,6 +82,121 @@ class CensusStandardizingVendor(StandardizingVendor):
             response_version=self.get_version(),
         )
         return vendor_responses
+
+    def _bulk_api_call(
+        self, raw_addresses: List[RawAddress]
+    ) -> List[StandardizedAddress]:
+        """
+        Make a bulk API call to the vendor
+
+        :param raw_addresses: List of addresses
+        :return: List of responses
+        """
+        # Create a CSV file with the addresses
+        file_contents = ""  # '"Unique ID", "Street address", "City", "State", "ZIP"'
+        for address in raw_addresses:
+            file_contents += f'\n"{address.get_id()}", "{address.address.line1}", "{address.address.city}", "{address.address.state}", "{address.address.zipcode}"'
+        # Define the URL and parameters
+        url = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
+        files = {"addressFile": ("localfile.csv", file_contents)}
+        data = {"benchmark": "4"}
+
+        # Send the POST request
+        response = requests.post(url, files=files, data=data)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Parse the response content
+            response_text = response.text
+            # Use StringIO to treat the response text as a file-like object
+            f = StringIO(response_text)
+
+            # Define fieldnames based on the expected output
+            fieldnames = [
+                "ID",
+                "Input Address",
+                "Match Status",
+                "Match Type",
+                "Matched Address",
+                "Coordinates",
+                "TIGER Line ID",
+                "Side",
+            ]
+
+            # Use DictReader to parse the CSV response
+            reader = csv.DictReader(f, fieldnames=fieldnames)
+
+            # Convert reader to a list of dictionaries
+            # noinspection PyTypeChecker
+            results: List[Dict[str, Any]] = [row for row in reader]
+            responses: List[StandardizedAddress] = [
+                self._parse_csv_response(r, raw_addresses=raw_addresses)
+                for r in results
+            ]
+            # sort the list, so it is in the same order as the raw_addresses.
+            # Census API does not return list in same order
+            matching_responses: List[StandardizedAddress] = [
+                [r for r in responses if r.address.address_id == raw_address.get_id()][
+                    0
+                ]
+                for raw_address in raw_addresses
+            ]
+            return matching_responses
+        else:
+            return []
+
+    # noinspection PyMethodMayBeStatic
+    def _parse_csv_response(
+        self, r: Dict[str, Any], raw_addresses: List[RawAddress]
+    ) -> StandardizedAddress:
+        import re
+
+        def split_address(address: str) -> Dict[str, str] | None:
+            # Define regex pattern for matching the address components
+            pattern = r"(?P<address1>[^,]+), (?P<city>[^,]+), (?P<state>[A-Z]{2}), (?P<zipcode>\d{5})"
+            match = re.match(pattern, address)
+
+            if match:
+                components = match.groupdict()
+                # Add address line 2 as empty since it is not present in the input address
+                components["address2"] = ""
+                return components
+            else:
+                return None
+
+        # Split the address
+        address_components: Dict[str, Any] | None = (
+            split_address(cast(str, r.get("Matched Address")))
+            if r.get("Matched Address")
+            else None
+        )
+        if not address_components:
+            return self._get_matching_raw_address(r["ID"], raw_addresses)
+        line1 = address_components.get("address1", "")
+        line2 = address_components.get("address2", "")
+        city = address_components.get("city", "")
+        state = address_components.get("state", "")
+        zipcode = address_components.get("zipcode", "")
+        latitude = r["Coordinates"].split(",")[1] if r.get("Coordinates") else ""
+        longitude = r["Coordinates"].split(",")[0] if r.get("Coordinates") else ""
+        return (
+            StandardizedAddress(
+                address_id=r["ID"],
+                line1=line1,
+                line2=line2,
+                city=city,
+                county="",
+                state=state,
+                zipcode=zipcode,
+                country="US",
+                latitude=latitude,
+                longitude=longitude,
+                standardize_vendor="census",
+                formatted_address=r["Matched Address"],
+            )
+            if r.get("Matched Address")
+            else self._get_matching_raw_address(r["ID"], raw_addresses)
+        )
 
     def _api_call(self, one_line_address: str) -> Dict[str, str] | None:
         params = {
@@ -233,3 +372,15 @@ class CensusStandardizingVendor(StandardizingVendor):
         )
 
         return standardized_address
+
+    # noinspection PyMethodMayBeStatic
+    def _get_matching_raw_address(
+        self, address_id: str, raw_addresses: List[RawAddress]
+    ) -> StandardizedAddress:
+        return next(
+            (
+                StandardizedAddress.from_raw_address(x)
+                for x in raw_addresses
+                if x.get_id() == address_id
+            )
+        )
