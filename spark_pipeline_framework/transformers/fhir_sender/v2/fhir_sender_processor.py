@@ -49,23 +49,35 @@ class FhirSenderProcessor:
             """
             pdf: pd.DataFrame
             index: int = 0
-            # print(f"batch type: {type(batch_iter)}")
-            for pdf in batch_iter:
-                # print(f"pdf type: {type(pdf)}")
-                # convert the dataframe to a list of dictionaries
-                pdf_json: str = pdf.to_json(orient="records")
-                rows: List[Dict[str, Any]] = json.loads(pdf_json)
-                # print(f"Processing partition {pdf.index} with {len(rows)} rows")
-                # send the partition to the server
-                result_list: List[Dict[str, Any]] = (
-                    FhirSenderProcessor.send_partition_to_server(
-                        partition_index=index, parameters=parameters, rows=rows
+            print(f"Processing batch type: {type(batch_iter)}")
+            try:
+                for pdf in batch_iter:
+                    print(f"Processing pdf type: {type(pdf)}")
+                    print(f"Processing pdf: {pdf}")
+                    # convert the dataframe to a list of dictionaries
+                    pdf_json: str = pdf.to_json(orient="records")
+                    rows: List[Dict[str, Any]] = json.loads(pdf_json)
+                    # print(f"Processing partition {pdf.index} with {len(rows)} rows")
+                    print(f"Processing partition {index}: {rows}")
+                    # send the partition to the server
+                    result_list: List[Dict[str, Any]] = (
+                        FhirSenderProcessor.send_partition_to_server(
+                            partition_index=index, parameters=parameters, rows=rows
+                        )
                     )
+                    index += 1
+                    print(f"Got result for partition {index}: {result_list}")
+                    # yield the result as a dataframe
+                    yield pd.DataFrame(result_list)
+            except Exception as e:
+                print(f"Error processing partition {index}: {e}")
+                yield pd.DataFrame(
+                    [
+                        FhirMergeResponseItem.from_error(
+                            e=e, resource_type=parameters.resource_name
+                        ).to_dict()
+                    ]
                 )
-                index += 1
-                # print(f"Got result {result_list}")
-                # yield the result as a dataframe
-                yield pd.DataFrame(result_list)
 
         return process_batch
 

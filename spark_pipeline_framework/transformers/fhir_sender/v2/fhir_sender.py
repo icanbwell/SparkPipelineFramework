@@ -90,7 +90,7 @@ class FhirSender(FrameworkTransformer):
         sort_by_column_name_and_type: Optional[tuple[str, Any]] = None,
         drop_fields_from_json: Optional[List[str]] = None,
         partition_by_column_name: Optional[str] = None,
-        enable_repartitioning: bool = True,
+        enable_repartitioning: bool = False,
         schema: Optional[StructType] = None,
         source_view: Optional[str] = None,
     ):
@@ -425,23 +425,24 @@ class FhirSender(FrameworkTransformer):
             name=f"{name}_fhir_sender", progress_logger=progress_logger
         ):
             # read all the files at path into a dataframe
-            reader: DataFrameReader = df.sparkSession.read
-            if schema:
-                reader = reader.schema(schema)
             try:
                 if source_view:
                     json_df: DataFrame = df.sparkSession.table(source_view)
-                elif delta_lake_table:
-                    path_to_files: str = str(file_path)
-                    json_df = reader.format("delta").load(path_to_files)
-                elif file_format == "parquet":
-                    path_to_files = str(file_path)
-                    json_df = reader.format(file_format).load(path_to_files)
                 else:
-                    path_to_files = str(file_path)
-                    json_df = reader.text(
-                        path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
-                    )
+                    reader: DataFrameReader = df.sparkSession.read
+                    if schema:
+                        reader = reader.schema(schema)
+                    path_to_files: str = str(file_path)
+                    if delta_lake_table:
+                        json_df = reader.format("delta").load(path_to_files)
+                    elif file_format == "parquet":
+                        json_df = reader.format(file_format).load(path_to_files)
+                    else:
+                        json_df = reader.text(
+                            path_to_files,
+                            pathGlobFilter="*.json",
+                            recursiveFileLookup=True,
+                        )
 
             except AnalysisException as e:
                 if str(e).startswith("Path does not exist:"):

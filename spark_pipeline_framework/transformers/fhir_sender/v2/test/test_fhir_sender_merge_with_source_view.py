@@ -2,11 +2,13 @@ import json
 from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
+from typing import Iterable, List, Dict, Any
 from urllib.parse import urljoin
 
 import pytest
 import requests
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StructType, StructField, StringType
 from spark_fhir_schemas.r4.resources.patient import PatientSchema
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -16,6 +18,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHe
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
+import pandas as pd
 
 
 @pytest.mark.parametrize("run_synchronously", [False])
@@ -29,63 +32,32 @@ def test_fhir_sender_merge_with_source_view(
         rmtree(temp_folder)
     makedirs(temp_folder)
 
-    from datetime import datetime
-
-    data = [
-        {
-            "resourceType": "Patient",
-            "id": "00100000002",
-            "meta": {
-                "source": "http://medstarhealth.org/provider",
-                "security": [
-                    {"system": "https://www.icanbwell.com/access", "code": "medstar"},
-                    {"system": "https://www.icanbwell.com/owner", "code": "medstar"},
-                ],
-            },
-            "birthDate": datetime(1990, 1, 1).date(),
-            "gender": "female",
-            "name": [
-                {
-                    "use": "usual",
-                    "text": "t",
-                    "family": "PATIENT1",
-                    "given": ["SHYLA"],
-                    "prefix": [],
-                    "suffix": [],
-                }
-            ],
-        },
-        {
-            "resourceType": "Patient",
-            "id": "00200000002",
-            "meta": {
-                "source": "http://medstarhealth.org/provider",
-                "security": [
-                    {"system": "https://www.icanbwell.com/access", "code": "medstar"},
-                    {"system": "https://www.icanbwell.com/owner", "code": "medstar"},
-                ],
-            },
-            "birthDate": datetime(1994, 1, 1).date(),
-            "gender": "female",
-            "name": [
-                {
-                    "use": "usual",
-                    "text": "t",
-                    "family": "PATIENT2",
-                    "given": ["KATIE"],
-                    "prefix": [],
-                    "suffix": [],
-                }
-            ],
-        },
-    ]
+    test_files_dir: Path = data_dir.joinpath("test_files/patients")
 
     # Create DataFrame
-    # noinspection PyTypeChecker
-    source_df = spark_session.createDataFrame(
-        data, schema=PatientSchema.get_schema()
-    )  # type:ignore[call-overload]
+    schema = PatientSchema.get_schema()
+    # source_df = spark_session.read.schema(schema).json(str(test_files_dir))
+    source_df = spark_session.read.text(
+        str(test_files_dir), pathGlobFilter="*.json", recursiveFileLookup=True
+    )
     source_df.createOrReplaceTempView("source_view")
+
+    # Define a simple pandas function for mapInPandas
+    def process_batch(
+        batch_iter: Iterable[pd.DataFrame],
+    ) -> Iterable[pd.DataFrame]:
+        for pdf in batch_iter:
+            pdf_json: str = pdf.to_json(orient="records")
+            rows: List[Dict[str, Any]] = json.loads(pdf_json)
+            yield pd.DataFrame([{"birthDate": "1990-01-01"}])
+
+    # Apply mapInPandas
+    result_df = source_df.mapInPandas(
+        process_batch, schema=StructType([StructField("birthDate", StringType())])
+    )
+
+    # Show results
+    result_df.show(truncate=False)
 
     response_files_dir: Path = temp_folder.joinpath(
         f"patients-response-{run_synchronously}"
