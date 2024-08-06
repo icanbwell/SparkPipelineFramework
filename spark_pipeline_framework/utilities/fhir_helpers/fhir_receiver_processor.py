@@ -34,6 +34,9 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parame
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
+    FhirGetResponseSchema,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
 )
@@ -86,19 +89,39 @@ class FhirReceiverProcessor:
             pdf: pd.DataFrame
             index: int = 0
             for pdf in batch_iter:
-                # convert the dataframe to a list of dictionaries
-                pdf_json: str = pdf.to_json(orient="records")
-                rows: List[Dict[str, Any]] = json.loads(pdf_json)
-                # print(f"Processing partition {pdf.index} with {len(rows)} rows")
-                # send the partition to the server
-                result_list: List[Dict[str, Any]] = (
-                    FhirReceiverProcessor.send_partition_request_to_server(
-                        partition_index=index, parameters=parameters, rows=rows
+                try:
+                    # convert the dataframe to a list of dictionaries
+                    pdf_json: str = pdf.to_json(orient="records")
+                    rows: List[Dict[str, Any]] = json.loads(pdf_json)
+                    # print(f"Processing partition {pdf.index} with {len(rows)} rows")
+                    # send the partition to the server
+                    result_list: List[Dict[str, Any]] = (
+                        FhirReceiverProcessor.send_partition_request_to_server(
+                            partition_index=index, parameters=parameters, rows=rows
+                        )
                     )
-                )
-                index += 1
-                # yield the result as a dataframe
-                yield pd.DataFrame(result_list)
+                    index += 1
+                    # yield the result as a dataframe
+                    yield pd.DataFrame(result_list)
+                except Exception as e:
+                    yield pd.DataFrame(
+                        [
+                            {
+                                FhirGetResponseSchema.partition_index: index,
+                                FhirGetResponseSchema.sent: 0,
+                                FhirGetResponseSchema.received: 0,
+                                FhirGetResponseSchema.url: parameters.server_url,
+                                FhirGetResponseSchema.responses: [],
+                                FhirGetResponseSchema.first: None,
+                                FhirGetResponseSchema.last: None,
+                                FhirGetResponseSchema.error_text: str(e),
+                                FhirGetResponseSchema.status_code: 400,
+                                FhirGetResponseSchema.request_id: None,
+                                FhirGetResponseSchema.access_token: None,
+                                FhirGetResponseSchema.extra_context_to_return: None,
+                            }
+                        ]
+                    )
 
         return process_batch
 
