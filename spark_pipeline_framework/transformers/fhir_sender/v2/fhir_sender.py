@@ -8,7 +8,7 @@ from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col, get_json_object
+from pyspark.sql.functions import col, get_json_object, to_json, struct
 from pyspark.sql.types import Row, StructType
 from pyspark.sql.utils import AnalysisException, PythonException
 
@@ -443,7 +443,12 @@ class FhirSender(FrameworkTransformer):
                             pathGlobFilter="*.json",
                             recursiveFileLookup=True,
                         )
-
+                # if source dataframe is not a single column dataframe then convert it to a single column dataframe
+                # the column name should be "value"
+                # we use string column because we accept resources of different resourceTypes that have different
+                # schemas
+                if len(json_df.columns) > 1 or "value" not in json_df.columns:
+                    json_df = json_df.select(to_json(struct("*")).alias("value"))
             except AnalysisException as e:
                 if str(e).startswith("Path does not exist:"):
                     if progress_logger:

@@ -2,13 +2,13 @@ import json
 from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
-from typing import Iterable, List, Dict, Any
+from typing import cast
 from urllib.parse import urljoin
 
 import pytest
 import requests
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql.types import StructType
 from spark_fhir_schemas.r4.resources.patient import PatientSchema
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -18,7 +18,6 @@ from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHe
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
-import pandas as pd
 
 
 @pytest.mark.parametrize("run_synchronously", [False])
@@ -36,34 +35,10 @@ def test_fhir_sender_merge_with_source_view(
 
     # Create DataFrame
     schema = PatientSchema.get_schema()
-    # source_df = spark_session.read.schema(schema).json(str(test_files_dir))
-    source_df = spark_session.read.text(
-        str(test_files_dir), pathGlobFilter="*.json", recursiveFileLookup=True
+    source_df = spark_session.read.schema(cast(StructType, schema)).json(
+        str(test_files_dir)
     )
-    source_df.printSchema()
-    source_df.show(truncate=False)
     source_df.createOrReplaceTempView("source_view")
-
-    # Define a simple pandas function for mapInPandas
-    def process_batch(
-        batch_iter: Iterable[pd.DataFrame],
-    ) -> Iterable[pd.DataFrame]:
-        for pdf in batch_iter:
-            print(f"Processing test pdf type: {type(pdf)}")
-            print(f"Processing test pdf: {pdf}")
-            pdf_json: str = pdf.to_json(orient="records")
-            print(f"Processing test pdf_json: {type(pdf_json)} {pdf_json}")
-            rows: List[Dict[str, Any]] = json.loads(pdf_json)
-            print(f"Processing test partition  {type(rows)} {rows}")
-            yield pd.DataFrame([{"birthDate": "1990-01-01"}])
-
-    # Apply mapInPandas
-    result_df = source_df.mapInPandas(
-        process_batch, schema=StructType([StructField("birthDate", StringType())])
-    )
-
-    # Show results
-    result_df.show(truncate=False)
 
     response_files_dir: Path = temp_folder.joinpath(
         f"patients-response-{run_synchronously}"
