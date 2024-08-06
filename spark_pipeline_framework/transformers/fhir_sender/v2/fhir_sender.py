@@ -6,10 +6,9 @@ from typing import Any, Dict, List, Optional, Union, Callable
 
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
-from pyspark.sql import DataFrameReader
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, get_json_object, to_json, struct
-from pyspark.sql.types import Row, StructType
+from pyspark.sql.types import Row
 from pyspark.sql.utils import AnalysisException, PythonException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -91,7 +90,6 @@ class FhirSender(FrameworkTransformer):
         drop_fields_from_json: Optional[List[str]] = None,
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = False,
-        schema: Optional[StructType] = None,
         source_view: Optional[str] = None,
     ):
         """
@@ -287,9 +285,6 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(enable_repartitioning=enable_repartitioning)
 
-        self.schema: Param[Optional[StructType]] = Param(self, "schema", "")
-        self._setDefault(schema=None)
-
         self.source_view: Param[Optional[str]] = Param(self, "source_view", "")
         self._setDefault(source_view=None)
 
@@ -376,8 +371,6 @@ class FhirSender(FrameworkTransformer):
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
-        schema: Optional[StructType] = self.getOrDefault(self.schema)
-
         source_view: Optional[str] = self.getOrDefault(self.source_view)
 
         if not enable_repartitioning:
@@ -429,16 +422,17 @@ class FhirSender(FrameworkTransformer):
                 if source_view:
                     json_df: DataFrame = df.sparkSession.table(source_view)
                 else:
-                    reader: DataFrameReader = df.sparkSession.read
-                    if schema:
-                        reader = reader.schema(schema)
                     path_to_files: str = str(file_path)
                     if delta_lake_table:
-                        json_df = reader.format("delta").load(path_to_files)
+                        json_df = df.sparkSession.read.format("delta").load(
+                            path_to_files
+                        )
                     elif file_format == "parquet":
-                        json_df = reader.format(file_format).load(path_to_files)
+                        json_df = df.sparkSession.read.format(file_format).load(
+                            path_to_files
+                        )
                     else:
-                        json_df = reader.text(
+                        json_df = df.sparkSession.read.text(
                             path_to_files,
                             pathGlobFilter="*.json",
                             recursiveFileLookup=True,
