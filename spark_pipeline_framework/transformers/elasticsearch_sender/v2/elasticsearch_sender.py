@@ -201,7 +201,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     "url", "success"
                 )
                 failed_df: DataFrame = result_df.where(col("failed") > 0).select(
-                    "url", "failed", "payload"
+                    "url", "failed", "payload", "error"
                 )
 
                 try:

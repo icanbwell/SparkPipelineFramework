@@ -83,6 +83,7 @@ def send_json_bundle_to_elasticsearch(
     )
     success: int = 0
     failed: int = 0
+    errors: List[str] = []
 
     try:
         success, failed = bulk(
@@ -91,6 +92,7 @@ def send_json_bundle_to_elasticsearch(
     except BulkIndexError as e:
         for error in e.errors:
             logger.error(f"The following record failed to index: {error}")
+            errors.append(error)
 
     full_uri: furl = furl(server_url)
     full_uri /= index
@@ -100,4 +102,5 @@ def send_json_bundle_to_elasticsearch(
         failed=failed,
         payload=list(payload),
         partition_index=0,
+        error=json.dumps(errors) if len(errors) > 0 else None,
     )

@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pyspark.sql.types import (
     StructType,
@@ -31,6 +31,9 @@ class ElasticSearchResult:
     partition_index: int
     """ The index of the partition """
 
+    error: Optional[str]
+    """ The error message if the operation failed """
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "url": self.url,
@@ -38,6 +41,7 @@ class ElasticSearchResult:
             "failed": self.failed,
             "payload": self.payload,
             "partition_index": self.partition_index,
+            "error": self.error,
         }
 
     def to_dict_flatten_payload(self) -> Dict[str, Any]:
@@ -51,6 +55,7 @@ class ElasticSearchResult:
             "failed": self.failed,
             "partition_index": self.partition_index,
             "payload": json.dumps(self.payload),
+            "error": self.error,
         }
 
     @staticmethod
@@ -65,5 +70,6 @@ class ElasticSearchResult:
                 StructField("failed", IntegerType(), True),
                 StructField("payload", StringType(), True),
                 StructField("partition_index", IntegerType(), True),
+                StructField("error", StringType(), True),
             ]
         )
