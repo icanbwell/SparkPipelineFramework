@@ -1,6 +1,8 @@
 from typing import NamedTuple, Dict, Optional
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import RawAddress
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
+    RawAddress,
+)
 
 
 class VendorResponse(NamedTuple):

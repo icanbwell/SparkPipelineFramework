@@ -18,15 +18,18 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
-    RawAddress,
-    StdAddress,
-)
+
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler import (
     CacheHandler,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
+    RawAddress,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address import (
     StandardizeAddr,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
+    StdAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
@@ -174,24 +177,14 @@ class AddressStandardization(FrameworkTransformer):
                     # map standard address back to a list of dictionary objects
                     standard_address_list: List[Dict[str, str]] = [
                         {
-                            "address_id": standard_address.address.address_id,
-                            f"{geolocation_column_prefix}latitude": standard_address.address.latitude,
-                            f"{geolocation_column_prefix}longitude": standard_address.address.longitude,
-                            address_column_mapping[
-                                "line1"
-                            ]: standard_address.address.line1,
-                            address_column_mapping[
-                                "line2"
-                            ]: standard_address.address.line2,
-                            address_column_mapping[
-                                "city"
-                            ]: standard_address.address.city,
-                            address_column_mapping[
-                                "state"
-                            ]: standard_address.address.state,
-                            address_column_mapping[
-                                "zipcode"
-                            ]: standard_address.address.zipcode,
+                            "address_id": standard_address.address_id,
+                            f"{geolocation_column_prefix}latitude": standard_address.latitude,
+                            f"{geolocation_column_prefix}longitude": standard_address.longitude,
+                            address_column_mapping["line1"]: standard_address.line1,
+                            address_column_mapping["line2"]: standard_address.line2,
+                            address_column_mapping["city"]: standard_address.city,
+                            address_column_mapping["state"]: standard_address.state,
+                            address_column_mapping["zipcode"]: standard_address.zipcode,
                         }
                         for standard_address in standard_addresses
                     ]

@@ -2,14 +2,15 @@ from typing import List, Type
 
 import structlog
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
-    RawAddress,
-)
+
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler import (
     CacheHandler,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_result import (
     CacheResult,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
+    RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,

@@ -1,9 +1,11 @@
-from typing import Dict, List
+from typing import List
 
 import structlog
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
     StdAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
@@ -20,9 +22,9 @@ class GeocodioStandardizingVendor(StandardizingVendor):
     def standardize(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
     ) -> List[VendorResponse]:
-        vendor_specific_addresses: List[Dict[str, str]] = []
+        vendor_specific_addresses: List[StdAddress] = []
         for address in raw_addresses:
-            address_dict = address.to_dict()
+            address_dict = StdAddress.from_raw_address(address)
 
             vendor_specific_addresses.append(address_dict)
             print("vendor specific address json")

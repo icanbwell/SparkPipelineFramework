@@ -1,9 +1,11 @@
-from typing import Dict, List
+from typing import List
 
 import structlog
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
     StdAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
@@ -20,13 +22,13 @@ class MockStandardizingVendor(StandardizingVendor):
     def standardize(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
     ) -> List[VendorResponse]:
-        vendor_specific_addresses: List[Dict[str, str]] = []
+        vendor_specific_addresses: List[StdAddress] = []
         for address in raw_addresses:
-            address_dict = address.to_dict()
-            address_dict["RecordID"] = address_dict["address_id"]
-            address_dict["latitude"] = "39.406215"
-            address_dict["longitude"] = "-76.450524"
-            address_dict["country"] = "usa"
+            address_dict: StdAddress = StdAddress.from_raw_address(address)
+            address_dict.set_id(address_dict.address_id)
+            address_dict.latitude = "39.406215"
+            address_dict.longitude = "-76.450524"
+            address_dict.country = "usa"
             vendor_specific_addresses.append(address_dict)
             print("vendor specific address json")
             print(address_dict)

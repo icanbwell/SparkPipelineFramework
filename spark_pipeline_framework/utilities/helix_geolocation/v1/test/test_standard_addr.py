@@ -18,18 +18,21 @@ from requests import Session
 
 import pymongo
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
-    RawAddress,
-    StdAddress,
-)
+
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.document_db_cache_handler import (
     DocumentDBCacheHandler,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.mock_cache_handler import (
     MockCacheHandler,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
+    RawAddress,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address import (
     StandardizeAddr,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
+    StdAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response_key_error import (
     VendorResponseKeyError,
@@ -193,7 +196,7 @@ def test_raw_address_to_export() -> None:
 
 def test_std_address_to_export() -> None:
     addr_dict = std_addr_obj.to_dict()
-    addr_str = std_addr_obj.address.formatted_address
+    addr_str = std_addr_obj.formatted_address
     assert addr_dict == {
         "address_id": "10",
         "country": "US",
@@ -252,14 +255,8 @@ def test_address_api_call(mocked_session: MagicMock) -> None:
         assert r[0].get_id() == "100"
         assert r[1].get_id() == "100"
         assert r[2].get_id() == "11"
-        assert (
-            r[0].address.formatted_address
-            == expected_result[0].address.formatted_address
-        )
-        assert (
-            r[1].address.formatted_address
-            == expected_result[1].address.formatted_address
-        )
+        assert r[0].formatted_address == expected_result[0].formatted_address
+        assert r[1].formatted_address == expected_result[1].formatted_address
 
 
 def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> None:
@@ -278,9 +275,7 @@ def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> None:
 
     # assert
     assert r[0].get_id() == "11"
-    assert (
-        r[0].address.formatted_address == expected_result[0].address.formatted_address
-    )
+    assert r[0].formatted_address == expected_result[0].formatted_address
 
 
 def test_documentdb_cache() -> None:
@@ -315,15 +310,15 @@ def test_standardize_stress_test() -> None:
         res = deepcopy(response_data)
         res["Records"] = [
             {
-                "RecordID": a.address.address_id,
+                "RecordID": a.address_id,
                 "FormattedAddress": f"{a.to_str()}",
-                "AddressLine1": a.address.line1,
+                "AddressLine1": a.line1,
                 "AddressLine2": "",
-                "Locality": a.address.city,
+                "Locality": a.city,
                 "SubAdministrativeArea": "a county",
-                "AdministrativeArea": a.address.state,
-                "PostalCode": a.address.zipcode,
-                "CountryISO3166_1_Alpha2": a.address.zipcode,
+                "AdministrativeArea": a.state,
+                "PostalCode": a.zipcode,
+                "CountryISO3166_1_Alpha2": a.zipcode,
                 "Latitude": "000",
                 "Longitude": "-000",
             }
@@ -405,7 +400,7 @@ def test_bad_request() -> None:
         res = deepcopy(response_data)
         res["Records"] = [
             {
-                "RecordID": a.address.address_id,
+                "RecordID": a.address_id,
                 "FormattedAddress": "",
                 "AddressLine1": "",
                 "AddressLine2": "",

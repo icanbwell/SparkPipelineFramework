@@ -3,8 +3,10 @@ from typing import Dict, List
 
 import structlog
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
     StdAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response import (
@@ -66,7 +68,7 @@ class StandardizingVendor(metaclass=ABCMeta):
 
     @staticmethod
     def _to_vendor_response(
-        vendor_response: List[Dict[str, str]],
+        vendor_response: List[StdAddress],
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,
@@ -79,8 +81,8 @@ class StandardizingVendor(metaclass=ABCMeta):
         # find and assign
         return [
             VendorResponse(
-                api_call_response=r,
-                related_raw_address=id_response_map[r["RecordID"]],
+                api_call_response=r.to_dict(),
+                related_raw_address=id_response_map[r.get_id()],
                 vendor_name=vendor_name,
                 response_version=response_version,
             )

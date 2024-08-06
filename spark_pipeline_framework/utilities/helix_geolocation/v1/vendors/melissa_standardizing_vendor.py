@@ -7,8 +7,10 @@ from urllib3 import Retry
 from spark_pipeline_framework.utilities.aws.config import get_ssm_config
 import structlog
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
     StdAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
@@ -103,9 +105,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
         ]
         return std_addresses
 
-    def _call_std_addr_api(
-        self, raw_addresses: List[RawAddress]
-    ) -> List[Dict[str, str]]:
+    def _call_std_addr_api(self, raw_addresses: List[RawAddress]) -> List[StdAddress]:
         """
         Please check https://www.melissa.com/quickstart-guides/global-address for more info
         Please make sure "License Key" is available https://www.melissa.com/user/user_account.aspx
@@ -141,7 +141,23 @@ class MelissaStandardizingVendor(StandardizingVendor):
 
             return []
 
-        return vendor_specific_addresses
+        return [
+            StdAddress(
+                address_id=a["RecordID"],
+                line1=a["AddressLine1"],
+                line2="",
+                city=a["Locality"],
+                county=a["SubAdministrativeArea"],
+                zipcode=a["PostalCode"],
+                state=a["AdministrativeArea"],
+                country=a["CountryISO3166_1_Alpha2"],
+                latitude=a["Latitude"],
+                longitude=a["Longitude"],
+                formatted_address=a["FormattedAddress"],
+                standardize_vendor=self.get_vendor_name(),
+            )
+            for a in vendor_specific_addresses
+        ]
 
     def _api_call(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         # making the request ready

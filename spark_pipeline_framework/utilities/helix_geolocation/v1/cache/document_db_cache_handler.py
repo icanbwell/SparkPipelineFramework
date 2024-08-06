@@ -7,15 +7,18 @@ from pymongo import UpdateOne, MongoClient
 from spark_pipeline_framework.utilities.document_db_connection.v1.document_db_connection import (
     DocumentDbServerUrl,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.address import (
-    StdAddress,
-    RawAddress,
-)
+
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler import (
     CacheHandler,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_result import (
     CacheResult,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
+    RawAddress,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
+    StdAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
@@ -35,8 +38,9 @@ class DocumentDBCacheHandler(CacheHandler):
         self,
         database_name: str = "helix_address_cache",
         collection_name: str = "helix_address_cache",
+        server_url: Optional[str] = None,
     ):
-        self.__server_url: Optional[str] = None
+        self.__server_url: Optional[str] = server_url
         self.database_name: str = database_name
         self.collection_name: str = collection_name
         self.__collection: Optional[pymongo.collection.Collection[Any]] = None
