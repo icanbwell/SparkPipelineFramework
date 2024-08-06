@@ -1,0 +1,151 @@
+import json
+from os import path, makedirs, environ
+from pathlib import Path
+from shutil import rmtree
+from urllib.parse import urljoin
+
+import pytest
+import requests
+from pyspark.sql import SparkSession, DataFrame
+from spark_fhir_schemas.r4.resources.patient import PatientSchema
+
+from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender import FhirSender
+from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    create_empty_dataframe,
+)
+
+
+@pytest.mark.parametrize("run_synchronously", [True, False])
+def test_fhir_sender_merge_with_source_view(
+    spark_session: SparkSession, run_synchronously: bool
+) -> None:
+    # Arrange
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    temp_folder = data_dir.joinpath("./temp")
+    if path.isdir(temp_folder):
+        rmtree(temp_folder)
+    makedirs(temp_folder)
+
+    from datetime import datetime
+
+    data = [
+        {
+            "resourceType": "Patient",
+            "id": "00100000002",
+            "meta": {
+                "source": "http://medstarhealth.org/provider",
+                "security": [
+                    {"system": "https://www.icanbwell.com/access", "code": "medstar"},
+                    {"system": "https://www.icanbwell.com/owner", "code": "medstar"},
+                ],
+            },
+            "birthDate": datetime(1990, 1, 1).date(),
+            "gender": "female",
+            "name": [
+                {
+                    "use": "usual",
+                    "text": "t",
+                    "family": "PATIENT1",
+                    "given": ["SHYLA"],
+                    "prefix": [],
+                    "suffix": [],
+                }
+            ],
+        },
+        {
+            "resourceType": "Patient",
+            "id": "00200000002",
+            "meta": {
+                "source": "http://medstarhealth.org/provider",
+                "security": [
+                    {"system": "https://www.icanbwell.com/access", "code": "medstar"},
+                    {"system": "https://www.icanbwell.com/owner", "code": "medstar"},
+                ],
+            },
+            "birthDate": datetime(1994, 1, 1).date(),
+            "gender": "female",
+            "name": [
+                {
+                    "use": "usual",
+                    "text": "t",
+                    "family": "PATIENT2",
+                    "given": ["KATIE"],
+                    "prefix": [],
+                    "suffix": [],
+                }
+            ],
+        },
+    ]
+
+    # Create DataFrame
+    # noinspection PyTypeChecker
+    source_df = spark_session.createDataFrame(
+        data, schema=PatientSchema.get_schema()
+    )  # type:ignore[call-overload]
+    source_df.createOrReplaceTempView("source_view")
+
+    response_files_dir: Path = temp_folder.joinpath(
+        f"patients-response-{run_synchronously}"
+    )
+    parameters = {"flow_name": "Test Pipeline V2"}
+
+    df: DataFrame = create_empty_dataframe(spark_session=spark_session)
+
+    fhir_server_url: str = environ["FHIR_SERVER_URL"]
+    auth_client_id = environ["FHIR_CLIENT_ID"]
+    auth_client_secret = environ["FHIR_CLIENT_SECRET"]
+    auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
+
+    logger = get_logger(__name__)
+
+    token_url = TokenHelper.get_auth_server_url_from_well_known_url(
+        well_known_url=auth_well_known_url
+    )
+    assert token_url
+
+    authorization_header = TokenHelper.get_authorization_header_from_environment()
+
+    environ["LOGLEVEL"] = "DEBUG"
+    # Act
+    with ProgressLogger() as progress_logger:
+        FhirSender(
+            resource="Patient",
+            server_url=fhir_server_url,
+            source_view="source_view",
+            response_path=response_files_dir,
+            progress_logger=progress_logger,
+            batch_size=1,
+            run_synchronously=run_synchronously,
+            parameters=parameters,
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
+            auth_well_known_url=auth_well_known_url,
+            view="result_view",
+            error_view="error_view",
+        ).transform(df)
+
+    # Assert
+    error_df = spark_session.read.table("error_view")
+    result_df = spark_session.read.table("result_view")
+    # Assert
+    assert error_df.count() == 0
+    assert result_df.count() == 2
+
+    response = requests.get(
+        urljoin(fhir_server_url, "Patient/00100000002"), headers=authorization_header
+    )
+    assert response.ok, response.text
+    json_text: str = response.text
+    obj = json.loads(json_text)
+    assert obj["birthDate"] == "1990-01-01"
+
+    response = requests.get(
+        urljoin(fhir_server_url, "Patient/00200000002"), headers=authorization_header
+    )
+    assert response.ok, response.text
+    json_text = response.text
+    obj = json.loads(json_text)
+    assert obj["birthDate"] == "1994-01-01"
