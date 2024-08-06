@@ -34,8 +34,20 @@ class CensusStandardizingVendor(StandardizingVendor):
         vendor_specific_addresses: List[Dict[str, Any]] = []
         for address in raw_addresses:
             address_dict = address.to_dict()
-
-            vendor_specific_addresses.append(address_dict)
+            standardized_address_dict = self._api_call(
+                one_line_address=address.to_str()
+            )
+            standardized_address: Optional[StandardizedAddress] = (
+                self._parse_geolocation_response(
+                    response_json=standardized_address_dict, record_id=address.get_id()
+                )
+                if standardized_address_dict
+                else None
+            )
+            if standardized_address:
+                vendor_specific_addresses.append(standardized_address.to_dict())
+            else:
+                vendor_specific_addresses.append(address_dict)
             print("vendor specific address json")
             print(address_dict)
 
@@ -77,13 +89,13 @@ class CensusStandardizingVendor(StandardizingVendor):
 
     @staticmethod
     def _parse_geolocation_response(
-        *,
-        response_json: Dict[str, Any],
+        *, response_json: Dict[str, Any], record_id: str
     ) -> Optional[StandardizedAddress]:
         """
         Parse the JSON response from the US Census API and return a standardized address object
 
         :param response_json: JSON response
+        :param record_id: Record ID
         :return: Standardized FHIR Address object
         """
         if not response_json:
@@ -207,7 +219,7 @@ class CensusStandardizingVendor(StandardizingVendor):
 
         # Create a new address object
         standardized_address: StandardizedAddress = StandardizedAddress(
-            address_id="",
+            address_id=record_id,
             line1=address_line,
             line2="",
             city=city or "",

@@ -82,7 +82,9 @@ class StandardizingVendor(metaclass=ABCMeta):
         return [
             VendorResponse(
                 api_call_response=r,
-                related_raw_address=id_response_map[r["RecordID"]],
+                related_raw_address=id_response_map[
+                    r.get("RecordID") or r.get("address_id") or ""
+                ],
                 vendor_name=vendor_name,
                 response_version=response_version,
             )

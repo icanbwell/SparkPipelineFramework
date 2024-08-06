@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any
+from typing import Any, Dict
 
 from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
@@ -64,3 +64,6 @@ class StandardizedAddress(RawAddress):
             return str(self.address.formatted_address)
         else:
             return super(StandardizedAddress, self).to_str()
+
+    def to_dict(self) -> Dict[str, str]:
+        return dict(self.address._asdict())
