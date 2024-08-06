@@ -9,9 +9,6 @@ import csv
 from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
-    StandardizedAddress,
-)
 from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
     StandardizingVendor,
 )
@@ -450,12 +447,12 @@ def save_to_cache(
 # uses a list of raw addresses to pull out the related vendor responses in a list
 def filter_cached_addresses(
     cache_result: List[RawAddress], addresses: List[Dict[Any, Any]]
-) -> List[StandardizedAddress]:
+) -> List[Dict[Any, Any]]:
     uncached_address_hashes = set()
     for result in cache_result:
         uncached_address_hashes.add(result.to_hash())
 
-    filtered_addresses: List[StandardizedAddress] = []
+    filtered_addresses = []
     for address in addresses:
         raw_address = RawAddress(
             address_id=address["RecordID"],
@@ -466,7 +463,7 @@ def filter_cached_addresses(
             zipcode=address["zipcode"],
         )
         if raw_address.to_hash() in uncached_address_hashes:
-            filtered_addresses.append(StandardizedAddress.from_raw_address(raw_address))
+            filtered_addresses.append(address)
 
     return filtered_addresses
 

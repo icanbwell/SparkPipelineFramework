@@ -31,9 +31,9 @@ class CensusStandardizingVendor(StandardizingVendor):
         """
         returns the vendor specific response from the vendor
         """
-        vendor_specific_addresses: List[StandardizedAddress] = []
+        vendor_specific_addresses: List[Dict[str, Any]] = []
         for address in raw_addresses:
-            address_dict = StandardizedAddress.from_raw_address(address)
+            address_dict = address.to_dict()
 
             vendor_specific_addresses.append(address_dict)
             print("vendor specific address json")

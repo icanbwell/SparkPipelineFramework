@@ -1,38 +1,60 @@
 import hashlib
-from dataclasses import dataclass, asdict
+from collections import namedtuple
 from typing import Dict
 
 
-@dataclass
 class RawAddress:
-    address_id: str
-    line1: str
-    line2: str = ""
-    city: str = ""
-    state: str = ""
-    zipcode: str = ""
-    country: str = "US"
+    """
+    The address that needs to get standardized
+    """
+
+    _Address = namedtuple(
+        "_Address",
+        ["address_id", "line1", "line2", "city", "state", "zipcode", "country"],
+    )
+
+    def __init__(
+        self,
+        address_id: str,
+        line1: str,
+        line2: str = "",
+        city: str = "",
+        state: str = "",
+        zipcode: str = "",
+        country: str = "US",
+    ):
+        self.address = self._Address(
+            address_id, line1, line2, city, state, zipcode, country
+        )
 
     def to_dict(self) -> Dict[str, str]:
-        return asdict(self)
+        return dict(self.address._asdict())
 
     def get_id(self) -> str:
-        return self.address_id
+        address_id: str = self.address.address_id
+        return address_id
 
     def set_id(self, address_id: str) -> None:
-        self.address_id = address_id
+        self.address = self.address._replace(address_id=address_id)
 
     def to_str(self) -> str:
-        line2 = " " + self.line2 if self.line2 else ""
-        addr = f"{self.line1}{line2}, {self.city} {self.state} {self.zipcode} {self.country}"
+        a = self.address
+        # todo: make sure the online format is legit
+        line2 = " " + a.line2 if a.line2 else ""
+        addr: str = f"{a.line1}{line2}, {a.city} {a.state} {a.zipcode} {a.country}"
         return addr.replace("  ", " ").strip(" ,")
 
     def to_hash(self) -> str:
-        a_dict = {
+        # reducing variance by cleaning the address
+        a_dict: Dict[str, str] = {
             k: str(v if v else "").strip().lower() for k, v in self.to_dict().items()
         }
-        addr = f"{a_dict['line1']}{a_dict['line2']}{a_dict['city']}{a_dict['state']}{a_dict['zipcode']}{a_dict['country']}"
+        a = self._Address(**a_dict)
+        addr: str = f"{a.line1}{a.line2}{a.city}{a.state}{a.zipcode}{a.country}"
+        # create hash
         return hashlib.sha1(addr.encode()).hexdigest()
 
+    # noinspection PyMethodMayBeStatic
     def _check_id_unique(self) -> bool:
+        # todo check if address_id is unique
         return False

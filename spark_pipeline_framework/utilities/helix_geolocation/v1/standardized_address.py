@@ -1,32 +1,66 @@
-from dataclasses import dataclass
+from collections import namedtuple
+from typing import Any
 
 from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
 )
 
 
-@dataclass
 class StandardizedAddress(RawAddress):
-    county: str = ""
-    latitude: str = ""
-    longitude: str = ""
-    formatted_address: str = ""
-    standardize_vendor: str = "melissa"
+    """
+    The address standardized by a vendor
+    """
+
+    _Address = namedtuple(
+        "_Address",
+        [
+            "address_id",
+            "line1",
+            "line2",
+            "city",
+            "county",
+            "state",
+            "zipcode",
+            "country",
+            "latitude",
+            "longitude",
+            "formatted_address",
+            "standardize_vendor",
+        ],
+    )
+
+    def __init__(
+        self,
+        address_id: str,
+        line1: str,
+        city: str = "",
+        state: str = "",
+        zipcode: str = "",
+        country: str = "US",
+        latitude: str = "",
+        longitude: str = "",
+        line2: str = "",
+        county: str = "",
+        formatted_address: str = "",
+        standardize_vendor: str = "melissa",
+    ):
+        self.address: Any = self._Address(
+            address_id,
+            line1,
+            line2,
+            city,
+            county,
+            state,
+            zipcode,
+            country,
+            latitude,
+            longitude,
+            formatted_address,
+            standardize_vendor,
+        )
 
     def to_str(self) -> str:
-        if self.formatted_address:
-            return self.formatted_address
+        if self.address.formatted_address:
+            return str(self.address.formatted_address)
         else:
-            return super().to_str()
-
-    @classmethod
-    def from_raw_address(cls, raw_address: RawAddress) -> "StandardizedAddress":
-        return cls(
-            address_id=raw_address.get_id(),
-            line1=raw_address.line1,
-            line2=raw_address.line2,
-            city=raw_address.city,
-            state=raw_address.state,
-            zipcode=raw_address.zipcode,
-            country=raw_address.country,
-        )
+            return super(StandardizedAddress, self).to_str()

@@ -185,13 +185,15 @@ class AddressStandardization(FrameworkTransformer):
                 # map standard address back to a list of dictionary raw_addresses
                 standard_address_list: List[Dict[str, str]] = [
                     {
-                        f"{geolocation_column_prefix}latitude": standard_address.latitude,
-                        f"{geolocation_column_prefix}longitude": standard_address.longitude,
-                        address_column_mapping["line1"]: standard_address.line1,
-                        address_column_mapping["line2"]: standard_address.line2,
-                        address_column_mapping["city"]: standard_address.city,
-                        address_column_mapping["state"]: standard_address.state,
-                        address_column_mapping["zipcode"]: standard_address.zipcode,
+                        f"{geolocation_column_prefix}latitude": standard_address.address.latitude,
+                        f"{geolocation_column_prefix}longitude": standard_address.address.longitude,
+                        address_column_mapping["line1"]: standard_address.address.line1,
+                        address_column_mapping["line2"]: standard_address.address.line2,
+                        address_column_mapping["city"]: standard_address.address.city,
+                        address_column_mapping["state"]: standard_address.address.state,
+                        address_column_mapping[
+                            "zipcode"
+                        ]: standard_address.address.zipcode,
                     }
                     for standard_address in standard_addresses
                 ]

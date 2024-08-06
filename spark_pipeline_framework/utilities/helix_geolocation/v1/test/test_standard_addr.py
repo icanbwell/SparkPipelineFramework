@@ -196,7 +196,7 @@ def test_raw_address_to_export() -> None:
 
 def test_std_address_to_export() -> None:
     addr_dict = std_addr_obj.to_dict()
-    addr_str = std_addr_obj.formatted_address
+    addr_str = std_addr_obj.address.formatted_address
     assert addr_dict == {
         "address_id": "10",
         "country": "US",
@@ -255,8 +255,14 @@ def test_address_api_call(mocked_session: MagicMock) -> None:
         assert r[0].get_id() == "100"
         assert r[1].get_id() == "100"
         assert r[2].get_id() == "11"
-        assert r[0].formatted_address == expected_result[0].formatted_address
-        assert r[1].formatted_address == expected_result[1].formatted_address
+        assert (
+            r[0].address.formatted_address
+            == expected_result[0].address.formatted_address
+        )
+        assert (
+            r[1].address.formatted_address
+            == expected_result[1].address.formatted_address
+        )
 
 
 def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> None:
@@ -275,7 +281,9 @@ def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> None:
 
     # assert
     assert r[0].get_id() == "11"
-    assert r[0].formatted_address == expected_result[0].formatted_address
+    assert (
+        r[0].address.formatted_address == expected_result[0].address.formatted_address
+    )
 
 
 def test_documentdb_cache() -> None:
@@ -310,15 +318,15 @@ def test_standardize_stress_test() -> None:
         res = deepcopy(response_data)
         res["Records"] = [
             {
-                "RecordID": a.address_id,
+                "RecordID": a.address.address_id,
                 "FormattedAddress": f"{a.to_str()}",
-                "AddressLine1": a.line1,
+                "AddressLine1": a.address.line1,
                 "AddressLine2": "",
-                "Locality": a.city,
+                "Locality": a.address.city,
                 "SubAdministrativeArea": "a county",
-                "AdministrativeArea": a.state,
-                "PostalCode": a.zipcode,
-                "CountryISO3166_1_Alpha2": a.zipcode,
+                "AdministrativeArea": a.address.state,
+                "PostalCode": a.address.zipcode,
+                "CountryISO3166_1_Alpha2": a.address.zipcode,
                 "Latitude": "000",
                 "Longitude": "-000",
             }
@@ -400,7 +408,7 @@ def test_bad_request() -> None:
         res = deepcopy(response_data)
         res["Records"] = [
             {
-                "RecordID": a.address_id,
+                "RecordID": a.address.address_id,
                 "FormattedAddress": "",
                 "AddressLine1": "",
                 "AddressLine2": "",

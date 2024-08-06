@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import structlog
 
@@ -22,9 +22,9 @@ class GeocodioStandardizingVendor(StandardizingVendor):
     def standardize(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
     ) -> List[VendorResponse]:
-        vendor_specific_addresses: List[StandardizedAddress] = []
+        vendor_specific_addresses: List[Dict[str, str]] = []
         for address in raw_addresses:
-            address_dict = StandardizedAddress.from_raw_address(address)
+            address_dict = address.to_dict()
 
             vendor_specific_addresses.append(address_dict)
             print("vendor specific address json")

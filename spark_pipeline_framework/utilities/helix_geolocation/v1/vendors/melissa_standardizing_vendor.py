@@ -107,7 +107,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
 
     def _call_std_addr_api(
         self, raw_addresses: List[RawAddress]
-    ) -> List[StandardizedAddress]:
+    ) -> List[Dict[str, str]]:
         """
         Please check https://www.melissa.com/quickstart-guides/global-address for more info
         Please make sure "License Key" is available https://www.melissa.com/user/user_account.aspx
@@ -143,23 +143,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
 
             return []
 
-        return [
-            StandardizedAddress(
-                address_id=a["RecordID"],
-                line1=a["AddressLine1"],
-                line2="",
-                city=a["Locality"],
-                county=a["SubAdministrativeArea"],
-                zipcode=a["PostalCode"],
-                state=a["AdministrativeArea"],
-                country=a["CountryISO3166_1_Alpha2"],
-                latitude=a["Latitude"],
-                longitude=a["Longitude"],
-                formatted_address=a["FormattedAddress"],
-                standardize_vendor=self.get_vendor_name(),
-            )
-            for a in vendor_specific_addresses
-        ]
+        return vendor_specific_addresses
 
     def _api_call(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         # making the request ready

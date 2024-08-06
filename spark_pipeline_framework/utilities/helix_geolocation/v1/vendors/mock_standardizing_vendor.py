@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import structlog
 
@@ -22,15 +22,13 @@ class MockStandardizingVendor(StandardizingVendor):
     def standardize(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
     ) -> List[VendorResponse]:
-        vendor_specific_addresses: List[StandardizedAddress] = []
+        vendor_specific_addresses: List[Dict[str, str]] = []
         for address in raw_addresses:
-            address_dict: StandardizedAddress = StandardizedAddress.from_raw_address(
-                address
-            )
-            address_dict.set_id(address_dict.address_id)
-            address_dict.latitude = "39.406215"
-            address_dict.longitude = "-76.450524"
-            address_dict.country = "usa"
+            address_dict = address.to_dict()
+            address_dict["RecordID"] = address_dict["address_id"]
+            address_dict["latitude"] = "39.406215"
+            address_dict["longitude"] = "-76.450524"
+            address_dict["country"] = "usa"
             vendor_specific_addresses.append(address_dict)
             print("vendor specific address json")
             print(address_dict)

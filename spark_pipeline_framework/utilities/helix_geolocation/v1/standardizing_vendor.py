@@ -68,7 +68,7 @@ class StandardizingVendor(metaclass=ABCMeta):
 
     @staticmethod
     def _to_vendor_response(
-        vendor_response: List[StandardizedAddress],
+        vendor_response: List[Dict[str, str]],
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,
@@ -81,8 +81,8 @@ class StandardizingVendor(metaclass=ABCMeta):
         # find and assign
         return [
             VendorResponse(
-                api_call_response=r.to_dict(),
-                related_raw_address=id_response_map[r.get_id()],
+                api_call_response=r,
+                related_raw_address=id_response_map[r["RecordID"]],
                 vendor_name=vendor_name,
                 response_version=response_version,
             )
