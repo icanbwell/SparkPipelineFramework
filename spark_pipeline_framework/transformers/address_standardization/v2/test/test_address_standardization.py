@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 
 from pyspark.sql import SparkSession, DataFrame
 
-from spark_pipeline_framework.transformers.address_standardization.v1.address_standardization import (
+from spark_pipeline_framework.transformers.address_standardization.v2.address_standardization import (
     AddressStandardization,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.mock_cache_handler import (

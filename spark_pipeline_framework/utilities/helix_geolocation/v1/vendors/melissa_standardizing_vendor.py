@@ -32,11 +32,27 @@ class MelissaStandardizingVendor(StandardizingVendor):
         license_key: str = "",
         custom_api_call: Optional[Callable[[Any], Dict[str, Any]]] = None,
         version: str = "1",
+        api_calls_limit: Optional[int] = None,
     ) -> None:
+        """
+        This class is responsible for standardizing addresses using Melissa API
+
+        :param license_key: License key for Melissa API
+        :param custom_api_call: Custom API call to Melissa API
+        :param version: Version of the response
+        :param api_calls_limit: Maximum number of calls to Melissa API allowed
+        """
         super().__init__(version)
-        self._license_key = license_key
-        self._custom_api_call = custom_api_call
-        self._error_counter = 0
+        assert (
+            license_key or custom_api_call
+        ), "Either license_key or custom_api_call must be provided"
+        self._license_key: str = license_key
+        self._custom_api_call: Optional[Callable[[Any], Dict[str, Any]]] = (
+            custom_api_call
+        )
+        self._error_counter: int = 0
+        self._api_calls_limit: Optional[int] = api_calls_limit
+        self._api_calls_counter: int = 0
 
     def standardize(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
@@ -93,6 +109,15 @@ class MelissaStandardizingVendor(StandardizingVendor):
         Please check https://www.melissa.com/quickstart-guides/global-address for more info
         Please make sure "License Key" is available https://www.melissa.com/user/user_account.aspx
         """
+
+        self._api_calls_counter += 1
+
+        if self._api_calls_limit and self._api_calls_counter > self._api_calls_limit:
+            logger.error(
+                f"Melissa API calls limit reached. Limit: {self._api_calls_limit}"
+            )
+            return []
+
         api_server_response: Dict[str, Any] = (
             self._custom_api_call(raw_addresses)
             if self._custom_api_call
