@@ -38,6 +38,9 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_datafra
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
+    FhirGetResponseSchema,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
 )
@@ -72,10 +75,27 @@ class FhirReceiverProcessor:
         input_values: List[Dict[str, Any]], parameters: Optional[FhirReceiverParameters]
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert parameters
-        for r in FhirReceiverProcessor.send_partition_request_to_server(
-            partition_index=0, parameters=parameters, rows=input_values
-        ):
-            yield r
+        try:
+            for r in FhirReceiverProcessor.send_partition_request_to_server(
+                partition_index=0, parameters=parameters, rows=input_values
+            ):
+                yield r
+        except Exception as e:
+            for input_value in input_values:
+                yield {
+                    FhirGetResponseSchema.partition_index: 0,
+                    FhirGetResponseSchema.sent: 0,
+                    FhirGetResponseSchema.received: 0,
+                    FhirGetResponseSchema.url: parameters.server_url,
+                    FhirGetResponseSchema.responses: [],
+                    FhirGetResponseSchema.first: None,
+                    FhirGetResponseSchema.last: None,
+                    FhirGetResponseSchema.error_text: str(e),
+                    FhirGetResponseSchema.status_code: 400,
+                    FhirGetResponseSchema.request_id: None,
+                    FhirGetResponseSchema.access_token: None,
+                    FhirGetResponseSchema.extra_context_to_return: None,
+                }
 
     @staticmethod
     def get_process_batch_function(

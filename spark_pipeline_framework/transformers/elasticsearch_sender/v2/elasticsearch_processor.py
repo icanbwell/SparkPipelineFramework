@@ -54,14 +54,15 @@ class ElasticSearchProcessor:
                         "payload": json.dumps(input_values),
                     }
         except Exception as e:
-            yield {
-                "error": str(e),
-                "partition_index": 0,
-                "url": parameters.index,
-                "success": 0,
-                "failed": 1,
-                "payload": json.dumps(input_values),
-            }
+            for input_value in input_values:
+                yield {
+                    "error": str(e),
+                    "partition_index": 0,
+                    "url": parameters.index,
+                    "success": 0,
+                    "failed": 1,
+                    "payload": json.dumps(input_values),
+                }
 
     @staticmethod
     def get_process_batch_function(

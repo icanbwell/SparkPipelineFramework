@@ -43,10 +43,16 @@ class FhirSenderProcessor:
         input_values: List[Dict[str, Any]], parameters: Optional[FhirSenderParameters]
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert parameters
-        for r in FhirSenderProcessor.send_partition_to_server(
-            partition_index=0, parameters=parameters, rows=input_values
-        ):
-            yield r
+        try:
+            for r in FhirSenderProcessor.send_partition_to_server(
+                partition_index=0, parameters=parameters, rows=input_values
+            ):
+                yield r
+        except Exception as e:
+            for input_value in input_values:
+                yield FhirMergeResponseItem.from_error(
+                    e=e, resource_type=parameters.resource_name
+                ).to_dict()
 
     @staticmethod
     def get_process_batch_function(
