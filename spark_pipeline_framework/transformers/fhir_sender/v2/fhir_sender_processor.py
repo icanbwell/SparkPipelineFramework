@@ -48,9 +48,9 @@ class FhirSenderProcessor:
         assert parameters
         count: int = 0
         try:
-            print(
-                f"FhirSenderProcessor.process_partition input_values [{len(input_values)}: {input_values}"
-            )
+            # print(
+            #     f"FhirSenderProcessor.process_partition input_values [{len(input_values)}: {input_values}"
+            # )
             r: FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse
             async for r in FhirSenderProcessor.send_partition_to_server_async(
                 partition_index=0, parameters=parameters, rows=input_values
@@ -71,17 +71,17 @@ class FhirSenderProcessor:
                     yield FhirMergeResponseItem.from_delete_response(
                         delete_response=r, resource_type=parameters.resource_name
                     ).to_dict()
-                print(
-                    f"FhirSenderProcessor.process_partition count: {count} r: {r.__dict__}"
-                )
+                # print(
+                #     f"FhirSenderProcessor.process_partition count: {count} r: {r.__dict__}"
+                # )
         except Exception as e:
             print(f"FhirSenderProcessor.process_partition exception: {e}")
             # if an exception is thrown then return an error for each row
             for input_value in input_values:
                 count += 1
-                print(
-                    f"FhirSenderProcessor.process_partition exception input_value: {input_value}"
-                )
+                # print(
+                #     f"FhirSenderProcessor.process_partition exception input_value: {input_value}"
+                # )
                 yield FhirMergeResponseItem.from_error(
                     e=e, resource_type=parameters.resource_name
                 ).to_dict()

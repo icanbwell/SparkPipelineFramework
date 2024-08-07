@@ -66,7 +66,6 @@ class AsyncHelper:
         ):
             df_chunk = df.sparkSession.createDataFrame(chunk, schema)  # type: ignore[type-var]
             collected_data.append(df_chunk)
-            print("Async chunk collected")
             df_chunk.show(truncate=False)  # Show each chunk as it is processed
 
         # Combine all chunks into a single DataFrame
