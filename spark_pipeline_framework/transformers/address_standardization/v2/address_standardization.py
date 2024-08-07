@@ -113,8 +113,6 @@ class AddressStandardization(FrameworkTransformer):
         )
         self._setDefault(func_get_response_path=func_get_response_path)
 
-        print("Hello from new transformer")
-
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -176,7 +174,6 @@ class AddressStandardization(FrameworkTransformer):
                     )
                     for raw_address in raw_addresses
                 ]
-                print(f"raw_address_list: {raw_address_list}")
                 # standardize the raw addresses which also calculates the lat/long
                 standard_addresses: List[
                     StandardizedAddress
@@ -185,10 +182,9 @@ class AddressStandardization(FrameworkTransformer):
                     cache_handler_obj=cache_handler,
                     vendor_obj=standardizing_vendor,
                 )
-                print(f"standard_addresses: {standard_addresses}")
                 assert len(standard_addresses) == len(
                     raw_addresses
-                ), f"{len(standard_addresses)} != {len(raw_addresses)}"
+                ), f"Length of output != Length of input: {len(standard_addresses)} != {len(raw_addresses)}"
                 # map standard address back to a list of dictionary raw_addresses
                 standard_address_list: List[Dict[str, str]] = [
                     {

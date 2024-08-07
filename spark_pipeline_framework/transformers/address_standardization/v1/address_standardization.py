@@ -201,7 +201,7 @@ class AddressStandardization(FrameworkTransformer):
                     return standard_address_list
                 except Exception as standardize_exception:
                     print(f"standardize_exception: {standardize_exception}")
-                return []
+                    raise standardize_exception
 
             if not spark_is_data_frame_empty(address_df):
                 # supply a schema whenever converting from rdd to df so spark does not have to infer the schema which

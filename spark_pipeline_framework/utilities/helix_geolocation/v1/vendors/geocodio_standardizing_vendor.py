@@ -27,8 +27,6 @@ class GeocodioStandardizingVendor(StandardizingVendor):
             address_dict = address.to_dict()
 
             vendor_specific_addresses.append(address_dict)
-            print("vendor specific address json")
-            print(address_dict)
 
         vendor_responses: List[VendorResponse] = super()._to_vendor_response(
             vendor_response=vendor_specific_addresses,
