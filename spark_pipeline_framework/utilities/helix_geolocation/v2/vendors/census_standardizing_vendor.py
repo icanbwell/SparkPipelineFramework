@@ -1,8 +1,8 @@
 import csv
 from io import StringIO
-from typing import List, Dict, Any, Optional, cast
+from typing import List, Dict, Any, Optional, cast, AsyncGenerator
 
-import requests
+import aiohttp
 from helix_fhir_client_sdk.utilities.list_chunker import ListChunker
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.address_parser import (
@@ -56,35 +56,33 @@ class CensusStandardizingVendor(StandardizingVendor):
             for chunk in ListChunker().divide_into_chunks(
                 raw_addresses, self.batch_request_max_size()
             ):
-                standardized_address_dicts.extend(
-                    self._bulk_api_call(raw_addresses=chunk)
-                )
+                async for standardized_address_list in self._bulk_api_call_async(
+                    raw_addresses=chunk
+                ):
+                    standardized_address_dicts.extend(standardized_address_list)
+
+            # verify that we got the right count
             assert len(standardized_address_dicts) == len(raw_addresses), (
-                f"Number of standardized addresses {len(standardized_address_dicts)} does not match number of raw addresses {len(raw_addresses)}"
+                f"Number of standardized addresses {len(standardized_address_dicts)}"
+                f" does not match number of raw addresses {len(raw_addresses)}"
                 "in the batch"
             )
         else:
             for address in raw_addresses:
-                standardized_address_dict = self._api_call(
-                    one_line_address=address.to_str()
-                )
-                standardized_address: Optional[StandardizedAddress] = (
-                    self._parse_geolocation_response(
-                        response_json=standardized_address_dict,
-                        record_id=address.get_id(),
-                    )
-                    if standardized_address_dict
-                    else None
-                )
-                if standardized_address:
-                    standardized_address_dicts.append(standardized_address)
-                else:
-                    standardized_address_dicts.append(
-                        StandardizedAddress.from_raw_address(address)
-                    )
+                async for standardized_address in self._api_call_async(
+                    one_line_address=address.to_str(),
+                    raw_address=address,
+                ):
+                    if standardized_address:
+                        standardized_address_dicts.append(standardized_address)
+                    else:
+                        standardized_address_dicts.append(
+                            StandardizedAddress.from_raw_address(address)
+                        )
+
             assert len(standardized_address_dicts) == len(raw_addresses), (
-                f"Number of standardized addresses {len(standardized_address_dicts)} does not match number of raw addresses {len(raw_addresses)}"
-                "in the batch"
+                f"Number of standardized addresses {len(standardized_address_dicts)} "
+                f"does not match number of raw addresses {len(raw_addresses)}"
             )
 
         # Now convert to vendor response
@@ -105,9 +103,9 @@ class CensusStandardizingVendor(StandardizingVendor):
         )
         return vendor_responses
 
-    def _bulk_api_call(
-        self, raw_addresses: List[RawAddress]
-    ) -> List[StandardizedAddress]:
+    async def _bulk_api_call_async(
+        self, *, raw_addresses: List[RawAddress]
+    ) -> AsyncGenerator[List[StandardizedAddress]]:
         """
         Make a bulk API call to the vendor
 
@@ -121,64 +119,66 @@ class CensusStandardizingVendor(StandardizingVendor):
 
         # Define the URL and parameters
         url = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
-        files = {"addressFile": ("localfile.csv", file_contents)}
-        data = {"benchmark": "4"}
+        form_data = aiohttp.FormData()
+        form_data.add_field("addressFile", file_contents, filename="localfile.csv")
+        form_data.add_field("benchmark", "4")
 
-        # Send the POST request
-        response = requests.post(url, files=files, data=data)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, data=form_data) as response:
+                response_text: str = await response.text()
+                assert (
+                    response.status == 200
+                ), f"Error in the Census API call. Response code: {response.status}: {response_text}"
+                # Check if the request was successful
+                if response.status == 200:
+                    # Use StringIO to treat the response text as a file-like object
+                    f = StringIO(response_text)
 
-        assert (
-            response.status_code == 200
-        ), f"Error in the Census API call. Response code: {response.status_code}: {response.text}"
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Parse the response content
-            response_text = response.text
+                    # Define fieldnames based on the expected output
+                    fieldnames = [
+                        "ID",
+                        "Input Address",
+                        "Match Status",
+                        "Match Type",
+                        "Matched Address",
+                        "Coordinates",
+                        "TIGER Line ID",
+                        "Side",
+                    ]
 
-            # Use StringIO to treat the response text as a file-like object
-            f = StringIO(response_text)
+                    # Use DictReader to parse the CSV response
+                    reader = csv.DictReader(f, fieldnames=fieldnames)
 
-            # Define fieldnames based on the expected output
-            fieldnames = [
-                "ID",
-                "Input Address",
-                "Match Status",
-                "Match Type",
-                "Matched Address",
-                "Coordinates",
-                "TIGER Line ID",
-                "Side",
-            ]
-
-            # Use DictReader to parse the CSV response
-            reader = csv.DictReader(f, fieldnames=fieldnames)
-
-            # Convert reader to a list of dictionaries
-            # noinspection PyTypeChecker
-            results: List[Dict[str, Any]] = [row for row in reader]
-            responses: List[StandardizedAddress] = [
-                self._parse_csv_response(r, raw_addresses=raw_addresses)
-                for r in results
-            ]
-            assert len(responses) == len(raw_addresses), (
-                f"Number of standardized addresses {len(responses)} does not match number of raw addresses {len(raw_addresses)}"
-                f"in the batch: {response_text}"
-            )
-            # sort the list, so it is in the same order as the raw_addresses.
-            # Census API does not return list in same order
-            matching_responses: List[StandardizedAddress] = [
-                [r for r in responses if r.address.address_id == raw_address.get_id()][
-                    0
-                ]
-                for raw_address in raw_addresses
-            ]
-            assert len(matching_responses) == len(raw_addresses), (
-                f"Number of matching standardized addresses {len(matching_responses)} does not match number of"
-                f"raw addresses {len(raw_addresses)} in the batch: {response_text}"
-            )
-            return matching_responses
-        else:
-            return []
+                    # Convert reader to a list of dictionaries
+                    # noinspection PyTypeChecker
+                    results: List[Dict[str, Any]] = [row for row in reader]
+                    responses: List[StandardizedAddress] = [
+                        self._parse_csv_response(r, raw_addresses=raw_addresses)
+                        for r in results
+                    ]
+                    assert len(responses) == len(raw_addresses), (
+                        f"Number of standardized addresses {len(responses)} does not match number of raw addresses {len(raw_addresses)}"
+                        f"in the batch: {response_text}"
+                    )
+                    # sort the list, so it is in the same order as the raw_addresses.
+                    # Census API does not return list in same order
+                    matching_responses: List[StandardizedAddress] = [
+                        [
+                            r
+                            for r in responses
+                            if r.address.address_id == raw_address.get_id()
+                        ][0]
+                        for raw_address in raw_addresses
+                    ]
+                    assert len(matching_responses) == len(raw_addresses), (
+                        f"Number of matching standardized addresses {len(matching_responses)} does not match number of"
+                        f"raw addresses {len(raw_addresses)} in the batch: {response_text}"
+                    )
+                    yield matching_responses
+                else:
+                    yield [
+                        StandardizedAddress.from_raw_address(r) for r in raw_addresses
+                    ]
 
     # noinspection PyMethodMayBeStatic
     def _parse_csv_response(
@@ -219,7 +219,16 @@ class CensusStandardizingVendor(StandardizingVendor):
             else self._get_matching_raw_address(r["ID"], raw_addresses)
         )
 
-    def _api_call(self, one_line_address: str) -> Dict[str, str] | None:
+    # noinspection PyMethodMayBeStatic
+    async def _api_call_async(
+        self, *, one_line_address: str, raw_address: RawAddress
+    ) -> AsyncGenerator[StandardizedAddress]:
+        """
+        Make an API call to the vendor for a single address
+
+        :param one_line_address: One line address
+        :return: Response as a dictionary
+        """
         params = {
             "address": one_line_address,
             "benchmark": "Public_AR_Current",
@@ -230,22 +239,30 @@ class CensusStandardizingVendor(StandardizingVendor):
         # Make the request
         # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
         # ex: "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=9000%20Franklin%20Square%20Dr.%2C%20Baltimore%2C%20MD%2021237&benchmark=Public_AR_Current&format=json"
-        response = requests.get(
-            "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress",
-            params=params,
-        )
+        url = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                response_text = await response.text()
+                assert (
+                    response.status == 200
+                ), f"Error in the Census API call. Response code: {response.status}: {response_text}"
 
-        # Check the response
-        if response.status_code != 200:
-            return None
+                # Check the response
+                if response.status != 200:
+                    yield StandardizedAddress.from_raw_address(raw_address)
 
-        # Parse the response
-        #
-        response_json: Dict[str, Any] = response.json()
-        if "result" not in response_json:
-            return None
-
-        return response_json
+                # Parse the response
+                #
+                response_json: Dict[str, Any] = await response.json()
+                if "result" not in response_json:
+                    yield StandardizedAddress.from_raw_address(raw_address)
+                else:
+                    yield (
+                        self._parse_geolocation_response(
+                            response_json=response_json, record_id=raw_address.get_id()
+                        )
+                        or StandardizedAddress.from_raw_address(raw_address)
+                    )
 
     @staticmethod
     def _parse_geolocation_response(
