@@ -187,7 +187,9 @@ class CensusStandardizingVendor(StandardizingVendor):
 
         # Split the address
         parsed_address: RawAddress | None = (
-            AddressParser.split_address(cast(str, r.get("Matched Address")))
+            AddressParser.split_address(
+                address=cast(str, r.get("Matched Address")), address_id=r["ID"]
+            )
             if r.get("Matched Address")
             else None
         )

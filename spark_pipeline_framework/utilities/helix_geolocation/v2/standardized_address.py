@@ -71,17 +71,17 @@ class StandardizedAddress(RawAddress):
     @classmethod
     def from_dict(cls, address_dict: Dict[str, str]) -> "StandardizedAddress":
         return cls(
-            address_id=address_dict["address_id"],
-            line1=address_dict["line1"],
-            line2=address_dict["line2"],
-            city=address_dict["city"],
-            state=address_dict["state"],
-            zipcode=address_dict["zipcode"],
-            country=address_dict["country"],
-            latitude=address_dict["latitude"],
-            longitude=address_dict["longitude"],
-            formatted_address=address_dict["formatted_address"],
-            standardize_vendor=address_dict["standardize_vendor"],
+            address_id=address_dict.get("address_id") or "",
+            line1=address_dict.get("line1") or "",
+            line2=address_dict.get("line2") or "",
+            city=address_dict.get("city") or "",
+            state=address_dict.get("state") or "",
+            zipcode=address_dict.get("zipcode") or "",
+            country=address_dict.get("country") or "",
+            latitude=address_dict.get("latitude") or "",
+            longitude=address_dict.get("longitude") or "",
+            formatted_address=address_dict.get("formatted_address") or "",
+            standardize_vendor=address_dict.get("standardize_vendor") or "",
         )
 
     @classmethod

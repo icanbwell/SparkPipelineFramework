@@ -66,6 +66,8 @@ structlog = ">=23.1.0"
 "usaddress"=">=0.5.10" # for parsing street addresses
 # usaddress-scourgify is needed for normalizing addresses
 "usaddress-scourgify"=">=0.6.0" # for normalizing addresses
+# aiohttp is needed for making HTTP requests asynchronously
+aiohttp = ">=3"
 
 [dev-packages]
 # setuptools is needed for building the package

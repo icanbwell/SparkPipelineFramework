@@ -86,6 +86,7 @@ setup(
         "structlog>=23.1.0",
         "usaddress>=0.5.10",
         "usaddress-scourgify>=0.6.0",
+        "aiohttp>=3",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
