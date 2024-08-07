@@ -16,7 +16,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
-@pytest.mark.parametrize("run_synchronously", [True])
+@pytest.mark.parametrize("run_synchronously", [True, False])
 def test_fhir_receiver_list(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:
