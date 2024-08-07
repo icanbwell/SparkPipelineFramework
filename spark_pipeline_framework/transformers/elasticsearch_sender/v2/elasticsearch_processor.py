@@ -40,6 +40,7 @@ class ElasticSearchProcessor:
         assert parameters
         count: int = 0
         try:
+            # print(f"ElasticSearchProcessor:process_partition input_values [{len(input_values)}: {input_values}")
             result: Iterable[Dict[str, Any] | None] = (
                 ElasticSearchProcessor.send_partition_to_server(
                     partition_index=0, parameters=parameters, rows=input_values
@@ -47,10 +48,13 @@ class ElasticSearchProcessor:
             )
             r: Dict[str, Any] | None
             for r in result:
-                count += 1
                 if r:
+                    count += r.get("success", 0) + r.get("failed", 0)
+                    # print(f"ElasticSearchProcessor:process_partition count: {count} r: {r}")
                     yield r
                 else:
+                    count += 1
+                    # print(f"ElasticSearchProcessor:process_partition count: {count} r is None")
                     yield {
                         "error": "Failed to send data to ElasticSearch",
                         "partition_index": 0,
@@ -60,8 +64,10 @@ class ElasticSearchProcessor:
                         "payload": json.dumps(input_values),
                     }
         except Exception as e:
+            # print(f"ElasticSearchProcessor:process_partition exception: {e}")
             # if an exception is thrown then return an error for each row
             for input_value in input_values:
+                # print(f"ElasticSearchProcessor:process_partition exception input_value: {input_value}")
                 count += 1
                 yield {
                     "error": str(e),
