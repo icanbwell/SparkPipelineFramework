@@ -69,7 +69,7 @@ class CensusStandardizingVendor(StandardizingVendor):
             )
         else:
             for address in raw_addresses:
-                async for standardized_address in self._api_call_async(
+                async for standardized_address in self._single_api_call_async(
                     one_line_address=address.to_str(),
                     raw_address=address,
                 ):
@@ -105,7 +105,7 @@ class CensusStandardizingVendor(StandardizingVendor):
 
     async def _bulk_api_call_async(
         self, *, raw_addresses: List[RawAddress]
-    ) -> AsyncGenerator[List[StandardizedAddress]]:
+    ) -> AsyncGenerator[List[StandardizedAddress], None]:
         """
         Make a bulk API call to the vendor
 
@@ -220,9 +220,9 @@ class CensusStandardizingVendor(StandardizingVendor):
         )
 
     # noinspection PyMethodMayBeStatic
-    async def _api_call_async(
+    async def _single_api_call_async(
         self, *, one_line_address: str, raw_address: RawAddress
-    ) -> AsyncGenerator[StandardizedAddress]:
+    ) -> AsyncGenerator[StandardizedAddress, None]:
         """
         Make an API call to the vendor for a single address
 
