@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Callable, cast, AsyncGenerator
+from typing import Any, Dict, List, Optional, Union, Callable, cast
 
 # noinspection PyPep8Naming
 import pyspark.sql.functions as F
@@ -38,6 +38,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
@@ -632,16 +633,8 @@ class FhirReceiver(FrameworkTransformer):
                         r.asDict(recursive=True) for r in id_df.collect()
                     ]
 
-                    async def collect_items(
-                        generator: AsyncGenerator[Dict[str, Any], None]
-                    ) -> List[Dict[str, Any]]:
-                        items = []
-                        async for item in generator:
-                            items.append(item)
-                        return items
-
                     result_rows: List[Dict[str, Any]] = asyncio.run(
-                        collect_items(
+                        AsyncHelper.collect_items(
                             FhirReceiverProcessor.send_partition_request_to_server_async(
                                 partition_index=0,
                                 rows=id_rows,
@@ -1033,16 +1026,8 @@ class FhirReceiver(FrameworkTransformer):
                     resources: List[str] = []
                     errors: List[str] = []
 
-                    async def collect_batch_items(
-                        generator: AsyncGenerator[GetBatchResult, None]
-                    ) -> List[GetBatchResult]:
-                        items = []
-                        async for item in generator:
-                            items.append(item)
-                        return items
-
                     for result1 in asyncio.run(
-                        collect_batch_items(
+                        AsyncHelper.collect_items(
                             FhirReceiverProcessor.get_batch_results_paging_async(
                                 page_size=page_size,
                                 limit=limit,
