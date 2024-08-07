@@ -514,6 +514,7 @@ class FhirSender(FrameworkTransformer):
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
                     auth_access_token=auth_access_token,
+                    auth_well_known_url=auth_well_known_url,
                     additional_request_headers=additional_request_headers,
                     log_level=log_level,
                     batch_size=batch_size,

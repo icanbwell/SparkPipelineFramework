@@ -475,6 +475,7 @@ class FhirReceiverProcessor:
             auth_access_token=parameters.auth_access_token,
             auth_scopes=parameters.auth_scopes,
             log_level=parameters.log_level,
+            auth_well_known_url=parameters.auth_well_known_url,
         )
         if (
             not parameters.graph_json

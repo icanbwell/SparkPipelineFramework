@@ -29,6 +29,7 @@ async def send_json_bundle_to_fhir_async(
     auth_login_token: Optional[str],
     auth_scopes: Optional[List[str]],
     auth_access_token: Optional[str],
+    auth_well_known_url: Optional[str],
     log_level: Optional[str],
     retry_count: Optional[int] = None,
     exclude_status_codes_from_retry: Optional[List[int]] = None,
@@ -49,6 +50,7 @@ async def send_json_bundle_to_fhir_async(
         auth_access_token=auth_access_token,
         auth_scopes=auth_scopes,
         log_level=log_level,
+        auth_well_known_url=auth_well_known_url,
     )
 
     fhir_client = fhir_client.resource(resource)
@@ -105,6 +107,7 @@ async def send_fhir_delete_async(
     auth_login_token: Optional[str],
     auth_scopes: Optional[List[str]],
     auth_access_token: Optional[str],
+    auth_well_known_url: Optional[str],
     log_level: Optional[str],
     additional_request_headers: Optional[Dict[str, str]] = None,
 ) -> AsyncGenerator[FhirDeleteResponse, None]:
@@ -118,6 +121,7 @@ async def send_fhir_delete_async(
         auth_access_token=auth_access_token,
         auth_scopes=auth_scopes,
         log_level=log_level,
+        auth_well_known_url=auth_well_known_url,
     )
 
     fhir_client = fhir_client.resource(resource)
@@ -159,6 +163,7 @@ async def update_json_bundle_to_fhir_async(
     auth_login_token: Optional[str],
     auth_scopes: Optional[List[str]],
     auth_access_token: Optional[str],
+    auth_well_known_url: Optional[str],
     log_level: Optional[str],
     retry_count: Optional[int] = None,
     exclude_status_codes_from_retry: Optional[List[int]] = None,
@@ -175,6 +180,7 @@ async def update_json_bundle_to_fhir_async(
         auth_access_token=auth_access_token,
         auth_scopes=auth_scopes,
         log_level=log_level,
+        auth_well_known_url=auth_well_known_url,
     )
 
     fhir_client = fhir_client.resource(resource)

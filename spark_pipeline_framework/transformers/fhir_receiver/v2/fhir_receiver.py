@@ -91,6 +91,7 @@ class FhirReceiver(FrameworkTransformer):
         auth_client_secret: Optional[str] = None,
         auth_login_token: Optional[str] = None,
         auth_scopes: Optional[List[str]] = None,
+        auth_well_known_url: Optional[str] = None,
         separate_bundle_resources: bool = False,
         error_on_result_count: bool = True,
         expand_fhir_bundle: bool = True,
@@ -295,6 +296,12 @@ class FhirReceiver(FrameworkTransformer):
 
         self.auth_scopes: Param[Optional[List[str]]] = Param(self, "auth_scopes", "")
         self._setDefault(auth_scopes=None)
+
+        self.auth_well_known_url: Param[Optional[str]] = Param(
+            self, "auth_well_known_url", ""
+        )
+        self._setDefault(auth_well_known_url=None)
+
         self.separate_bundle_resources: Param[bool] = Param(
             self, "separate_bundle_resources", ""
         )
@@ -444,6 +451,7 @@ class FhirReceiver(FrameworkTransformer):
         auth_client_secret: Optional[str] = self.getAuthClientSecret()
         auth_login_token: Optional[str] = self.getAuthLoginToken()
         auth_scopes: Optional[List[str]] = self.getAuthScopes()
+        auth_well_known_url: Optional[str] = self.getOrDefault(self.auth_well_known_url)
 
         separate_bundle_resources: bool = self.getSeparateBundleResources()
         expand_fhir_bundle: bool = self.getExpandFhirBundle()
@@ -540,6 +548,7 @@ class FhirReceiver(FrameworkTransformer):
                 auth_login_token=auth_login_token,
                 auth_scopes=auth_scopes,
                 log_level=log_level,
+                auth_well_known_url=auth_well_known_url,
             )
 
         with ProgressLogMetric(
@@ -608,6 +617,7 @@ class FhirReceiver(FrameworkTransformer):
                     auth_client_secret=auth_client_secret,
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
+                    auth_well_known_url=auth_well_known_url,
                     include_only_properties=include_only_properties,
                     separate_bundle_resources=separate_bundle_resources,
                     expand_fhir_bundle=expand_fhir_bundle,
@@ -980,6 +990,7 @@ class FhirReceiver(FrameworkTransformer):
                     auth_client_secret=auth_client_secret,
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
+                    auth_well_known_url=auth_well_known_url,
                     include_only_properties=include_only_properties,
                     separate_bundle_resources=separate_bundle_resources,
                     expand_fhir_bundle=expand_fhir_bundle,

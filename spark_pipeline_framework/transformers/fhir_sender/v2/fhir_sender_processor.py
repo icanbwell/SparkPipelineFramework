@@ -177,6 +177,7 @@ class FhirSenderProcessor:
                         auth_login_token=parameters.auth_login_token,
                         auth_scopes=parameters.auth_scopes,
                         auth_access_token=parameters.auth_access_token,
+                        auth_well_known_url=parameters.auth_well_known_url,
                         additional_request_headers=parameters.additional_request_headers,
                         log_level=parameters.log_level,
                     ):
@@ -201,6 +202,7 @@ class FhirSenderProcessor:
                         auth_login_token=parameters.auth_login_token,
                         auth_scopes=parameters.auth_scopes,
                         auth_access_token=parameters.auth_access_token,
+                        auth_well_known_url=parameters.auth_well_known_url,
                         additional_request_headers=parameters.additional_request_headers,
                         log_level=parameters.log_level,
                     ):
@@ -224,6 +226,7 @@ class FhirSenderProcessor:
                         auth_login_token=parameters.auth_login_token,
                         auth_scopes=parameters.auth_scopes,
                         auth_access_token=parameters.auth_access_token,
+                        auth_well_known_url=parameters.auth_well_known_url,
                         additional_request_headers=parameters.additional_request_headers,
                         log_level=parameters.log_level,
                     ):
@@ -274,6 +277,7 @@ class FhirSenderProcessor:
                                 auth_login_token=parameters.auth_login_token,
                                 auth_scopes=parameters.auth_scopes,
                                 auth_access_token=auth_access_token1,
+                                auth_well_known_url=parameters.auth_well_known_url,
                                 additional_request_headers=parameters.additional_request_headers,
                                 log_level=parameters.log_level,
                                 retry_count=parameters.retry_count,
@@ -314,6 +318,7 @@ class FhirSenderProcessor:
                             auth_login_token=parameters.auth_login_token,
                             auth_scopes=parameters.auth_scopes,
                             auth_access_token=parameters.auth_access_token,
+                            auth_well_known_url=parameters.auth_well_known_url,
                             additional_request_headers=parameters.additional_request_headers,
                             logger=logger,
                             log_level=parameters.log_level,
