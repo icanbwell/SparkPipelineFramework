@@ -69,6 +69,22 @@ class StandardizedAddress(RawAddress):
         return dict(self.address._asdict())
 
     @classmethod
+    def from_dict(cls, address_dict: Dict[str, str]) -> "StandardizedAddress":
+        return cls(
+            address_id=address_dict["address_id"],
+            line1=address_dict["line1"],
+            line2=address_dict["line2"],
+            city=address_dict["city"],
+            state=address_dict["state"],
+            zipcode=address_dict["zipcode"],
+            country=address_dict["country"],
+            latitude=address_dict["latitude"],
+            longitude=address_dict["longitude"],
+            formatted_address=address_dict["formatted_address"],
+            standardize_vendor=address_dict["standardize_vendor"],
+        )
+
+    @classmethod
     def from_raw_address(cls, raw_address: RawAddress) -> "StandardizedAddress":
         return cls(
             address_id=raw_address.get_id(),

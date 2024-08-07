@@ -1,6 +1,5 @@
 from typing import List
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
 
 from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler import (
     CacheHandler,
@@ -24,7 +23,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response imp
 
 class StandardizeAddr:
     def __init__(self) -> None:
-        self.logger = get_logger(__file__)
+        self.logger = None
 
     def standardize(
         self,
@@ -33,12 +32,13 @@ class StandardizeAddr:
         vendor_obj: StandardizingVendor,
     ) -> List[StandardizedAddress]:
         # check cache if exists
+        assert all(
+            [r.get_id() is not None for r in raw_addresses]
+        ), f"{vendor_obj.get_vendor_name()} requires all addresses to have an id. {[r.to_dict for r in raw_addresses]}"
 
-        self.logger.info(
-            f"looking for addresses. raw address count: {len(raw_addresses)}"
-        )
+        print(f"looking for addresses. raw address count: {len(raw_addresses)}")
         cache_lookup_result: CacheResult = cache_handler_obj.check_cache(raw_addresses)
-        self.logger.info(
+        print(
             f"cache lookup result -- not found records: {len(cache_lookup_result.not_found)}"
             f" -- found records: {(len(cache_lookup_result.found))}"
             f" using {cache_handler_obj.__class__.__name__}"
@@ -51,6 +51,10 @@ class StandardizeAddr:
             vendor_responses_batch: List[VendorResponse] = vendor_obj.standardize(
                 cache_lookup_result.not_found[i : i + max_requests]
             )
+            assert len(vendor_responses_batch) == len(
+                cache_lookup_result.not_found[i : i + max_requests]
+            ), f"{len(vendor_responses_batch)} != {len(cache_lookup_result.not_found[i: i + max_requests])}.  {type(vendor_obj)}"
+
             new_std_addresses.extend(
                 vendor_obj.vendor_specific_to_std(vendor_responses_batch)
             )
@@ -58,4 +62,7 @@ class StandardizeAddr:
             cache_handler_obj.save_to_cache(vendor_responses_batch)
 
         # combine and return
+        assert len(cache_lookup_result.found) + len(new_std_addresses) == len(
+            raw_addresses
+        ), f"{len(cache_lookup_result.found)} + {len(new_std_addresses)} != {len(raw_addresses)}, vendor={type(vendor_obj)}, not_found={len(cache_lookup_result.not_found)}"
         return cache_lookup_result.found + new_std_addresses

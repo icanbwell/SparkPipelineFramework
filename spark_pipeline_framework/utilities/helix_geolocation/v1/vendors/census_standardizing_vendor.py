@@ -42,13 +42,21 @@ class CensusStandardizingVendor(StandardizingVendor):
         """
         standardized_address_dicts: List[StandardizedAddress] = []
 
-        if not self._use_bulk_api:
+        assert all(
+            [r.get_id() is not None for r in raw_addresses]
+        ), f"{self.get_vendor_name()} requires all addresses to have an id. {[r.to_dict for r in raw_addresses]}"
+
+        if self._use_bulk_api:
             for chunk in ListChunker().divide_into_chunks(
                 raw_addresses, self.batch_request_max_size()
             ):
                 standardized_address_dicts.extend(
                     self._bulk_api_call(raw_addresses=chunk)
                 )
+            assert len(standardized_address_dicts) == len(raw_addresses), (
+                f"Number of standardized addresses {len(standardized_address_dicts)} does not match number of raw addresses {len(raw_addresses)}"
+                "in the batch"
+            )
         else:
             for address in raw_addresses:
                 address_dict = address.to_dict()
@@ -69,6 +77,10 @@ class CensusStandardizingVendor(StandardizingVendor):
                     standardized_address_dicts.append(
                         StandardizedAddress.from_raw_address(address)
                     )
+            assert len(standardized_address_dicts) == len(raw_addresses), (
+                f"Number of standardized addresses {len(standardized_address_dicts)} does not match number of raw addresses {len(raw_addresses)}"
+                "in the batch"
+            )
 
         # Now convert to vendor response
         vendor_specific_addresses: List[Dict[str, Any]] = [
@@ -80,6 +92,11 @@ class CensusStandardizingVendor(StandardizingVendor):
             raw_addresses=raw_addresses,
             vendor_name=self.get_vendor_name(),
             response_version=self.get_version(),
+        )
+
+        assert len(vendor_responses) == len(raw_addresses), (
+            f"Number of vendor responses {len(vendor_responses)} does not match number of raw addresses"
+            f" {len(raw_addresses)} in the batch"
         )
         return vendor_responses
 
@@ -95,7 +112,9 @@ class CensusStandardizingVendor(StandardizingVendor):
         # Create a CSV file with the addresses
         file_contents = ""  # '"Unique ID", "Street address", "City", "State", "ZIP"'
         for address in raw_addresses:
-            file_contents += f'\n"{address.get_id()}", "{address.address.line1}", "{address.address.city}", "{address.address.state}", "{address.address.zipcode}"'
+            file_contents += f'"{address.get_id()}", "{address.address.line1}", "{address.address.city}", "{address.address.state}", "{address.address.zipcode}"\n'
+        clean_file_contents = file_contents.replace("\n", "\\n")
+        # assert file_contents is None, f'\nfile_contents={file_contents}\n, lines={len(file_contents.splitlines())}'
         # Define the URL and parameters
         url = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
         files = {"addressFile": ("localfile.csv", file_contents)}
@@ -104,10 +123,15 @@ class CensusStandardizingVendor(StandardizingVendor):
         # Send the POST request
         response = requests.post(url, files=files, data=data)
 
+        assert (
+            response.status_code == 200
+        ), f"Error in the Census API call. Response code: {response.status_code}: {response.text}"
         # Check if the request was successful
         if response.status_code == 200:
             # Parse the response content
             response_text = response.text
+            clean_response_text = response_text.replace("\n", "\\n")
+            # assert response_text is None, f'{clean_response_text}'
             # Use StringIO to treat the response text as a file-like object
             f = StringIO(response_text)
 
@@ -133,6 +157,10 @@ class CensusStandardizingVendor(StandardizingVendor):
                 self._parse_csv_response(r, raw_addresses=raw_addresses)
                 for r in results
             ]
+            assert len(responses) == len(raw_addresses), (
+                f"Number of standardized addresses {len(responses)} does not match number of raw addresses {len(raw_addresses)}"
+                f"in the batch: {response_text}"
+            )
             # sort the list, so it is in the same order as the raw_addresses.
             # Census API does not return list in same order
             matching_responses: List[StandardizedAddress] = [
@@ -141,6 +169,10 @@ class CensusStandardizingVendor(StandardizingVendor):
                 ]
                 for raw_address in raw_addresses
             ]
+            assert len(matching_responses) == len(raw_addresses), (
+                f"Number of matching standardized addresses {len(matching_responses)} does not match number of"
+                f"raw addresses {len(raw_addresses)} in the batch: {response_text}"
+            )
             return matching_responses
         else:
             return []
@@ -384,3 +416,16 @@ class CensusStandardizingVendor(StandardizingVendor):
                 if x.get_id() == address_id
             )
         )
+
+    @staticmethod
+    def vendor_specific_to_std(
+        vendor_specific_addresses: List[VendorResponse],
+    ) -> List[StandardizedAddress]:
+        """
+        Each vendor class knows how to convert its response to StdAddress
+        """
+        std_addresses = [
+            StandardizedAddress.from_dict(a.api_call_response)
+            for a in vendor_specific_addresses
+        ]
+        return std_addresses

@@ -113,6 +113,8 @@ class AddressStandardization(FrameworkTransformer):
         )
         self._setDefault(func_get_response_path=func_get_response_path)
 
+        print("Hello from new transformer")
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -165,7 +167,7 @@ class AddressStandardization(FrameworkTransformer):
                 # create raw address raw_addresses to send to the standardization module...
                 raw_address_list: List[RawAddress] = [
                     RawAddress(
-                        address_id="",
+                        address_id=raw_address[address_column_mapping["address_id"]],
                         line1=raw_address[address_column_mapping["line1"]],
                         line2=raw_address[address_column_mapping["line2"]],
                         city=raw_address[address_column_mapping["city"]],
@@ -174,6 +176,7 @@ class AddressStandardization(FrameworkTransformer):
                     )
                     for raw_address in raw_addresses
                 ]
+                print(f"raw_address_list: {raw_address_list}")
                 # standardize the raw addresses which also calculates the lat/long
                 standard_addresses: List[
                     StandardizedAddress
@@ -182,9 +185,13 @@ class AddressStandardization(FrameworkTransformer):
                     cache_handler_obj=cache_handler,
                     vendor_obj=standardizing_vendor,
                 )
+                print(f"standard_addresses: {standard_addresses}")
                 # map standard address back to a list of dictionary raw_addresses
                 standard_address_list: List[Dict[str, str]] = [
                     {
+                        address_column_mapping[
+                            "address_id"
+                        ]: standard_address.address.address_id,
                         f"{geolocation_column_prefix}latitude": standard_address.address.latitude,
                         f"{geolocation_column_prefix}longitude": standard_address.address.longitude,
                         address_column_mapping["line1"]: standard_address.address.line1,
@@ -206,27 +213,26 @@ class AddressStandardization(FrameworkTransformer):
                 :param values: a list of raw addresses as json strings
                 :return: a structure that contains address1, address2, city, state, zip, latitude, longitude
                 """
-                try:
-                    # Convert JSON strings to dictionaries
-                    raw_addresses: List[Dict[str, Any]] = values.apply(
-                        json.loads
-                    ).tolist()
+                # Convert JSON strings to dictionaries
+                raw_addresses: List[Dict[str, Any]] = values.apply(json.loads).tolist()
+                if len(raw_addresses) == 0:
+                    return pd.DataFrame([])
 
-                    assert isinstance(raw_addresses, list)
-                    assert isinstance(raw_addresses[0], dict)
+                assert isinstance(raw_addresses, list)
+                assert isinstance(raw_addresses[0], dict)
 
-                    # Apply the custom function `standardize_list`
-                    processed_objects: List[Dict[str, Any]] = standardize_list(
-                        raw_addresses=raw_addresses
-                    )
-                    assert isinstance(processed_objects, list)
+                # Apply the custom function `standardize_list`
+                processed_objects: List[Dict[str, Any]] = standardize_list(
+                    raw_addresses=raw_addresses
+                )
+                assert isinstance(processed_objects, list)
+                if len(processed_objects) > 0:
                     assert isinstance(processed_objects[0], dict)
+                else:
+                    processed_objects = raw_addresses
 
-                    # Convert the processed objects back to a dataframe to return
-                    return pd.DataFrame(processed_objects)
-                except Exception as standardize_exception:
-                    print(f"standardize_exception: {standardize_exception}")
-                    raise
+                # Convert the processed objects back to a dataframe to return
+                return pd.DataFrame(processed_objects)
 
             # Define the Pandas UDF
             def apply_process_batch_udf(
