@@ -536,12 +536,12 @@ class FhirSender(FrameworkTransformer):
                             )
                         )
                     )
+                    merge_items: List[FhirMergeResponseItem] = (
+                        FhirMergeResponseItem.from_responses(responses=result_rows)
+                    )
                     result_df = (
                         df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            [
-                                FhirMergeResponseItem.from_dict(r.__dict__)
-                                for r in result_rows
-                            ],
+                            merge_items,
                             schema=FhirMergeResponseItemSchema.get_schema(),
                         )
                     )
