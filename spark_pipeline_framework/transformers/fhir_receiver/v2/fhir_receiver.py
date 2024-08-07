@@ -1,10 +1,11 @@
+import asyncio
 import json
 import math
 import uuid
 from datetime import datetime
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Callable, cast
+from typing import Any, Dict, List, Optional, Union, Callable, cast, AsyncGenerator
 
 # noinspection PyPep8Naming
 import pyspark.sql.functions as F
@@ -630,11 +631,22 @@ class FhirReceiver(FrameworkTransformer):
                     id_rows: List[Dict[str, Any]] = [
                         r.asDict(recursive=True) for r in id_df.collect()
                     ]
-                    result_rows: List[Dict[str, Any]] = (
-                        FhirReceiverProcessor.send_partition_request_to_server(
-                            partition_index=0,
-                            rows=id_rows,
-                            parameters=receiver_parameters,
+
+                    async def collect_items(
+                        generator: AsyncGenerator[Dict[str, Any], None]
+                    ) -> List[Dict[str, Any]]:
+                        items = []
+                        async for item in generator:
+                            items.append(item)
+                        return items
+
+                    result_rows: List[Dict[str, Any]] = asyncio.run(
+                        collect_items(
+                            FhirReceiverProcessor.send_partition_request_to_server_async(
+                                partition_index=0,
+                                rows=id_rows,
+                                parameters=receiver_parameters,
+                            )
                         )
                     )
                     response_schema = FhirGetResponseSchema.get_schema()
@@ -1020,13 +1032,26 @@ class FhirReceiver(FrameworkTransformer):
                 else:
                     resources: List[str] = []
                     errors: List[str] = []
-                    for result1 in FhirReceiverProcessor.get_batch_results_paging(
-                        page_size=page_size,
-                        limit=limit,
-                        server_url=server_url,
-                        parameters=receiver_parameters,
-                        last_updated_after=last_updated_after,
-                        last_updated_before=last_updated_before,
+
+                    async def collect_batch_items(
+                        generator: AsyncGenerator[GetBatchResult, None]
+                    ) -> List[GetBatchResult]:
+                        items = []
+                        async for item in generator:
+                            items.append(item)
+                        return items
+
+                    for result1 in asyncio.run(
+                        collect_batch_items(
+                            FhirReceiverProcessor.get_batch_results_paging_async(
+                                page_size=page_size,
+                                limit=limit,
+                                server_url=server_url,
+                                parameters=receiver_parameters,
+                                last_updated_after=last_updated_after,
+                                last_updated_before=last_updated_before,
+                            )
+                        )
                     ):
                         resources.extend(result1.resources)
                         errors.extend(result1.errors)
