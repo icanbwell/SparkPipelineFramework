@@ -30,6 +30,18 @@ class RawAddress:
     def to_dict(self) -> Dict[str, str]:
         return dict(self.address._asdict())
 
+    @classmethod
+    def from_dict(cls, address_dict: Dict[str, str]) -> "RawAddress":
+        return cls(
+            address_id=address_dict["address_id"],
+            line1=address_dict["line1"],
+            line2=address_dict["line2"],
+            city=address_dict["city"],
+            state=address_dict["state"],
+            zipcode=address_dict["zipcode"],
+            country=address_dict["country"],
+        )
+
     def get_id(self) -> str:
         address_id: str = self.address.address_id
         return address_id

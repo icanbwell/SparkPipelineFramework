@@ -5,6 +5,9 @@ from typing import List, Dict, Any, Optional, cast
 import requests
 from helix_fhir_client_sdk.utilities.list_chunker import ListChunker
 
+from spark_pipeline_framework.utilities.helix_geolocation.v1.address_parser import (
+    AddressParser,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
     RawAddress,
 )
@@ -20,9 +23,14 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.vendor_response imp
 
 
 class CensusStandardizingVendor(StandardizingVendor):
-    def __init__(self, use_bulk_api: bool = True) -> None:
+    def __init__(
+        self, use_bulk_api: bool = True, batch_request_max_size: Optional[int] = None
+    ) -> None:
         super().__init__(version="1")
         self._use_bulk_api: bool = use_bulk_api
+        # The Census service has a limit of 10,000 addresses per batch
+        # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
+        self._batch_request_max_size: Optional[int] = batch_request_max_size or 9000
 
     @staticmethod
     def get_vendor_name() -> str:
@@ -30,8 +38,6 @@ class CensusStandardizingVendor(StandardizingVendor):
 
     @staticmethod
     def batch_request_max_size() -> int:
-        # The Census service has a limit of 10,000 addresses per batch
-        # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
         return 9000
 
     def standardize(
@@ -59,7 +65,6 @@ class CensusStandardizingVendor(StandardizingVendor):
             )
         else:
             for address in raw_addresses:
-                address_dict = address.to_dict()
                 standardized_address_dict = self._api_call(
                     one_line_address=address.to_str()
                 )
@@ -113,8 +118,7 @@ class CensusStandardizingVendor(StandardizingVendor):
         file_contents = ""  # '"Unique ID", "Street address", "City", "State", "ZIP"'
         for address in raw_addresses:
             file_contents += f'"{address.get_id()}", "{address.address.line1}", "{address.address.city}", "{address.address.state}", "{address.address.zipcode}"\n'
-        clean_file_contents = file_contents.replace("\n", "\\n")
-        # assert file_contents is None, f'\nfile_contents={file_contents}\n, lines={len(file_contents.splitlines())}'
+
         # Define the URL and parameters
         url = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
         files = {"addressFile": ("localfile.csv", file_contents)}
@@ -130,8 +134,7 @@ class CensusStandardizingVendor(StandardizingVendor):
         if response.status_code == 200:
             # Parse the response content
             response_text = response.text
-            clean_response_text = response_text.replace("\n", "\\n")
-            # assert response_text is None, f'{clean_response_text}'
+
             # Use StringIO to treat the response text as a file-like object
             f = StringIO(response_text)
 
@@ -181,34 +184,20 @@ class CensusStandardizingVendor(StandardizingVendor):
     def _parse_csv_response(
         self, r: Dict[str, Any], raw_addresses: List[RawAddress]
     ) -> StandardizedAddress:
-        import re
-
-        def split_address(address: str) -> Dict[str, str] | None:
-            # Define regex pattern for matching the address components
-            pattern = r"(?P<address1>[^,]+), (?P<city>[^,]+), (?P<state>[A-Z]{2}), (?P<zipcode>\d{5})"
-            match = re.match(pattern, address)
-
-            if match:
-                components = match.groupdict()
-                # Add address line 2 as empty since it is not present in the input address
-                components["address2"] = ""
-                return components
-            else:
-                return None
 
         # Split the address
-        address_components: Dict[str, Any] | None = (
-            split_address(cast(str, r.get("Matched Address")))
+        parsed_address: RawAddress | None = (
+            AddressParser.split_address(cast(str, r.get("Matched Address")))
             if r.get("Matched Address")
             else None
         )
-        if not address_components:
+        if not parsed_address:
             return self._get_matching_raw_address(r["ID"], raw_addresses)
-        line1 = address_components.get("address1", "")
-        line2 = address_components.get("address2", "")
-        city = address_components.get("city", "")
-        state = address_components.get("state", "")
-        zipcode = address_components.get("zipcode", "")
+        line1 = parsed_address.address.line1
+        line2 = parsed_address.address.line2
+        city = parsed_address.address.city
+        state = parsed_address.address.state
+        zipcode = parsed_address.address.zipcode
         latitude = r["Coordinates"].split(",")[1] if r.get("Coordinates") else ""
         longitude = r["Coordinates"].split(",")[0] if r.get("Coordinates") else ""
         return (
