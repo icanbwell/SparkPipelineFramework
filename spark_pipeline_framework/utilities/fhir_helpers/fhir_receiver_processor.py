@@ -593,7 +593,10 @@ class FhirReceiverProcessor:
         # if paging is requested then iterate through the pages until the response is empty
         page_number: int = 0
         server_page_number: int = 0
-        while True:
+        has_next_page: bool = True
+        loop_number: int = 0
+        while has_next_page:
+            loop_number += 1
             async for result in FhirReceiverProcessor.send_fhir_request_async(
                 logger=get_logger(__name__),
                 resource_id=None,
@@ -674,7 +677,7 @@ class FhirReceiverProcessor:
                         page_number += 1
                         if limit and limit > 0:
                             if not page_size or (page_number * page_size) >= limit:
-                                break
+                                has_next_page = False
                     else:
                         # Received an error
                         if result.status not in parameters.ignore_status_codes:
@@ -687,8 +690,8 @@ class FhirReceiverProcessor:
                                 request_id=result.request_id,
                             )
                 else:
-                    break
-            yield GetBatchResult(resources=resources, errors=errors)
+                    has_next_page = False
+                yield GetBatchResult(resources=resources, errors=errors)
 
     @staticmethod
     async def get_batch_result_streaming_async(
