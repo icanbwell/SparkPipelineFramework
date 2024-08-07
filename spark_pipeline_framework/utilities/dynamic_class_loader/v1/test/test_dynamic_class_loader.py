@@ -12,7 +12,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendo
 def test_dynamic_class_loader() -> None:
     data_dir: Path = Path(__file__).parent.joinpath("./")
     standardizing_vendor_path = data_dir.joinpath(
-        "../../../helix_geolocation/v1/vendors"
+        "../../../helix_geolocation/v2/vendors"
     )
     sub_classes: List[Type[StandardizingVendor]] = DynamicClassLoader[
         StandardizingVendor
