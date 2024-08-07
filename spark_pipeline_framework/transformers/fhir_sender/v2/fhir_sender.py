@@ -4,6 +4,9 @@ from os import environ
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable
 
+from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
+from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
+from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -32,6 +35,9 @@ from spark_pipeline_framework.utilities.async_helper.v1.async_helper import Asyn
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
+    FhirMergeResponseItem,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
@@ -519,7 +525,9 @@ class FhirSender(FrameworkTransformer):
                     rows_to_send: List[Dict[str, Any]] = [
                         r.asDict(recursive=True) for r in json_df.collect()
                     ]
-                    result_rows: List[Dict[str, Any]] = AsyncHelper.run_in_event_loop(
+                    result_rows: List[
+                        FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse
+                    ] = AsyncHelper.run_in_event_loop(
                         AsyncHelper.collect_items(
                             FhirSenderProcessor.send_partition_to_server_async(
                                 partition_index=0,
@@ -530,7 +538,11 @@ class FhirSender(FrameworkTransformer):
                     )
                     result_df = (
                         df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            result_rows, schema=FhirMergeResponseItemSchema.get_schema()
+                            [
+                                FhirMergeResponseItem.from_dict(r.__dict__)
+                                for r in result_rows
+                            ],
+                            schema=FhirMergeResponseItemSchema.get_schema(),
                         )
                     )
                 else:

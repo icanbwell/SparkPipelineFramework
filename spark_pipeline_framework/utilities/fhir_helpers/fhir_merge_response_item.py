@@ -52,6 +52,12 @@ class FhirMergeResponseItem:
             FhirMergeResponseItemSchema.resource_json: self.resource_json,
         }
 
+    @classmethod
+    def from_dict(
+        cls, item: Dict[str, Any], status: Optional[int] = 200
+    ) -> "FhirMergeResponseItem":
+        return cls(item=item, status=status)
+
     @staticmethod
     def from_error(e: Exception, resource_type: str) -> "FhirMergeResponseItem":
         return FhirMergeResponseItem(

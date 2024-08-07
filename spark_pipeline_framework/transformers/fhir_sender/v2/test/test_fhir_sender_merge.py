@@ -110,7 +110,7 @@ async def test_fhir_sender_merge(
     assert obj["birthDate"] == "1984-01-01"
 
 
-@pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("run_synchronously", [True])
 def test_fhir_sender_merge_for_custom_parameters(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:

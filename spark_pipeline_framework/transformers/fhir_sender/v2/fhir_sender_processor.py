@@ -12,7 +12,9 @@ from typing import (
 )
 
 import pandas as pd
+from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
+from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
@@ -27,13 +29,10 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
-    FhirMergeResponseItemSchema,
-)
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import (
-    send_fhir_delete,
-    send_json_bundle_to_fhir,
-    update_json_bundle_to_fhir,
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers_async import (
+    update_json_bundle_to_fhir_async,
+    send_fhir_delete_async,
+    send_json_bundle_to_fhir_async,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
@@ -49,15 +48,26 @@ class FhirSenderProcessor:
         assert parameters
         count: int = 0
         try:
+            print(
+                f"FhirSenderProcessor.process_partition input_values [{len(input_values)}: {input_values}"
+            )
+            r: FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse
             async for r in FhirSenderProcessor.send_partition_to_server_async(
                 partition_index=0, parameters=parameters, rows=input_values
             ):
                 count += 1
-                yield r
+                print(f"FhirSenderProcessor.process_partition count: {count} r: {r}")
+                yield FhirMergeResponseItem.from_dict(
+                    item=r.__dict__, status=r.status
+                ).to_dict()
         except Exception as e:
+            print(f"FhirSenderProcessor.process_partition exception: {e}")
             # if an exception is thrown then return an error for each row
             for input_value in input_values:
                 count += 1
+                print(
+                    f"FhirSenderProcessor.process_partition exception input_value: {input_value}"
+                )
                 yield FhirMergeResponseItem.from_error(
                     e=e, resource_type=parameters.resource_name
                 ).to_dict()
@@ -91,7 +101,9 @@ class FhirSenderProcessor:
         partition_index: int,
         rows: Iterable[Dict[str, Any]],
         parameters: FhirSenderParameters,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[
+        FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse, None
+    ]:
         """
         This function processes a partition
 
@@ -104,8 +116,8 @@ class FhirSenderProcessor:
         :param parameters: parameters for this function
         :return: response from the server as FhirMergeResponseItem dicts
         """
+        json_data_list: List[Dict[str, Any]] = list(rows)
         try:
-            json_data_list: List[Dict[str, Any]] = list(rows)
             assert isinstance(json_data_list, list)
             if len(json_data_list) > 0:
                 assert isinstance(json_data_list[0], dict)
@@ -136,7 +148,8 @@ class FhirSenderProcessor:
                         json.loads(convert_dict_to_fhir_json(payload_item))
                         for payload_item in item_value["payload"]
                     ]
-                    patch_result: Optional[Dict[str, Any]] = update_json_bundle_to_fhir(
+                    patch: FhirUpdateResponse
+                    async for patch_result in update_json_bundle_to_fhir_async(
                         obj_id=item_value["id"],
                         json_data=json.dumps(payload),
                         server_url=parameters.server_url,
@@ -152,15 +165,15 @@ class FhirSenderProcessor:
                         auth_access_token=parameters.auth_access_token,
                         additional_request_headers=parameters.additional_request_headers,
                         log_level=parameters.log_level,
-                    )
-                    if patch_result:
-                        responses.append(patch_result)
+                    ):
+                        yield patch_result
             elif FhirSenderOperation.operation_equals(
                 parameters.operation, FhirSenderOperation.FHIR_OPERATION_PUT
             ):
                 for item in json_data_list:
                     item_value = json.loads(item["value"])
-                    put_result: Optional[Dict[str, Any]] = update_json_bundle_to_fhir(
+                    put_result: FhirUpdateResponse
+                    async for put_result in update_json_bundle_to_fhir_async(
                         obj_id=item_value["id"],
                         json_data=convert_dict_to_fhir_json(item_value),
                         server_url=parameters.server_url,
@@ -176,15 +189,15 @@ class FhirSenderProcessor:
                         auth_access_token=parameters.auth_access_token,
                         additional_request_headers=parameters.additional_request_headers,
                         log_level=parameters.log_level,
-                    )
-                    if put_result:
-                        responses.append(put_result)
+                    ):
+                        yield put_result
             elif FhirSenderOperation.operation_equals(
                 parameters.operation, FhirSenderOperation.FHIR_OPERATION_DELETE
             ):
                 # FHIR doesn't support bulk deletes, so we have to send one at a time
-                responses = [
-                    send_fhir_delete(
+                for item in json_data_list:
+                    delete_result: FhirDeleteResponse
+                    async for delete_result in send_fhir_delete_async(
                         obj_id=(item if "id" in item else json.loads(item["value"]))[
                             "id"
                         ],  # parse the JSON and extract the id
@@ -199,9 +212,8 @@ class FhirSenderProcessor:
                         auth_access_token=parameters.auth_access_token,
                         additional_request_headers=parameters.additional_request_headers,
                         log_level=parameters.log_level,
-                    )
-                    for item in json_data_list
-                ]
+                    ):
+                        yield delete_result
             elif FhirSenderOperation.operation_equals(
                 parameters.operation, FhirSenderOperation.FHIR_OPERATION_MERGE
             ):
@@ -234,31 +246,31 @@ class FhirSenderProcessor:
                             f"for {parameters.resource_name}: {first_id}"
                         )
                         if first_id:
-                            result: Optional[FhirMergeResponse] = (
-                                send_json_bundle_to_fhir(
-                                    id_=first_id,
-                                    json_data_list=json_data_list_1,
-                                    server_url=parameters.server_url,
-                                    validation_server_url=parameters.validation_server_url,
-                                    resource=parameters.resource_name,
-                                    logger=logger,
-                                    auth_server_url=parameters.auth_server_url,
-                                    auth_client_id=parameters.auth_client_id,
-                                    auth_client_secret=parameters.auth_client_secret,
-                                    auth_login_token=parameters.auth_login_token,
-                                    auth_scopes=parameters.auth_scopes,
-                                    auth_access_token=auth_access_token1,
-                                    additional_request_headers=parameters.additional_request_headers,
-                                    log_level=parameters.log_level,
-                                    retry_count=parameters.retry_count,
-                                    exclude_status_codes_from_retry=parameters.exclude_status_codes_from_retry,
-                                )
-                            )
-                            if result:
-                                auth_access_token1 = result.access_token
-                                if result.request_id:
-                                    request_id_list.append(result.request_id)
-                                responses.extend(result.responses)
+                            result: Optional[FhirMergeResponse]
+                            async for result in send_json_bundle_to_fhir_async(
+                                id_=first_id,
+                                json_data_list=json_data_list_1,
+                                server_url=parameters.server_url,
+                                validation_server_url=parameters.validation_server_url,
+                                resource=parameters.resource_name,
+                                logger=logger,
+                                auth_server_url=parameters.auth_server_url,
+                                auth_client_id=parameters.auth_client_id,
+                                auth_client_secret=parameters.auth_client_secret,
+                                auth_login_token=parameters.auth_login_token,
+                                auth_scopes=parameters.auth_scopes,
+                                auth_access_token=auth_access_token1,
+                                additional_request_headers=parameters.additional_request_headers,
+                                log_level=parameters.log_level,
+                                retry_count=parameters.retry_count,
+                                exclude_status_codes_from_retry=parameters.exclude_status_codes_from_retry,
+                            ):
+                                if result:
+                                    auth_access_token1 = result.access_token
+                                    if result.request_id:
+                                        request_id_list.append(result.request_id)
+                                    responses.extend(result.responses)
+                                    yield result
                 else:
                     # send a whole batch to the server at once
                     json_data_list_1 = [
@@ -276,7 +288,7 @@ class FhirSenderProcessor:
                     )
                     first_id = first_item.get("id") if first_item is not None else None
                     if first_id:
-                        result = send_json_bundle_to_fhir(
+                        async for result in send_json_bundle_to_fhir_async(
                             id_=first_id,
                             json_data_list=json_data_list_1,
                             server_url=parameters.server_url,
@@ -293,62 +305,17 @@ class FhirSenderProcessor:
                             log_level=parameters.log_level,
                             retry_count=parameters.retry_count,
                             exclude_status_codes_from_retry=parameters.exclude_status_codes_from_retry,
-                        )
-                        if result and result.request_id:
-                            request_id_list.append(result.request_id)
-                        if result:
-                            responses = result.responses
-            # each item in responses is either a json object
-            #   or a list of json objects
-            error_count: int = 0
-            updated_count: int = 0
-            created_count: int = 0
-            deleted_count: int = 0
-            errors: List[str] = []
-            response: Dict[str, Any]
-            for response in responses:
-                if response.get(FhirMergeResponseItemSchema.updated) is True:
-                    updated_count += 1
-                if response.get(FhirMergeResponseItemSchema.created) is True:
-                    created_count += 1
-                if response.get(FhirMergeResponseItemSchema.deleted) is True:
-                    deleted_count += 1
-                if response.get(FhirMergeResponseItemSchema.issue) is not None:
-                    error_count += 1
-                    errors.append(
-                        json.dumps(response[FhirMergeResponseItemSchema.issue])
-                    )
-            logger.debug(
-                f"Received response for batch {partition_index}/{parameters.desired_partitions} "
-                f"request_ids:[{', '.join(request_id_list)}] "
-                f"total={len(json_data_list)}, error={error_count}, "
-                f"created={created_count}, updated={updated_count}, deleted={deleted_count} "
-                f"to {parameters.server_url}/{parameters.resource_name}. "
-                f"[{parameters.name}] "
-                f"Response={json.dumps(responses, default=str)}"
-            )
-            if len(errors) > 0:
-                logger.error(
-                    f"---- errors for {partition_index}/{parameters.desired_partitions} "
-                    f"to {parameters.server_url}/{parameters.resource_name} -----"
-                )
-                for error in errors:
-                    logger.error(error)
-                logger.error("---- end errors -----")
-
-            # parse the response
-            parsed_responses: List[FhirMergeResponseItem] = [
-                FhirMergeResponseItem(item=response) for response in responses
-            ]
+                        ):
+                            if result and result.request_id:
+                                request_id_list.append(result.request_id)
+                            yield result
         except Exception as e:
-            parsed_responses = [
-                FhirMergeResponseItem.from_error(
-                    e=e, resource_type=parameters.resource_name
-                )
-            ]
-
-        clean_responses: List[Dict[str, Any]] = [
-            parsed_response.to_dict() for parsed_response in parsed_responses
-        ]
-        for clean_response in clean_responses:
-            yield clean_response
+            yield FhirMergeResponse(
+                request_id="",
+                status=400,
+                error=str(e),
+                json_data=json.dumps(json_data_list),
+                access_token=parameters.auth_access_token,
+                url=parameters.server_url,
+                responses=[],
+            )
