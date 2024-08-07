@@ -162,6 +162,9 @@ class AddressStandardization(FrameworkTransformer):
                 :param raw_addresses:
                 :return:
                 """
+                assert all(
+                    r.get(address_column_mapping["address_id"]) for r in raw_addresses
+                )
                 # create raw address raw_addresses to send to the standardization module...
                 raw_address_list: List[RawAddress] = [
                     RawAddress(

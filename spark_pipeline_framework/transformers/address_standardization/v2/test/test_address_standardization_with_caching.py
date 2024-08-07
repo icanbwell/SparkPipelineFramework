@@ -19,6 +19,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 def test_address_standardization_with_caching(spark_session: SparkSession) -> None:
     view_name: str = "foo"
     address_column_mapping: Dict[str, str] = {
+        "address_id": "address_id",
         "line1": "address1",
         "line2": "address2",
         "city": "city",
@@ -27,6 +28,7 @@ def test_address_standardization_with_caching(spark_session: SparkSession) -> No
     }
     data: List[Dict[str, Any]] = [
         {
+            "address_id": "1",
             "address1": "547 haight st",
             "address2": "",
             "city": "san francisco",
@@ -34,13 +36,21 @@ def test_address_standardization_with_caching(spark_session: SparkSession) -> No
             "zip": "23434",
         },
         {
+            "address_id": "2",
             "address1": "548 haight st",
             "address2": "",
             "city": "san francisco",
             "state": "ca",
             "zip": "23434",
         },
-        {"address1": None, "address2": None, "city": None, "state": None, "zip": None},
+        {
+            "address_id": 3,
+            "address1": None,
+            "address2": None,
+            "city": None,
+            "state": None,
+            "zip": None,
+        },
     ]
 
     df: DataFrame = create_dataframe_from_dictionary(
