@@ -49,9 +49,9 @@ class AsyncPandasColumnUDF:
             if len(input_values) == 0:
                 yield pd.DataFrame([])
             else:
-                output_values: List[Dict[str, Any]] = await self.async_func(
-                    input_values
-                )
+                output_values: List[Dict[str, Any]] = []
+                async for output_value in self.async_func(input_values):  # type: ignore[attr-defined]
+                    output_values.append(output_value)
                 yield pd.DataFrame(output_values)
 
     # noinspection PyMethodMayBeStatic

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional, Callable, AsyncGenerator, cast
 
 from pyspark.ml.param import Param
 from pyspark.sql import Column
@@ -18,6 +18,9 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_column_udf import (
     AsyncPandasColumnUDF,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
+    HandlePandasBatchFunction,
 )
 
 # noinspection PyProtectedMember
@@ -152,7 +155,7 @@ class AddressStandardization(FrameworkTransformer):
 
             async def standardize_list(
                 input_values: List[Dict[str, Any]],
-            ) -> List[Dict[str, Any]]:
+            ) -> AsyncGenerator[Dict[str, Any], None]:
                 """
                 Standardize a list of raw addresses.  raw address is a dictionary with the following keys
                 address1, address2, city, state, zip
@@ -165,45 +168,59 @@ class AddressStandardization(FrameworkTransformer):
                 assert all(
                     r.get(address_column_mapping["address_id"]) for r in input_values
                 )
-                # create raw address raw_addresses to send to the standardization module...
-                raw_address_list: List[RawAddress] = [
-                    RawAddress(
-                        address_id=raw_address[address_column_mapping["address_id"]],
-                        line1=raw_address[address_column_mapping["line1"]],
-                        line2=raw_address[address_column_mapping["line2"]],
-                        city=raw_address[address_column_mapping["city"]],
-                        state=raw_address[address_column_mapping["state"]],
-                        zipcode=raw_address[address_column_mapping["zipcode"]],
+                try:
+                    # create raw address raw_addresses to send to the standardization module...
+                    raw_address_list: List[RawAddress] = [
+                        RawAddress(
+                            address_id=raw_address[
+                                address_column_mapping["address_id"]
+                            ],
+                            line1=raw_address[address_column_mapping["line1"]],
+                            line2=raw_address[address_column_mapping["line2"]],
+                            city=raw_address[address_column_mapping["city"]],
+                            state=raw_address[address_column_mapping["state"]],
+                            zipcode=raw_address[address_column_mapping["zipcode"]],
+                        )
+                        for raw_address in input_values
+                    ]
+                    # standardize the raw addresses which also calculates the lat/long
+                    standard_addresses: List[
+                        StandardizedAddress
+                    ] = await StandardizeAddr().standardize_async(
+                        raw_addresses=raw_address_list,
+                        cache_handler_obj=cache_handler,
+                        vendor_obj=standardizing_vendor,
                     )
-                    for raw_address in input_values
-                ]
-                # standardize the raw addresses which also calculates the lat/long
-                standard_addresses: List[
-                    StandardizedAddress
-                ] = await StandardizeAddr().standardize_async(
-                    raw_addresses=raw_address_list,
-                    cache_handler_obj=cache_handler,
-                    vendor_obj=standardizing_vendor,
-                )
-                assert len(standard_addresses) == len(
-                    input_values
-                ), f"Length of output != Length of input: {len(standard_addresses)} != {len(input_values)}"
-                # map standard address back to a list of dictionary raw_addresses
-                standard_address_list: List[Dict[str, str]] = [
-                    {
-                        f"{geolocation_column_prefix}latitude": standard_address.address.latitude,
-                        f"{geolocation_column_prefix}longitude": standard_address.address.longitude,
-                        address_column_mapping["line1"]: standard_address.address.line1,
-                        address_column_mapping["line2"]: standard_address.address.line2,
-                        address_column_mapping["city"]: standard_address.address.city,
-                        address_column_mapping["state"]: standard_address.address.state,
-                        address_column_mapping[
-                            "zipcode"
-                        ]: standard_address.address.zipcode,
-                    }
-                    for standard_address in standard_addresses
-                ]
-                return standard_address_list
+                    assert len(standard_addresses) == len(
+                        input_values
+                    ), f"Length of output != Length of input: {len(standard_addresses)} != {len(input_values)}"
+                    # map standard address back to a list of dictionary raw_addresses
+                    standard_address_list: List[Dict[str, str]] = [
+                        {
+                            f"{geolocation_column_prefix}latitude": standard_address.address.latitude,
+                            f"{geolocation_column_prefix}longitude": standard_address.address.longitude,
+                            address_column_mapping[
+                                "line1"
+                            ]: standard_address.address.line1,
+                            address_column_mapping[
+                                "line2"
+                            ]: standard_address.address.line2,
+                            address_column_mapping[
+                                "city"
+                            ]: standard_address.address.city,
+                            address_column_mapping[
+                                "state"
+                            ]: standard_address.address.state,
+                            address_column_mapping[
+                                "zipcode"
+                            ]: standard_address.address.zipcode,
+                        }
+                        for standard_address in standard_addresses
+                    ]
+                    for standard_address in standard_address_list:
+                        yield standard_address
+                except Exception as e:
+                    raise e
 
             # if there are rows then standardize them
             if not spark_is_data_frame_empty(address_df):
@@ -217,7 +234,9 @@ class AddressStandardization(FrameworkTransformer):
                 # )
                 apply_process_batch_udf1: Callable[
                     [Column], Column
-                ] = AsyncPandasColumnUDF(async_func=standardize_list).get_pandas_udf(
+                ] = AsyncPandasColumnUDF(
+                    async_func=cast(HandlePandasBatchFunction, standardize_list)
+                ).get_pandas_udf(
                     return_type=self.get_standardization_df_schema(
                         address_column_mapping=address_column_mapping,
                         geolocation_column_prefix=geolocation_column_prefix,

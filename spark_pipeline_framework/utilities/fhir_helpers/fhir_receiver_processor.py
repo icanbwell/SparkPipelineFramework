@@ -35,6 +35,9 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parame
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
+    HandlePandasBatchWithParametersFunction,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
 )
@@ -75,13 +78,17 @@ class FhirReceiverProcessor:
         input_values: List[Dict[str, Any]], parameters: Optional[FhirReceiverParameters]
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert parameters
+        count: int = 0
         try:
             for r in FhirReceiverProcessor.send_partition_request_to_server(
                 partition_index=0, parameters=parameters, rows=input_values
             ):
+                count += 1
                 yield r
         except Exception as e:
+            # if an exception is thrown then return an error for each row
             for input_value in input_values:
+                count += 1
                 yield {
                     FhirGetResponseSchema.partition_index: 0,
                     FhirGetResponseSchema.sent: 0,
@@ -96,6 +103,8 @@ class FhirReceiverProcessor:
                     FhirGetResponseSchema.access_token: None,
                     FhirGetResponseSchema.extra_context_to_return: None,
                 }
+        # we actually want to error here since something strange happened
+        assert count == len(input_values), f"count={count}, len={len(input_values)}"
 
     @staticmethod
     def get_process_batch_function(
@@ -110,7 +119,10 @@ class FhirReceiverProcessor:
         """
 
         return AsyncPandasDataFrameUDF(
-            async_func=FhirReceiverProcessor.process_partition,  # type: ignore[arg-type]
+            async_func=cast(
+                HandlePandasBatchWithParametersFunction[FhirReceiverParameters],
+                FhirReceiverProcessor.process_partition,
+            ),
             parameters=parameters,
         ).get_pandas_udf()
 

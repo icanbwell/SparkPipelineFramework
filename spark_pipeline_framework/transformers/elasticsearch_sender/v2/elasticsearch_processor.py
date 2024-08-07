@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Iterator,
     AsyncGenerator,
+    cast,
 )
 
 import pandas as pd
@@ -25,6 +26,9 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
+    HandlePandasBatchWithParametersFunction,
+)
 
 
 class ElasticSearchProcessor:
@@ -34,6 +38,7 @@ class ElasticSearchProcessor:
         parameters: Optional[ElasticSearchSenderParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert parameters
+        count: int = 0
         try:
             result: Iterable[Dict[str, Any] | None] = (
                 ElasticSearchProcessor.send_partition_to_server(
@@ -42,6 +47,7 @@ class ElasticSearchProcessor:
             )
             r: Dict[str, Any] | None
             for r in result:
+                count += 1
                 if r:
                     yield r
                 else:
@@ -54,7 +60,9 @@ class ElasticSearchProcessor:
                         "payload": json.dumps(input_values),
                     }
         except Exception as e:
+            # if an exception is thrown then return an error for each row
             for input_value in input_values:
+                count += 1
                 yield {
                     "error": str(e),
                     "partition_index": 0,
@@ -63,6 +71,8 @@ class ElasticSearchProcessor:
                     "failed": 1,
                     "payload": json.dumps(input_values),
                 }
+        # we actually want to error here since something strange happened
+        assert count == len(input_values), f"count={count}, len={len(input_values)}"
 
     @staticmethod
     def get_process_batch_function(
@@ -77,7 +87,10 @@ class ElasticSearchProcessor:
         """
 
         return AsyncPandasDataFrameUDF(
-            async_func=ElasticSearchProcessor.process_partition,  # type: ignore[arg-type]
+            async_func=cast(
+                HandlePandasBatchWithParametersFunction[ElasticSearchSenderParameters],
+                ElasticSearchProcessor.process_partition,
+            ),
             parameters=parameters,
         ).get_pandas_udf()
 
