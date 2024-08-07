@@ -1,8 +1,7 @@
 import json
-from typing import Dict, List, Optional, Any, Callable
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3 import Retry
+from typing import Dict, List, Optional, Any, AsyncGenerator, Protocol
+
+import aiohttp
 
 from spark_pipeline_framework.utilities.aws.config import get_ssm_config
 import structlog
@@ -26,6 +25,20 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response_key
 logger = structlog.get_logger(__file__)
 
 
+class CustomApiCallFunction(Protocol):
+    async def __call__(
+        self,
+        raw_addresses: List[RawAddress],
+    ) -> Dict[str, Any]:
+        """
+        This function is called with a batch of raw addresses and should return a response from the vendor
+
+        :param raw_addresses: raw addresses as a list
+        :return: output values as a list of dictionaries
+        """
+        ...
+
+
 class MelissaStandardizingVendor(StandardizingVendor):
     _RESPONSE_KEY_ERROR_THRESHOLD = 2
     # number of times Melissa is allowed to send bad response until we cancel rest of requests
@@ -33,7 +46,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
     def __init__(
         self,
         license_key: str = "",
-        custom_api_call: Optional[Callable[[Any], Dict[str, Any]]] = None,
+        custom_api_call: Optional[CustomApiCallFunction] = None,
         version: str = "1",
         api_calls_limit: Optional[int] = None,
     ) -> None:
@@ -50,9 +63,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
             license_key or custom_api_call
         ), "Either license_key or custom_api_call must be provided"
         self._license_key: str = license_key
-        self._custom_api_call: Optional[Callable[[Any], Dict[str, Any]]] = (
-            custom_api_call
-        )
+        self._custom_api_call_async: Optional[CustomApiCallFunction] = custom_api_call
         self._error_counter: int = 0
         self._api_calls_limit: Optional[int] = api_calls_limit
         self._api_calls_counter: int = 0
@@ -63,7 +74,12 @@ class MelissaStandardizingVendor(StandardizingVendor):
         """
         returns the vendor specific response from the vendor
         """
-        vendor_specific_addresses = self._call_std_addr_api(raw_addresses=raw_addresses)
+        vendor_specific_addresses: List[Dict[str, str]] = []
+        async for vendor_specific_addresses1 in self._call_std_addr_api_async(
+            raw_addresses=raw_addresses
+        ):
+            vendor_specific_addresses.extend(vendor_specific_addresses1)
+
         vendor_responses: List[VendorResponse] = super()._to_vendor_response(
             vendor_response=vendor_specific_addresses,
             raw_addresses=raw_addresses,
@@ -105,9 +121,9 @@ class MelissaStandardizingVendor(StandardizingVendor):
         ]
         return std_addresses
 
-    def _call_std_addr_api(
+    async def _call_std_addr_api_async(
         self, raw_addresses: List[RawAddress]
-    ) -> List[Dict[str, str]]:
+    ) -> AsyncGenerator[List[Dict[str, str]], None]:
         """
         Please check https://www.melissa.com/quickstart-guides/global-address for more info
         Please make sure "License Key" is available https://www.melissa.com/user/user_account.aspx
@@ -119,20 +135,20 @@ class MelissaStandardizingVendor(StandardizingVendor):
             logger.error(
                 f"Melissa API calls limit reached. Limit: {self._api_calls_limit}"
             )
-            return []
+            yield []
 
         api_server_response: Dict[str, Any] = (
-            self._custom_api_call(raw_addresses)
-            if self._custom_api_call
-            else self._api_call(raw_addresses)
+            await self._custom_api_call_async(raw_addresses)
+            if self._custom_api_call_async
+            else await self._api_call_async(raw_addresses)
         )
 
-        # adding vendor so we can parse it correctly after reading response from cache in the future
+        # adding vendor, so we can parse it correctly after reading response from cache in the future
         try:
             vendor_specific_addresses: List[Dict[str, str]] = api_server_response[
                 "Records"
             ]
-
+            yield vendor_specific_addresses
         except KeyError:
             logger.exception(
                 f"{self.get_vendor_name()} response does not have a Records key. Are we out of credit?"
@@ -140,13 +156,9 @@ class MelissaStandardizingVendor(StandardizingVendor):
             self._error_counter += 1
             if self._error_counter > self._RESPONSE_KEY_ERROR_THRESHOLD:
                 raise VendorResponseKeyError
+            yield []
 
-            return []
-
-        return vendor_specific_addresses
-
-    def _api_call(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
-        # making the request ready
+    async def _api_call_async(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         addresses_to_lookup: List[Dict[str, str]] = [
             {
                 "RecordID": a.get_id(),
@@ -166,24 +178,20 @@ class MelissaStandardizingVendor(StandardizingVendor):
         }
         payload = json.dumps(json_batch_dict).encode("utf-8")
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
-        # send the batch request
+
         try:
-            s = requests.session()
-            retries = Retry(
-                total=3, backoff_factor=0.1, status_forcelist=[429, 500, 502, 503, 504]
-            )
-
-            s.mount("http://", HTTPAdapter(max_retries=retries))
-            s.mount("https://", HTTPAdapter(max_retries=retries))
-            response = s.post(URL, headers=headers, data=payload)
-            response.raise_for_status()
-
-            api_response: Dict[str, List[Dict[str, str]]] = json.loads(response.text)
+            async with aiohttp.ClientSession() as session:
+                async with session.post(URL, headers=headers, data=payload) as response:
+                    response.raise_for_status()
+                    api_response: Dict[str, List[Dict[str, str]]] = (
+                        await response.json()
+                    )
         except Exception as e:
             logger.exception(
                 f"Error connecting to {self.get_vendor_name()}", http_error=repr(e)
             )
             raise e
+
         return api_response
 
     def _get_request_credentials(self) -> Dict[str, str]:

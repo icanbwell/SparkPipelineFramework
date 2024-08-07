@@ -270,12 +270,15 @@ async def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> Non
     expected_result = [std_addr_obj2]
     arrange_mongo()
 
+    async def my_func(raw_addresses: List[RawAddress]) -> Dict[str, Any]:
+        return response_data
+
     # act
     r: List[StandardizedAddress] = await StandardizeAddr().standardize_async(
         raw_addrs,
         cache_handler_obj=MockCacheHandler(),
         vendor_obj=MelissaStandardizingVendor(
-            license_key="mock", custom_api_call=lambda x: response_data
+            license_key="mock", custom_api_call=my_func
         ),
     )
 
@@ -314,7 +317,7 @@ def arrange_mongo() -> None:
 
 
 async def test_standardize_stress_test() -> None:
-    def mocked_api_call(addresses_to_lookup: List[RawAddress]) -> Dict[str, Any]:
+    async def mocked_api_call(raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         res = deepcopy(response_data)
         res["Records"] = [
             {
@@ -330,7 +333,7 @@ async def test_standardize_stress_test() -> None:
                 "Latitude": "000",
                 "Longitude": "-000",
             }
-            for a in addresses_to_lookup
+            for a in raw_addresses
         ]
         return res
 
@@ -404,7 +407,7 @@ async def test_standardize_stress_test() -> None:
 
 
 async def test_bad_request() -> None:
-    def mocked_api_call(addresses_to_lookup: List[RawAddress]) -> Dict[str, Any]:
+    async def mocked_api_call(raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         res = deepcopy(response_data)
         res["Records"] = [
             {
@@ -420,7 +423,7 @@ async def test_bad_request() -> None:
                 "Latitude": "",
                 "Longitude": "",
             }
-            for a in addresses_to_lookup
+            for a in raw_addresses
         ]
         return res
 
