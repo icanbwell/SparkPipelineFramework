@@ -1,9 +1,7 @@
-import json
 from typing import Any, Dict, List, Optional, Callable
-from typing import Iterator
 
-import pandas as pd
 from pyspark.ml.param import Param
+from pyspark.sql import Column
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import (
     to_json,
@@ -12,12 +10,14 @@ from pyspark.sql.functions import (
     col,
     lit,
 )
-from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StructType, StructField, StringType
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_column_udf import (
+    AsyncPandasColumnUDF,
 )
 
 # noinspection PyProtectedMember
@@ -150,20 +150,20 @@ class AddressStandardization(FrameworkTransformer):
             )
             incoming_row_count: int = address_df.count()
 
-            def standardize_list(
-                raw_addresses: List[Dict[str, str]]
-            ) -> List[Dict[str, str]]:
+            async def standardize_list(
+                input_values: List[Dict[str, Any]],
+            ) -> List[Dict[str, Any]]:
                 """
                 Standardize a list of raw addresses.  raw address is a dictionary with the following keys
                 address1, address2, city, state, zip
                 Returns a list of dictionary raw_addresses with the following keys
                 address1, address2, city, state, zip, latitude, longitude
 
-                :param raw_addresses:
+                :param input_values:
                 :return:
                 """
                 assert all(
-                    r.get(address_column_mapping["address_id"]) for r in raw_addresses
+                    r.get(address_column_mapping["address_id"]) for r in input_values
                 )
                 # create raw address raw_addresses to send to the standardization module...
                 raw_address_list: List[RawAddress] = [
@@ -175,7 +175,7 @@ class AddressStandardization(FrameworkTransformer):
                         state=raw_address[address_column_mapping["state"]],
                         zipcode=raw_address[address_column_mapping["zipcode"]],
                     )
-                    for raw_address in raw_addresses
+                    for raw_address in input_values
                 ]
                 # standardize the raw addresses which also calculates the lat/long
                 standard_addresses: List[
@@ -186,8 +186,8 @@ class AddressStandardization(FrameworkTransformer):
                     vendor_obj=standardizing_vendor,
                 )
                 assert len(standard_addresses) == len(
-                    raw_addresses
-                ), f"Length of output != Length of input: {len(standard_addresses)} != {len(raw_addresses)}"
+                    input_values
+                ), f"Length of output != Length of input: {len(standard_addresses)} != {len(input_values)}"
                 # map standard address back to a list of dictionary raw_addresses
                 standard_address_list: List[Dict[str, str]] = [
                     {
@@ -205,62 +205,23 @@ class AddressStandardization(FrameworkTransformer):
                 ]
                 return standard_address_list
 
-            def standardize_batch(values: pd.Series) -> pd.DataFrame:  # type: ignore[type-arg]
-                """
-                Standardize a batch of raw addresses.
-
-                :param values: a list of raw addresses as json strings
-                :return: a structure that contains address1, address2, city, state, zip, latitude, longitude
-                """
-                # Convert JSON strings to dictionaries
-                raw_addresses: List[Dict[str, Any]] = values.apply(json.loads).tolist()
-                if len(raw_addresses) == 0:
-                    return pd.DataFrame([])
-
-                assert isinstance(raw_addresses, list)
-                assert isinstance(raw_addresses[0], dict)
-
-                # Apply the custom function `standardize_list`
-                processed_objects: List[Dict[str, Any]] = standardize_list(
-                    raw_addresses=raw_addresses
-                )
-                assert isinstance(processed_objects, list)
-                if len(processed_objects) > 0:
-                    assert isinstance(processed_objects[0], dict)
-                else:
-                    processed_objects = raw_addresses
-
-                # Convert the processed objects back to a dataframe to return
-                return pd.DataFrame(processed_objects)
-
-            # Define the Pandas UDF
-            def apply_process_batch_udf(
-                batch_iter: Iterator[pd.Series],  # type: ignore[type-arg]
-            ) -> Iterator[pd.DataFrame]:
-                """
-                Apply the custom function `standardize_batch` to the input batch iterator.
-                This is a vectorized Pandas UDF, which means that it processes the input data in batches.
-                This function will be called for each partition in Spark.  It will run on worker nodes in parallel.
-                Within each partition, the input data will be processed in batches using Pandas.  The size of the batches
-                is controlled by the `spark.sql.execution.arrow.maxRecordsPerBatch` configuration.
-
-                https://learn.microsoft.com/en-us/azure/databricks/udf/pandas
-
-                :param batch_iter: iterator of batches of input data.
-                :return: iterator of batches of output data
-                """
-                for x in batch_iter:
-                    yield standardize_batch(x)
-
             # if there are rows then standardize them
             if not spark_is_data_frame_empty(address_df):
                 # wrap the function into a pandas udf specifying the output schema
-                apply_process_batch_udf1 = pandas_udf(  # type:ignore[call-overload]
-                    apply_process_batch_udf,
-                    returnType=self.get_standardization_df_schema(
+                # apply_process_batch_udf1 = pandas_udf(  # type:ignore[call-overload]
+                #     apply_process_batch_udf,
+                #     returnType=self.get_standardization_df_schema(
+                #         address_column_mapping=address_column_mapping,
+                #         geolocation_column_prefix=geolocation_column_prefix,
+                #     ),
+                # )
+                apply_process_batch_udf1: Callable[
+                    [Column], Column
+                ] = AsyncPandasColumnUDF(standardize_list).get_pandas_udf(
+                    return_type=self.get_standardization_df_schema(
                         address_column_mapping=address_column_mapping,
                         geolocation_column_prefix=geolocation_column_prefix,
-                    ),
+                    )
                 )
                 # add a new column that will hold the result of standardization as a struct
                 combined_df = address_df.withColumn(

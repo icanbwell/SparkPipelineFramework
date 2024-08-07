@@ -42,6 +42,8 @@ class AddressParser:
         :param address: address string
         :return: dictionary containing the address components
         """
+        if not address:
+            return None
         parsed_address: Optional[OrderedDict[str, Union[List[str], str]]]
         parsed_address_type: Optional[str]
         parsed_address, parsed_address_type = AddressParser.safe_tag_address(
@@ -111,6 +113,8 @@ class AddressParser:
         :param address: address string
         :return: dictionary containing the address components
         """
+        if not address:
+            return None
         parsed_address: RawAddress | None = AddressParser.split_address_with_parser(
             address
         )
