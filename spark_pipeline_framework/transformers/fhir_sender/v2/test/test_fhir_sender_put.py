@@ -57,7 +57,6 @@ def test_fhir_sender_put(spark_session: SparkSession, run_synchronously: bool) -
             batch_size=1,
             run_synchronously=run_synchronously,
             operation=FhirSenderOperation.FHIR_OPERATION_PUT,
-            additional_request_headers={"SampleHeader": "SampleValue"},
             parameters=parameters,
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,

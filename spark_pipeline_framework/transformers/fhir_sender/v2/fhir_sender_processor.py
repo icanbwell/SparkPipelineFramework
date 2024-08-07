@@ -55,11 +55,25 @@ class FhirSenderProcessor:
             async for r in FhirSenderProcessor.send_partition_to_server_async(
                 partition_index=0, parameters=parameters, rows=input_values
             ):
-                count += 1
-                print(f"FhirSenderProcessor.process_partition count: {count} r: {r}")
-                yield FhirMergeResponseItem.from_dict(
-                    item=r.__dict__, status=r.status
-                ).to_dict()
+                if isinstance(r, FhirMergeResponse):
+                    for merge_response in FhirMergeResponseItem.from_merge_response(
+                        merge_response=r
+                    ):
+                        count += 1
+                        yield merge_response.to_dict()
+                elif isinstance(r, FhirUpdateResponse):
+                    count += 1
+                    yield FhirMergeResponseItem.from_update_response(
+                        update_response=r, resource_type=parameters.resource_name
+                    ).to_dict()
+                elif isinstance(r, FhirDeleteResponse):
+                    count += 1  # no responses in delete
+                    yield FhirMergeResponseItem.from_delete_response(
+                        delete_response=r, resource_type=parameters.resource_name
+                    ).to_dict()
+                print(
+                    f"FhirSenderProcessor.process_partition count: {count} r: {r.__dict__}"
+                )
         except Exception as e:
             print(f"FhirSenderProcessor.process_partition exception: {e}")
             # if an exception is thrown then return an error for each row
