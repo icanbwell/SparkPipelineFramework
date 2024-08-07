@@ -33,13 +33,13 @@ class RawAddress:
     @classmethod
     def from_dict(cls, address_dict: Dict[str, str]) -> "RawAddress":
         return cls(
-            address_id=address_dict["address_id"],
-            line1=address_dict["line1"],
-            line2=address_dict["line2"],
-            city=address_dict["city"],
-            state=address_dict["state"],
-            zipcode=address_dict["zipcode"],
-            country=address_dict["country"],
+            address_id=address_dict.get("address_id") or "",
+            line1=address_dict.get("line1") or "",
+            line2=address_dict.get("line2") or "",
+            city=address_dict.get("city") or "",
+            state=address_dict.get("state") or "",
+            zipcode=address_dict.get("zipcode") or "",
+            country=address_dict.get("country") or "",
         )
 
     def get_id(self) -> str:
