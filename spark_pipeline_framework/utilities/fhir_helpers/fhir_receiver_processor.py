@@ -1,4 +1,3 @@
-import asyncio
 import dataclasses
 import json
 from datetime import datetime
@@ -24,12 +23,13 @@ from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 from pyspark.sql import DataFrame
-from pyspark.sql.types import StructType, AtomicType, StructField, ArrayType, StringType
+from pyspark.sql.types import StructType, StructField, ArrayType, StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
@@ -355,7 +355,7 @@ class FhirReceiverProcessor:
         resource_id_with_token_list: List[Dict[str, Optional[str]]],
         parameters: FhirReceiverParameters,
     ) -> AsyncGenerator[Dict[str, Any], None]:
-        result1: FhirGetResponse = asyncio.run(
+        result1: FhirGetResponse = AsyncHelper.run_in_event_loop(
             FhirGetResponse.from_async_generator(
                 FhirReceiverProcessor.send_simple_fhir_request_async(
                     id_=[
@@ -739,7 +739,7 @@ class FhirReceiverProcessor:
     def get_batch_result_streaming_dataframe(
         *,
         df: DataFrame,
-        schema: StructType | AtomicType,
+        schema: StructType,
         last_updated_after: Optional[datetime],
         last_updated_before: Optional[datetime],
         parameters: FhirReceiverParameters,
@@ -759,9 +759,8 @@ class FhirReceiverProcessor:
         :param results_per_batch: int
         :return: DataFrame
         """
-        # Have to run in asyncio.run since we want to process async functions but return synchronously
-        return asyncio.run(
-            FhirReceiverProcessor.async_generator_to_dataframe(
+        return AsyncHelper.run_in_event_loop(
+            AsyncHelper.async_generator_to_dataframe(
                 df=df,
                 async_gen=FhirReceiverProcessor.get_batch_result_streaming_async(
                     last_updated_after=last_updated_after,
@@ -773,62 +772,3 @@ class FhirReceiverProcessor:
                 results_per_batch=results_per_batch,
             )
         )
-
-    @staticmethod
-    async def collect_async_data(
-        *, async_gen: AsyncGenerator[Any, None], chunk_size: int
-    ) -> AsyncGenerator[List[Any], None]:
-        """
-        Collects data from an async generator in chunks of size `chunk_size`
-
-        :param async_gen: AsyncGenerator
-        :param chunk_size: int
-        :return: AsyncGenerator
-        """
-        chunk1 = []
-        async for item in async_gen:
-            chunk1.append(item)
-            if len(chunk1) >= chunk_size:
-                yield chunk1
-                chunk1 = []
-        if chunk1:
-            yield chunk1
-
-    @staticmethod
-    async def async_generator_to_dataframe(
-        df: DataFrame,
-        async_gen: AsyncGenerator[Any, None],
-        schema: StructType | AtomicType,
-        results_per_batch: Optional[int],
-    ) -> DataFrame:
-        """
-        Takes an async generator, adds it to the dataframe in batches of size `results_per_batch`
-        and returns the dataframe
-
-        :param df: DataFrame
-        :param async_gen: AsyncGenerator
-        :param schema: StructType | AtomicType
-        :param results_per_batch: int
-        :return: DataFrame
-        """
-
-        # iterate through the async generator and collect the data in chunks
-        collected_data = []
-        async for chunk in FhirReceiverProcessor.collect_async_data(
-            async_gen=async_gen, chunk_size=results_per_batch or 1
-        ):
-            df_chunk = df.sparkSession.createDataFrame(chunk, schema)
-            collected_data.append(df_chunk)
-            print("Async chunk collected")
-            df_chunk.show(truncate=False)  # Show each chunk as it is processed
-
-        # Combine all chunks into a single DataFrame
-        if collected_data:
-            # if data was already collected, combine it into a single DataFrame
-            final_df = collected_data[0]
-            for df in collected_data[1:]:
-                final_df = final_df.union(df)
-            return final_df
-        else:
-            # create a DataFrame with the schema but no data
-            return df.sparkSession.createDataFrame([], schema)

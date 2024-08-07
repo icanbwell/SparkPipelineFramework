@@ -1,4 +1,3 @@
-import asyncio
 import json
 import math
 import uuid
@@ -633,7 +632,7 @@ class FhirReceiver(FrameworkTransformer):
                         r.asDict(recursive=True) for r in id_df.collect()
                     ]
 
-                    result_rows: List[Dict[str, Any]] = asyncio.run(
+                    result_rows: List[Dict[str, Any]] = AsyncHelper.run_in_event_loop(
                         AsyncHelper.collect_items(
                             FhirReceiverProcessor.send_partition_request_to_server_async(
                                 partition_index=0,
@@ -1026,7 +1025,7 @@ class FhirReceiver(FrameworkTransformer):
                     resources: List[str] = []
                     errors: List[str] = []
 
-                    for result1 in asyncio.run(
+                    for result1 in AsyncHelper.run_in_event_loop(
                         AsyncHelper.collect_items(
                             FhirReceiverProcessor.get_batch_results_paging_async(
                                 page_size=page_size,
