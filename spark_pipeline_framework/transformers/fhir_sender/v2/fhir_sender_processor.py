@@ -49,7 +49,7 @@ class FhirSenderProcessor:
         assert parameters
         count: int = 0
         try:
-            for r in FhirSenderProcessor.send_partition_to_server(
+            async for r in FhirSenderProcessor.send_partition_to_server_async(
                 partition_index=0, parameters=parameters, rows=input_values
             ):
                 count += 1
@@ -86,12 +86,12 @@ class FhirSenderProcessor:
 
     @staticmethod
     # function that is called for each partition
-    def send_partition_to_server(
+    async def send_partition_to_server_async(
         *,
         partition_index: int,
         rows: Iterable[Dict[str, Any]],
         parameters: FhirSenderParameters,
-    ) -> List[Dict[str, Any]]:
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         This function processes a partition
 
@@ -118,7 +118,7 @@ class FhirSenderProcessor:
             ), f"partition_index should be an int but is {type(partition_index)}"
 
             if len(json_data_list) == 0:
-                return []
+                assert len(json_data_list) > 0, "json_data_list should not be empty"
             logger.info(
                 f"Sending batch {partition_index}/{parameters.desired_partitions} "
                 f"containing {len(json_data_list)} rows "
@@ -350,4 +350,5 @@ class FhirSenderProcessor:
         clean_responses: List[Dict[str, Any]] = [
             parsed_response.to_dict() for parsed_response in parsed_responses
         ]
-        return clean_responses
+        for clean_response in clean_responses:
+            yield clean_response
