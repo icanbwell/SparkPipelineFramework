@@ -186,12 +186,12 @@ class AddressStandardization(FrameworkTransformer):
                     vendor_obj=standardizing_vendor,
                 )
                 print(f"standard_addresses: {standard_addresses}")
+                assert len(standard_addresses) == len(
+                    raw_addresses
+                ), f"{len(standard_addresses)} != {len(raw_addresses)}"
                 # map standard address back to a list of dictionary raw_addresses
                 standard_address_list: List[Dict[str, str]] = [
                     {
-                        address_column_mapping[
-                            "address_id"
-                        ]: standard_address.address.address_id,
                         f"{geolocation_column_prefix}latitude": standard_address.address.latitude,
                         f"{geolocation_column_prefix}longitude": standard_address.address.longitude,
                         address_column_mapping["line1"]: standard_address.address.line1,
