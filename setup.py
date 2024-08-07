@@ -84,6 +84,8 @@ setup(
         "numexpr>=2.8.4",
         "bottleneck>=1.3.6",
         "structlog>=23.1.0",
+        "usaddress>=0.5.10",
+        "usaddress-scourgify>=0.6.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
