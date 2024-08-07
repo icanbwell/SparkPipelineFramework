@@ -23,19 +23,19 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_column_
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 
-from spark_pipeline_framework.utilities.helix_geolocation.v1.cache.cache_handler import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler import (
     CacheHandler,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.standardize_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.standardize_address import (
     StandardizeAddr,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
     StandardizedAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v1.standardizing_vendor import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
@@ -180,7 +180,7 @@ class AddressStandardization(FrameworkTransformer):
                 # standardize the raw addresses which also calculates the lat/long
                 standard_addresses: List[
                     StandardizedAddress
-                ] = StandardizeAddr().standardize(
+                ] = await StandardizeAddr().standardize_async(
                     raw_addresses=raw_address_list,
                     cache_handler_obj=cache_handler,
                     vendor_obj=standardizing_vendor,
@@ -217,7 +217,7 @@ class AddressStandardization(FrameworkTransformer):
                 # )
                 apply_process_batch_udf1: Callable[
                     [Column], Column
-                ] = AsyncPandasColumnUDF(standardize_list).get_pandas_udf(
+                ] = AsyncPandasColumnUDF(async_func=standardize_list).get_pandas_udf(
                     return_type=self.get_standardization_df_schema(
                         address_column_mapping=address_column_mapping,
                         geolocation_column_prefix=geolocation_column_prefix,
