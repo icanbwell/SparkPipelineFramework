@@ -6,6 +6,7 @@ from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteRespo
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
@@ -67,8 +68,10 @@ def send_json_bundle_to_fhir(
         logger.debug("----------- Sending data to FHIR -------")
         logger.debug(json_data_list)
         logger.debug("----------- End sending data to FHIR -------")
-        response: FhirMergeResponse = fhir_client.merge(
-            id_=id_, json_data_list=json_data_list
+        response: FhirMergeResponse = AsyncHelper.run_in_event_loop(
+            FhirMergeResponse.from_async_generator(
+                fhir_client.merge_async(id_=id_, json_data_list=json_data_list)
+            )
         )
         return response
     except AssertionError as e:
@@ -114,7 +117,9 @@ def send_fhir_delete(
         )
         fhir_client = fhir_client.additional_request_headers(additional_request_headers)
     try:
-        response: FhirDeleteResponse = fhir_client.delete()
+        response: FhirDeleteResponse = AsyncHelper.run_in_event_loop(
+            fhir_client.delete_async()
+        )
         if response and response.status == 204:
             return {"deleted": True}
         else:
@@ -187,7 +192,9 @@ def update_json_bundle_to_fhir(
         ):
             response = fhir_client.send_patch_request(data=json_data)
         else:
-            response = fhir_client.update(json_data=json_data)
+            response = AsyncHelper.run_in_event_loop(
+                fhir_client.update_async(json_data=json_data)
+            )
         if response and response.status == 200:
             return {"updated": True}
         else:

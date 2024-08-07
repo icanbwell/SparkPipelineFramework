@@ -10,6 +10,12 @@ T = TypeVar("T")
 class AsyncHelper:
     @staticmethod
     async def collect_items(generator: AsyncGenerator[T, None]) -> List[T]:
+        """
+        Collects items from an async generator and returns them as a list
+
+        :param generator: AsyncGenerator
+        :return: List[T]
+        """
         items = []
         async for item in generator:
             items.append(item)
@@ -76,6 +82,13 @@ class AsyncHelper:
 
     @staticmethod
     def run_in_event_loop(fn: Coroutine[Any, Any, T]) -> T:
+        """
+        Runs an async function but returns the result synchronously
+        Similar to asyncio.run() but does not create a new event loop if one already exists
+
+        :param fn: Coroutine
+        :return: T
+        """
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
