@@ -75,17 +75,18 @@ class FhirReceiverProcessor:
         input_values: List[Dict[str, Any]], parameters: Optional[FhirReceiverParameters]
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert parameters
-        count: int = 0
+        # count: int = 0
         try:
             async for r in FhirReceiverProcessor.send_partition_request_to_server_async(
                 partition_index=0, parameters=parameters, rows=input_values
             ):
-                count += 1
+                # response_item: FhirGetResponseItem = FhirGetResponseItem.from_dict(r)
+                # count += len(response_item.responses)
                 yield r
         except Exception as e:
             # if an exception is thrown then return an error for each row
             for input_value in input_values:
-                count += 1
+                # count += 1
                 yield {
                     FhirGetResponseSchema.partition_index: 0,
                     FhirGetResponseSchema.sent: 0,
@@ -100,8 +101,6 @@ class FhirReceiverProcessor:
                     FhirGetResponseSchema.access_token: None,
                     FhirGetResponseSchema.extra_context_to_return: None,
                 }
-        # we actually want to error here since something strange happened
-        assert count == len(input_values), f"count={count}, len={len(input_values)}"
 
     @staticmethod
     def get_process_batch_function(

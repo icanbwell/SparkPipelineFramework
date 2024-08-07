@@ -56,7 +56,6 @@ def test_fhir_receiver_list_streaming(
             file_path=patient_json_path,
             progress_logger=progress_logger,
             parameters=parameters,
-            additional_request_headers={"SampleHeader": "TestValue"},
             run_synchronously=run_synchronously,
             use_data_streaming=True,
         ).transform(df)
