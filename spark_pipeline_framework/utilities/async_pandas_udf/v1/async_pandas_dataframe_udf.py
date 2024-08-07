@@ -12,10 +12,11 @@ from typing import (
     TypeVar,
     Optional,
     Generic,
+    Iterable,
+    cast,
 )
 
 import pandas as pd
-from pandas import DataFrame
 
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchWithParametersFunction,
@@ -106,10 +107,13 @@ class AsyncPandasDataFrameUDF(Generic[T]):
 
     def get_pandas_udf(
         self,
-    ) -> Callable[[Iterator[DataFrame | DataFrame]], Iterator[DataFrame | DataFrame]]:
+    ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """
         Returns a Pandas UDF function that can be used in Spark.
 
         :return: a Pandas UDF function
         """
-        return self.apply_process_batch_udf
+        return cast(
+            Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]],
+            self.apply_process_batch_udf,
+        )

@@ -28,6 +28,7 @@ class HandlePandasBatchWithParametersFunction(Protocol[T]):
         This function is called with a batch of input values and should return a batch of output values.
 
         :param input_values: input values as a list of dictionaries
+        :param parameters: additional parameters
         :return: output values as a list of dictionaries
         """
         ...
