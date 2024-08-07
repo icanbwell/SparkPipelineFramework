@@ -1,5 +1,14 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional, Callable
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Callable,
+    Iterator,
+    AsyncGenerator,
+)
 
 import pandas as pd
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
@@ -7,6 +16,9 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
     FhirSenderParameters,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
+    AsyncPandasDataFrameUDF,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
@@ -27,9 +39,19 @@ from spark_pipeline_framework.utilities.json_helpers import convert_dict_to_fhir
 
 class FhirSenderProcessor:
     @staticmethod
+    async def process_partition(
+        input_values: List[Dict[str, Any]], parameters: Optional[FhirSenderParameters]
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        assert parameters
+        for r in FhirSenderProcessor.send_partition_to_server(
+            partition_index=0, parameters=parameters, rows=input_values
+        ):
+            yield r
+
+    @staticmethod
     def get_process_batch_function(
         *, parameters: FhirSenderParameters
-    ) -> Callable[[Iterable[pd.DataFrame]], Iterable[pd.DataFrame]]:
+    ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """
         Returns a function that includes the passed parameters so that function
         can be used in a pandas_udf
@@ -38,50 +60,10 @@ class FhirSenderProcessor:
         :return: pandas_udf
         """
 
-        def process_partition(
-            batch_iter: Iterable[pd.DataFrame],
-        ) -> Iterable[pd.DataFrame]:
-            """
-            This function will be called for each partition in Spark.  It will run on worker nodes in parallel.
-            Within each partition, the input data will be processed in batches using Pandas.  The size of the batches
-            is controlled by the `spark.sql.execution.arrow.maxRecordsPerBatch` configuration.
-
-            :param batch_iter: Iterable[pd.DataFrame]
-            :return: Iterable[pd.DataFrame]
-            """
-            pdf: pd.DataFrame
-            index: int = 0
-            # print(f"Processing batch type: {type(batch_iter)}")
-            for pdf in batch_iter:
-                try:
-                    # print(f"Processing pdf type: {type(pdf)}")
-                    # print(f"Processing pdf: {pdf}")
-                    # convert the dataframe to a list of dictionaries
-                    pdf_json: str = pdf.to_json(orient="records")
-                    rows: List[Dict[str, Any]] = json.loads(pdf_json)
-                    # print(f"Processing partition {pdf.index} with {len(rows)} rows")
-                    # print(f"Processing partition {index}: {rows}")
-                    # send the partition to the server
-                    result_list: List[Dict[str, Any]] = (
-                        FhirSenderProcessor.send_partition_to_server(
-                            partition_index=index, parameters=parameters, rows=rows
-                        )
-                    )
-                    index += 1
-                    # print(f"Got result for partition {index}: {result_list}")
-                    # yield the result as a dataframe
-                    yield pd.DataFrame(result_list)
-                except Exception as e:
-                    print(f"Error processing partition {index}: {e}")
-                    yield pd.DataFrame(
-                        [
-                            FhirMergeResponseItem.from_error(
-                                e=e, resource_type=parameters.resource_name
-                            ).to_dict()
-                        ]
-                    )
-
-        return process_partition
+        return AsyncPandasDataFrameUDF(
+            async_func=FhirSenderProcessor.process_partition,  # type: ignore[arg-type]
+            parameters=parameters,
+        ).get_pandas_udf()
 
     @staticmethod
     # function that is called for each partition

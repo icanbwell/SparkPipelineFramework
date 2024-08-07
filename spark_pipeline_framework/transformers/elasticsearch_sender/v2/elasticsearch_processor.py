@@ -1,5 +1,14 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional, Callable
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Callable,
+    Iterator,
+    AsyncGenerator,
+)
 
 import pandas as pd
 
@@ -13,13 +22,51 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_sender_parameters import (
     ElasticSearchSenderParameters,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
+    AsyncPandasDataFrameUDF,
+)
 
 
 class ElasticSearchProcessor:
     @staticmethod
+    async def process_partition(
+        input_values: List[Dict[str, Any]],
+        parameters: Optional[ElasticSearchSenderParameters],
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        assert parameters
+        try:
+            result: Iterable[Dict[str, Any] | None] = (
+                ElasticSearchProcessor.send_partition_to_server(
+                    partition_index=0, parameters=parameters, rows=input_values
+                )
+            )
+            r: Dict[str, Any] | None
+            for r in result:
+                if r:
+                    yield r
+                else:
+                    yield {
+                        "error": "Failed to send data to ElasticSearch",
+                        "partition_index": 0,
+                        "url": parameters.index,
+                        "success": 0,
+                        "failed": 1,
+                        "payload": json.dumps(input_values),
+                    }
+        except Exception as e:
+            yield {
+                "error": str(e),
+                "partition_index": 0,
+                "url": parameters.index,
+                "success": 0,
+                "failed": 1,
+                "payload": json.dumps(input_values),
+            }
+
+    @staticmethod
     def get_process_batch_function(
         *, parameters: ElasticSearchSenderParameters
-    ) -> Callable[[Iterable[pd.DataFrame]], Iterable[pd.DataFrame]]:
+    ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """
         Returns a function that includes the passed parameters so that function
         can be used in a pandas_udf
@@ -28,54 +75,10 @@ class ElasticSearchProcessor:
         :return: pandas_udf
         """
 
-        def process_batch(
-            batch_iter: Iterable[pd.DataFrame],
-        ) -> Iterable[pd.DataFrame]:
-            """
-            This function is passed a list of dataframes, each dataframe is a partition
-
-            :param batch_iter: Iterable[pd.DataFrame]
-            :return: Iterable[pd.DataFrame]
-            """
-            pdf: pd.DataFrame
-            index: int = 0
-            # print(f"batch type: {type(batch_iter)}")
-            for pdf in batch_iter:
-                pdf_json: Optional[str] = None
-                try:
-                    # print(f"pdf type: {type(pdf)}")
-                    # convert the dataframe to a list of dictionaries
-                    pdf_json = pdf.to_json(orient="records")
-                    rows: List[Dict[str, Any]] = json.loads(pdf_json)
-                    # print(f"Processing partition {pdf.index}: {pdf_json}")
-                    # print(f"Processing partition {pdf.index} with {len(rows)} rows")
-                    # send the partition to the server
-                    result_list: Iterable[Dict[str, Any] | None] = (
-                        ElasticSearchProcessor.send_partition_to_server(
-                            partition_index=index, parameters=parameters, rows=rows
-                        )
-                    )
-                    # remove any nulls
-                    result_list = [r for r in result_list if r is not None]
-                    index += 1
-                    # print(f"output: {json.dumps(result_list)}")
-                    # yield the result as a dataframe
-                    yield pd.DataFrame(result_list)
-                except Exception as e:
-                    yield pd.DataFrame(
-                        [
-                            {
-                                "error": str(e),
-                                "partition_index": index,
-                                "url": parameters.index,
-                                "success": 0,
-                                "failed": 1,
-                                "payload": pdf_json,
-                            }
-                        ]
-                    )
-
-        return process_batch
+        return AsyncPandasDataFrameUDF(
+            async_func=ElasticSearchProcessor.process_partition,  # type: ignore[arg-type]
+            parameters=parameters,
+        ).get_pandas_udf()
 
     @staticmethod
     def send_partition_to_server(

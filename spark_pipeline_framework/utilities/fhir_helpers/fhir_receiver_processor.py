@@ -70,11 +70,12 @@ class FhirReceiverProcessor:
     @staticmethod
     async def process_partition(
         input_values: List[Dict[str, Any]], parameters: Optional[FhirReceiverParameters]
-    ) -> List[Dict[str, Any]]:
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         assert parameters
-        return FhirReceiverProcessor.send_partition_request_to_server(
+        for r in FhirReceiverProcessor.send_partition_request_to_server(
             partition_index=0, parameters=parameters, rows=input_values
-        )
+        ):
+            yield r
 
     @staticmethod
     def get_process_batch_function(
@@ -89,7 +90,7 @@ class FhirReceiverProcessor:
         """
 
         return AsyncPandasDataFrameUDF(
-            async_func=FhirReceiverProcessor.process_partition,
+            async_func=FhirReceiverProcessor.process_partition,  # type: ignore[arg-type]
             parameters=parameters,
         ).get_pandas_udf()
 

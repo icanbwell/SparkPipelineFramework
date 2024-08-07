@@ -67,9 +67,12 @@ class AsyncPandasDataFrameUDF(Generic[T]):
             if len(input_values) == 0:
                 yield pd.DataFrame([])
             else:
-                output_values: List[Dict[str, Any]] = await self.async_func(
+                output_values: List[Dict[str, Any]] = []
+                # noinspection PyTypeChecker
+                async for output_value in self.async_func(  # type:ignore[attr-defined]
                     input_values=input_values, parameters=self.parameters
-                )
+                ):
+                    output_values.append(output_value)
                 yield pd.DataFrame(output_values)
 
     # noinspection PyMethodMayBeStatic
@@ -82,16 +85,12 @@ class AsyncPandasDataFrameUDF(Generic[T]):
         self, batch_iter: Iterator[pd.DataFrame]
     ) -> Iterator[pd.DataFrame]:
         """
-        Apply the custom function `standardize_batch` to the input batch iterator.
-        This is a vectorized Pandas UDF, which means that it processes the input data in batches.
         This function will be called for each partition in Spark.  It will run on worker nodes in parallel.
         Within each partition, the input data will be processed in batches using Pandas.  The size of the batches
         is controlled by the `spark.sql.execution.arrow.maxRecordsPerBatch` configuration.
 
-        https://learn.microsoft.com/en-us/azure/databricks/udf/pandas
-
-        :param batch_iter: iterator of batches of input data.
-        :return: iterator of batches of output data
+        :param batch_iter: Iterable[pd.DataFrame]
+        :return: Iterable[pd.DataFrame]
         """
         try:
             loop = asyncio.get_running_loop()
