@@ -1,5 +1,4 @@
 import asyncio
-import time
 from asyncio import Task
 from typing import AsyncGenerator, List, TypeVar, Optional, Coroutine, Any
 
@@ -82,83 +81,56 @@ class AsyncHelper:
             return df.sparkSession.createDataFrame([], schema)
 
     @staticmethod
-    def run(fn: Coroutine[Any, Any, T]) -> T:
+    async def _run_with_timeout(
+        async_func: Coroutine[Any, Any, T], timeout: Optional[float] = None
+    ) -> T:
+        """
+        Runs an async function with a timeout
+
+        :param async_func: Coroutine to run
+        :param timeout: Optional timeout in seconds
+        :return: T
+        """
+        # noinspection PyCallingNonCallable
+        result: T = await asyncio.wait_for(async_func(), timeout=timeout)  # type: ignore[operator]
+        return result
+
+    @staticmethod
+    async def _run_task(
+        async_func: Coroutine[Any, Any, T], timeout: Optional[float]
+    ) -> T:
+        """
+        Runs an async function with a timeout in a running event loop
+
+        :param async_func: Coroutine to run
+        :param timeout: Optional timeout in seconds
+        :return: T
+        """
+        result = await AsyncHelper._run_with_timeout(async_func, timeout)
+        return result
+
+    @staticmethod
+    def run(async_func: Coroutine[Any, Any, T], timeout: Optional[float] = None) -> T:
         """
         Runs an async function but returns the result synchronously
         Similar to asyncio.run() but does not create a new event loop if one already exists
 
-        :param fn: Coroutine
+        :param async_func: Coroutine to run
+        :param timeout: Optional timeout in seconds
         :return: T
         """
-        try:
-            print(f"Getting running loop")
-            loop = asyncio.get_running_loop()
-            print(f"Got running loop")
-        except RuntimeError:
-            print(f"Creating new event loop")
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        try:
-            if loop.is_running():
-                print(f"Loop is running so waiting for it to end")
-                start_time = time.time()
-                timeout = 30  # maximum time in seconds
-                while loop.is_running():
-                    current_time = time.time()
-                    elapsed_time = current_time - start_time
-
-                    if elapsed_time > timeout:
-                        print("Timeout reached. Exiting loop.")
-                        break
-
-                    print(f"Waiting for loop to end: {elapsed_time}")
-                    time.sleep(1)
-            print(f"Running loop")
-            result = loop.run_until_complete(fn)
-            print(f"Ran loop")
-        except RuntimeError as e:
-            print(f"RuntimeError running loop: {e}")
-            if "no running event loop" in str(e):
-                result = asyncio.run(fn)
-            else:
-                raise e
-        return result
-
-    @staticmethod
-    async def run_with_timeout(
-        async_func: Coroutine[Any, Any, T], timeout: Optional[float] = None
-    ) -> T:
-        # noinspection PyCallingNonCallable
-        result: T = await asyncio.wait_for(async_func(), timeout=timeout)  # type: ignore[operator]
-        print(f"Function result: {result}")
-        return result
-
-    @staticmethod
-    async def run_task(
-        async_func: Coroutine[Any, Any, T], timeout: Optional[float]
-    ) -> T:
-        result = await AsyncHelper.run_with_timeout(async_func, timeout)
-        return result
-
-    @staticmethod
-    def run_async_function_with_timeout(
-        async_func: Coroutine[Any, Any, T], timeout: Optional[float] = None
-    ) -> T:
         # Check if there's already a running event loop
         if not asyncio.get_event_loop().is_running():
-            result = asyncio.run(AsyncHelper.run_task(async_func, timeout))
-            print(f"Main result: {result}")
+            result = asyncio.run(AsyncHelper._run_task(async_func, timeout))
             return result
         else:
             # If the event loop is already running, ensure the coroutine is run within it
             future: Task[T] = asyncio.get_event_loop().create_task(
-                AsyncHelper.run_task(async_func, timeout)
+                AsyncHelper._run_task(async_func, timeout)
             )
 
             async def get_result(future1: Task[T]) -> T:
                 result1 = await future1
-                print(f"Main result: {result1}")
                 return result1
 
             # Schedule the result retrieval and run it within the current loop

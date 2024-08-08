@@ -83,7 +83,7 @@ async def test_async_real_fhir_server_get_patients_large(
 
     logger = get_logger(__name__)
 
-    access_token = AsyncHelper.run_async_function_with_timeout(
+    access_token = AsyncHelper.run(
         fhir_get_access_token_async(
             logger=logger,
             server_url=fhir_server_url,
