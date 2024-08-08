@@ -53,7 +53,7 @@ class AddressStandardization(FrameworkTransformer):
         self,
         view: str,
         address_column_mapping: Dict[str, str],
-        standardizing_vendor: StandardizingVendor,
+        standardizing_vendor: StandardizingVendor[Any],
         cache_handler: CacheHandler,
         func_get_response_path: Callable[[str], str] | None = None,
         geolocation_column_prefix: Optional[str] = "",
@@ -98,7 +98,7 @@ class AddressStandardization(FrameworkTransformer):
         )
         self._setDefault(address_column_mapping=address_column_mapping)
 
-        self.standardizing_vendor: Param[StandardizingVendor] = Param(
+        self.standardizing_vendor: Param[StandardizingVendor[Any]] = Param(
             self, "standardizing_vendor", ""
         )
         self._setDefault(view=standardizing_vendor)
@@ -133,7 +133,9 @@ class AddressStandardization(FrameworkTransformer):
                 address_column_mapping.values()
             )
             # what vendor to use for standardizing
-            standardizing_vendor: StandardizingVendor = self.getStandardizingVendor()
+            standardizing_vendor: StandardizingVendor[Any] = (
+                self.getStandardizingVendor()
+            )
             # what cache handler to use
             cache_handler: CacheHandler = self.getCacheHandler()
             # what column prefix to use for lat/long columns (if any)
@@ -311,7 +313,7 @@ class AddressStandardization(FrameworkTransformer):
         return self.getOrDefault(self.address_column_mapping)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getStandardizingVendor(self) -> StandardizingVendor:
+    def getStandardizingVendor(self) -> StandardizingVendor[Any]:
         return self.getOrDefault(self.standardizing_vendor)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

@@ -1,6 +1,6 @@
 import abc
 from abc import ABCMeta
-from typing import List, Type
+from typing import List, Type, Any
 
 import structlog
 
@@ -33,8 +33,8 @@ class CacheHandler(metaclass=ABCMeta):
         """
 
     @abc.abstractmethod
-    def save_to_cache(self, vendor_responses: List[VendorResponse]) -> None:
+    def save_to_cache(self, vendor_responses: List[VendorResponse[Any]]) -> None:
         pass
 
-    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor]:
+    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor[Any]]:
         return StandardizingVendor

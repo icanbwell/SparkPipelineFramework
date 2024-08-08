@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import List, Type, Any
 
 import structlog
 
@@ -23,11 +23,11 @@ logger = structlog.get_logger(__file__)
 
 
 class MockCacheHandler(CacheHandler):
-    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor]:
+    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor[Any]]:
         return StandardizingVendor
 
     def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
         return CacheResult(found=[], not_found=raw_addresses)
 
-    def save_to_cache(self, vendor_responses: List[VendorResponse]) -> None:
+    def save_to_cache(self, vendor_responses: List[VendorResponse[Any]]) -> None:
         pass

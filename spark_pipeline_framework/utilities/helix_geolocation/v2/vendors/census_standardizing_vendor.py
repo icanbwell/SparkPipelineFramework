@@ -21,8 +21,10 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response imp
     VendorResponse,
 )
 
+MyResponseType = Dict[str, str]
 
-class CensusStandardizingVendor(StandardizingVendor):
+
+class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
     def __init__(
         self, use_bulk_api: bool = True, batch_request_max_size: Optional[int] = None
     ) -> None:
@@ -40,7 +42,7 @@ class CensusStandardizingVendor(StandardizingVendor):
 
     async def standardize_async(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
-    ) -> List[VendorResponse]:
+    ) -> List[VendorResponse[MyResponseType]]:
         """
         returns the vendor specific response from the vendor
         """
@@ -88,11 +90,13 @@ class CensusStandardizingVendor(StandardizingVendor):
             standardized_address.to_dict()
             for standardized_address in standardized_address_dicts
         ]
-        vendor_responses: List[VendorResponse] = self._to_vendor_response(
-            vendor_response=vendor_specific_addresses,
-            raw_addresses=raw_addresses,
-            vendor_name=self.get_vendor_name(),
-            response_version=self.get_version(),
+        vendor_responses: List[VendorResponse[MyResponseType]] = (
+            self._to_vendor_response(
+                vendor_response=vendor_specific_addresses,
+                raw_addresses=raw_addresses,
+                vendor_name=self.get_vendor_name(),
+                response_version=self.get_version(),
+            )
         )
 
         assert len(vendor_responses) == len(raw_addresses), (
@@ -425,7 +429,7 @@ class CensusStandardizingVendor(StandardizingVendor):
 
     def vendor_specific_to_std(
         self,
-        vendor_specific_addresses: List[VendorResponse],
+        vendor_specific_addresses: List[VendorResponse[MyResponseType]],
     ) -> List[StandardizedAddress]:
         """
         Each vendor class knows how to convert its response to StdAddress
@@ -442,7 +446,7 @@ class CensusStandardizingVendor(StandardizingVendor):
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,
-    ) -> List[VendorResponse]:
+    ) -> List[VendorResponse[MyResponseType]]:
         # create the map
         id_response_map = {a.get_id(): a for a in raw_addresses}
         # find and assign

@@ -73,7 +73,7 @@ class DocumentDBCacheHandler(CacheHandler):
         query = {"address_hash": {r"$in": list(unique_address_hashes)}}
         lookup_result: pymongo.cursor.Cursor[Any] = self._collection.find(query)
 
-        found_vendor_response: List[VendorResponse] = []
+        found_vendor_response: List[VendorResponse[Any]] = []
         for r in lookup_result:
             matching_raw: List[RawAddress] = [
                 raw for raw in raw_addresses if r["address_hash"] == raw.to_hash()
@@ -99,7 +99,7 @@ class DocumentDBCacheHandler(CacheHandler):
         ]
         return CacheResult(found=found_std_addr, not_found=not_found)
 
-    def save_to_cache(self, vendor_responses: List[VendorResponse]) -> None:
+    def save_to_cache(self, vendor_responses: List[VendorResponse[Any]]) -> None:
         requests = [
             UpdateOne(
                 {"address_hash": vr.related_raw_address.to_hash()},
@@ -125,12 +125,12 @@ class DocumentDBCacheHandler(CacheHandler):
                 requests=len(requests),
             )
 
-    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor]:
+    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor[Any]]:
         return super()._get_vendor_class(vendor_name)
 
     @staticmethod
     def _convert_to_std_address(
-        vendor_responses: List[VendorResponse],
+        vendor_responses: List[VendorResponse[Any]],
     ) -> Tuple[List[StandardizedAddress], List[str]]:
         """
         get vendor responses (possibly from different vendors) turn it to StdAddress
@@ -139,7 +139,7 @@ class DocumentDBCacheHandler(CacheHandler):
         std_addresses: List[StandardizedAddress] = []
         found_ids: List[str] = []
         for vr in vendor_responses:
-            vendor_obj: Type[StandardizingVendor] = (
+            vendor_obj: Type[StandardizingVendor[Any]] = (
                 StandardizingVendorFactory.get_vendor_class(vr.vendor_name)
             )
             std_addresses.extend(  # vendor_specific_to_std works with list but we are just sending one

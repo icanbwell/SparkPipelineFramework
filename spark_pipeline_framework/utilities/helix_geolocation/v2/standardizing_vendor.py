@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Generic, TypeVar
 
 import structlog
 
@@ -16,7 +16,11 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response imp
 logger = structlog.get_logger(__file__)
 
 
-class StandardizingVendor(metaclass=ABCMeta):
+# Define the TypeVar for the generic type
+T = TypeVar("T")
+
+
+class StandardizingVendor(Generic[T], metaclass=ABCMeta):
     """
     for now, we just save the version attached to the vendor response, in future we need to expand it
     to have different parsers for possible new versions
@@ -28,7 +32,7 @@ class StandardizingVendor(metaclass=ABCMeta):
     @abstractmethod
     async def standardize_async(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
-    ) -> List[VendorResponse]:
+    ) -> List[VendorResponse[T]]:
         """
         returns the vendor specific response from the vendor
         """
@@ -36,7 +40,7 @@ class StandardizingVendor(metaclass=ABCMeta):
     @abstractmethod
     def vendor_specific_to_std(
         self,
-        vendor_specific_addresses: List[VendorResponse],
+        vendor_specific_addresses: List[VendorResponse[T]],
     ) -> List[StandardizedAddress]:
         """
         each vendor class knows how to convert its response to StdAddress
@@ -63,7 +67,7 @@ class StandardizingVendor(metaclass=ABCMeta):
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,
-    ) -> List[VendorResponse]:
+    ) -> List[VendorResponse[T]]:
         """
         using RecordID, we want to find the corresponding raw address of a vendor response
         """

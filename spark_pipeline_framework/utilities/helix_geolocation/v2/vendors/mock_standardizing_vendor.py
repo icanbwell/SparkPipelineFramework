@@ -17,11 +17,13 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response imp
 
 logger = structlog.get_logger(__file__)
 
+MyResponseType = Dict[str, str]
 
-class MockStandardizingVendor(StandardizingVendor):
+
+class MockStandardizingVendor(StandardizingVendor[MyResponseType]):
     async def standardize_async(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
-    ) -> List[VendorResponse]:
+    ) -> List[VendorResponse[MyResponseType]]:
         vendor_specific_addresses: List[Dict[str, str]] = []
         for address in raw_addresses:
             address_dict = address.to_dict()
@@ -33,17 +35,19 @@ class MockStandardizingVendor(StandardizingVendor):
             print("vendor specific address json")
             print(address_dict)
 
-        vendor_responses: List[VendorResponse] = self._to_vendor_response(
-            vendor_response=vendor_specific_addresses,
-            raw_addresses=raw_addresses,
-            vendor_name=self.get_vendor_name(),
-            response_version=self.get_version(),
+        vendor_responses: List[VendorResponse[MyResponseType]] = (
+            self._to_vendor_response(
+                vendor_response=vendor_specific_addresses,
+                raw_addresses=raw_addresses,
+                vendor_name=self.get_vendor_name(),
+                response_version=self.get_version(),
+            )
         )
         return vendor_responses
 
     def vendor_specific_to_std(
         self,
-        vendor_specific_addresses: List[VendorResponse],
+        vendor_specific_addresses: List[VendorResponse[MyResponseType]],
     ) -> List[StandardizedAddress]:
         """
         each vendor class knows how to convert its response to StdAddress
@@ -77,7 +81,7 @@ class MockStandardizingVendor(StandardizingVendor):
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,
-    ) -> List[VendorResponse]:
+    ) -> List[VendorResponse[MyResponseType]]:
         # create the map
         id_response_map = {a.get_id(): a for a in raw_addresses}
         # find and assign

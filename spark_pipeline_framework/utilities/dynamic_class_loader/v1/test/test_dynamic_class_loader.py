@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Type, List
+from typing import Type, List, Any
 
 from spark_pipeline_framework.utilities.dynamic_class_loader.v1.dynamic_class_loader import (
     DynamicClassLoader,
@@ -16,8 +16,8 @@ def test_dynamic_class_loader() -> None:
         "../../../helix_geolocation/v2/vendors"
     )
     print(f"standardizing_vendor_path: {standardizing_vendor_path}")
-    sub_classes: List[Type[StandardizingVendor]] = DynamicClassLoader[
-        StandardizingVendor
+    sub_classes: List[Type[StandardizingVendor[Any]]] = DynamicClassLoader[
+        StandardizingVendor[Any]
     ](
         StandardizingVendor, standardizing_vendor_path  # type: ignore[type-abstract]
     ).find_subclasses()

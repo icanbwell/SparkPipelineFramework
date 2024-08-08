@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 
 import pytest
 
@@ -31,7 +31,7 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
         zipcode="20233",
     )
 
-    vendor_responses: List[VendorResponse] = await CensusStandardizingVendor(
+    vendor_responses: List[VendorResponse[Any]] = await CensusStandardizingVendor(
         use_bulk_api=use_bulk_api
     ).standardize_async([raw_addr_obj, raw_addr_obj2])
     assert len(vendor_responses) == 2
