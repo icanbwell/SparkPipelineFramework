@@ -26,9 +26,9 @@ class StandardizingVendorFactory:
         ).find_subclasses()
 
         for sub_class in sub_classes:
-            StandardizingVendorFactory.vendor_class_map[sub_class.get_vendor_name()] = (
-                sub_class
-            )
+            StandardizingVendorFactory.vendor_class_map[
+                sub_class().get_vendor_name()
+            ] = sub_class
 
     @staticmethod
     def get_vendor_class(vendor_name: str) -> Type[StandardizingVendor]:

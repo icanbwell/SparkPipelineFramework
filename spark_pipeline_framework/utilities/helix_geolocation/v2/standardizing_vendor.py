@@ -42,32 +42,23 @@ class StandardizingVendor(metaclass=ABCMeta):
         each vendor class knows how to convert its response to StdAddress
         """
 
-    @staticmethod
-    def _add_vendor_to_address(
-        addresses: List[Dict[str, str]], vendor: str
-    ) -> List[Dict[str, str]]:
-        return [dict(a, **{"standardize_vendor": vendor}) for a in addresses]
-
-    def _get_request_credentials(self) -> Dict[str, str]:
-        return {}
-
-    @staticmethod
-    def batch_request_max_size() -> int:
+    @abstractmethod
+    def batch_request_max_size(self) -> int:
         return 0
 
-    @staticmethod
-    def get_record_id(record: Dict[str, str]) -> str:
-        return ""
-
-    @staticmethod
-    def get_vendor_name() -> str:
+    @abstractmethod
+    def get_vendor_name(self) -> str:
+        """
+        returns the name of the vendor
+        """
         return ""
 
     def get_version(self) -> str:
         return self._version
 
-    @staticmethod
+    @abstractmethod
     def _to_vendor_response(
+        self,
         vendor_response: List[Dict[str, str]],
         raw_addresses: List[RawAddress],
         vendor_name: str,
@@ -76,17 +67,3 @@ class StandardizingVendor(metaclass=ABCMeta):
         """
         using RecordID, we want to find the corresponding raw address of a vendor response
         """
-        # create the map
-        id_response_map = {a.get_id(): a for a in raw_addresses}
-        # find and assign
-        return [
-            VendorResponse(
-                api_call_response=r,
-                related_raw_address=id_response_map[
-                    r.get("RecordID") or r.get("address_id") or ""
-                ],
-                vendor_name=vendor_name,
-                response_version=response_version,
-            )
-            for r in vendor_response
-        ]

@@ -81,7 +81,7 @@ class MelissaStandardizingVendor(StandardizingVendor):
         ):
             vendor_specific_addresses.extend(vendor_specific_addresses1)
 
-        vendor_responses: List[VendorResponse] = super()._to_vendor_response(
+        vendor_responses: List[VendorResponse] = self._to_vendor_response(
             vendor_response=vendor_specific_addresses,
             raw_addresses=raw_addresses,
             vendor_name=self.get_vendor_name(),
@@ -204,14 +204,34 @@ class MelissaStandardizingVendor(StandardizingVendor):
             license_key = c[f"{base_path}license_key_credit"]
         return {"license_key": license_key}
 
-    @staticmethod
-    def batch_request_max_size() -> int:
+    def batch_request_max_size(self) -> int:
         return 100
 
-    @staticmethod
-    def get_vendor_name() -> str:
+    def get_vendor_name(self) -> str:
         return "melissa"
 
     @staticmethod
     def get_record_id(record: Dict[str, str]) -> str:
         return record["RecordID"]
+
+    def _to_vendor_response(
+        self,
+        vendor_response: List[Dict[str, str]],
+        raw_addresses: List[RawAddress],
+        vendor_name: str,
+        response_version: str,
+    ) -> List[VendorResponse]:
+        # create the map
+        id_response_map = {a.get_id(): a for a in raw_addresses}
+        # find and assign
+        return [
+            VendorResponse(
+                api_call_response=r,
+                related_raw_address=id_response_map[
+                    r.get("RecordID") or r.get("address_id") or ""
+                ],
+                vendor_name=vendor_name,
+                response_version=response_version,
+            )
+            for r in vendor_response
+        ]
