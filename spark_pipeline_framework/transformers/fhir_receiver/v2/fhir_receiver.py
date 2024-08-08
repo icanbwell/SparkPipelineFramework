@@ -420,7 +420,7 @@ class FhirReceiver(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        return AsyncHelper.run_in_event_loop(self.transform_async(df))
+        return AsyncHelper.run(self.transform_async(df))
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         server_url: Optional[str] = self.getServerUrl()

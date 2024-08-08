@@ -68,7 +68,7 @@ def send_json_bundle_to_fhir(
         logger.debug("----------- Sending data to FHIR -------")
         logger.debug(json_data_list)
         logger.debug("----------- End sending data to FHIR -------")
-        response: FhirMergeResponse = AsyncHelper.run_in_event_loop(
+        response: FhirMergeResponse = AsyncHelper.run(
             FhirMergeResponse.from_async_generator(
                 fhir_client.merge_async(id_=id_, json_data_list=json_data_list)
             )
@@ -117,9 +117,7 @@ def send_fhir_delete(
         )
         fhir_client = fhir_client.additional_request_headers(additional_request_headers)
     try:
-        response: FhirDeleteResponse = AsyncHelper.run_in_event_loop(
-            fhir_client.delete_async()
-        )
+        response: FhirDeleteResponse = AsyncHelper.run(fhir_client.delete_async())
         if response and response.status == 204:
             return {"deleted": True}
         else:
@@ -192,9 +190,7 @@ def update_json_bundle_to_fhir(
         ):
             response = fhir_client.send_patch_request(data=json_data)
         else:
-            response = AsyncHelper.run_in_event_loop(
-                fhir_client.update_async(json_data=json_data)
-            )
+            response = AsyncHelper.run(fhir_client.update_async(json_data=json_data))
         if response and response.status == 200:
             return {"updated": True}
         else:

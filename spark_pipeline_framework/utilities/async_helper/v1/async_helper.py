@@ -80,7 +80,7 @@ class AsyncHelper:
             return df.sparkSession.createDataFrame([], schema)
 
     @staticmethod
-    def run_in_event_loop(fn: Coroutine[Any, Any, T]) -> T:
+    def run(fn: Coroutine[Any, Any, T]) -> T:
         """
         Runs an async function but returns the result synchronously
         Similar to asyncio.run() but does not create a new event loop if one already exists
