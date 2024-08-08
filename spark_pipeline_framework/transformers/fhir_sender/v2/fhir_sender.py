@@ -34,7 +34,7 @@ from spark_pipeline_framework.utilities.FriendlySparkException import (
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token,
+    fhir_get_access_token_async,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
@@ -409,7 +409,7 @@ class FhirSender(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id:
-            auth_access_token = fhir_get_access_token(
+            auth_access_token = await fhir_get_access_token_async(
                 logger=self.logger,
                 server_url=server_url,
                 auth_server_url=auth_server_url,

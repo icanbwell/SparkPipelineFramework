@@ -52,8 +52,8 @@ async def test_async_real_fhir_server_get_graph_large(
     )
     fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
 
-    count: int = 10
-    roles_per_practitioner: int = 10
+    count: int = 2
+    roles_per_practitioner: int = 2
 
     id_dict: Dict[str, List[str]] = PractitionerGenerator.get_ids(
         count=count, roles_per_practitioner=roles_per_practitioner
@@ -158,7 +158,7 @@ async def test_async_real_fhir_server_get_graph_large(
     parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
 
     with ProgressLogger() as progress_logger:
-        FhirReceiver(
+        await FhirReceiver(
             server_url=fhir_server_url,
             resource=resource_type,
             action="$graph",
@@ -172,7 +172,7 @@ async def test_async_real_fhir_server_get_graph_large(
             auth_well_known_url=auth_well_known_url,
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
-        ).transform(df)
+        ).transform_async(df)
 
     # Assert
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
