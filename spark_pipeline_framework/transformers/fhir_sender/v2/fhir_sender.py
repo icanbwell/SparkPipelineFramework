@@ -299,6 +299,9 @@ class FhirSender(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        return AsyncHelper.run_in_event_loop(self._transform_async(df))
+
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         file_path: Path | str | Callable[[str | None], Path | str] | None = (
             self.getOrDefault(self.file_path)
         )
@@ -528,13 +531,11 @@ class FhirSender(FrameworkTransformer):
                     ]
                     result_rows: List[
                         FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse
-                    ] = AsyncHelper.run_in_event_loop(
-                        AsyncHelper.collect_items(
-                            FhirSenderProcessor.send_partition_to_server_async(
-                                partition_index=0,
-                                rows=rows_to_send,
-                                parameters=sender_parameters,
-                            )
+                    ] = await AsyncHelper.collect_items(
+                        FhirSenderProcessor.send_partition_to_server_async(
+                            partition_index=0,
+                            rows=rows_to_send,
+                            parameters=sender_parameters,
                         )
                     )
                     merge_items: List[FhirMergeResponseItem] = (

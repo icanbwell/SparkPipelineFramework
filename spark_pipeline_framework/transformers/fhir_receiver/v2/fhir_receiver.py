@@ -422,7 +422,7 @@ class FhirReceiver(FrameworkTransformer):
     def _transform(self, df: DataFrame) -> DataFrame:
         return AsyncHelper.run_in_event_loop(self.transform_async(df))
 
-    async def transform_async(self, df: DataFrame) -> DataFrame:
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         server_url: Optional[str] = self.getServerUrl()
         resource_name: str = self.getResource()
         parameters = self.getParameters()
