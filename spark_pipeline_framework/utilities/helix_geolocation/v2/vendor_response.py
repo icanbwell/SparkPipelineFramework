@@ -10,3 +10,4 @@ class VendorResponse(NamedTuple):
     response_version: str
     api_call_response: Dict[str, str]
     related_raw_address: Optional[RawAddress] = None
+    error: Optional[str] = None

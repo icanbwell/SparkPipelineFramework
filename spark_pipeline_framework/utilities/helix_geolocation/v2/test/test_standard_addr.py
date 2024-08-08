@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from unittest import mock
 from unittest.mock import MagicMock
 
+import aiohttp
 import boto3
 
 import pytest
@@ -474,7 +475,7 @@ async def test_vendor_http_error_call(mocked_session: MagicMock) -> None:
     raw_addrs = [raw_addr_obj]
 
     # act / assert
-    with pytest.raises(requests.exceptions.HTTPError):
+    with pytest.raises(aiohttp.client_exceptions.ClientResponseError):
         await StandardizeAddr().standardize_async(
             raw_addrs,
             cache_handler_obj=MockCacheHandler(),

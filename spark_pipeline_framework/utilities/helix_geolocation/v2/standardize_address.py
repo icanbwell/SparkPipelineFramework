@@ -48,14 +48,17 @@ class StandardizeAddr:
         max_requests = vendor_obj.batch_request_max_size()
         new_std_addresses: List[StandardizedAddress] = []
         for i in range(0, len(cache_lookup_result.not_found), max_requests):
+            addresses_not_found_in_cache = cache_lookup_result.not_found[
+                i : i + max_requests
+            ]
+
             vendor_responses_batch: List[VendorResponse] = (
-                await vendor_obj.standardize_async(
-                    cache_lookup_result.not_found[i : i + max_requests]
-                )
+                await vendor_obj.standardize_async(addresses_not_found_in_cache)
             )
-            assert len(vendor_responses_batch) == len(
-                cache_lookup_result.not_found[i : i + max_requests]
-            ), f"{len(vendor_responses_batch)} != {len(cache_lookup_result.not_found[i: i + max_requests])}.  {type(vendor_obj)}"
+            assert len(vendor_responses_batch) == len(addresses_not_found_in_cache), (
+                f"{len(vendor_responses_batch)} != {len(cache_lookup_result.not_found[i: i + max_requests])}."
+                f"  {type(vendor_obj)}"
+            )
 
             new_std_addresses.extend(
                 vendor_obj.vendor_specific_to_std(vendor_responses_batch)

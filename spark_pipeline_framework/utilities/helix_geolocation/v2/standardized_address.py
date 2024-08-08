@@ -66,6 +66,7 @@ class StandardizedAddress(RawAddress):
             return super(StandardizedAddress, self).to_str()
 
     def to_dict(self) -> Dict[str, str]:
+        # noinspection PyProtectedMember
         return dict(self.address._asdict())
 
     @classmethod
