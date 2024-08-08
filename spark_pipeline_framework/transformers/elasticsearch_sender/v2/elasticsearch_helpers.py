@@ -90,6 +90,7 @@ class ElasticSearchHelpers:
         errors: List[str] = []
 
         try:
+            # https://opster.com/guides/opensearch/opensearch-operations/opensearch-py-bulk/
             success, failed = await es_client.bulk(
                 body=payload, index=index, stats_only=True
             )
