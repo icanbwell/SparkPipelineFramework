@@ -34,7 +34,10 @@ def fhir_get_access_token(
         auth_well_known_url=auth_well_known_url,
     )
 
-    return AsyncHelper.run_in_event_loop(fhir_client.get_access_token_async())
+    print(f"Getting access token for {server_url}")
+    access_token = AsyncHelper.run_in_event_loop(fhir_client.get_access_token_async())
+    print(f"Access token: {access_token}")
+    return access_token
 
 
 async def fhir_get_access_token_async(

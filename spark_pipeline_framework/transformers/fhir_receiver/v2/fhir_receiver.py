@@ -40,7 +40,7 @@ from spark_pipeline_framework.utilities.FriendlySparkException import (
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token,
+    fhir_get_access_token_async,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
@@ -420,6 +420,9 @@ class FhirReceiver(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        return AsyncHelper.run_in_event_loop(self.transform_async(df))
+
+    async def transform_async(self, df: DataFrame) -> DataFrame:
         server_url: Optional[str] = self.getServerUrl()
         resource_name: str = self.getResource()
         parameters = self.getParameters()
@@ -539,7 +542,7 @@ class FhirReceiver(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
-            auth_access_token = fhir_get_access_token(
+            auth_access_token = await fhir_get_access_token_async(
                 logger=self.logger,
                 server_url=server_url,
                 auth_server_url=auth_server_url,
@@ -642,13 +645,11 @@ class FhirReceiver(FrameworkTransformer):
                         r.asDict(recursive=True) for r in id_df.collect()
                     ]
 
-                    result_rows: List[Dict[str, Any]] = AsyncHelper.run_in_event_loop(
-                        AsyncHelper.collect_items(
-                            FhirReceiverProcessor.send_partition_request_to_server_async(
-                                partition_index=0,
-                                rows=id_rows,
-                                parameters=receiver_parameters,
-                            )
+                    result_rows: List[Dict[str, Any]] = await AsyncHelper.collect_items(
+                        FhirReceiverProcessor.send_partition_request_to_server_async(
+                            partition_index=0,
+                            rows=id_rows,
+                            parameters=receiver_parameters,
                         )
                     )
                     response_schema = FhirGetResponseSchema.get_schema()
@@ -1015,7 +1016,7 @@ class FhirReceiver(FrameworkTransformer):
 
                 if receiver_parameters.use_data_streaming:
                     list_df: DataFrame = (
-                        FhirReceiverProcessor.get_batch_result_streaming_dataframe(
+                        await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
                             df=df,
                             server_url=server_url,
                             parameters=receiver_parameters,
@@ -1036,17 +1037,15 @@ class FhirReceiver(FrameworkTransformer):
                     resources: List[str] = []
                     errors: List[str] = []
 
-                    for result1 in AsyncHelper.run_in_event_loop(
-                        AsyncHelper.collect_items(
-                            FhirReceiverProcessor.get_batch_results_paging_async(
-                                page_size=page_size,
-                                limit=limit,
-                                server_url=server_url,
-                                parameters=receiver_parameters,
-                                last_updated_after=last_updated_after,
-                                last_updated_before=last_updated_before,
-                            )
-                        )
+                    async for (
+                        result1
+                    ) in FhirReceiverProcessor.get_batch_results_paging_async(
+                        page_size=page_size,
+                        limit=limit,
+                        server_url=server_url,
+                        parameters=receiver_parameters,
+                        last_updated_after=last_updated_after,
+                        last_updated_before=last_updated_before,
                     ):
                         resources.extend(result1.resources)
                         errors.extend(result1.errors)

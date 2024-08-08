@@ -741,7 +741,7 @@ class FhirReceiverProcessor:
             yield dataclasses.asdict(batch_result)
 
     @staticmethod
-    def get_batch_result_streaming_dataframe(
+    async def get_batch_result_streaming_dataframe_async(
         *,
         df: DataFrame,
         schema: StructType,
@@ -764,16 +764,14 @@ class FhirReceiverProcessor:
         :param results_per_batch: int
         :return: DataFrame
         """
-        return AsyncHelper.run_in_event_loop(
-            AsyncHelper.async_generator_to_dataframe(
-                df=df,
-                async_gen=FhirReceiverProcessor.get_batch_result_streaming_async(
-                    last_updated_after=last_updated_after,
-                    last_updated_before=last_updated_before,
-                    parameters=parameters,
-                    server_url=server_url,
-                ),
-                schema=schema,
-                results_per_batch=results_per_batch,
-            )
+        return await AsyncHelper.async_generator_to_dataframe(
+            df=df,
+            async_gen=FhirReceiverProcessor.get_batch_result_streaming_async(
+                last_updated_after=last_updated_after,
+                last_updated_before=last_updated_before,
+                parameters=parameters,
+                server_url=server_url,
+            ),
+            schema=schema,
+            results_per_batch=results_per_batch,
         )

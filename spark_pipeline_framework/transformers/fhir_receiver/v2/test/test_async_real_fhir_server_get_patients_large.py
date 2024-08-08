@@ -4,7 +4,6 @@ from pathlib import Path
 from shutil import rmtree
 
 import pytest
-
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
@@ -17,7 +16,7 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import
     FhirReceiver,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token,
+    fhir_get_access_token_async,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
@@ -83,7 +82,7 @@ async def test_async_real_fhir_server_get_patients_large(
 
     logger = get_logger(__name__)
 
-    access_token = fhir_get_access_token(
+    access_token = await fhir_get_access_token_async(
         logger=logger,
         server_url=fhir_server_url,
         log_level="DEBUG",
@@ -98,7 +97,7 @@ async def test_async_real_fhir_server_get_patients_large(
     parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
 
     with ProgressLogger() as progress_logger:
-        FhirReceiver(
+        await FhirReceiver(
             server_url=fhir_server_url,
             resource=resource_type,
             file_path=patient_json_path,
@@ -109,7 +108,7 @@ async def test_async_real_fhir_server_get_patients_large(
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             use_data_streaming=use_data_streaming,
-        ).transform(df)
+        ).transform_async(df)
 
     # Assert
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
