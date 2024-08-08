@@ -15,7 +15,7 @@ import pandas as pd
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_helpers import (
-    send_json_bundle_to_elasticsearch,
+    ElasticSearchHelpers,
 )
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_result import (
     ElasticSearchResult,
@@ -41,17 +41,14 @@ class ElasticSearchProcessor:
         count: int = 0
         try:
             # print(f"ElasticSearchProcessor:process_partition input_values [{len(input_values)}: {input_values}")
-            result: Iterable[Dict[str, Any] | None] = (
-                ElasticSearchProcessor.send_partition_to_server(
-                    partition_index=0, parameters=parameters, rows=input_values
-                )
-            )
-            r: Dict[str, Any] | None
-            for r in result:
-                if r:
-                    count += r.get("success", 0) + r.get("failed", 0)
+            result: Dict[str, Any] | None
+            async for result in ElasticSearchProcessor.send_partition_to_server_async(
+                partition_index=0, parameters=parameters, rows=input_values
+            ):
+                if result:
+                    count += result.get("success", 0) + result.get("failed", 0)
                     # print(f"ElasticSearchProcessor:process_partition count: {count} r: {r}")
-                    yield r
+                    yield result
                 else:
                     count += 1
                     # print(f"ElasticSearchProcessor:process_partition count: {count} r is None")
@@ -101,12 +98,12 @@ class ElasticSearchProcessor:
         ).get_pandas_udf()
 
     @staticmethod
-    def send_partition_to_server(
+    async def send_partition_to_server_async(
         *,
         partition_index: int,
         rows: Iterable[Dict[str, Any]],
         parameters: ElasticSearchSenderParameters,
-    ) -> Iterable[Optional[Dict[str, Any]]]:
+    ) -> AsyncGenerator[Optional[Dict[str, Any]], None]:
         assert parameters.index is not None
         assert isinstance(parameters.index, str)
         assert parameters.operation is not None
@@ -130,12 +127,14 @@ class ElasticSearchProcessor:
                 f"to ES Server/{parameters.index}. [{parameters.name}].."
             )
             # send to server
-            response_json: ElasticSearchResult = send_json_bundle_to_elasticsearch(
-                json_data_list=json_data_list,
-                index=parameters.index,
-                operation=parameters.operation,
-                logger=logger,
-                doc_id_prefix=parameters.doc_id_prefix,
+            response_json: ElasticSearchResult = (
+                await ElasticSearchHelpers.send_json_bundle_to_elasticsearch_async(
+                    json_data_list=json_data_list,
+                    index=parameters.index,
+                    operation=parameters.operation,
+                    logger=logger,
+                    doc_id_prefix=parameters.doc_id_prefix,
+                )
             )
             response_json.partition_index = partition_index
             yield response_json.to_dict_flatten_payload()

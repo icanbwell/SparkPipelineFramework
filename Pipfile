@@ -45,7 +45,7 @@ fastjsonschema= ">=2.18.0"
 # helix.fhir.client.sdk is needed for interacting with FHIR servers
 "helix.fhir.client.sdk" = ">=2.0.13"
 # opensearch-py is needed for interacting with OpenSearch
-opensearch-py= ">=1.1.0"
+opensearch-py= { extras = ['async'], version = ">=2.6.0" }
 # pyathena is needed for interacting with Athena in AWS
 pyathena = ">2.14.0"
 # spark-nlp is needed for natural language processing

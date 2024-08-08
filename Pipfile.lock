@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "cee15de3fc227b45433401c7eb92c9c899d30cdcc56d4593d3030f67f149023a"
+            "sha256": "1577444d51af0221ca91af8264491877d7651ade80d5811b689ad274d5c91874"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -617,11 +617,11 @@
         },
         "helix.fhir.client.sdk": {
             "hashes": [
-                "sha256:109b1ee083080898f10bcf71c9fee64e362a98ee60be18be0344c7cd9c1c8094",
-                "sha256:a038dafb1e2315c2eef7701d1a9bcdd8de6074da79ea55e01447ae28ab518d09"
+                "sha256:30b7dcc94c7ea49fd74702edae2466430c7c2bc3a10f438af8b49aaadc4d3fd4",
+                "sha256:69fa3cf762515fe23a63db4eb1d7d5cd3fcf9ad3d4deccdbcb097ccaac570827"
             ],
             "markers": "python_version >= '3.10'",
-            "version": "==2.0.13"
+            "version": "==2.0.14"
         },
         "idna": {
             "hashes": [
@@ -930,11 +930,13 @@
             "version": "==2.0.1"
         },
         "opensearch-py": {
+            "extras": [
+                "async"
+            ],
             "hashes": [
                 "sha256:0b7c27e8ed84c03c99558406927b6161f186a72502ca6d0325413d8e5523ba96",
                 "sha256:b6e78b685dd4e9c016d7a4299cf1de69e299c88322e3f81c716e6e23fe5683c1"
             ],
-            "index": "pypi",
             "markers": "python_version >= '3.8' and python_version < '4'",
             "version": "==2.6.0"
         },
@@ -1512,7 +1514,7 @@
                 "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472",
                 "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.8'",
             "version": "==2.2.2"
         },
         "usaddress": {
@@ -1784,11 +1786,11 @@
         },
         "babel": {
             "hashes": [
-                "sha256:08706bdad8d0a3413266ab61bd6c34d0c28d6e1e7badf40a2cebe67644e2e1fb",
-                "sha256:8daf0e265d05768bc6c7a314cf1321e9a123afc328cc635c18622a2f30a04413"
+                "sha256:368b5b98b37c06b7daf6696391c3240c938b37767d4584413e8438c5c435fa8b",
+                "sha256:d1f3554ca26605fe173f3de0c65f750f5a42f924499bf134de6423582298e316"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==2.15.0"
+            "version": "==2.16.0"
         },
         "backports.tarfile": {
             "hashes": [
@@ -3491,7 +3493,7 @@
                 "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472",
                 "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.8'",
             "version": "==2.2.2"
         },
         "virtualenv": {
@@ -3923,7 +3925,7 @@
                 "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472",
                 "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.8'",
             "version": "==2.2.2"
         },
         "vistir": {
