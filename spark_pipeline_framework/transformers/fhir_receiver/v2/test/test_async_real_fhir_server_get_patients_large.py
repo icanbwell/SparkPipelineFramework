@@ -63,6 +63,7 @@ async def test_async_real_fhir_server_get_patients_large(
     await FhirHelper.delete_resources_by_ids_async(
         fhir_client=fhir_client, resource_type=resource_type, id_list=patient_ids
     )
+    print(f"Deleted {count} patients")
 
     fhir_client = FhirClient()
     fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
@@ -72,9 +73,11 @@ async def test_async_real_fhir_server_get_patients_large(
     fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
 
     resource = await FhirHelper.create_test_patients(count)
+    print(f"Merging {count} patients")
     merge_response: FhirMergeResponse = await FhirMergeResponse.from_async_generator(
         fhir_client.merge_async(json_data_list=[json.dumps(resource)])
     )
+    print(f"Merged {count} patients")
     print(merge_response.responses)
     assert merge_response.status == 200, merge_response.responses
     assert len(merge_response.responses) == count, merge_response.responses

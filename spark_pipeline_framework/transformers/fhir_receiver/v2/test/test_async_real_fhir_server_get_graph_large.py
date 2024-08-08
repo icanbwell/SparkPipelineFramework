@@ -59,23 +59,27 @@ async def test_async_real_fhir_server_get_graph_large(
         count=count, roles_per_practitioner=roles_per_practitioner
     )
     # delete Practitioner resources
+    print(f"Deleting {count} {resource_type} resources: {id_dict[resource_type]}")
     await FhirHelper.delete_resources_by_ids_async(
         fhir_client=fhir_client,
         resource_type=resource_type,
         id_list=id_dict[resource_type],
     )
     # delete Organization resources
+    print(f"Deleting {count} Organization resources: {id_dict['Organization']}")
     await FhirHelper.delete_resources_by_ids_async(
         fhir_client=fhir_client,
         resource_type="Organization",
         id_list=id_dict["Organization"],
     )
     # delete PractitionerRole resources
+    print(f"Deleting {count} PractitionerRole resources: {id_dict['PractitionerRole']}")
     await FhirHelper.delete_resources_by_ids_async(
         fhir_client=fhir_client,
         resource_type="PractitionerRole",
         id_list=id_dict["PractitionerRole"],
     )
+    print("Finished deleting resources")
 
     fhir_client = FhirClient()
     fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
@@ -91,9 +95,11 @@ async def test_async_real_fhir_server_get_graph_large(
     expected_resource_count = len(bundle["entry"])
     print("expected_resource_count", expected_resource_count)
 
+    print(f"Merging bundle with {expected_resource_count} resources")
     merge_response: FhirMergeResponse = await FhirMergeResponse.from_async_generator(
         fhir_client.merge_async(json_data_list=[json.dumps(bundle)])
     )
+    print(f"Merged {expected_resource_count} resources")
     print(json.dumps(merge_response.responses))
     assert merge_response.status == 200, merge_response.responses
     assert (
