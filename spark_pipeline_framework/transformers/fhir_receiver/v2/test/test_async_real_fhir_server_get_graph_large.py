@@ -169,6 +169,9 @@ async def test_async_real_fhir_server_get_graph_large(
             progress_logger=progress_logger,
             parameters=parameters,
             run_synchronously=run_synchronously,
+            auth_well_known_url=auth_well_known_url,
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
         ).transform(df)
 
     # Assert
