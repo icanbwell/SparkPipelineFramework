@@ -1,7 +1,8 @@
 import json
 from logging import Logger
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Union, cast
 
+from opensearchpy._async.helpers.actions import async_bulk
 from opensearchpy import AsyncOpenSearch
 from furl import furl
 from opensearchpy.helpers.errors import BulkIndexError
@@ -86,14 +87,18 @@ class ElasticSearchHelpers:
             )
         )
         success: int = 0
-        failed: int = 0
+        failed: Union[int, List[Any]] = 0
         errors: List[str] = []
 
         try:
-            # https://opster.com/guides/opensearch/opensearch-operations/opensearch-py-bulk/
-            success, failed = await es_client.bulk(
-                body=payload, index=index, stats_only=True
+            # https://github.com/opensearch-project/opensearch-py/blob/main/opensearchpy/_async/helpers/actions.py
+            success, failed = await async_bulk(
+                client=es_client, actions=payload, index=index, stats_only=True
             )
+            assert isinstance(success, int)
+            # since we passed stats_only=True, failed will be an int
+            assert isinstance(failed, int)
+
         except BulkIndexError as e:
             for error in e.errors:
                 logger.error(f"The following record failed to index: {error}")
@@ -104,7 +109,7 @@ class ElasticSearchHelpers:
         return ElasticSearchResult(
             url=full_uri.url,
             success=success,
-            failed=failed,
+            failed=cast(int, failed),
             payload=list(payload),
             partition_index=0,
             error=json.dumps(errors) if len(errors) > 0 else None,

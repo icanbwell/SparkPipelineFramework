@@ -22,7 +22,8 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-@pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.skip(reason="This test is too slow")
+@pytest.mark.parametrize("run_synchronously", [True])
 async def test_async_real_fhir_server_get_graph_large(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:

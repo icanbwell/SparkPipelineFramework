@@ -70,7 +70,7 @@ async def test_fhir_sender_merge_on_delta(
 
     # Act
     with ProgressLogger() as progress_logger:
-        FhirSender(
+        await FhirSender(
             resource="Patient",
             server_url=fhir_server_url,
             file_path=test_files_dir_delta,
@@ -82,7 +82,7 @@ async def test_fhir_sender_merge_on_delta(
             auth_client_secret=auth_client_secret,
             auth_well_known_url=auth_well_known_url,
             run_synchronously=run_synchronously,
-        ).transform(df)
+        ).transform_async(df)
 
     # Assert
     response = requests.get(

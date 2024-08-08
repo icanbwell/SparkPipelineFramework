@@ -62,7 +62,7 @@ async def test_fhir_sender_patch(
 
     # now add the resources first
     with ProgressLogger() as progress_logger:
-        FhirSender(
+        await FhirSender(
             resource="Patient",
             server_url=fhir_server_url,
             file_path=test_files_initial_dir,
@@ -76,7 +76,7 @@ async def test_fhir_sender_patch(
             view="result_view",
             error_view="error_view",
             run_synchronously=run_synchronously,
-        ).transform(df)
+        ).transform_async(df)
 
     token_url = TokenHelper.get_auth_server_url_from_well_known_url(
         well_known_url=auth_well_known_url
@@ -86,7 +86,7 @@ async def test_fhir_sender_patch(
     environ["LOGLEVEL"] = "DEBUG"
     # Act
     with ProgressLogger() as progress_logger:
-        FhirSender(
+        await FhirSender(
             resource="Patient",
             server_url=fhir_server_url,
             file_path=test_files_dir,
@@ -100,7 +100,7 @@ async def test_fhir_sender_patch(
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             auth_well_known_url=auth_well_known_url,
-        ).transform(df)
+        ).transform_async(df)
 
     # Assert
     response = requests.get(

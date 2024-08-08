@@ -80,7 +80,7 @@ async def test_fhir_sender_merge_with_source_view(
     environ["LOGLEVEL"] = "DEBUG"
     # Act
     with ProgressLogger() as progress_logger:
-        FhirSender(
+        await FhirSender(
             resource="Patient",
             server_url=fhir_server_url,
             source_view="source_view",
@@ -94,7 +94,7 @@ async def test_fhir_sender_merge_with_source_view(
             auth_well_known_url=auth_well_known_url,
             view="result_view",
             error_view="error_view",
-        ).transform(df)
+        ).transform_async(df)
 
     # Assert
     error_df = spark_session.read.table("error_view")
