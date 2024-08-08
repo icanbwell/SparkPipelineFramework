@@ -33,14 +33,14 @@ class StandardizingVendor(metaclass=ABCMeta):
         returns the vendor specific response from the vendor
         """
 
-    @staticmethod
+    @abstractmethod
     def vendor_specific_to_std(
+        self,
         vendor_specific_addresses: List[VendorResponse],
     ) -> List[StandardizedAddress]:
         """
         each vendor class knows how to convert its response to StdAddress
         """
-        return []
 
     @staticmethod
     def _add_vendor_to_address(

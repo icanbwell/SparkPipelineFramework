@@ -41,6 +41,7 @@ class CustomApiCallFunction(Protocol):
 
 class MelissaStandardizingVendor(StandardizingVendor):
     _RESPONSE_KEY_ERROR_THRESHOLD = 2
+
     # number of times Melissa is allowed to send bad response until we cancel rest of requests
 
     def __init__(
@@ -88,8 +89,8 @@ class MelissaStandardizingVendor(StandardizingVendor):
         )
         return vendor_responses
 
-    @staticmethod
     def vendor_specific_to_std(
+        self,
         vendor_specific_addresses: List[VendorResponse],
     ) -> List[StandardizedAddress]:
         """

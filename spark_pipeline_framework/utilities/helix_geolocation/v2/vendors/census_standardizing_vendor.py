@@ -425,8 +425,8 @@ class CensusStandardizingVendor(StandardizingVendor):
             )
         )
 
-    @staticmethod
     def vendor_specific_to_std(
+        self,
         vendor_specific_addresses: List[VendorResponse],
     ) -> List[StandardizedAddress]:
         """

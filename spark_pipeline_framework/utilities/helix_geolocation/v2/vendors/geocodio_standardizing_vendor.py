@@ -36,8 +36,8 @@ class GeocodioStandardizingVendor(StandardizingVendor):
         )
         return vendor_responses
 
-    @staticmethod
     def vendor_specific_to_std(
+        self,
         vendor_specific_addresses: List[VendorResponse],
     ) -> List[StandardizedAddress]:
         """

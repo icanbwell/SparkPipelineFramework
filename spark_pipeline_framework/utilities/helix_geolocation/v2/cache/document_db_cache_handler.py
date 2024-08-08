@@ -142,8 +142,8 @@ class DocumentDBCacheHandler(CacheHandler):
             vendor_obj: Type[StandardizingVendor] = (
                 StandardizingVendorFactory.get_vendor_class(vr.vendor_name)
             )
-            std_addresses.append(  # vendor_specific_to_std works with list but we are just sending one
-                vendor_obj.vendor_specific_to_std(
+            std_addresses.extend(  # vendor_specific_to_std works with list but we are just sending one
+                vendor_obj().vendor_specific_to_std(
                     [
                         VendorResponse(
                             api_call_response=vr.api_call_response,
@@ -152,7 +152,7 @@ class DocumentDBCacheHandler(CacheHandler):
                             response_version=vr.response_version,
                         )
                     ]
-                )[0]
+                )
             )
             if vr.related_raw_address:
                 found_ids.append(vr.related_raw_address.get_id())
