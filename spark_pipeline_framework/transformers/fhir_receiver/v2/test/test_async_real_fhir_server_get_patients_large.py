@@ -15,8 +15,9 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,
 )
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token,
+    fhir_get_access_token_async,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
@@ -82,13 +83,15 @@ async def test_async_real_fhir_server_get_patients_large(
 
     logger = get_logger(__name__)
 
-    access_token = fhir_get_access_token(
-        logger=logger,
-        server_url=fhir_server_url,
-        log_level="DEBUG",
-        auth_client_id=auth_client_id,
-        auth_client_secret=auth_client_secret,
-        auth_well_known_url=auth_well_known_url,
+    access_token = AsyncHelper.run_async_function_with_timeout(
+        fhir_get_access_token_async(
+            logger=logger,
+            server_url=fhir_server_url,
+            log_level="DEBUG",
+            auth_client_id=auth_client_id,
+            auth_client_secret=auth_client_secret,
+            auth_well_known_url=auth_well_known_url,
+        )
     )
     print(f"Found access token in test: {access_token}")
     # act

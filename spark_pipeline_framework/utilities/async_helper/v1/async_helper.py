@@ -1,5 +1,6 @@
 import asyncio
 import time
+from asyncio import Task
 from typing import AsyncGenerator, List, TypeVar, Optional, Coroutine, Any
 
 from pyspark.sql import DataFrame
@@ -123,3 +124,43 @@ class AsyncHelper:
             else:
                 raise e
         return result
+
+    @staticmethod
+    async def run_with_timeout(
+        async_func: Coroutine[Any, Any, T], timeout: Optional[float] = None
+    ) -> T:
+        # noinspection PyCallingNonCallable
+        result: T = await asyncio.wait_for(async_func(), timeout=timeout)  # type: ignore[operator]
+        print(f"Function result: {result}")
+        return result
+
+    @staticmethod
+    async def run_task(
+        async_func: Coroutine[Any, Any, T], timeout: Optional[float]
+    ) -> T:
+        result = await AsyncHelper.run_with_timeout(async_func, timeout)
+        return result
+
+    @staticmethod
+    def run_async_function_with_timeout(
+        async_func: Coroutine[Any, Any, T], timeout: Optional[float] = None
+    ) -> T:
+        # Check if there's already a running event loop
+        if not asyncio.get_event_loop().is_running():
+            result = asyncio.run(AsyncHelper.run_task(async_func, timeout))
+            print(f"Main result: {result}")
+            return result
+        else:
+            # If the event loop is already running, ensure the coroutine is run within it
+            future: Task[T] = asyncio.get_event_loop().create_task(
+                AsyncHelper.run_task(async_func, timeout)
+            )
+
+            async def get_result(future1: Task[T]) -> T:
+                result1 = await future1
+                print(f"Main result: {result1}")
+                return result1
+
+            # Schedule the result retrieval and run it within the current loop
+            result_task = asyncio.get_event_loop().create_task(get_result(future))
+            return result_task  # type: ignore[return-value]
