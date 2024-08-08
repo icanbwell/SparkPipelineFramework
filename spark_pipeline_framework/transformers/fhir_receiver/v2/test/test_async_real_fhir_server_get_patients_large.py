@@ -16,7 +16,7 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import
     FhirReceiver,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token_async,
+    fhir_get_access_token,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
@@ -82,7 +82,7 @@ async def test_async_real_fhir_server_get_patients_large(
 
     logger = get_logger(__name__)
 
-    access_token = await fhir_get_access_token_async(
+    access_token = fhir_get_access_token(
         logger=logger,
         server_url=fhir_server_url,
         log_level="DEBUG",

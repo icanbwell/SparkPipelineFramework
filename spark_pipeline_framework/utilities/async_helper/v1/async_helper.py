@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import AsyncGenerator, List, TypeVar, Optional, Coroutine, Any
 
 from pyspark.sql import DataFrame
@@ -89,10 +90,36 @@ class AsyncHelper:
         :return: T
         """
         try:
+            print(f"Getting running loop")
             loop = asyncio.get_running_loop()
+            print(f"Got running loop")
         except RuntimeError:
+            print(f"Creating new event loop")
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        result = loop.run_until_complete(fn)
+        try:
+            if loop.is_running():
+                print(f"Loop is running so waiting for it to end")
+                start_time = time.time()
+                timeout = 30  # maximum time in seconds
+                while loop.is_running():
+                    current_time = time.time()
+                    elapsed_time = current_time - start_time
+
+                    if elapsed_time > timeout:
+                        print("Timeout reached. Exiting loop.")
+                        break
+
+                    print(f"Waiting for loop to end: {elapsed_time}")
+                    time.sleep(1)
+            print(f"Running loop")
+            result = loop.run_until_complete(fn)
+            print(f"Ran loop")
+        except RuntimeError as e:
+            print(f"RuntimeError running loop: {e}")
+            if "no running event loop" in str(e):
+                result = asyncio.run(fn)
+            else:
+                raise e
         return result
