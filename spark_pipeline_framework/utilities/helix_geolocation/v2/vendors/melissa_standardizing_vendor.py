@@ -202,7 +202,7 @@ class MelissaStandardizingVendor(
         ]
 
         license_key = self._get_request_credentials()["license_key"]
-        url = r"http://address.melissadata.net/v3/WEB/GlobalAddress/doglobaladdress"
+        url = r"https://address.melissadata.net/v3/WEB/GlobalAddress/doglobaladdress"
         json_batch_dict = {
             "TransmissionReference": "GlobalAddressBatch",
             "CustomerID": license_key,
