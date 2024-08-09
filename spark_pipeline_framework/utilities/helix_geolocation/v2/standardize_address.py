@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 
@@ -56,7 +56,7 @@ class StandardizeAddr:
                 i : i + max_requests
             ]
 
-            vendor_responses_batch: List[VendorResponse[Any]] = (
+            vendor_responses_batch: List[VendorResponse[BaseVendorApiResponse]] = (
                 await vendor_obj.standardize_async(addresses_not_found_in_cache)
             )
             assert len(vendor_responses_batch) == len(addresses_not_found_in_cache), (
@@ -73,5 +73,8 @@ class StandardizeAddr:
         # combine and return
         assert len(cache_lookup_result.found) + len(new_std_addresses) == len(
             raw_addresses
-        ), f"{len(cache_lookup_result.found)} + {len(new_std_addresses)} != {len(raw_addresses)}, vendor={type(vendor_obj)}, not_found={len(cache_lookup_result.not_found)}"
+        ), (
+            f"{len(cache_lookup_result.found)} + {len(new_std_addresses)} != {len(raw_addresses)},"
+            f" vendor={type(vendor_obj)}, not_found={len(cache_lookup_result.not_found)}"
+        )
         return cache_lookup_result.found + new_std_addresses

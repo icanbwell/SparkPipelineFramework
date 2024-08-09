@@ -135,16 +135,21 @@ class MelissaStandardizingVendor(
             logger.error(
                 f"Melissa API calls limit reached. Limit: {self._api_calls_limit}"
             )
-            yield []
+            yield [
+                MelissaStandardizingVendorApiResponse.from_standardized_address(
+                    StandardizedAddress.from_raw_address(raw_address=raw_address)
+                )
+                for raw_address in raw_addresses
+            ]
 
-        api_server_response: Dict[str, Any] = (
-            await self._custom_api_call_async(raw_addresses)
-            if self._custom_api_call_async
-            else await self._api_call_async(raw_addresses)
-        )
-
-        # adding vendor, so we can parse it correctly after reading response from cache in the future
         try:
+            api_server_response: Dict[str, Any] = (
+                await self._custom_api_call_async(raw_addresses)
+                if self._custom_api_call_async
+                else await self._api_call_async(raw_addresses)
+            )
+
+            # adding vendor, so we can parse it correctly after reading response from cache in the future
             vendor_specific_addresses: List[Dict[str, str]] = api_server_response[
                 "Records"
             ]
@@ -152,14 +157,19 @@ class MelissaStandardizingVendor(
                 MelissaStandardizingVendorApiResponse.from_dict(v)
                 for v in vendor_specific_addresses
             ]
-        except KeyError:
+        except Exception as e:
             logger.exception(
                 f"{self.get_vendor_name()} response does not have a Records key. Are we out of credit?"
             )
             self._error_counter += 1
             if self._error_counter > self._RESPONSE_KEY_ERROR_THRESHOLD:
                 raise VendorResponseKeyError
-            yield []
+            yield [
+                MelissaStandardizingVendorApiResponse.from_standardized_address(
+                    StandardizedAddress.from_raw_address(raw_address=raw_address)
+                )
+                for raw_address in raw_addresses
+            ]
 
     async def _api_call_async(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         addresses_to_lookup: List[Dict[str, str]] = [

@@ -45,3 +45,19 @@ class MelissaStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
             formatted_address=self.FormattedAddress,
             standardize_vendor="melissa",
         )
+
+    @classmethod
+    def from_standardized_address(
+        cls, standardized_address: StandardizedAddress
+    ) -> "MelissaStandardizingVendorApiResponse":
+        return cls(
+            RecordID=standardized_address.address_id,
+            FormattedAddress=standardized_address.formatted_address,
+            Locality=standardized_address.city,
+            AdministrativeArea=standardized_address.state,
+            SubAdministrativeArea=standardized_address.county,
+            PostalCode=standardized_address.zipcode,
+            CountryISO3166_1_Alpha2=standardized_address.country,
+            Latitude=standardized_address.latitude,
+            Longitude=standardized_address.longitude,
+        )
