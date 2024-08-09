@@ -33,7 +33,7 @@ class AsyncPandasDataFrameUDF(Generic[T]):
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.
-        This class is used to read a row in a dataframe and return a row after processing that row.
+        This class is used to read rows in a dataframe and return rows after processing that row.
 
         :param async_func: an async function that takes a list of dictionaries as input and
                             returns a list of dictionaries

@@ -308,10 +308,11 @@ class FhirReceiverProcessor:
         # resource_type = resource1.get("resourceType")
         request_id: Optional[str] = None
         responses_from_fhir: List[str] = []
+        errors: List[GetBatchError] = []
         extra_context_to_return: Optional[Dict[str, Any]] = None
         try:
-            result1: FhirGetResponse
-            async for result1 in FhirReceiverProcessor.send_simple_fhir_request_async(
+            response: FhirGetResponse
+            async for response in FhirReceiverProcessor.send_simple_fhir_request_async(
                 id_=id_,
                 server_url_=url_ or parameters.server_url,
                 service_slug=service_slug,
@@ -319,29 +320,33 @@ class FhirReceiverProcessor:
                 server_url=parameters.server_url,
                 parameters=parameters,
             ):
-                # resp_result: str = result1.responses.replace("\n", "")
+                # resp_result: str = response.responses.replace("\n", "")
                 try:
-                    responses_from_fhir = [
-                        json.dumps(r) for r in result1.get_resources()
-                    ]
+                    batch_result: GetBatchResult = (
+                        FhirReceiverProcessor.read_resources_and_errors_from_response(
+                            response=response
+                        )
+                    )
+                    responses_from_fhir = batch_result.resources
+                    errors = batch_result.errors
                 except JSONDecodeError as e2:
                     if parameters.error_view:
-                        result1.error = f"{(result1.error or '')}: {str(e2)}"
+                        response.error = f"{(response.error or '')}: {str(e2)}"
                     else:
                         raise FhirParserException(
-                            url=result1.url,
+                            url=response.url,
                             message="Parsing result as json failed",
-                            json_data=result1.responses,
-                            response_status_code=result1.status,
-                            request_id=result1.request_id,
+                            json_data=response.responses,
+                            response_status_code=response.status,
+                            request_id=response.request_id,
                         ) from e2
 
-                error_text = result1.error
-                status_code = result1.status
-                request_url = result1.url
-                request_id = result1.request_id
-                extra_context_to_return = result1.extra_context_to_return
-                access_token = result1.access_token
+                error_text = response.error or "\n".join([e.error_text for e in errors])
+                status_code = response.status
+                request_url = response.url
+                request_id = response.request_id
+                extra_context_to_return = response.extra_context_to_return
+                access_token = response.access_token
                 yield FhirGetResponseItem(
                     dict(
                         partition_index=partition_index,
@@ -388,31 +393,38 @@ class FhirReceiverProcessor:
         resource_id_with_token_list: List[Dict[str, Optional[str]]],
         parameters: FhirReceiverParameters,
     ) -> AsyncGenerator[Dict[str, Any], None]:
-        result1: FhirGetResponse
-        async for result1 in FhirReceiverProcessor.send_simple_fhir_request_async(
+        response: FhirGetResponse
+        async for response in FhirReceiverProcessor.send_simple_fhir_request_async(
             id_=[cast(str, r["resource_id"]) for r in resource_id_with_token_list],
             server_url=parameters.server_url,
             server_url_=parameters.server_url,
             parameters=parameters,
         ):
-            responses_from_fhir = []
+            responses_from_fhir: List[str] = []
+            errors: List[GetBatchError] = []
             try:
-                responses_from_fhir = [json.dumps(r) for r in result1.get_resources()]
+                batch_result: GetBatchResult = (
+                    FhirReceiverProcessor.read_resources_and_errors_from_response(
+                        response=response
+                    )
+                )
+                responses_from_fhir = batch_result.resources
+                errors = batch_result.errors
             except JSONDecodeError as e1:
                 if parameters.error_view:
-                    result1.error = f"{(result1.error or '')}: {str(e1)}"
+                    response.error = f"{(response.error or '')}: {str(e1)}"
                 else:
                     raise FhirParserException(
-                        url=result1.url,
+                        url=response.url,
                         message="Parsing result as json failed",
-                        json_data=result1.responses,
-                        response_status_code=result1.status,
-                        request_id=result1.request_id,
+                        json_data=response.responses,
+                        response_status_code=response.status,
+                        request_id=response.request_id,
                     ) from e1
 
-            error_text = result1.error
-            status_code = result1.status
-            request_id: Optional[str] = result1.request_id
+            error_text = response.error or "\n".join([e.error_text for e in errors])
+            status_code = response.status
+            request_id: Optional[str] = response.request_id
             is_valid_response: bool = True if len(responses_from_fhir) > 0 else False
             yield FhirGetResponseItem(
                 dict(
@@ -423,7 +435,7 @@ class FhirReceiverProcessor:
                     first=first_id,
                     last=last_id,
                     error_text=error_text,
-                    url=result1.url,
+                    url=response.url,
                     status_code=status_code,
                     request_id=request_id,
                     access_token=None,
@@ -635,7 +647,13 @@ class FhirReceiverProcessor:
             ):
                 result_response: List[str] = []
                 try:
-                    result_response = [json.dumps(r) for r in result.get_resources()]
+                    batch_result: GetBatchResult = (
+                        FhirReceiverProcessor.read_resources_and_errors_from_response(
+                            response=result
+                        )
+                    )
+                    result_response = batch_result.resources
+                    errors = batch_result.errors
                 except JSONDecodeError as e:
                     if parameters.error_view:
                         errors.append(
@@ -661,60 +679,40 @@ class FhirReceiverProcessor:
                     json_resources: List[Dict[str, Any]] = json.loads(result.responses)
                     if isinstance(json_resources, list):  # normal response
                         if len(json_resources) > 0:  # received any resources back
-                            # did we get any resources of the type we asked for?
-                            found_any_expected_resources: bool = any(
-                                [
-                                    r
-                                    for r in json_resources
-                                    if r.get("resourceType") == parameters.resource_type
+                            last_json_resource = json_resources[-1]
+                            if result.next_url:
+                                # if server has sent back a next url then use that
+                                next_url: Optional[str] = result.next_url
+                                next_uri: furl = furl(next_url)
+                                additional_parameters = [
+                                    f"{k}={v}" for k, v in next_uri.args.items()
                                 ]
-                            )
-                            if not found_any_expected_resources:
-                                errors.append(
-                                    GetBatchError(
-                                        url=result.url,
-                                        status_code=result.status,
-                                        error_text=result.responses,
-                                        request_id=result.request_id,
+                                # remove any entry for id:above
+                                additional_parameters = list(
+                                    filter(
+                                        lambda x: not x.startswith("_count")
+                                        and not x.startswith("_element"),
+                                        additional_parameters,
                                     )
                                 )
-                                # if we didn't get any resources of the type we asked for then we're done
-                                has_next_page = False
+                            elif "id" in last_json_resource:
+                                # use id:above to optimize the next query
+                                id_of_last_resource = last_json_resource["id"]
+                                if not additional_parameters:
+                                    additional_parameters = []
+                                # remove any entry for id:above
+                                additional_parameters = list(
+                                    filter(
+                                        lambda x: not x.startswith("id:above"),
+                                        additional_parameters,
+                                    )
+                                )
+                                additional_parameters.append(
+                                    f"id:above={id_of_last_resource}"
+                                )
                             else:
-                                last_json_resource = json_resources[-1]
-                                if result.next_url:
-                                    # if server has sent back a next url then use that
-                                    next_url: Optional[str] = result.next_url
-                                    next_uri: furl = furl(next_url)
-                                    additional_parameters = [
-                                        f"{k}={v}" for k, v in next_uri.args.items()
-                                    ]
-                                    # remove any entry for id:above
-                                    additional_parameters = list(
-                                        filter(
-                                            lambda x: not x.startswith("_count")
-                                            and not x.startswith("_element"),
-                                            additional_parameters,
-                                        )
-                                    )
-                                elif "id" in last_json_resource:
-                                    # use id:above to optimize the next query
-                                    id_of_last_resource = last_json_resource["id"]
-                                    if not additional_parameters:
-                                        additional_parameters = []
-                                    # remove any entry for id:above
-                                    additional_parameters = list(
-                                        filter(
-                                            lambda x: not x.startswith("id:above"),
-                                            additional_parameters,
-                                        )
-                                    )
-                                    additional_parameters.append(
-                                        f"id:above={id_of_last_resource}"
-                                    )
-                                else:
-                                    server_page_number += 1
-                                resources = resources + result_response
+                                server_page_number += 1
+                            resources = resources + result_response
                         page_number += 1
                         if limit and limit > 0:
                             if not page_size or (page_number * page_size) >= limit:
@@ -745,6 +743,7 @@ class FhirReceiverProcessor:
         assert server_url
         errors: List[GetBatchError] = []
         resources: List[str] = []
+        result: FhirGetResponse
         async for result in FhirReceiverProcessor.send_fhir_request_async(
             logger=get_logger(__name__),
             parameters=parameters,
@@ -754,7 +753,13 @@ class FhirReceiverProcessor:
             last_updated_before=last_updated_before,
         ):
             try:
-                resources = [json.dumps(r) for r in result.get_resources()]
+                batch_result1: GetBatchResult = (
+                    FhirReceiverProcessor.read_resources_and_errors_from_response(
+                        response=result
+                    )
+                )
+                resources = resources + batch_result1.resources
+                errors = errors + batch_result1.errors
             except JSONDecodeError as e:
                 if parameters.error_view:
                     errors.append(
@@ -812,4 +817,30 @@ class FhirReceiverProcessor:
             ),
             schema=schema,
             results_per_batch=results_per_batch,
+        )
+
+    @staticmethod
+    def read_resources_and_errors_from_response(
+        response: FhirGetResponse,
+    ) -> GetBatchResult:
+        all_resources: List[Dict[str, Any]] = response.get_resources()
+        resources_except_operation_outcomes: List[Dict[str, Any]] = [
+            r for r in all_resources if r.get("resourceType") != "OperationOutcome"
+        ]
+        operation_outcomes: List[Dict[str, Any]] = [
+            r for r in all_resources if r.get("resourceType") == "OperationOutcome"
+        ]
+
+        errors: List[GetBatchError] = [
+            GetBatchError(
+                request_id=response.request_id,
+                url=response.url,
+                status_code=response.status,
+                error_text=json.dumps(o, indent=2),
+            )
+            for o in operation_outcomes
+        ]
+        return GetBatchResult(
+            resources=[json.dumps(r) for r in resources_except_operation_outcomes],
+            errors=errors,
         )

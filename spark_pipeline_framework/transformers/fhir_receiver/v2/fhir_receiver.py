@@ -1031,7 +1031,9 @@ class FhirReceiver(FrameworkTransformer):
                     resource_df = list_df.select(
                         explode(col("resources")).alias("resource")
                     )
-                    errors_df = list_df.select(explode(col("errors")).alias("resource"))
+                    errors_df = list_df.select(
+                        explode(col("errors")).alias("resource")
+                    ).select("resource.*")
                     resource_df.write.format(file_format).mode(mode).save(
                         str(file_path)
                     )

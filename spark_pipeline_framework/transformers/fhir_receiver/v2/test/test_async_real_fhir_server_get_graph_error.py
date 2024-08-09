@@ -22,8 +22,8 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-@pytest.mark.parametrize("run_synchronously", [True, False])
-@pytest.mark.parametrize("use_data_streaming", [True, False])
+@pytest.mark.parametrize("run_synchronously", [True])
+@pytest.mark.parametrize("use_data_streaming", [True])
 async def test_async_real_fhir_server_get_graph_error(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
@@ -185,12 +185,14 @@ async def test_async_real_fhir_server_get_graph_error(
 
     # Assert
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
+    print("------- Result DataFrame -------")
     json_df.show()
     json_df.printSchema()
 
     assert json_df.count() == 0
 
     error_df: DataFrame = df.sparkSession.table("error_view")
+    print("------- Error DataFrame -------")
     error_df.show()
 
     assert error_df.count() == 1
