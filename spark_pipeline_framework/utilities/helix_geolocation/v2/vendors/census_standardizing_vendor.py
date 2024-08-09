@@ -238,7 +238,7 @@ class CensusStandardizingVendor(
         return CensusStandardizingVendorApiResponse(
             address_id=r["ID"],
             input=CensusStandardizingVendorInput(
-                address=r["Input Address"],
+                address=CensusStandardizingVendorAddress(address=r["Input Address"]),
                 benchmark=CensusStandardizingVendorBenchmark(
                     benchmarkName=benchmark,
                     benchmarkDescription=None,
