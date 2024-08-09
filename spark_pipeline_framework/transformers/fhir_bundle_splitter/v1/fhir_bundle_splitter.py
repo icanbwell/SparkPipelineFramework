@@ -89,10 +89,10 @@ class FhirBundleSplitter(FrameworkTransformer):
 
             if progress_logger:
                 progress_logger.write_to_log(
-                    "Following resource types were found in the data:"
+                    entry_name="fhir_bundle_splitter",
+                    message="Following resource types were found in the data: {resource_types}",
+                    resource_types=resource_types,
                 )
-                progress_logger.write_to_log(",".join(resource_types))
-
         column_specs: Dict[str, Column] = {
             resource_type.lower(): from_json(
                 filter(

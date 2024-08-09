@@ -89,7 +89,8 @@ class FrameworkPipeline(Transformer):
                     name=str(stage_name) or "unknown",
                 ):
                     self.progress_logger.log_event(
-                        pipeline_name, event_text=f"Running pipeline step {stage_name}"
+                        event_name=pipeline_name,
+                        event_text=f"Running pipeline step {stage_name}",
                     )
                     df = transformer.transform(dataset=df)
                     if self.log_level and self.log_level == "DEBUG":

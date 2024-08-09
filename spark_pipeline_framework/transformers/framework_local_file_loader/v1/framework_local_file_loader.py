@@ -177,7 +177,12 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
 
         if progress_logger:
             progress_logger.write_to_log(
-                f"Loading {self.getReaderFormat()} file for view {view}: {absolute_paths}, infer_schema: {infer_schema}"
+                entry_name=self.__class__.__name__,
+                message="Loading {format} file for view {view}: {absolute_paths}, infer_schema: {infer_schema}",
+                format=self.getReaderFormat(),
+                view=view,
+                absolute_paths=absolute_paths,
+                infer_schema=infer_schema,
             )
             progress_logger.log_param("data_path", ", ".join(absolute_paths))
 
@@ -234,8 +239,13 @@ class FrameworkLocalFileLoader(FrameworkTransformer):
             df.sparkSession.sql(f"CACHE TABLE {view}")
 
         progress_logger and progress_logger.write_to_log(
-            f"Finished Loading {self.getReaderFormat()} file for View[{view}]: {absolute_paths}, "
-            + f"infer_schema: {infer_schema}"
+            entry_name=self.__class__.__name__,
+            message="Finished Loading {format} file for View[{view}]: {absolute_paths}, "
+            + "infer_schema: {infer_schema}",
+            format=self.getReaderFormat(),
+            view=view,
+            absolute_paths=absolute_paths,
+            infer_schema=infer_schema,
         )
 
         return df

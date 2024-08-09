@@ -133,8 +133,13 @@ class FrameworkSqlTransformer(FrameworkTransformer):
             if progress_logger and name:
                 # mlflow opens .txt files inline so we use that extension
                 progress_logger.log_artifact(key=f"{name}.sql.txt", contents=sql_text)
-                progress_logger.write_to_log(name=name, message=sql_text)
+                progress_logger.write_to_log(
+                    entry_name=name, message="{sql_text}", sql_text=sql_text
+                )
             try:
+                progress_logger.write_to_log(
+                    entry_name=name, message="{sql_text}", sql_text=sql_text
+                )
                 df = df.sparkSession.sql(sql_text)
             except Exception:
                 self.logger.info(f"Error in {name}")
@@ -158,7 +163,9 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                     )
                     self.logger.info(message)
                     if progress_logger:
-                        progress_logger.write_to_log(message)
+                        progress_logger.write_to_log(
+                            entry_name=name or view, message="{data}", data=message
+                        )
                         if log_event or log_event_level:
                             if log_event_level:
                                 progress_logger.log_event(

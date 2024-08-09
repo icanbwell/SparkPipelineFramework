@@ -110,7 +110,10 @@ class FrameworkParquetLoader(FrameworkTransformer):
 
         if progress_logger:
             progress_logger.write_to_log(
-                f"Loading parquet file for view {view}: {file_path}"
+                entry_name=self.__class__.__name__,
+                message="Loading parquet file for view {view}: {file_path}",
+                view=view,
+                file_path=file_path,
             )
             progress_logger.log_param(key="data_path", value=str(file_path))
 

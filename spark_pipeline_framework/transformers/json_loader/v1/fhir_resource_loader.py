@@ -54,7 +54,9 @@ class FhirResourceLoader(FrameworkTransformer):
 
         if progress_logger:
             progress_logger.write_to_log(
-                name="FhirResourceLoader", message="Loading json file(s)..."
+                entry_name=self.getName(),
+                message="Loading json file(s) {path}",
+                path=file_path,
             )
 
         schema = BundleSchema.get_schema()
@@ -76,8 +78,9 @@ class FhirResourceLoader(FrameworkTransformer):
 
         if progress_logger:
             progress_logger.write_to_log(
-                name="FhirResourceLoader",
-                message=f"Resources row count: {df_resources.count()}",
+                entry_name=self.getName(),
+                message="Resources row count: {count}",
+                count=df_resources.count(),
             )
 
         df_resources.createOrReplaceTempView(name=view)

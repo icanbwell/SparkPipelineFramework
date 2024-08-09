@@ -90,7 +90,10 @@ class FrameworkXmlLoader(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         paths = get_absolute_paths(file_path=file_path)
         progress_logger and progress_logger.write_to_log(
-            f"Loading file for view {view}: {paths}"
+            entry_name=self.getName(),
+            message="Loading file for view {view}: {paths}",
+            view=view,
+            paths=paths,
         )
 
         df_xml_reader: DataFrameReader = df.sparkSession.read.format("xml").options(

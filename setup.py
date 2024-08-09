@@ -83,6 +83,7 @@ setup(
         "pandas>=2.2.2",
         "numexpr>=2.8.4",
         "bottleneck>=1.3.6",
+        "structlog>=22.1.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

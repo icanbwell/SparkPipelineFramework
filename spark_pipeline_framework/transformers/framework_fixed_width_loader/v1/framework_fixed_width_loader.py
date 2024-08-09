@@ -141,8 +141,12 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         has_header = self.getHasHeader()
 
         if progress_logger:
-            progress_logger.write_to_log(f"Loading file for view {view}: {paths}")
-            progress_logger.log_param("data_path", ", ".join(paths))
+            progress_logger.write_to_log(
+                entry_name=self.__class__.__name__,
+                message="Loading file for view {view}: {paths}",
+                view=view,
+                paths=paths,
+            )
 
         df_reader: DataFrameReader = df.sparkSession.read
         df_text = df_reader.text(paths=paths)
@@ -162,7 +166,10 @@ class FrameworkFixedWidthLoader(FrameworkTransformer):
         df_text.createOrReplaceTempView(view)
 
         progress_logger and progress_logger.write_to_log(
-            f"Finished Loading file for View[{view}]: {paths}"
+            entry_name=self.__class__.__name__,
+            message="Finished Loading file for View[{view}]: {paths}",
+            view=view,
+            paths=paths,
         )
         return df
 

@@ -79,7 +79,12 @@ class FrameworkUrlLoader(FrameworkTransformer):
         response: Response = http.request(url=full_uri.url, method=method)
         if progress_logger:
             progress_logger.write_to_log(
-                f"{method} {full_uri.url} [{response.status_code}]: {str(response.content)}"
+                entry_name=self.getName(),
+                message="{method} {url} [{status_code}]: {content}",
+                method=method,
+                url=full_uri.url,
+                status_code=response.status_code,
+                content=str(response.content),
             )
         return df
 
