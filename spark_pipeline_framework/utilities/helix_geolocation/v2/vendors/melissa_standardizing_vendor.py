@@ -162,14 +162,7 @@ class MelissaStandardizingVendor(
                 "Records"
             ]
             if len(vendor_specific_addresses) == 0:
-                yield [
-                    MelissaStandardizingVendorApiResponse.from_standardized_address(
-                        StandardizedAddress.from_raw_address(
-                            raw_address=raw_address, vendor_name=self.get_vendor_name()
-                        )
-                    )
-                    for raw_address in raw_addresses
-                ]
+                raise VendorResponseKeyError
             else:
                 yield [
                     MelissaStandardizingVendorApiResponse.from_dict(v)

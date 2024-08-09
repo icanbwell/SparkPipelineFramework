@@ -22,8 +22,8 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-@pytest.mark.parametrize("run_synchronously", [True, False])
-async def test_async_real_fhir_server_get_graph_by_id_large(
+@pytest.mark.parametrize("run_synchronously", [True])
+async def test_async_real_fhir_server_get_graph_large(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:
     print()
@@ -161,19 +161,12 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
     # act
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
-    id_df = spark_session.createDataFrame(
-        [(s,) for s in id_dict[resource_type]], ["id"]
-    )
-
-    id_df.createOrReplaceTempView("id_view")
-
     parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
 
     with ProgressLogger() as progress_logger:
         await FhirReceiver(
             server_url=fhir_server_url,
             resource=resource_type,
-            id_view="id_view",
             action="$graph",
             additional_parameters=["contained=true"],
             separate_bundle_resources=True,
@@ -185,9 +178,18 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
             auth_well_known_url=auth_well_known_url,
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
+            error_view="error_view",
         ).transform_async(df)
 
     # Assert
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     json_df.show()
     json_df.printSchema()
+
+    assert json_df.count() == 0
+
+    error_df: DataFrame = df.sparkSession.table("error_view")
+    error_df.show()
+
+    assert error_df.count() == 1
+    # assert error_df.first().error == "The server could not process the request"

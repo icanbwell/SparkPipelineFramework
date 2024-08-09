@@ -54,16 +54,38 @@ from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
 
 
 @dataclasses.dataclass
+class GetBatchError:
+    url: str
+    status_code: int
+    error_text: str
+    request_id: Optional[str]
+
+    @staticmethod
+    def get_schema() -> StructType:
+        return StructType(
+            [
+                StructField("url", StringType(), True),
+                StructField("status_code", StringType(), True),
+                StructField("error_text", StringType(), True),
+                StructField("request_id", StringType(), True),
+            ]
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass
 class GetBatchResult:
     resources: List[str]
-    errors: List[str]
+    errors: List[GetBatchError]
 
     @staticmethod
     def get_schema() -> StructType:
         return StructType(
             [
                 StructField("resources", ArrayType(StringType()), True),
-                StructField("errors", ArrayType(StringType()), True),
+                StructField("errors", ArrayType(GetBatchError.get_schema()), True),
             ]
         )
 
@@ -588,7 +610,7 @@ class FhirReceiverProcessor:
     ) -> AsyncGenerator[GetBatchResult, None]:
         assert server_url
         resources: List[str] = []
-        errors: List[str] = []
+        errors: List[GetBatchError] = []
         additional_parameters: Optional[List[str]] = parameters.additional_parameters
         if not page_size:
             page_size = limit
@@ -617,14 +639,11 @@ class FhirReceiverProcessor:
                 except JSONDecodeError as e:
                     if parameters.error_view:
                         errors.append(
-                            json.dumps(
-                                {
-                                    "url": result.url,
-                                    "status_code": result.status,
-                                    "error_text": str(e) + " : " + result.responses,
-                                    "request_id": result.request_id,
-                                },
-                                default=str,
+                            GetBatchError(
+                                url=result.url,
+                                status_code=result.status,
+                                error_text=str(e) + " : " + result.responses,
+                                request_id=result.request_id,
                             )
                         )
                     else:
@@ -642,40 +661,60 @@ class FhirReceiverProcessor:
                     json_resources: List[Dict[str, Any]] = json.loads(result.responses)
                     if isinstance(json_resources, list):  # normal response
                         if len(json_resources) > 0:  # received any resources back
-                            last_json_resource = json_resources[-1]
-                            if result.next_url:
-                                # if server has sent back a next url then use that
-                                next_url: Optional[str] = result.next_url
-                                next_uri: furl = furl(next_url)
-                                additional_parameters = [
-                                    f"{k}={v}" for k, v in next_uri.args.items()
+                            # did we get any resources of the type we asked for?
+                            found_any_expected_resources: bool = any(
+                                [
+                                    r
+                                    for r in json_resources
+                                    if r.get("resourceType") == parameters.resource_type
                                 ]
-                                # remove any entry for id:above
-                                additional_parameters = list(
-                                    filter(
-                                        lambda x: not x.startswith("_count")
-                                        and not x.startswith("_element"),
-                                        additional_parameters,
+                            )
+                            if not found_any_expected_resources:
+                                errors.append(
+                                    GetBatchError(
+                                        url=result.url,
+                                        status_code=result.status,
+                                        error_text=result.responses,
+                                        request_id=result.request_id,
                                     )
                                 )
-                            elif "id" in last_json_resource:
-                                # use id:above to optimize the next query
-                                id_of_last_resource = last_json_resource["id"]
-                                if not additional_parameters:
-                                    additional_parameters = []
-                                # remove any entry for id:above
-                                additional_parameters = list(
-                                    filter(
-                                        lambda x: not x.startswith("id:above"),
-                                        additional_parameters,
-                                    )
-                                )
-                                additional_parameters.append(
-                                    f"id:above={id_of_last_resource}"
-                                )
+                                # if we didn't get any resources of the type we asked for then we're done
+                                has_next_page = False
                             else:
-                                server_page_number += 1
-                            resources = resources + result_response
+                                last_json_resource = json_resources[-1]
+                                if result.next_url:
+                                    # if server has sent back a next url then use that
+                                    next_url: Optional[str] = result.next_url
+                                    next_uri: furl = furl(next_url)
+                                    additional_parameters = [
+                                        f"{k}={v}" for k, v in next_uri.args.items()
+                                    ]
+                                    # remove any entry for id:above
+                                    additional_parameters = list(
+                                        filter(
+                                            lambda x: not x.startswith("_count")
+                                            and not x.startswith("_element"),
+                                            additional_parameters,
+                                        )
+                                    )
+                                elif "id" in last_json_resource:
+                                    # use id:above to optimize the next query
+                                    id_of_last_resource = last_json_resource["id"]
+                                    if not additional_parameters:
+                                        additional_parameters = []
+                                    # remove any entry for id:above
+                                    additional_parameters = list(
+                                        filter(
+                                            lambda x: not x.startswith("id:above"),
+                                            additional_parameters,
+                                        )
+                                    )
+                                    additional_parameters.append(
+                                        f"id:above={id_of_last_resource}"
+                                    )
+                                else:
+                                    server_page_number += 1
+                                resources = resources + result_response
                         page_number += 1
                         if limit and limit > 0:
                             if not page_size or (page_number * page_size) >= limit:
@@ -704,7 +743,7 @@ class FhirReceiverProcessor:
         server_url: Optional[str],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert server_url
-        errors: List[str] = []
+        errors: List[GetBatchError] = []
         resources: List[str] = []
         async for result in FhirReceiverProcessor.send_fhir_request_async(
             logger=get_logger(__name__),
@@ -719,13 +758,11 @@ class FhirReceiverProcessor:
             except JSONDecodeError as e:
                 if parameters.error_view:
                     errors.append(
-                        json.dumps(
-                            {
-                                "url": result.url,
-                                "status_code": result.status,
-                                "error_text": str(e) + " : " + result.responses,
-                            },
-                            default=str,
+                        GetBatchError(
+                            url=result.url,
+                            status_code=result.status,
+                            error_text=str(e) + " : " + result.responses,
+                            request_id=result.request_id,
                         )
                     )
                 else:

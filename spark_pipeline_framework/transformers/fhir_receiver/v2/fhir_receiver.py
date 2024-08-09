@@ -51,12 +51,12 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_processor import (
     FhirReceiverProcessor,
     GetBatchResult,
+    GetBatchError,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
-    sc,
 )
 
 
@@ -204,6 +204,8 @@ class FhirReceiver(FrameworkTransformer):
         ), f"last_updated_before is not a datetime. it is a {type(last_updated_before)}"
 
         assert file_path
+
+        # assert not action == "$graph" or id_view, "id_view is required when action is $graph"
 
         self.logger = get_logger(__name__)
 
@@ -1035,7 +1037,7 @@ class FhirReceiver(FrameworkTransformer):
                     )
                 else:
                     resources: List[str] = []
-                    errors: List[str] = []
+                    errors: List[GetBatchError] = []
 
                     async for (
                         result1
@@ -1054,7 +1056,10 @@ class FhirReceiver(FrameworkTransformer):
                         resources, schema=StringType()
                     )
                     errors_df = (
-                        sc(df).parallelize(errors).toDF().cache()
+                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                            [e.to_dict() for e in errors],
+                            schema=GetBatchError.get_schema(),
+                        )
                         if errors
                         else df.sparkSession.createDataFrame([], schema=StringType())
                     )
