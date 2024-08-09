@@ -92,6 +92,7 @@ std_addr_obj = StandardizedAddress(
     latitude="30.373400",
     longitude="-97.680000",
     formatted_address="8300 North Lamar Boulevard;Austin, TX 78753-5976",
+    standardize_vendor="melissa",
 )
 
 std_addr_obj1 = StandardizedAddress(
@@ -105,6 +106,7 @@ std_addr_obj1 = StandardizedAddress(
     latitude="30.373400",
     longitude="-97.680000",
     formatted_address="8300 North Lamar Boulevard;Austin, TX 78753-5976",
+    standardize_vendor="melissa",
 )
 
 std_addr_obj2 = StandardizedAddress(
@@ -118,6 +120,7 @@ std_addr_obj2 = StandardizedAddress(
     latitude="34.100066",
     longitude="-118.155034",
     formatted_address="1137 Huntington Dr Ste B1;South Pasadena, CA 91030-4582",
+    standardize_vendor="melissa",
 )
 response_data: Dict[str, Any] = {
     "Version": "3.0.1.160",

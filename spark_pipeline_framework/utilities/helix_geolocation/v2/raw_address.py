@@ -1,47 +1,28 @@
-import dataclasses
 import hashlib
 from typing import Dict, Optional
 
+from pydantic import BaseModel
 
-@dataclasses.dataclass
-class RawAddress:
+
+class RawAddress(BaseModel):
     """
     The address that needs to get standardized
     """
 
-    def __init__(
-        self,
-        *,
-        address_id: Optional[str],
-        line1: Optional[str],
-        line2: Optional[str] = None,
-        city: Optional[str],
-        state: Optional[str],
-        zipcode: Optional[str],
-        country: Optional[str] = "US",
-    ):
-        self.address_id: Optional[str] = address_id
-        self.line1: Optional[str] = line1
-        self.line2: Optional[str] = line2
-        self.city: Optional[str] = city
-        self.state: Optional[str] = state
-        self.zipcode: Optional[str] = zipcode
-        self.country: Optional[str] = country
+    address_id: Optional[str]
+    line1: Optional[str]
+    line2: Optional[str] = None
+    city: Optional[str]
+    state: Optional[str]
+    zipcode: Optional[str]
+    country: Optional[str] = "US"
 
     def to_dict(self) -> Dict[str, str]:
-        return dataclasses.asdict(self)
+        return self.model_dump()
 
     @classmethod
     def from_dict(cls, address_dict: Dict[str, str]) -> "RawAddress":
-        return cls(
-            address_id=address_dict.get("address_id") or "",
-            line1=address_dict.get("line1") or "",
-            line2=address_dict.get("line2") or "",
-            city=address_dict.get("city") or "",
-            state=address_dict.get("state") or "",
-            zipcode=address_dict.get("zipcode") or "",
-            country=address_dict.get("country") or "",
-        )
+        return cls(**address_dict)
 
     def get_id(self) -> Optional[str]:
         address_id: Optional[str] = self.address_id

@@ -1,6 +1,8 @@
 import dataclasses
 from typing import Dict, Any, Optional
 
+from pydantic import BaseModel
+
 from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
     RawAddress,
 )
@@ -13,9 +15,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 
 
 @dataclasses.dataclass
-class GeocodioStandardizingVendorApiResponse(BaseVendorApiResponse):
+class GeocodioStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     def to_dict(self) -> Dict[str, Any]:
-        return dataclasses.asdict(self)
+        return self.model_dump()
 
     RecordID: Optional[str]
     line1: Optional[str]
@@ -60,19 +62,3 @@ class GeocodioStandardizingVendorApiResponse(BaseVendorApiResponse):
             formatted_address=f"{self.line1}, {self.city}, {self.state} {self.zipcode}",
             standardize_vendor="geocodio",
         )
-
-    # @classmethod
-    # def from_dict(
-    #     cls, response: Dict[str, Any]
-    # ) -> "GeocodioStandardizingVendorApiResponse":
-    #     return GeocodioStandardizingVendorApiResponse(
-    #         RecordID=response.get("RecordID"),
-    #         line1=response.get("line1"),
-    #         line2=response.get("line2"),
-    #         city=response.get("city"),
-    #         state=response.get("state"),
-    #         zipcode=response.get("zipcode"),
-    #         geocodio_Country=response.get("geocodio_Country"),
-    #         Latitude=response.get("Latitude"),
-    #         Longitude=response.get("Longitude"),
-    #     )

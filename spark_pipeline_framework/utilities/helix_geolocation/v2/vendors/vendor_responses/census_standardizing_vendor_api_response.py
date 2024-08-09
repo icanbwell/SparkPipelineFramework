@@ -1,6 +1,6 @@
-import dataclasses
-from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
+from typing import Optional, List, Any, Dict
+
+from pydantic import BaseModel
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
     StandardizedAddress,
@@ -10,39 +10,33 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 )
 
 
-@dataclass
-class CensusStandardizingVendorAddress:
+class CensusStandardizingVendorAddress(BaseModel):
     address: Optional[str]
 
 
-@dataclass
-class CensusStandardizingVendorBenchmark:
+class CensusStandardizingVendorBenchmark(BaseModel):
     isDefault: Optional[bool]
     benchmarkDescription: Optional[str]
     id: Optional[str]
     benchmarkName: Optional[str]
 
 
-@dataclass
-class CensusStandardizingVendorInput:
+class CensusStandardizingVendorInput(BaseModel):
     address: CensusStandardizingVendorAddress
     benchmark: CensusStandardizingVendorBenchmark
 
 
-@dataclass
-class CensusStandardizingVendorTigerLine:
+class CensusStandardizingVendorTigerLine(BaseModel):
     side: Optional[str]
     tigerLineId: Optional[str]
 
 
-@dataclass
-class CensusStandardizingVendorCoordinates:
+class CensusStandardizingVendorCoordinates(BaseModel):
     x: Optional[float]
     y: Optional[float]
 
 
-@dataclass
-class CensusStandardizingVendorAddressComponents:
+class CensusStandardizingVendorAddressComponents(BaseModel):
     zip: Optional[str]
     streetName: Optional[str]
     preType: Optional[str]
@@ -57,22 +51,20 @@ class CensusStandardizingVendorAddressComponents:
     preQualifier: Optional[str]
 
 
-@dataclass
-class CensusStandardizingVendorAddressMatch:
+class CensusStandardizingVendorAddressMatch(BaseModel):
     tigerLine: CensusStandardizingVendorTigerLine
     coordinates: CensusStandardizingVendorCoordinates
     addressComponents: CensusStandardizingVendorAddressComponents
     matchedAddress: Optional[str]
 
 
-@dataclass
-class CensusStandardizingVendorApiResponse(BaseVendorApiResponse):
-    def to_dict(self) -> Dict[str, Any]:
-        return dataclasses.asdict(self)
-
+class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     input: CensusStandardizingVendorInput
-    addressMatches: List[CensusStandardizingVendorAddressMatch] | None
+    addressMatches: Optional[List[CensusStandardizingVendorAddressMatch]]
     address_id: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.model_dump()
 
     @classmethod
     def from_standardized_address(
@@ -210,48 +202,3 @@ class CensusStandardizingVendorApiResponse(BaseVendorApiResponse):
         )
 
         return standardized_address
-
-    # @classmethod
-    # def from_dict(
-    #     cls, response: Dict[str, Any]
-    # ) -> "CensusStandardizingVendorApiResponse":
-    #     return CensusStandardizingVendorApiResponse(
-    #         address_id=response.get("address_id"),
-    #         input=CensusStandardizingVendorInput(
-    #             address=CensusStandardizingVendorAddress(
-    #                 address=response.get("address")
-    #             ),
-    #             benchmark=CensusStandardizingVendorBenchmark(
-    #                 isDefault=response.get("isDefault"),
-    #                 benchmarkDescription=response.get("benchmarkDescription"),
-    #                 id=response.get("id"),
-    #                 benchmarkName=response.get("benchmarkName"),
-    #             ),
-    #         ),
-    #         addressMatches=[
-    #             CensusStandardizingVendorAddressMatch(
-    #                 tigerLine=CensusStandardizingVendorTigerLine(
-    #                     side=response.get("side"),
-    #                     tigerLineId=response.get("tigerLineId"),
-    #                 ),
-    #                 coordinates=CensusStandardizingVendorCoordinates(
-    #                     x=response.get("x"), y=response.get("y")
-    #                 ),
-    #                 addressComponents=CensusStandardizingVendorAddressComponents(
-    #                     zip=response.get("zip"),
-    #                     streetName=response.get("streetName"),
-    #                     preType=response.get("preType"),
-    #                     city=response.get("city"),
-    #                     preDirection=response.get("preDirection"),
-    #                     suffixDirection=response.get("suffixDirection"),
-    #                     fromAddress=response.get("fromAddress"),
-    #                     state=response.get("state"),
-    #                     suffixType=response.get("suffixType"),
-    #                     toAddress=response.get("toAddress"),
-    #                     suffixQualifier=response.get("suffixQualifier"),
-    #                     preQualifier=response.get("preQualifier"),
-    #                 ),
-    #                 matchedAddress=response.get("matchedAddress"),
-    #             )
-    #         ],
-    #     )

@@ -1,10 +1,7 @@
-import dataclasses
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod
 from typing import Dict, Any, Optional, TypeVar, Type
 
-from spark_pipeline_framework.utilities.data_class_loader.v1.data_class_loader import (
-    DataClassLoader,
-)
+
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
     StandardizedAddress,
 )
@@ -12,8 +9,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_addres
 T = TypeVar("T", bound="BaseVendorApiResponse")
 
 
-@dataclasses.dataclass
-class BaseVendorApiResponse(metaclass=ABCMeta):
+class BaseVendorApiResponse:
     @abstractmethod
     def to_dict(self) -> Dict[str, Any]:
         pass
@@ -26,4 +22,4 @@ class BaseVendorApiResponse(metaclass=ABCMeta):
 
     @classmethod
     def from_dict(cls: Type[T], response: Dict[str, Any]) -> T:
-        return DataClassLoader.from_dict(cls, response)
+        return cls(**response)

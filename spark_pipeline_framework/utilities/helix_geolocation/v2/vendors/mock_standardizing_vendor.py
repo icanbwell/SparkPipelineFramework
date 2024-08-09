@@ -62,6 +62,7 @@ class MockStandardizingVendor(StandardizingVendor[MockStandardizingVendorApiResp
                 latitude=None,
                 longitude=None,
                 formatted_address=None,
+                standardize_vendor=self.get_vendor_name(),
             )
             for a in vendor_specific_addresses
         ]
