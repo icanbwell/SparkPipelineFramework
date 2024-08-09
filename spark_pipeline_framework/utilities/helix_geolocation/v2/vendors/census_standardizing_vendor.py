@@ -318,6 +318,7 @@ class CensusStandardizingVendor(
                             raw_address, vendor_name=self.get_vendor_name()
                         )
                     )
+                    return
 
                 # Parse the response
                 #

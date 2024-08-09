@@ -130,6 +130,7 @@ class MelissaStandardizingVendor(
         """
 
         if len(raw_addresses) == 0:
+            logger.info("No addresses to standardize")
             yield []
             return
 
@@ -190,6 +191,7 @@ class MelissaStandardizingVendor(
                     )
                     for raw_address in raw_addresses
                 ]
+                return
 
     async def _api_call_async(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         addresses_to_lookup: List[Dict[str, str]] = [

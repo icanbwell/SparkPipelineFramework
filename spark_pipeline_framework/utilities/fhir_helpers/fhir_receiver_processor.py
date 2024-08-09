@@ -223,6 +223,7 @@ class FhirReceiverProcessor:
                     extra_context_to_return=None,
                 )
             ).to_dict()
+            return
 
         # if batch and not has_token then send all ids at once as long as the access token is the same
         if (

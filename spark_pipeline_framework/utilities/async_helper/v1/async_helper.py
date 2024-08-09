@@ -39,6 +39,7 @@ class AsyncHelper:
             if len(chunk1) >= chunk_size:
                 yield chunk1
                 chunk1 = []
+        # if there are any chunks left yield them
         if chunk1:
             yield chunk1
 

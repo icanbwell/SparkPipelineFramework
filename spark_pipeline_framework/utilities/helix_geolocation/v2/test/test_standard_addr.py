@@ -509,6 +509,7 @@ async def test_vendor_http_error_call(mocked_session: MagicMock) -> None:
 
 @mock.patch.object(Session, "post")
 async def test_vendor_empty_response_call(mocked_session: MagicMock) -> None:
+    print()
     response = requests.Response()
     response.status_code = 200
     response.raw = BytesIO(json.dumps({}).encode())
