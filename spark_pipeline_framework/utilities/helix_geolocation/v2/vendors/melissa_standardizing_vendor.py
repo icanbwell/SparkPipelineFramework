@@ -216,11 +216,14 @@ class MelissaStandardizingVendor(
 
         try:
             async with aiohttp.ClientSession() as session:
+                logger.debug(f"Making request to {url} {json_batch_dict}")
                 async with session.post(url, headers=headers, data=payload) as response:
+                    logger.debug(f"Response status: {response.status}")
                     response.raise_for_status()
                     api_response: Dict[str, List[Dict[str, str]]] = (
                         await response.json()
                     )
+                    logger.debug(f"Response: {api_response}")
         except Exception as e:
             logger.exception(
                 f"Error connecting to {self.get_vendor_name()}", http_error=repr(e)

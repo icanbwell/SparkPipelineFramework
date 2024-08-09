@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import random
 from copy import deepcopy
@@ -520,6 +521,7 @@ async def test_vendor_empty_response_call(mocked_session: MagicMock) -> None:
     vendor = MelissaStandardizingVendor(
         license_key="mock", response_key_error_threshold=0
     )
+    logging.basicConfig(level=logging.DEBUG)
     # act / assert
     with pytest.raises(VendorResponseKeyError):
         await StandardizeAddr().standardize_async(
