@@ -720,18 +720,23 @@ class FhirReceiverProcessor:
                         if limit and limit > 0:
                             if not page_size or (page_number * page_size) >= limit:
                                 has_next_page = False
-                    else:
-                        # Received an error
-                        if result.status not in parameters.ignore_status_codes:
-                            raise FhirReceiverException(
-                                url=result.url,
-                                json_data=result.responses,
-                                response_text=result.responses,
-                                response_status_code=result.status,
-                                message="Error from FHIR server",
-                                request_id=result.request_id,
-                            )
                 else:
+                    if result.status == 404 and page_number != 0:
+                        # 404 (not found) is fine since it just means we ran out of data while paging
+                        pass
+                    elif result.status not in parameters.ignore_status_codes:
+                        raise FhirReceiverException(
+                            url=result.url,
+                            json_data=result.responses,
+                            response_text=result.responses,
+                            response_status_code=result.status,
+                            message=(
+                                "Error received from server"
+                                if len(errors) == 0
+                                else "\n".join([e.error_text for e in errors])
+                            ),
+                            request_id=result.request_id,
+                        )
                     has_next_page = False
                 yield GetBatchResult(resources=resources, errors=errors)
 
