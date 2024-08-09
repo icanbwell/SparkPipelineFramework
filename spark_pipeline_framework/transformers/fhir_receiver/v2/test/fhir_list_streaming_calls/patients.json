@@ -3,7 +3,7 @@
   "request_parameters": {
     "method": "GET",
     "headers": {
-        "Accept": "application/fhir+ndjson"
+        "Accept": "application/fhir+ndjson, application/fhir+json"
     }
   },
   "request_result": {

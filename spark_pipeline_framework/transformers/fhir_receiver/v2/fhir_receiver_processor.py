@@ -721,7 +721,7 @@ class FhirReceiverProcessor:
                             if not page_size or (page_number * page_size) >= limit:
                                 has_next_page = False
                 else:
-                    if result.status == 404 and page_number != 0:
+                    if result.status == 404 and loop_number > 1:
                         # 404 (not found) is fine since it just means we ran out of data while paging
                         pass
                     elif result.status not in parameters.ignore_status_codes:
