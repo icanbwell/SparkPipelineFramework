@@ -56,15 +56,12 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
     first_response: StandardizedAddress | None = (
         first_raw_response.to_standardized_address(address_id="10")
     )
-    assert first_response is not None
-    assert first_response.address_id == "10"
-    assert first_response.line1 == raw_addr_obj.line1
-    assert first_response.city == raw_addr_obj.city
-    assert first_response.state == raw_addr_obj.state
-    assert first_response.zipcode == raw_addr_obj.zipcode
-    assert first_response.country == "US"
-    assert first_response.latitude == ""
-    assert first_response.longitude == ""
+    # This one is not found in Census API
+    assert first_response is None
+    assert first_raw_response.input is not None
+    assert first_raw_response.input.address is not None
+    assert first_raw_response.input.address.address is not None
+    assert first_raw_response.input.address.address.startswith("8300 N Lamar Blvd")
 
     # test second address
     assert vendor_responses[1].vendor_name == "census"

@@ -26,6 +26,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
     CensusStandardizingVendorTigerLine,
     CensusStandardizingVendorCoordinates,
     CensusStandardizingVendorAddressComponents,
+    CensusStandardizingVendorInput,
+    CensusStandardizingVendorBenchmark,
+    CensusStandardizingVendorAddress,
 )
 
 
@@ -195,7 +198,10 @@ class CensusStandardizingVendor(
 
     # noinspection PyMethodMayBeStatic
     def _parse_csv_response(
-        self, r: Dict[str, Any], raw_addresses: List[RawAddress]
+        self,
+        r: Dict[str, Any],
+        raw_addresses: List[RawAddress],
+        benchmark: str = "Public_AR_Current",
     ) -> CensusStandardizingVendorApiResponse:
 
         # Split the address
@@ -206,11 +212,21 @@ class CensusStandardizingVendor(
             if r.get("Matched Address")
             else None
         )
-        if not parsed_address:
-            return CensusStandardizingVendorApiResponse.from_standardized_address(
-                StandardizedAddress.from_raw_address(
-                    self._get_matching_raw_address(r["ID"], raw_addresses)
-                )
+        if not r.get("Matched Address") or not parsed_address:
+            return CensusStandardizingVendorApiResponse(
+                address_id=r["ID"],
+                addressMatches=None,
+                input=CensusStandardizingVendorInput(
+                    address=CensusStandardizingVendorAddress(
+                        address=r["Input Address"]
+                    ),
+                    benchmark=CensusStandardizingVendorBenchmark(
+                        benchmarkName=benchmark,
+                        benchmarkDescription=None,
+                        isDefault=True,
+                        id=None,
+                    ),
+                ),
             )
         line1 = parsed_address.line1
         line2 = parsed_address.line2
@@ -219,41 +235,43 @@ class CensusStandardizingVendor(
         zipcode = parsed_address.zipcode
         latitude = r["Coordinates"].split(",")[1] if r.get("Coordinates") else ""
         longitude = r["Coordinates"].split(",")[0] if r.get("Coordinates") else ""
-        return (
-            CensusStandardizingVendorApiResponse(
-                address_id=r["ID"],
-                input=r["Input Address"],
-                addressMatches=[
-                    CensusStandardizingVendorAddressMatch(
-                        tigerLine=CensusStandardizingVendorTigerLine(
-                            side=r["Side"], tigerLineId=r["TIGER Line ID"]
-                        ),
-                        coordinates=CensusStandardizingVendorCoordinates(
-                            x=float(longitude) if longitude else None,
-                            y=float(latitude) if latitude else None,
-                        ),
-                        addressComponents=CensusStandardizingVendorAddressComponents(
-                            zip=zipcode,
-                            streetName=line1,
-                            preType=None,
-                            city=city,
-                            preDirection=None,
-                            suffixDirection=None,
-                            fromAddress=None,
-                            state=state,
-                            suffixType=None,
-                            toAddress=None,
-                            suffixQualifier=None,
-                            preQualifier=None,
-                        ),
-                        matchedAddress=r["Matched Address"],
-                    )
-                ],
-            )
-            if r.get("Matched Address")
-            else CensusStandardizingVendorApiResponse.from_standardized_address(
-                self._get_matching_raw_address(r["ID"], raw_addresses)
-            )
+        return CensusStandardizingVendorApiResponse(
+            address_id=r["ID"],
+            input=CensusStandardizingVendorInput(
+                address=r["Input Address"],
+                benchmark=CensusStandardizingVendorBenchmark(
+                    benchmarkName=benchmark,
+                    benchmarkDescription=None,
+                    isDefault=True,
+                    id=None,
+                ),
+            ),
+            addressMatches=[
+                CensusStandardizingVendorAddressMatch(
+                    tigerLine=CensusStandardizingVendorTigerLine(
+                        side=r["Side"], tigerLineId=r["TIGER Line ID"]
+                    ),
+                    coordinates=CensusStandardizingVendorCoordinates(
+                        x=float(longitude) if longitude else None,
+                        y=float(latitude) if latitude else None,
+                    ),
+                    addressComponents=CensusStandardizingVendorAddressComponents(
+                        zip=zipcode,
+                        streetName=line1,
+                        preType=None,
+                        city=city,
+                        preDirection=None,
+                        suffixDirection=None,
+                        fromAddress=None,
+                        state=state,
+                        suffixType=None,
+                        toAddress=None,
+                        suffixQualifier=None,
+                        preQualifier=None,
+                    ),
+                    matchedAddress=r["Matched Address"],
+                )
+            ],
         )
 
     # noinspection PyMethodMayBeStatic
@@ -276,7 +294,7 @@ class CensusStandardizingVendor(
         # Make the request
         # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
         # ex: "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=9000%20Franklin%20Square%20Dr.%2C%20Baltimore%2C%20MD%2021237&benchmark=Public_AR_Current&format=json"
-        url = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress"
+        url = f"https://geocoding.geo.census.gov/geocoder/locations/onelineaddress"
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as response:
                 response_text = await response.text()
@@ -302,6 +320,9 @@ class CensusStandardizingVendor(
                         CensusStandardizingVendorApiResponse | None
                     ) = self._parse_geolocation_response(
                         response_json=response_json, record_id=raw_address.get_id()
+                    )
+                    assert geolocation_response is None or isinstance(
+                        geolocation_response, CensusStandardizingVendorApiResponse
                     )
                     if geolocation_response is not None:
                         yield geolocation_response
@@ -374,6 +395,7 @@ class CensusStandardizingVendor(
         if not result or "addressMatches" not in result:
             return None
 
+        result["address_id"] = record_id
         return CensusStandardizingVendorApiResponse.from_dict(result)
 
     # noinspection PyMethodMayBeStatic

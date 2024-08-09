@@ -70,9 +70,9 @@ class CensusStandardizingVendorApiResponse(BaseVendorApiResponse):
     def to_dict(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
 
-    address_id: Optional[str]
     input: CensusStandardizingVendorInput
-    addressMatches: List[CensusStandardizingVendorAddressMatch]
+    addressMatches: List[CensusStandardizingVendorAddressMatch] | None
+    address_id: Optional[str] = None
 
     @classmethod
     def from_standardized_address(
