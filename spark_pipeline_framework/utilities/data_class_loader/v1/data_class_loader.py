@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
     from _typeshed import DataclassInstance
 
-TDataClass = TypeVar("TDataClass", bound=DataclassInstance)
+TDataClass = TypeVar("TDataClass", bound="DataclassInstance")
 
 
 class DataClassLoader:
