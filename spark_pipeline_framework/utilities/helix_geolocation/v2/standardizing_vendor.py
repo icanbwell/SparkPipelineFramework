@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List, Generic, TypeVar
+from typing import List, Generic, TypeVar
 
 import structlog
 
@@ -12,12 +12,15 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_addres
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
     VendorResponse,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
+    BaseVendorApiResponse,
+)
 
 logger = structlog.get_logger(__file__)
 
 
 # Define the TypeVar for the generic type
-T = TypeVar("T")
+T = TypeVar("T", bound=BaseVendorApiResponse)
 
 
 class StandardizingVendor(Generic[T], metaclass=ABCMeta):
@@ -63,7 +66,7 @@ class StandardizingVendor(Generic[T], metaclass=ABCMeta):
     @abstractmethod
     def _to_vendor_response(
         self,
-        vendor_response: List[Dict[str, str]],
+        vendor_response: List[T],
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,

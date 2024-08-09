@@ -1,73 +1,57 @@
-from collections import namedtuple
-from typing import Any, Dict
+import dataclasses
+from typing import Dict, Optional
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
     RawAddress,
 )
 
 
+@dataclasses.dataclass
 class StandardizedAddress(RawAddress):
     """
     The address standardized by a vendor
     """
 
-    _Address = namedtuple(
-        "_Address",
-        [
-            "address_id",
-            "line1",
-            "line2",
-            "city",
-            "county",
-            "state",
-            "zipcode",
-            "country",
-            "latitude",
-            "longitude",
-            "formatted_address",
-            "standardize_vendor",
-        ],
-    )
-
     def __init__(
         self,
-        address_id: str,
-        line1: str,
-        city: str = "",
-        state: str = "",
-        zipcode: str = "",
-        country: str = "US",
-        latitude: str = "",
-        longitude: str = "",
-        line2: str = "",
-        county: str = "",
-        formatted_address: str = "",
+        *,
+        address_id: Optional[str],
+        line1: Optional[str],
+        city: Optional[str],
+        state: Optional[str],
+        zipcode: Optional[str],
+        latitude: Optional[str],
+        longitude: Optional[str],
+        line2: Optional[str] = None,
+        county: Optional[str],
+        formatted_address: Optional[str],
+        country: Optional[str] = "US",
         standardize_vendor: str = "melissa",
     ):
-        self.address: Any = self._Address(
-            address_id,
-            line1,
-            line2,
-            city,
-            county,
-            state,
-            zipcode,
-            country,
-            latitude,
-            longitude,
-            formatted_address,
-            standardize_vendor,
+        super().__init__(
+            address_id=address_id,
+            line1=line1,
+            line2=line2,
+            city=city,
+            state=state,
+            zipcode=zipcode,
+            country=country,
         )
+        self.county: Optional[str] = county
+        self.longitude: Optional[str] = longitude
+        self.latitude: Optional[str] = latitude
+        self.formatted_address: Optional[str] = formatted_address
+        self.standardize_vendor: str = standardize_vendor
 
     def to_str(self) -> str:
-        if self.address.formatted_address:
-            return str(self.address.formatted_address)
+        if self.formatted_address:
+            return str(self.formatted_address)
         else:
             return super(StandardizedAddress, self).to_str()
 
     def to_dict(self) -> Dict[str, str]:
         # noinspection PyProtectedMember
-        return dict(self.address._asdict())
+        return dataclasses.asdict(self)
 
     @classmethod
     def from_dict(cls, address_dict: Dict[str, str]) -> "StandardizedAddress":
@@ -83,16 +67,21 @@ class StandardizedAddress(RawAddress):
             longitude=address_dict.get("longitude") or "",
             formatted_address=address_dict.get("formatted_address") or "",
             standardize_vendor=address_dict.get("standardize_vendor") or "",
+            county=address_dict.get("county") or "",
         )
 
     @classmethod
     def from_raw_address(cls, raw_address: RawAddress) -> "StandardizedAddress":
         return cls(
             address_id=raw_address.get_id(),
-            line1=raw_address.address.line1,
-            line2=raw_address.address.line2,
-            city=raw_address.address.city,
-            state=raw_address.address.state,
-            zipcode=raw_address.address.zipcode,
-            country=raw_address.address.country,
+            line1=raw_address.line1,
+            line2=raw_address.line2,
+            city=raw_address.city,
+            state=raw_address.state,
+            zipcode=raw_address.zipcode,
+            country=raw_address.country,
+            county=None,
+            latitude=None,
+            longitude=None,
+            formatted_address=None,
         )

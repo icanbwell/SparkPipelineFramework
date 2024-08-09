@@ -51,6 +51,7 @@ mongo_collection_name = "helix_address_cache"
 raw_addr_obj = RawAddress(
     address_id="10",
     line1="8300 N Lamar Blvd",
+    line2=None,
     city="Austin",
     state="TX",
     zipcode="78753",
@@ -59,13 +60,20 @@ raw_addr_obj = RawAddress(
 raw_addr_obj1 = RawAddress(
     address_id="100",
     line1="8300 N Lamar Blvd",
+    line2=None,
     city="Austin",
     state="TX",
     zipcode="78753",
 )
 
 raw_addr_obj2 = RawAddress(
-    address_id="11", line1="1137 Huntington Drive Ste B1, South Pasadena, CA 91030"
+    address_id="11",
+    line1="1137 Huntington Drive Ste B1, South Pasadena, CA 91030",
+    country="US",
+    line2=None,
+    city=None,
+    state=None,
+    zipcode=None,
 )
 
 std_addr_obj = StandardizedAddress(
@@ -73,6 +81,7 @@ std_addr_obj = StandardizedAddress(
     line1="8300 N Lamar Blvd",
     city="Austin",
     state="TX",
+    county=None,
     country="US",
     zipcode="78753",
     latitude="30.373400",
@@ -85,6 +94,7 @@ std_addr_obj1 = StandardizedAddress(
     line1="8300 N Lamar Blvd",
     city="Austin",
     state="TX",
+    county=None,
     country="US",
     zipcode="78753",
     latitude="30.373400",
@@ -97,6 +107,7 @@ std_addr_obj2 = StandardizedAddress(
     line1="1137 Huntington Drive Ste B1",
     city="Los Angeles",
     state="CA",
+    county=None,
     country="US",
     zipcode="91030-4582",
     latitude="34.100066",
@@ -197,7 +208,7 @@ def test_raw_address_to_export() -> None:
 
 def test_std_address_to_export() -> None:
     addr_dict = std_addr_obj.to_dict()
-    addr_str = std_addr_obj.address.formatted_address
+    addr_str = std_addr_obj.formatted_address
     assert addr_dict == {
         "address_id": "10",
         "country": "US",
@@ -256,14 +267,8 @@ async def test_address_api_call(mocked_session: MagicMock) -> None:
         assert r[0].get_id() == "100"
         assert r[1].get_id() == "100"
         assert r[2].get_id() == "11"
-        assert (
-            r[0].address.formatted_address
-            == expected_result[0].address.formatted_address
-        )
-        assert (
-            r[1].address.formatted_address
-            == expected_result[1].address.formatted_address
-        )
+        assert r[0].formatted_address == expected_result[0].formatted_address
+        assert r[1].formatted_address == expected_result[1].formatted_address
 
 
 async def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> None:
@@ -285,9 +290,7 @@ async def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> Non
 
     # assert
     assert r[0].get_id() == "11"
-    assert (
-        r[0].address.formatted_address == expected_result[0].address.formatted_address
-    )
+    assert r[0].formatted_address == expected_result[0].formatted_address
 
 
 def test_documentdb_cache() -> None:
@@ -322,15 +325,15 @@ async def test_standardize_stress_test() -> None:
         res = deepcopy(response_data)
         res["Records"] = [
             {
-                "RecordID": a.address.address_id,
+                "RecordID": a.address_id,
                 "FormattedAddress": f"{a.to_str()}",
-                "AddressLine1": a.address.line1,
+                "AddressLine1": a.line1,
                 "AddressLine2": "",
-                "Locality": a.address.city,
+                "Locality": a.city,
                 "SubAdministrativeArea": "a county",
-                "AdministrativeArea": a.address.state,
-                "PostalCode": a.address.zipcode,
-                "CountryISO3166_1_Alpha2": a.address.zipcode,
+                "AdministrativeArea": a.state,
+                "PostalCode": a.zipcode,
+                "CountryISO3166_1_Alpha2": a.zipcode,
                 "Latitude": "000",
                 "Longitude": "-000",
             }
@@ -412,7 +415,7 @@ async def test_bad_request() -> None:
         res = deepcopy(response_data)
         res["Records"] = [
             {
-                "RecordID": a.address.address_id,
+                "RecordID": a.address_id,
                 "FormattedAddress": "",
                 "AddressLine1": "",
                 "AddressLine2": "",

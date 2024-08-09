@@ -155,5 +155,7 @@ class DocumentDBCacheHandler(CacheHandler):
                 )
             )
             if vr.related_raw_address:
-                found_ids.append(vr.related_raw_address.get_id())
+                address_id: Optional[str] = vr.related_raw_address.get_id()
+                assert address_id is not None
+                found_ids.append(address_id)
         return std_addresses, found_ids

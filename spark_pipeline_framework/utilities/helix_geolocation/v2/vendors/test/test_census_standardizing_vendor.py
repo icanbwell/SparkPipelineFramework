@@ -21,6 +21,8 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
         city="Austin",
         state="TX",
         zipcode="78753",
+        country="US",
+        line2=None,
     )
 
     raw_addr_obj2 = RawAddress(
@@ -29,6 +31,8 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
         city="Washington",
         state="DC",
         zipcode="20233",
+        country="US",
+        line2=None,
     )
 
     vendor_responses: List[VendorResponse[Any]] = await CensusStandardizingVendor(
@@ -39,19 +43,10 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
     # test first address
     assert vendor_responses[0].vendor_name == "census"
     assert vendor_responses[0].api_call_response.get("address_id") == "10"
-    assert (
-        vendor_responses[0].api_call_response.get("line1") == raw_addr_obj.address.line1
-    )
-    assert (
-        vendor_responses[0].api_call_response.get("city") == raw_addr_obj.address.city
-    )
-    assert (
-        vendor_responses[0].api_call_response.get("state") == raw_addr_obj.address.state
-    )
-    assert (
-        vendor_responses[0].api_call_response.get("zipcode")
-        == raw_addr_obj.address.zipcode
-    )
+    assert vendor_responses[0].api_call_response.get("line1") == raw_addr_obj.line1
+    assert vendor_responses[0].api_call_response.get("city") == raw_addr_obj.city
+    assert vendor_responses[0].api_call_response.get("state") == raw_addr_obj.state
+    assert vendor_responses[0].api_call_response.get("zipcode") == raw_addr_obj.zipcode
     assert vendor_responses[0].api_call_response.get("country") == "US"
     assert vendor_responses[0].api_call_response.get("latitude") == ""
     assert vendor_responses[0].api_call_response.get("longitude") == ""

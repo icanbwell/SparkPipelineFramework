@@ -21,6 +21,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response imp
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response_key_error import (
     VendorResponseKeyError,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.melissa_standardizing_vendor_api_response import (
+    MelissaStandardizingVendorApiResponse,
+)
 
 logger = structlog.get_logger(__file__)
 
@@ -39,10 +42,9 @@ class CustomApiCallFunction(Protocol):
         ...
 
 
-MyResponseType = Dict[str, str]
-
-
-class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
+class MelissaStandardizingVendor(
+    StandardizingVendor[MelissaStandardizingVendorApiResponse]
+):
     _RESPONSE_KEY_ERROR_THRESHOLD = 2
 
     # number of times Melissa is allowed to send bad response until we cancel rest of requests
@@ -74,29 +76,31 @@ class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
 
     async def standardize_async(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
-    ) -> List[VendorResponse[MyResponseType]]:
+    ) -> List[VendorResponse[MelissaStandardizingVendorApiResponse]]:
         """
         returns the vendor specific response from the vendor
         """
-        vendor_specific_addresses: List[Dict[str, str]] = []
+        vendor_specific_addresses: List[MelissaStandardizingVendorApiResponse] = []
         async for vendor_specific_addresses1 in self._call_std_addr_api_async(
             raw_addresses=raw_addresses
         ):
             vendor_specific_addresses.extend(vendor_specific_addresses1)
 
-        vendor_responses: List[VendorResponse[MyResponseType]] = (
-            self._to_vendor_response(
-                vendor_response=vendor_specific_addresses,
-                raw_addresses=raw_addresses,
-                vendor_name=self.get_vendor_name(),
-                response_version=self.get_version(),
-            )
+        vendor_responses: List[
+            VendorResponse[MelissaStandardizingVendorApiResponse]
+        ] = self._to_vendor_response(
+            vendor_response=vendor_specific_addresses,
+            raw_addresses=raw_addresses,
+            vendor_name=self.get_vendor_name(),
+            response_version=self.get_version(),
         )
         return vendor_responses
 
     def vendor_specific_to_std(
         self,
-        vendor_specific_addresses: List[VendorResponse[MyResponseType]],
+        vendor_specific_addresses: List[
+            VendorResponse[MelissaStandardizingVendorApiResponse]
+        ],
     ) -> List[StandardizedAddress]:
         """
         Each vendor class knows how to convert its response to StdAddress
@@ -106,22 +110,8 @@ class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
         """
 
         std_addresses = [
-            StandardizedAddress(
-                address_id=(
-                    a.related_raw_address.get_id()
-                    if a.related_raw_address
-                    else a.api_call_response["RecordID"]
-                ),
-                line1=str(a.api_call_response["FormattedAddress"]).split(";")[0],
-                city=a.api_call_response["Locality"],
-                county=a.api_call_response["SubAdministrativeArea"],
-                zipcode=a.api_call_response["PostalCode"],
-                state=a.api_call_response["AdministrativeArea"],
-                country=a.api_call_response["CountryISO3166_1_Alpha2"],
-                latitude=a.api_call_response["Latitude"],
-                longitude=a.api_call_response["Longitude"],
-                formatted_address=a.api_call_response["FormattedAddress"],
-                standardize_vendor=a.vendor_name,
+            a.api_call_response.to_standardized_address(
+                address_id=a.api_call_response.RecordID
             )
             for a in vendor_specific_addresses
         ]
@@ -129,7 +119,7 @@ class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
 
     async def _call_std_addr_api_async(
         self, raw_addresses: List[RawAddress]
-    ) -> AsyncGenerator[List[Dict[str, str]], None]:
+    ) -> AsyncGenerator[List[MelissaStandardizingVendorApiResponse], None]:
         """
         Please check https://www.melissa.com/quickstart-guides/global-address for more info
         Please make sure "License Key" is available https://www.melissa.com/user/user_account.aspx
@@ -154,7 +144,10 @@ class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
             vendor_specific_addresses: List[Dict[str, str]] = api_server_response[
                 "Records"
             ]
-            yield vendor_specific_addresses
+            yield [
+                MelissaStandardizingVendorApiResponse.from_dict(v)
+                for v in vendor_specific_addresses
+            ]
         except KeyError:
             logger.exception(
                 f"{self.get_vendor_name()} response does not have a Records key. Are we out of credit?"
@@ -167,7 +160,7 @@ class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
     async def _api_call_async(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         addresses_to_lookup: List[Dict[str, str]] = [
             {
-                "RecordID": a.get_id(),
+                "RecordID": a.get_id() or "",
                 "AddressLine1": a.to_str(),
                 "Country": a.to_dict()["country"],
             }
@@ -175,7 +168,7 @@ class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
         ]
 
         license_key = self._get_request_credentials()["license_key"]
-        URL = r"http://address.melissadata.net/v3/WEB/GlobalAddress/doglobaladdress"
+        url = r"http://address.melissadata.net/v3/WEB/GlobalAddress/doglobaladdress"
         json_batch_dict = {
             "TransmissionReference": "GlobalAddressBatch",
             "CustomerID": license_key,
@@ -187,7 +180,7 @@ class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(URL, headers=headers, data=payload) as response:
+                async with session.post(url, headers=headers, data=payload) as response:
                     response.raise_for_status()
                     api_response: Dict[str, List[Dict[str, str]]] = (
                         await response.json()
@@ -221,20 +214,18 @@ class MelissaStandardizingVendor(StandardizingVendor[MyResponseType]):
 
     def _to_vendor_response(
         self,
-        vendor_response: List[Dict[str, str]],
+        vendor_response: List[MelissaStandardizingVendorApiResponse],
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,
-    ) -> List[VendorResponse[MyResponseType]]:
+    ) -> List[VendorResponse[MelissaStandardizingVendorApiResponse]]:
         # create the map
         id_response_map = {a.get_id(): a for a in raw_addresses}
         # find and assign
         return [
             VendorResponse(
                 api_call_response=r,
-                related_raw_address=id_response_map[
-                    r.get("RecordID") or r.get("address_id") or ""
-                ],
+                related_raw_address=id_response_map[r.RecordID],
                 vendor_name=vendor_name,
                 response_version=response_version,
             )

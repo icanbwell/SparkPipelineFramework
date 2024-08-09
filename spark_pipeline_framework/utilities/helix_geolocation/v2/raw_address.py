@@ -1,34 +1,35 @@
+import dataclasses
 import hashlib
-from collections import namedtuple
-from typing import Dict
+from typing import Dict, Optional
 
 
+@dataclasses.dataclass
 class RawAddress:
     """
     The address that needs to get standardized
     """
 
-    _Address = namedtuple(
-        "_Address",
-        ["address_id", "line1", "line2", "city", "state", "zipcode", "country"],
-    )
-
     def __init__(
         self,
-        address_id: str,
-        line1: str,
-        line2: str = "",
-        city: str = "",
-        state: str = "",
-        zipcode: str = "",
-        country: str = "US",
+        *,
+        address_id: Optional[str],
+        line1: Optional[str],
+        line2: Optional[str] = None,
+        city: Optional[str],
+        state: Optional[str],
+        zipcode: Optional[str],
+        country: Optional[str] = "US",
     ):
-        self.address = self._Address(
-            address_id, line1, line2, city, state, zipcode, country
-        )
+        self.address_id: Optional[str] = address_id
+        self.line1: Optional[str] = line1
+        self.line2: Optional[str] = line2
+        self.city: Optional[str] = city
+        self.state: Optional[str] = state
+        self.zipcode: Optional[str] = zipcode
+        self.country: Optional[str] = country
 
     def to_dict(self) -> Dict[str, str]:
-        return dict(self.address._asdict())
+        return dataclasses.asdict(self)
 
     @classmethod
     def from_dict(cls, address_dict: Dict[str, str]) -> "RawAddress":
@@ -42,18 +43,19 @@ class RawAddress:
             country=address_dict.get("country") or "",
         )
 
-    def get_id(self) -> str:
-        address_id: str = self.address.address_id
+    def get_id(self) -> Optional[str]:
+        address_id: Optional[str] = self.address_id
         return address_id
 
-    def set_id(self, address_id: str) -> None:
-        self.address = self.address._replace(address_id=address_id)
+    def set_id(self, address_id: Optional[str]) -> None:
+        self.address_id = address_id
 
     def to_str(self) -> str:
-        a = self.address
         # todo: make sure the online format is legit
-        line2 = " " + a.line2 if a.line2 else ""
-        addr: str = f"{a.line1}{line2}, {a.city} {a.state} {a.zipcode} {a.country}"
+        line2 = " " + self.line2 if self.line2 else ""
+        addr: str = (
+            f"{self.line1}{line2}, {self.city} {self.state} {self.zipcode} {self.country}"
+        )
         return addr.replace("  ", " ").strip(" ,")
 
     def to_hash(self) -> str:
@@ -61,8 +63,9 @@ class RawAddress:
         a_dict: Dict[str, str] = {
             k: str(v if v else "").strip().lower() for k, v in self.to_dict().items()
         }
-        a = self._Address(**a_dict)
-        addr: str = f"{a.line1}{a.line2}{a.city}{a.state}{a.zipcode}{a.country}"
+        addr: str = (
+            f'{a_dict["line1"]}{a_dict["line2"]}{a_dict["city"]}{a_dict["state"]}{a_dict["zipcode"]}{a_dict["country"]}'
+        )
         # create hash
         return hashlib.sha1(addr.encode()).hexdigest()
 

@@ -20,11 +20,14 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendo
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
     VendorResponse,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.census_standardizing_vendor_api_response import (
+    CensusStandardizingVendorApiResponse,
+)
 
-MyResponseType = Dict[str, str]
 
-
-class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
+class CensusStandardizingVendor(
+    StandardizingVendor[CensusStandardizingVendorApiResponse]
+):
     def __init__(
         self, use_bulk_api: bool = True, batch_request_max_size: Optional[int] = None
     ) -> None:
@@ -42,7 +45,7 @@ class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
 
     async def standardize_async(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
-    ) -> List[VendorResponse[MyResponseType]]:
+    ) -> List[VendorResponse[CensusStandardizingVendorApiResponse]]:
         """
         returns the vendor specific response from the vendor
         """
@@ -86,11 +89,13 @@ class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
             )
 
         # Now convert to vendor response
-        vendor_specific_addresses: List[Dict[str, Any]] = [
-            standardized_address.to_dict()
+        vendor_specific_addresses: List[CensusStandardizingVendorApiResponse] = [
+            CensusStandardizingVendorApiResponse.from_standardized_address(
+                standardized_address
+            )
             for standardized_address in standardized_address_dicts
         ]
-        vendor_responses: List[VendorResponse[MyResponseType]] = (
+        vendor_responses: List[VendorResponse[CensusStandardizingVendorApiResponse]] = (
             self._to_vendor_response(
                 vendor_response=vendor_specific_addresses,
                 raw_addresses=raw_addresses,
@@ -117,7 +122,10 @@ class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
         # Create a CSV file with the addresses
         file_contents = ""  # '"Unique ID", "Street address", "City", "State", "ZIP"'
         for address in raw_addresses:
-            file_contents += f'"{address.get_id()}", "{address.address.line1}", "{address.address.city}", "{address.address.state}", "{address.address.zipcode}"\n'
+            file_contents += (
+                f'"{address.get_id()}", "{address.line1}", "{address.city}",'
+                f' "{address.state}", "{address.zipcode}"\n'
+            )
 
         # Define the URL and parameters
         url = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
@@ -165,11 +173,9 @@ class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
                     # sort the list, so it is in the same order as the raw_addresses.
                     # Census API does not return list in same order
                     matching_responses: List[StandardizedAddress] = [
-                        [
-                            r
-                            for r in responses
-                            if r.address.address_id == raw_address.get_id()
-                        ][0]
+                        [r for r in responses if r.address_id == raw_address.get_id()][
+                            0
+                        ]
                         for raw_address in raw_addresses
                     ]
                     assert len(matching_responses) == len(raw_addresses), (
@@ -197,11 +203,11 @@ class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
         )
         if not parsed_address:
             return self._get_matching_raw_address(r["ID"], raw_addresses)
-        line1 = parsed_address.address.line1
-        line2 = parsed_address.address.line2
-        city = parsed_address.address.city
-        state = parsed_address.address.state
-        zipcode = parsed_address.address.zipcode
+        line1 = parsed_address.line1
+        line2 = parsed_address.line2
+        city = parsed_address.city
+        state = parsed_address.state
+        zipcode = parsed_address.zipcode
         latitude = r["Coordinates"].split(",")[1] if r.get("Coordinates") else ""
         longitude = r["Coordinates"].split(",")[0] if r.get("Coordinates") else ""
         return (
@@ -270,7 +276,7 @@ class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
 
     @staticmethod
     def _parse_geolocation_response(
-        *, response_json: Dict[str, Any], record_id: str
+        *, response_json: Dict[str, Any], record_id: Optional[str]
     ) -> Optional[StandardizedAddress]:
         """
         Parse the JSON response from the US Census API and return a standardized address object
@@ -411,6 +417,7 @@ class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
             formatted_address=matched_address or "",
             standardize_vendor="census",
             country="US",
+            county=None,
         )
 
         return standardized_address
@@ -429,33 +436,33 @@ class CensusStandardizingVendor(StandardizingVendor[MyResponseType]):
 
     def vendor_specific_to_std(
         self,
-        vendor_specific_addresses: List[VendorResponse[MyResponseType]],
+        vendor_specific_addresses: List[
+            VendorResponse[CensusStandardizingVendorApiResponse]
+        ],
     ) -> List[StandardizedAddress]:
         """
         Each vendor class knows how to convert its response to StdAddress
         """
         std_addresses = [
-            StandardizedAddress.from_dict(a.api_call_response)
+            StandardizedAddress.from_dict(a.api_call_response.to_dict())
             for a in vendor_specific_addresses
         ]
         return std_addresses
 
     def _to_vendor_response(
         self,
-        vendor_response: List[Dict[str, str]],
+        vendor_response: List[CensusStandardizingVendorApiResponse],
         raw_addresses: List[RawAddress],
         vendor_name: str,
         response_version: str,
-    ) -> List[VendorResponse[MyResponseType]]:
+    ) -> List[VendorResponse[CensusStandardizingVendorApiResponse]]:
         # create the map
         id_response_map = {a.get_id(): a for a in raw_addresses}
         # find and assign
         return [
             VendorResponse(
                 api_call_response=r,
-                related_raw_address=id_response_map[
-                    r.get("RecordID") or r.get("address_id") or ""
-                ],
+                related_raw_address=id_response_map[r.address_id],
                 vendor_name=vendor_name,
                 response_version=response_version,
             )
