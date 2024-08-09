@@ -61,18 +61,18 @@ class MockStandardizingVendorApiResponse(BaseVendorApiResponse):
             standardize_vendor="mock",
         )
 
-    @classmethod
-    def from_dict(
-        cls, response: Dict[str, Any]
-    ) -> "MockStandardizingVendorApiResponse":
-        return MockStandardizingVendorApiResponse(
-            address_id=response.get("address_id"),
-            line1=response.get("line1"),
-            line2=response.get("line2"),
-            city=response.get("city"),
-            state=response.get("state"),
-            zipcode=response.get("zipcode"),
-            country=response.get("country"),
-            latitude=response.get("latitude"),
-            longitude=response.get("longitude"),
-        )
+    # @classmethod
+    # def from_dict(
+    #     cls, response: Dict[str, Any]
+    # ) -> "MockStandardizingVendorApiResponse":
+    #     return MockStandardizingVendorApiResponse(
+    #         address_id=response.get("address_id"),
+    #         line1=response.get("line1"),
+    #         line2=response.get("line2"),
+    #         city=response.get("city"),
+    #         state=response.get("state"),
+    #         zipcode=response.get("zipcode"),
+    #         country=response.get("country"),
+    #         latitude=response.get("latitude"),
+    #         longitude=response.get("longitude"),
+    #     )

@@ -61,18 +61,18 @@ class GeocodioStandardizingVendorApiResponse(BaseVendorApiResponse):
             standardize_vendor="geocodio",
         )
 
-    @classmethod
-    def from_dict(
-        cls, response: Dict[str, Any]
-    ) -> "GeocodioStandardizingVendorApiResponse":
-        return GeocodioStandardizingVendorApiResponse(
-            RecordID=response.get("RecordID"),
-            line1=response.get("line1"),
-            line2=response.get("line2"),
-            city=response.get("city"),
-            state=response.get("state"),
-            zipcode=response.get("zipcode"),
-            geocodio_Country=response.get("geocodio_Country"),
-            Latitude=response.get("Latitude"),
-            Longitude=response.get("Longitude"),
-        )
+    # @classmethod
+    # def from_dict(
+    #     cls, response: Dict[str, Any]
+    # ) -> "GeocodioStandardizingVendorApiResponse":
+    #     return GeocodioStandardizingVendorApiResponse(
+    #         RecordID=response.get("RecordID"),
+    #         line1=response.get("line1"),
+    #         line2=response.get("line2"),
+    #         city=response.get("city"),
+    #         state=response.get("state"),
+    #         zipcode=response.get("zipcode"),
+    #         geocodio_Country=response.get("geocodio_Country"),
+    #         Latitude=response.get("Latitude"),
+    #         Longitude=response.get("Longitude"),
+    #     )

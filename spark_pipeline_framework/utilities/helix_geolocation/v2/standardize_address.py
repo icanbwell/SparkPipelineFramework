@@ -20,6 +20,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendo
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
     VendorResponse,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
+    BaseVendorApiResponse,
+)
 
 
 class StandardizeAddr:
@@ -30,7 +33,8 @@ class StandardizeAddr:
         self,
         raw_addresses: List[RawAddress],
         cache_handler_obj: CacheHandler,
-        vendor_obj: StandardizingVendor[Any],
+        vendor_obj: StandardizingVendor[BaseVendorApiResponse],
+        # Any is needed to make mypy happy since it cannot understand generics that have subclasses
     ) -> List[StandardizedAddress]:
         # check cache if exists
         assert all(

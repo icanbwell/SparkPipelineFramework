@@ -41,6 +41,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_addres
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
+    BaseVendorApiResponse,
+)
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
@@ -53,7 +56,7 @@ class AddressStandardization(FrameworkTransformer):
         self,
         view: str,
         address_column_mapping: Dict[str, str],
-        standardizing_vendor: StandardizingVendor[Any],
+        standardizing_vendor: StandardizingVendor[BaseVendorApiResponse],
         cache_handler: CacheHandler,
         func_get_response_path: Callable[[str], str] | None = None,
         geolocation_column_prefix: Optional[str] = "",
@@ -98,8 +101,8 @@ class AddressStandardization(FrameworkTransformer):
         )
         self._setDefault(address_column_mapping=address_column_mapping)
 
-        self.standardizing_vendor: Param[StandardizingVendor[Any]] = Param(
-            self, "standardizing_vendor", ""
+        self.standardizing_vendor: Param[StandardizingVendor[BaseVendorApiResponse]] = (
+            Param(self, "standardizing_vendor", "")
         )
         self._setDefault(view=standardizing_vendor)
 
@@ -133,7 +136,7 @@ class AddressStandardization(FrameworkTransformer):
                 address_column_mapping.values()
             )
             # what vendor to use for standardizing
-            standardizing_vendor: StandardizingVendor[Any] = (
+            standardizing_vendor: StandardizingVendor[BaseVendorApiResponse] = (
                 self.getStandardizingVendor()
             )
             # what cache handler to use
@@ -211,8 +214,8 @@ class AddressStandardization(FrameworkTransformer):
                     ]
                     for standard_address in standard_address_list:
                         yield standard_address
-                except Exception as e:
-                    raise e
+                except Exception as e1:
+                    raise e1
 
             # if there are rows then standardize them
             if not spark_is_data_frame_empty(address_df):
@@ -303,7 +306,7 @@ class AddressStandardization(FrameworkTransformer):
         return self.getOrDefault(self.address_column_mapping)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getStandardizingVendor(self) -> StandardizingVendor[Any]:
+    def getStandardizingVendor(self) -> StandardizingVendor[BaseVendorApiResponse]:
         return self.getOrDefault(self.standardizing_vendor)
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

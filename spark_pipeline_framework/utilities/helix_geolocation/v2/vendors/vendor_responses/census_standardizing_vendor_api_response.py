@@ -211,47 +211,47 @@ class CensusStandardizingVendorApiResponse(BaseVendorApiResponse):
 
         return standardized_address
 
-    @classmethod
-    def from_dict(
-        cls, response: Dict[str, Any]
-    ) -> "CensusStandardizingVendorApiResponse":
-        return CensusStandardizingVendorApiResponse(
-            address_id=response.get("address_id"),
-            input=CensusStandardizingVendorInput(
-                address=CensusStandardizingVendorAddress(
-                    address=response.get("address")
-                ),
-                benchmark=CensusStandardizingVendorBenchmark(
-                    isDefault=response.get("isDefault"),
-                    benchmarkDescription=response.get("benchmarkDescription"),
-                    id=response.get("id"),
-                    benchmarkName=response.get("benchmarkName"),
-                ),
-            ),
-            addressMatches=[
-                CensusStandardizingVendorAddressMatch(
-                    tigerLine=CensusStandardizingVendorTigerLine(
-                        side=response.get("side"),
-                        tigerLineId=response.get("tigerLineId"),
-                    ),
-                    coordinates=CensusStandardizingVendorCoordinates(
-                        x=response.get("x"), y=response.get("y")
-                    ),
-                    addressComponents=CensusStandardizingVendorAddressComponents(
-                        zip=response.get("zip"),
-                        streetName=response.get("streetName"),
-                        preType=response.get("preType"),
-                        city=response.get("city"),
-                        preDirection=response.get("preDirection"),
-                        suffixDirection=response.get("suffixDirection"),
-                        fromAddress=response.get("fromAddress"),
-                        state=response.get("state"),
-                        suffixType=response.get("suffixType"),
-                        toAddress=response.get("toAddress"),
-                        suffixQualifier=response.get("suffixQualifier"),
-                        preQualifier=response.get("preQualifier"),
-                    ),
-                    matchedAddress=response.get("matchedAddress"),
-                )
-            ],
-        )
+    # @classmethod
+    # def from_dict(
+    #     cls, response: Dict[str, Any]
+    # ) -> "CensusStandardizingVendorApiResponse":
+    #     return CensusStandardizingVendorApiResponse(
+    #         address_id=response.get("address_id"),
+    #         input=CensusStandardizingVendorInput(
+    #             address=CensusStandardizingVendorAddress(
+    #                 address=response.get("address")
+    #             ),
+    #             benchmark=CensusStandardizingVendorBenchmark(
+    #                 isDefault=response.get("isDefault"),
+    #                 benchmarkDescription=response.get("benchmarkDescription"),
+    #                 id=response.get("id"),
+    #                 benchmarkName=response.get("benchmarkName"),
+    #             ),
+    #         ),
+    #         addressMatches=[
+    #             CensusStandardizingVendorAddressMatch(
+    #                 tigerLine=CensusStandardizingVendorTigerLine(
+    #                     side=response.get("side"),
+    #                     tigerLineId=response.get("tigerLineId"),
+    #                 ),
+    #                 coordinates=CensusStandardizingVendorCoordinates(
+    #                     x=response.get("x"), y=response.get("y")
+    #                 ),
+    #                 addressComponents=CensusStandardizingVendorAddressComponents(
+    #                     zip=response.get("zip"),
+    #                     streetName=response.get("streetName"),
+    #                     preType=response.get("preType"),
+    #                     city=response.get("city"),
+    #                     preDirection=response.get("preDirection"),
+    #                     suffixDirection=response.get("suffixDirection"),
+    #                     fromAddress=response.get("fromAddress"),
+    #                     state=response.get("state"),
+    #                     suffixType=response.get("suffixType"),
+    #                     toAddress=response.get("toAddress"),
+    #                     suffixQualifier=response.get("suffixQualifier"),
+    #                     preQualifier=response.get("preQualifier"),
+    #                 ),
+    #                 matchedAddress=response.get("matchedAddress"),
+    #             )
+    #         ],
+    #     )

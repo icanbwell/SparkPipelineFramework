@@ -42,18 +42,18 @@ class MelissaStandardizingVendorApiResponse(BaseVendorApiResponse):
             standardize_vendor="melissa",
         )
 
-    @classmethod
-    def from_dict(
-        cls, response: Dict[str, Any]
-    ) -> "MelissaStandardizingVendorApiResponse":
-        return MelissaStandardizingVendorApiResponse(
-            RecordID=response.get("RecordID"),
-            FormattedAddress=response.get("FormattedAddress"),
-            Locality=response.get("Locality"),
-            AdministrativeArea=response.get("AdministrativeArea"),
-            SubAdministrativeArea=response.get("SubAdministrativeArea"),
-            PostalCode=response.get("PostalCode"),
-            CountryISO3166_1_Alpha2=response.get("CountryISO3166_1_Alpha2"),
-            Latitude=response.get("Latitude"),
-            Longitude=response.get("Longitude"),
-        )
+    # @classmethod
+    # def from_dict(
+    #     cls, response: Dict[str, Any]
+    # ) -> "MelissaStandardizingVendorApiResponse":
+    #     return MelissaStandardizingVendorApiResponse(
+    #         RecordID=response.get("RecordID"),
+    #         FormattedAddress=response.get("FormattedAddress"),
+    #         Locality=response.get("Locality"),
+    #         AdministrativeArea=response.get("AdministrativeArea"),
+    #         SubAdministrativeArea=response.get("SubAdministrativeArea"),
+    #         PostalCode=response.get("PostalCode"),
+    #         CountryISO3166_1_Alpha2=response.get("CountryISO3166_1_Alpha2"),
+    #         Latitude=response.get("Latitude"),
+    #         Longitude=response.get("Longitude"),
+    #     )

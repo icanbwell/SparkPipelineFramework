@@ -1,6 +1,6 @@
 import abc
 from abc import ABCMeta
-from typing import List, Type, Any
+from typing import List, Type
 
 import structlog
 
@@ -16,6 +16,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendo
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
     VendorResponse,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
+    BaseVendorApiResponse,
 )
 
 logger = structlog.get_logger(__file__)
@@ -33,8 +36,12 @@ class CacheHandler(metaclass=ABCMeta):
         """
 
     @abc.abstractmethod
-    def save_to_cache(self, vendor_responses: List[VendorResponse[Any]]) -> None:
+    def save_to_cache(
+        self, vendor_responses: List[VendorResponse[BaseVendorApiResponse]]
+    ) -> None:
         pass
 
-    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor[Any]]:
+    def _get_vendor_class(
+        self, vendor_name: str
+    ) -> Type[StandardizingVendor[BaseVendorApiResponse]]:
         return StandardizingVendor

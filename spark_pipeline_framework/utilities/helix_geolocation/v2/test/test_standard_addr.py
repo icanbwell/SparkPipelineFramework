@@ -4,7 +4,7 @@ import random
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -18,7 +18,6 @@ from pymongo.collection import Collection
 from requests import Session
 
 import pymongo
-
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.document_db_cache_handler import (
     DocumentDBCacheHandler,
@@ -35,6 +34,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardize_address
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
     StandardizedAddress,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
+    StandardizingVendor,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response_key_error import (
     VendorResponseKeyError,
 )
@@ -43,6 +45,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.melissa_sta
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.mock_standardizing_vendor import (
     MockStandardizingVendor,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
+    BaseVendorApiResponse,
 )
 
 mongo_address = r"mongodb://mongo:27017/"
@@ -259,7 +264,9 @@ async def test_address_api_call(mocked_session: MagicMock) -> None:
         # act
         r: List[StandardizedAddress] = await StandardizeAddr().standardize_async(
             raw_addrs,
-            vendor_obj=MockStandardizingVendor(),
+            vendor_obj=cast(
+                StandardizingVendor[BaseVendorApiResponse], MockStandardizingVendor()
+            ),
             cache_handler_obj=DocumentDBCacheHandler(),
         )
         assert 3 == len(r)
@@ -283,8 +290,9 @@ async def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> Non
     r: List[StandardizedAddress] = await StandardizeAddr().standardize_async(
         raw_addrs,
         cache_handler_obj=MockCacheHandler(),
-        vendor_obj=MelissaStandardizingVendor(
-            license_key="mock", custom_api_call=my_func
+        vendor_obj=cast(
+            StandardizingVendor[BaseVendorApiResponse],
+            MelissaStandardizingVendor(license_key="mock", custom_api_call=my_func),
         ),
     )
 
@@ -394,8 +402,11 @@ async def test_standardize_stress_test() -> None:
     # act
     r = await StandardizeAddr().standardize_async(
         raw_addresses=raw_addr_objs,
-        vendor_obj=MelissaStandardizingVendor(
-            license_key="mock", custom_api_call=mocked_api_call
+        vendor_obj=cast(
+            StandardizingVendor[BaseVendorApiResponse],
+            MelissaStandardizingVendor(
+                license_key="mock", custom_api_call=mocked_api_call
+            ),
         ),
         cache_handler_obj=DocumentDBCacheHandler(),
     )
@@ -451,8 +462,11 @@ async def test_bad_request() -> None:
     # act
     r = await StandardizeAddr().standardize_async(
         raw_addresses=[empty_raw_address],
-        vendor_obj=MelissaStandardizingVendor(
-            license_key="mock", custom_api_call=mocked_api_call
+        vendor_obj=cast(
+            StandardizingVendor[BaseVendorApiResponse],
+            MelissaStandardizingVendor(
+                license_key="mock", custom_api_call=mocked_api_call
+            ),
         ),
         cache_handler_obj=DocumentDBCacheHandler(),
     )
@@ -482,7 +496,10 @@ async def test_vendor_http_error_call(mocked_session: MagicMock) -> None:
         await StandardizeAddr().standardize_async(
             raw_addrs,
             cache_handler_obj=MockCacheHandler(),
-            vendor_obj=MelissaStandardizingVendor(license_key="mock"),
+            vendor_obj=cast(
+                StandardizingVendor[BaseVendorApiResponse],
+                MelissaStandardizingVendor(license_key="mock"),
+            ),
         )
 
 
@@ -500,5 +517,7 @@ async def test_vendor_empty_response_call(mocked_session: MagicMock) -> None:
     # act / assert
     with pytest.raises(VendorResponseKeyError):
         await StandardizeAddr().standardize_async(
-            raw_addrs, cache_handler_obj=MockCacheHandler(), vendor_obj=vendor
+            raw_addrs,
+            cache_handler_obj=MockCacheHandler(),
+            vendor_obj=cast(StandardizingVendor[BaseVendorApiResponse], vendor),
         )

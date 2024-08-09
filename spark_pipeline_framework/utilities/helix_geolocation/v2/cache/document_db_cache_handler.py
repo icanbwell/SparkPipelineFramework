@@ -29,6 +29,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendo
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
     VendorResponse,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
+    BaseVendorApiResponse,
+)
 
 logger = structlog.get_logger(__file__)
 
@@ -125,7 +128,9 @@ class DocumentDBCacheHandler(CacheHandler):
                 requests=len(requests),
             )
 
-    def _get_vendor_class(self, vendor_name: str) -> Type[StandardizingVendor[Any]]:
+    def _get_vendor_class(
+        self, vendor_name: str
+    ) -> Type[StandardizingVendor[BaseVendorApiResponse]]:
         return super()._get_vendor_class(vendor_name)
 
     @staticmethod
@@ -139,7 +144,7 @@ class DocumentDBCacheHandler(CacheHandler):
         std_addresses: List[StandardizedAddress] = []
         found_ids: List[str] = []
         for vr in vendor_responses:
-            vendor_obj: Type[StandardizingVendor[Any]] = (
+            vendor_obj: Type[StandardizingVendor[BaseVendorApiResponse]] = (
                 StandardizingVendorFactory.get_vendor_class(vr.vendor_name)
             )
             std_addresses.extend(  # vendor_specific_to_std works with list but we are just sending one

@@ -7,12 +7,12 @@ if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
     from _typeshed import DataclassInstance
 
-T = TypeVar("T", bound=DataclassInstance)
+TDataClass = TypeVar("TDataClass", bound=DataclassInstance)
 
 
 class DataClassLoader:
     @staticmethod
-    def from_dict(data_class: Type[T], data: Dict[str, Any]) -> T:
+    def from_dict(data_class: Type[TDataClass], data: Dict[str, Any]) -> TDataClass:
         field_values = {}
 
         for field in fields(data_class):
