@@ -25,8 +25,8 @@ class MelissaStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     SubAdministrativeArea: Optional[str]
     PostalCode: Optional[str]
     CountryISO3166_1_Alpha2: Optional[str]
-    Latitude: Optional[float]
-    Longitude: Optional[float]
+    Latitude: Optional[str]
+    Longitude: Optional[str]
 
     def to_standardized_address(
         self, *, address_id: Optional[str]
