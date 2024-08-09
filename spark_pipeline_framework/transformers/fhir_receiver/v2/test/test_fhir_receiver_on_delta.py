@@ -19,8 +19,9 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("use_data_streaming", [True, False])
 def test_fhir_receiver_on_delta(
-    spark_session: SparkSession, run_synchronously: bool
+    spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     # Arrange
     print()
@@ -66,6 +67,7 @@ def test_fhir_receiver_on_delta(
             delta_lake_table="table",
             schema=PatientSchema.get_schema(),
             run_synchronously=run_synchronously,
+            use_data_streaming=use_data_streaming,
         ).transform(df)
 
     # Assert

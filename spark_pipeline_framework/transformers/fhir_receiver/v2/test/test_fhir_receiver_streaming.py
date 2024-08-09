@@ -17,8 +17,9 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("use_data_streaming", [True, False])
 def test_fhir_receiver_streaming(
-    spark_session: SparkSession, run_synchronously: bool
+    spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     # Arrange
     print()
@@ -64,7 +65,7 @@ def test_fhir_receiver_streaming(
             file_path=patient_json_path,
             progress_logger=progress_logger,
             parameters=parameters,
-            use_data_streaming=True,
+            use_data_streaming=use_data_streaming,
             run_synchronously=run_synchronously,
         ).transform(df)
 

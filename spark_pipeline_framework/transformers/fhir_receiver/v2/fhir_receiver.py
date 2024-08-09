@@ -112,7 +112,7 @@ class FhirReceiver(FrameworkTransformer):
         checkpoint_path: Optional[
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = None,
-        use_data_streaming: Optional[bool] = None,
+        use_data_streaming: Optional[bool] = True,
         delta_lake_table: Optional[str] = None,
         schema: Optional[Union[StructType, DataType]] = None,
         cache_storage_level: Optional[StorageLevel] = None,
@@ -375,7 +375,7 @@ class FhirReceiver(FrameworkTransformer):
         self.use_data_streaming: Param[Optional[bool]] = Param(
             self, "use_data_streaming", ""
         )
-        self._setDefault(use_data_streaming=None)
+        self._setDefault(use_data_streaming=True)
 
         self.delta_lake_table: Param[Optional[str]] = Param(
             self, "delta_lake_table", ""

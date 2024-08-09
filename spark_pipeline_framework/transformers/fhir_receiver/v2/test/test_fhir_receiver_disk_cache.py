@@ -18,8 +18,9 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("use_data_streaming", [True, False])
 def test_fhir_receiver_disk_cache(
-    spark_session: SparkSession, run_synchronously: bool
+    spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     # Arrange
     print()
@@ -64,6 +65,7 @@ def test_fhir_receiver_disk_cache(
             progress_logger=progress_logger,
             cache_storage_level=StorageLevel.DISK_ONLY,
             run_synchronously=run_synchronously,
+            use_data_streaming=use_data_streaming,
         ).transform(df)
 
     # Assert

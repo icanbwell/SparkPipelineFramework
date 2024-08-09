@@ -57,8 +57,9 @@ slot_practitioner_graph = {
 
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("use_data_streaming", [True, False])
 def test_fhir_receiver_graph_synthetic_run_synchronously(
-    spark_session: SparkSession, run_synchronously: bool
+    spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     # Arrange
     print()
@@ -124,6 +125,7 @@ def test_fhir_receiver_graph_synthetic_run_synchronously(
             graph_json=slot_practitioner_graph,
             separate_bundle_resources=True,
             run_synchronously=run_synchronously,
+            use_data_streaming=use_data_streaming,
         ).transform(df)
 
     # Assert

@@ -17,7 +17,10 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
-def test_fhir_receiver(spark_session: SparkSession, run_synchronously: bool) -> None:
+@pytest.mark.parametrize("use_data_streaming", [True, False])
+def test_fhir_receiver(
+    spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
+) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -63,6 +66,7 @@ def test_fhir_receiver(spark_session: SparkSession, run_synchronously: bool) -> 
             progress_logger=progress_logger,
             parameters=parameters,
             run_synchronously=run_synchronously,
+            use_data_streaming=use_data_streaming,
         ).transform(df)
 
     # Assert

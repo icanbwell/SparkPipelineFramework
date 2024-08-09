@@ -22,9 +22,10 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-@pytest.mark.parametrize("run_synchronously", [True])
-async def test_async_real_fhir_server_get_graph_large(
-    spark_session: SparkSession, run_synchronously: bool
+@pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("use_data_streaming", [True, False])
+async def test_async_real_fhir_server_get_graph_error(
+    spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -174,6 +175,7 @@ async def test_async_real_fhir_server_get_graph_large(
             file_path=patient_json_path,
             progress_logger=progress_logger,
             parameters=parameters,
+            use_data_streaming=use_data_streaming,
             run_synchronously=run_synchronously,
             auth_well_known_url=auth_well_known_url,
             auth_client_id=auth_client_id,
@@ -192,4 +194,10 @@ async def test_async_real_fhir_server_get_graph_large(
     error_df.show()
 
     assert error_df.count() == 1
+    first_row = error_df.first()
+    assert first_row is not None
+    assert first_row["url"] is not None
+    assert (
+        first_row["url"] == "http://fhir:3000/4_0_0/Practitioner/$graph?contained=true"
+    )
     # assert error_df.first().error == "The server could not process the request"
