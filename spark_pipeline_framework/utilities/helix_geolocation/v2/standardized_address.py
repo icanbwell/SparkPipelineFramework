@@ -10,10 +10,10 @@ class StandardizedAddress(RawAddress):
     The address standardized by a vendor
     """
 
-    county: Optional[str]
-    longitude: Optional[str]
-    latitude: Optional[str]
-    formatted_address: Optional[str]
+    county: Optional[str] = None
+    longitude: Optional[str] = None
+    latitude: Optional[str] = None
+    formatted_address: Optional[str] = None
     standardize_vendor: str
 
     def to_str(self) -> str:
@@ -31,5 +31,8 @@ class StandardizedAddress(RawAddress):
         return cls(**address_dict)
 
     @classmethod
-    def from_raw_address(cls, raw_address: RawAddress) -> "StandardizedAddress":
-        return cls(**raw_address.to_dict())
+    def from_raw_address(
+        cls, raw_address: RawAddress, vendor_name: str
+    ) -> "StandardizedAddress":
+        assert vendor_name, "vendor_name is required"
+        return cls(**raw_address.to_dict(), standardize_vendor=vendor_name)

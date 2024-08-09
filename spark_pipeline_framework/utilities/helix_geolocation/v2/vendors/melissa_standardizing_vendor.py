@@ -49,16 +49,13 @@ class MelissaStandardizingVendor(
     def get_api_response_class(cls) -> Type[MelissaStandardizingVendorApiResponse]:
         return MelissaStandardizingVendorApiResponse
 
-    _RESPONSE_KEY_ERROR_THRESHOLD = 2
-
-    # number of times Melissa is allowed to send bad response until we cancel rest of requests
-
     def __init__(
         self,
         license_key: str = "",
         custom_api_call: Optional[CustomApiCallFunction] = None,
         version: str = "1",
         api_calls_limit: Optional[int] = None,
+        response_key_error_threshold: int = 2,
     ) -> None:
         """
         This class is responsible for standardizing addresses using Melissa API
@@ -67,6 +64,8 @@ class MelissaStandardizingVendor(
         :param custom_api_call: Custom API call to Melissa API
         :param version: Version of the response
         :param api_calls_limit: Maximum number of calls to Melissa API allowed
+        :param response_key_error_threshold: Number of times Melissa is allowed to send bad response
+                                            until we cancel rest of requests
         """
         super().__init__(version)
         assert (
@@ -77,6 +76,7 @@ class MelissaStandardizingVendor(
         self._error_counter: int = 0
         self._api_calls_limit: Optional[int] = api_calls_limit
         self._api_calls_counter: int = 0
+        self._response_key_error_threshold: int = response_key_error_threshold
 
     async def standardize_async(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
@@ -129,6 +129,10 @@ class MelissaStandardizingVendor(
         Please make sure "License Key" is available https://www.melissa.com/user/user_account.aspx
         """
 
+        if len(raw_addresses) == 0:
+            yield []
+            return
+
         self._api_calls_counter += 1
 
         if self._api_calls_limit and self._api_calls_counter > self._api_calls_limit:
@@ -137,10 +141,13 @@ class MelissaStandardizingVendor(
             )
             yield [
                 MelissaStandardizingVendorApiResponse.from_standardized_address(
-                    StandardizedAddress.from_raw_address(raw_address=raw_address)
+                    StandardizedAddress.from_raw_address(
+                        raw_address=raw_address, vendor_name=self.get_vendor_name()
+                    )
                 )
                 for raw_address in raw_addresses
             ]
+            return
 
         try:
             api_server_response: Dict[str, Any] = (
@@ -153,23 +160,36 @@ class MelissaStandardizingVendor(
             vendor_specific_addresses: List[Dict[str, str]] = api_server_response[
                 "Records"
             ]
-            yield [
-                MelissaStandardizingVendorApiResponse.from_dict(v)
-                for v in vendor_specific_addresses
-            ]
+            if len(vendor_specific_addresses) == 0:
+                yield [
+                    MelissaStandardizingVendorApiResponse.from_standardized_address(
+                        StandardizedAddress.from_raw_address(
+                            raw_address=raw_address, vendor_name=self.get_vendor_name()
+                        )
+                    )
+                    for raw_address in raw_addresses
+                ]
+            else:
+                yield [
+                    MelissaStandardizingVendorApiResponse.from_dict(v)
+                    for v in vendor_specific_addresses
+                ]
         except Exception as e:
             logger.exception(
                 f"{self.get_vendor_name()} response does not have a Records key. Are we out of credit?"
             )
             self._error_counter += 1
-            if self._error_counter > self._RESPONSE_KEY_ERROR_THRESHOLD:
+            if self._error_counter > self._response_key_error_threshold:
                 raise VendorResponseKeyError
-            yield [
-                MelissaStandardizingVendorApiResponse.from_standardized_address(
-                    StandardizedAddress.from_raw_address(raw_address=raw_address)
-                )
-                for raw_address in raw_addresses
-            ]
+            else:
+                yield [
+                    MelissaStandardizingVendorApiResponse.from_standardized_address(
+                        StandardizedAddress.from_raw_address(
+                            raw_address=raw_address, vendor_name=self.get_vendor_name()
+                        )
+                    )
+                    for raw_address in raw_addresses
+                ]
 
     async def _api_call_async(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         addresses_to_lookup: List[Dict[str, str]] = [

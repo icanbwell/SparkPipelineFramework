@@ -94,7 +94,9 @@ class CensusStandardizingVendor(
                     else:
                         vendor_specific_addresses.append(
                             CensusStandardizingVendorApiResponse.from_standardized_address(
-                                StandardizedAddress.from_raw_address(address)
+                                StandardizedAddress.from_raw_address(
+                                    address, vendor_name=self.get_vendor_name()
+                                )
                             )
                         )
 
@@ -185,7 +187,9 @@ class CensusStandardizingVendor(
                 else:
                     responses = [
                         CensusStandardizingVendorApiResponse.from_standardized_address(
-                            StandardizedAddress.from_raw_address(r)
+                            StandardizedAddress.from_raw_address(
+                                raw_address=r, vendor_name=self.get_vendor_name()
+                            )
                         )
                         for r in raw_addresses
                     ]
@@ -310,7 +314,9 @@ class CensusStandardizingVendor(
                 # Check the response
                 if response.status != 200:
                     yield CensusStandardizingVendorApiResponse.from_standardized_address(
-                        StandardizedAddress.from_raw_address(raw_address)
+                        StandardizedAddress.from_raw_address(
+                            raw_address, vendor_name=self.get_vendor_name()
+                        )
                     )
 
                 # Parse the response
@@ -318,7 +324,9 @@ class CensusStandardizingVendor(
                 response_json: Dict[str, Any] = await response.json()
                 if "result" not in response_json:
                     yield CensusStandardizingVendorApiResponse.from_standardized_address(
-                        StandardizedAddress.from_raw_address(raw_address)
+                        StandardizedAddress.from_raw_address(
+                            raw_address, vendor_name=self.get_vendor_name()
+                        )
                     )
                 else:
                     geolocation_response: (
@@ -333,7 +341,9 @@ class CensusStandardizingVendor(
                         yield geolocation_response
                     else:
                         yield CensusStandardizingVendorApiResponse.from_standardized_address(
-                            StandardizedAddress.from_raw_address(raw_address)
+                            StandardizedAddress.from_raw_address(
+                                raw_address, vendor_name=self.get_vendor_name()
+                            )
                         )
 
     @staticmethod
@@ -409,7 +419,9 @@ class CensusStandardizingVendor(
     ) -> StandardizedAddress:
         return next(
             (
-                StandardizedAddress.from_raw_address(x)
+                StandardizedAddress.from_raw_address(
+                    x, vendor_name=self.get_vendor_name()
+                )
                 for x in raw_addresses
                 if x.get_id() == address_id
             )

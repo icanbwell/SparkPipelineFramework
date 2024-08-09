@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, cast
 from unittest import mock
 from unittest.mock import MagicMock
 
-import aiohttp
 import boto3
 
 import pytest
@@ -495,13 +494,15 @@ async def test_vendor_http_error_call(mocked_session: MagicMock) -> None:
     raw_addrs = [raw_addr_obj]
 
     # act / assert
-    with pytest.raises(aiohttp.client_exceptions.ClientResponseError):
+    with pytest.raises(VendorResponseKeyError):
         await StandardizeAddr().standardize_async(
             raw_addrs,
             cache_handler_obj=MockCacheHandler(),
             vendor_obj=cast(
                 StandardizingVendor[BaseVendorApiResponse],
-                MelissaStandardizingVendor(license_key="mock"),
+                MelissaStandardizingVendor(
+                    license_key="mock", response_key_error_threshold=0
+                ),
             ),
         )
 
@@ -515,8 +516,9 @@ async def test_vendor_empty_response_call(mocked_session: MagicMock) -> None:
 
     # arrange
     raw_addrs = [raw_addr_obj]
-    vendor = MelissaStandardizingVendor(license_key="mock")
-    vendor._RESPONSE_KEY_ERROR_THRESHOLD = 0
+    vendor = MelissaStandardizingVendor(
+        license_key="mock", response_key_error_threshold=0
+    )
     # act / assert
     with pytest.raises(VendorResponseKeyError):
         await StandardizeAddr().standardize_async(
