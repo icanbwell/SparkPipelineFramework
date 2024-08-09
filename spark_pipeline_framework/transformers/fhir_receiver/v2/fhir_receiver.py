@@ -48,7 +48,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema im
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_processor import (
+from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
     FhirReceiverProcessor,
     GetBatchResult,
     GetBatchError,
