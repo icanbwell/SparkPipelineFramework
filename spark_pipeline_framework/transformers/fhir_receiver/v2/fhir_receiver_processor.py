@@ -320,7 +320,6 @@ class FhirReceiverProcessor:
                 server_url=parameters.server_url,
                 parameters=parameters,
             ):
-                # resp_result: str = response.responses.replace("\n", "")
                 try:
                     batch_result: GetBatchResult = (
                         FhirReceiverProcessor.read_resources_and_errors_from_response(
@@ -341,7 +340,9 @@ class FhirReceiverProcessor:
                             request_id=response.request_id,
                         ) from e2
 
-                error_text = response.error or "\n".join([e.error_text for e in errors])
+                error_text = response.error or (
+                    "\n".join([e.error_text for e in errors]) if errors else None
+                )
                 status_code = response.status
                 request_url = response.url
                 request_id = response.request_id
@@ -422,7 +423,9 @@ class FhirReceiverProcessor:
                         request_id=response.request_id,
                     ) from e1
 
-            error_text = response.error or "\n".join([e.error_text for e in errors])
+            error_text = response.error or (
+                "\n".join([e.error_text for e in errors]) if errors else None
+            )
             status_code = response.status
             request_id: Optional[str] = response.request_id
             is_valid_response: bool = True if len(responses_from_fhir) > 0 else False
