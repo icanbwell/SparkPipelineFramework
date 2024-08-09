@@ -307,9 +307,8 @@ class FhirReceiverProcessor:
         )
         # resource_type = resource1.get("resourceType")
         request_id: Optional[str] = None
-        responses_from_fhir: List[str] = []
-        errors: List[GetBatchError] = []
         extra_context_to_return: Optional[Dict[str, Any]] = None
+        responses_from_fhir: List[str] = []
         try:
             response: FhirGetResponse
             async for response in FhirReceiverProcessor.send_simple_fhir_request_async(
@@ -320,13 +319,14 @@ class FhirReceiverProcessor:
                 server_url=parameters.server_url,
                 parameters=parameters,
             ):
+                errors: List[GetBatchError] = []
                 try:
                     batch_result: GetBatchResult = (
                         FhirReceiverProcessor.read_resources_and_errors_from_response(
                             response=response
                         )
                     )
-                    responses_from_fhir = batch_result.resources
+                    responses_from_fhir += batch_result.resources
                     errors = batch_result.errors
                 except JSONDecodeError as e2:
                     if parameters.error_view:
@@ -624,8 +624,6 @@ class FhirReceiverProcessor:
         server_url: Optional[str],
     ) -> AsyncGenerator[GetBatchResult, None]:
         assert server_url
-        resources: List[str] = []
-        errors: List[GetBatchError] = []
         additional_parameters: Optional[List[str]] = parameters.additional_parameters
         if not page_size:
             page_size = limit
@@ -648,6 +646,9 @@ class FhirReceiverProcessor:
                     additional_parameters
                 ),
             ):
+                resources: List[str] = []
+                errors: List[GetBatchError] = []
+
                 result_response: List[str] = []
                 try:
                     batch_result: GetBatchResult = (
@@ -679,7 +680,9 @@ class FhirReceiverProcessor:
                 auth_access_token = result.access_token
                 if len(result_response) > 0:
                     # get id of last resource
-                    json_resources: List[Dict[str, Any]] = json.loads(result.responses)
+                    json_resources: List[Dict[str, Any]] = [
+                        json.loads(r) for r in result_response
+                    ]
                     if isinstance(json_resources, list):  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
@@ -738,6 +741,8 @@ class FhirReceiverProcessor:
                             request_id=result.request_id,
                         )
                     has_next_page = False
+
+                # Now return the data back to the caller
                 yield GetBatchResult(resources=resources, errors=errors)
 
     @staticmethod
@@ -749,8 +754,6 @@ class FhirReceiverProcessor:
         server_url: Optional[str],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert server_url
-        errors: List[GetBatchError] = []
-        resources: List[str] = []
         result: FhirGetResponse
         async for result in FhirReceiverProcessor.send_fhir_request_async(
             logger=get_logger(__name__),
@@ -760,6 +763,8 @@ class FhirReceiverProcessor:
             last_updated_after=last_updated_after,
             last_updated_before=last_updated_before,
         ):
+            errors: List[GetBatchError] = []
+            resources: List[str] = []
             try:
                 batch_result1: GetBatchResult = (
                     FhirReceiverProcessor.read_resources_and_errors_from_response(
