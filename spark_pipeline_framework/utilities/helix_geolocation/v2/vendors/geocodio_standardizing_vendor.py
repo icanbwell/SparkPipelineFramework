@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Type
 
 import structlog
 
@@ -24,6 +24,10 @@ logger = structlog.get_logger(__file__)
 class GeocodioStandardizingVendor(
     StandardizingVendor[GeocodioStandardizingVendorApiResponse]
 ):
+    @classmethod
+    def get_api_response_class(cls) -> Type[GeocodioStandardizingVendorApiResponse]:
+        return GeocodioStandardizingVendorApiResponse
+
     async def standardize_async(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
     ) -> List[VendorResponse[GeocodioStandardizingVendorApiResponse]]:
@@ -78,7 +82,8 @@ class GeocodioStandardizingVendor(
         ]
         return std_addresses
 
-    def get_vendor_name(self) -> str:
+    @classmethod
+    def get_vendor_name(cls) -> str:
         return "Geocodio"
 
     def batch_request_max_size(self) -> int:

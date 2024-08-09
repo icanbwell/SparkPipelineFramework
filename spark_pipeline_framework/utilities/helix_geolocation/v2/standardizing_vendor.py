@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import List, Generic, TypeVar
+from typing import List, Generic, TypeVar, Type
 
 import structlog
 
@@ -53,8 +53,9 @@ class StandardizingVendor(Generic[T], metaclass=ABCMeta):
     def batch_request_max_size(self) -> int:
         return 0
 
+    @classmethod
     @abstractmethod
-    def get_vendor_name(self) -> str:
+    def get_vendor_name(cls) -> str:
         """
         returns the name of the vendor
         """
@@ -74,3 +75,8 @@ class StandardizingVendor(Generic[T], metaclass=ABCMeta):
         """
         using RecordID, we want to find the corresponding raw address of a vendor response
         """
+
+    @classmethod
+    @abstractmethod
+    def get_api_response_class(cls) -> Type[T]:
+        pass

@@ -59,6 +59,9 @@ class CensusStandardizingVendorAddressMatch(BaseModel):
 
 
 class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
+    class Config:
+        extra = "ignore"
+
     input: CensusStandardizingVendorInput
     addressMatches: Optional[List[CensusStandardizingVendorAddressMatch]]
     address_id: Optional[str] = None

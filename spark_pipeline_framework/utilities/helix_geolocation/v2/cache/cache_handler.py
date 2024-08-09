@@ -14,6 +14,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
+from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor_factory import (
+    StandardizingVendorFactory,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
     VendorResponse,
 )
@@ -44,4 +47,4 @@ class CacheHandler(metaclass=ABCMeta):
     def _get_vendor_class(
         self, vendor_name: str
     ) -> Type[StandardizingVendor[BaseVendorApiResponse]]:
-        return StandardizingVendor
+        return StandardizingVendorFactory.get_vendor_class(vendor_name)

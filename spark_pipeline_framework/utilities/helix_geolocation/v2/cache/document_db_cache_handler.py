@@ -23,9 +23,6 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_addres
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor_factory import (
-    StandardizingVendorFactory,
-)
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
     VendorResponse,
 )
@@ -76,17 +73,31 @@ class DocumentDBCacheHandler(CacheHandler):
         query = {"address_hash": {r"$in": list(unique_address_hashes)}}
         lookup_result: pymongo.cursor.Cursor[Any] = self._collection.find(query)
 
-        found_vendor_response: List[VendorResponse[Any]] = []
+        found_vendor_response: List[VendorResponse[BaseVendorApiResponse]] = []
         for r in lookup_result:
             matching_raw: List[RawAddress] = [
                 raw for raw in raw_addresses if r["address_hash"] == raw.to_hash()
             ]
+            # find the matching vendor
+
+            vendor_name = r["vendor_name"]
+            vendor_class: Type[StandardizingVendor[BaseVendorApiResponse]] = (
+                self._get_vendor_class(vendor_name)
+            )
+            api_response_class: Type[BaseVendorApiResponse] = (
+                vendor_class.get_api_response_class()
+            )
+            assert (
+                api_response_class is not None
+            ), f"api_response_class is None for {vendor_name}"
             found_vendor_response.extend(
                 [
                     VendorResponse(
-                        api_call_response=r["vendor_std_address"],
+                        api_call_response=api_response_class.from_dict(
+                            r["vendor_std_address"]
+                        ),
                         related_raw_address=raw,
-                        vendor_name=r["vendor_name"],
+                        vendor_name=vendor_name,
                         response_version=r["response_version"],
                     )
                     for raw in matching_raw
@@ -108,7 +119,7 @@ class DocumentDBCacheHandler(CacheHandler):
                 {"address_hash": vr.related_raw_address.to_hash()},
                 {
                     "$set": {
-                        "vendor_std_address": vr.api_call_response,
+                        "vendor_std_address": vr.api_call_response.to_dict(),
                         "vendor_name": vr.vendor_name,
                         "response_version": vr.response_version,
                     }
@@ -135,7 +146,7 @@ class DocumentDBCacheHandler(CacheHandler):
 
     @staticmethod
     def _convert_to_std_address(
-        vendor_responses: List[VendorResponse[Any]],
+        vendor_responses: List[VendorResponse[BaseVendorApiResponse]],
     ) -> Tuple[List[StandardizedAddress], List[str]]:
         """
         get vendor responses (possibly from different vendors) turn it to StdAddress
@@ -143,24 +154,16 @@ class DocumentDBCacheHandler(CacheHandler):
         """
         std_addresses: List[StandardizedAddress] = []
         found_ids: List[str] = []
+        vr: VendorResponse[BaseVendorApiResponse]
         for vr in vendor_responses:
-            vendor_obj: Type[StandardizingVendor[BaseVendorApiResponse]] = (
-                StandardizingVendorFactory.get_vendor_class(vr.vendor_name)
-            )
-            std_addresses.extend(  # vendor_specific_to_std works with list but we are just sending one
-                vendor_obj().vendor_specific_to_std(
-                    [
-                        VendorResponse(
-                            api_call_response=vr.api_call_response,
-                            related_raw_address=vr.related_raw_address,
-                            vendor_name=vr.vendor_name,
-                            response_version=vr.response_version,
-                        )
-                    ]
+            if vr.related_raw_address and vr.related_raw_address.get_id():
+                standardized_address = vr.api_call_response.to_standardized_address(
+                    address_id=vr.related_raw_address.get_id()
                 )
-            )
-            if vr.related_raw_address:
-                address_id: Optional[str] = vr.related_raw_address.get_id()
-                assert address_id is not None
-                found_ids.append(address_id)
+                if standardized_address:
+                    std_addresses.append(standardized_address)
+                if vr.related_raw_address:
+                    address_id: Optional[str] = vr.related_raw_address.get_id()
+                    assert address_id is not None
+                    found_ids.append(address_id)
         return std_addresses, found_ids

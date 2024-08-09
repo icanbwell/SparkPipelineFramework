@@ -47,7 +47,7 @@ class MockStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         self, *, address_id: Optional[str]
     ) -> Optional[StandardizedAddress]:
         return StandardizedAddress(
-            address_id=self.address_id,
+            address_id=address_id,
             line1=self.line1,
             line2=self.line2,
             city=self.city,

@@ -207,7 +207,7 @@ def test_raw_address_to_export() -> None:
         "zipcode": "78753",
         "state": "TX",
         "city": "Austin",
-        "line2": "",
+        "line2": None,
         "line1": "8300 N Lamar Blvd",
     }
     assert addr_str == "8300 N Lamar Blvd, Austin TX 78753 US"
@@ -223,9 +223,9 @@ def test_std_address_to_export() -> None:
         "zipcode": "78753",
         "state": "TX",
         "city": "Austin",
-        "line2": "",
+        "line2": None,
         "line1": "8300 N Lamar Blvd",
-        "county": "",
+        "county": None,
         "latitude": "30.373400",
         "longitude": "-97.680000",
         "formatted_address": "8300 North Lamar Boulevard;Austin, TX 78753-5976",

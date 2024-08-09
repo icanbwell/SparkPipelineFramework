@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional, Any, AsyncGenerator, Protocol
+from typing import Dict, List, Optional, Any, AsyncGenerator, Protocol, Type
 
 import aiohttp
 
@@ -45,6 +45,10 @@ class CustomApiCallFunction(Protocol):
 class MelissaStandardizingVendor(
     StandardizingVendor[MelissaStandardizingVendorApiResponse]
 ):
+    @classmethod
+    def get_api_response_class(cls) -> Type[MelissaStandardizingVendorApiResponse]:
+        return MelissaStandardizingVendorApiResponse
+
     _RESPONSE_KEY_ERROR_THRESHOLD = 2
 
     # number of times Melissa is allowed to send bad response until we cancel rest of requests
@@ -205,7 +209,8 @@ class MelissaStandardizingVendor(
     def batch_request_max_size(self) -> int:
         return 100
 
-    def get_vendor_name(self) -> str:
+    @classmethod
+    def get_vendor_name(cls) -> str:
         return "melissa"
 
     @staticmethod

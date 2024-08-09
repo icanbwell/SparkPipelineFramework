@@ -1,4 +1,3 @@
-import dataclasses
 from typing import Dict, Any, Optional
 
 from pydantic import BaseModel
@@ -11,8 +10,11 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 )
 
 
-@dataclasses.dataclass
 class MelissaStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
+
+    class Config:
+        extra = "ignore"
+
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
 
@@ -30,7 +32,7 @@ class MelissaStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         self, *, address_id: Optional[str]
     ) -> StandardizedAddress:
         return StandardizedAddress(
-            address_id=self.RecordID,
+            address_id=address_id,
             line1=next(iter((self.FormattedAddress or "").split(";"))),
             line2=None,
             county=self.SubAdministrativeArea,

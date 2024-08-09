@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Type
 
 import structlog
 
@@ -22,6 +22,10 @@ logger = structlog.get_logger(__file__)
 
 
 class MockStandardizingVendor(StandardizingVendor[MockStandardizingVendorApiResponse]):
+    @classmethod
+    def get_api_response_class(cls) -> Type[MockStandardizingVendorApiResponse]:
+        return MockStandardizingVendorApiResponse
+
     async def standardize_async(
         self, raw_addresses: List[RawAddress], max_requests: int = 100
     ) -> List[VendorResponse[MockStandardizingVendorApiResponse]]:
@@ -68,7 +72,8 @@ class MockStandardizingVendor(StandardizingVendor[MockStandardizingVendorApiResp
         ]
         return std_addresses
 
-    def get_vendor_name(self) -> str:
+    @classmethod
+    def get_vendor_name(cls) -> str:
         return "Mock"
 
     def batch_request_max_size(self) -> int:

@@ -1,6 +1,6 @@
 import csv
 from io import StringIO
-from typing import List, Dict, Any, Optional, cast, AsyncGenerator
+from typing import List, Dict, Any, Optional, cast, AsyncGenerator, Type
 
 import aiohttp
 from helix_fhir_client_sdk.utilities.list_chunker import ListChunker
@@ -35,6 +35,10 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 class CensusStandardizingVendor(
     StandardizingVendor[CensusStandardizingVendorApiResponse]
 ):
+    @classmethod
+    def get_api_response_class(cls) -> Type[CensusStandardizingVendorApiResponse]:
+        return CensusStandardizingVendorApiResponse
+
     def __init__(
         self, use_bulk_api: bool = True, batch_request_max_size: Optional[int] = None
     ) -> None:
@@ -44,7 +48,8 @@ class CensusStandardizingVendor(
         # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
         self._batch_request_max_size: Optional[int] = batch_request_max_size or 9000
 
-    def get_vendor_name(self) -> str:
+    @classmethod
+    def get_vendor_name(cls) -> str:
         return "census"
 
     def batch_request_max_size(self) -> int:
