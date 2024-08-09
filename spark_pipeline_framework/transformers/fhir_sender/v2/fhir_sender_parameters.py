@@ -19,6 +19,7 @@ class FhirSenderParameters:
     auth_login_token: Optional[str]
     auth_scopes: Optional[List[str]]
     auth_access_token: Optional[str]
+    auth_well_known_url: Optional[str]
     additional_request_headers: Optional[Dict[str, str]]
     log_level: Optional[str]
     batch_size: Optional[int]

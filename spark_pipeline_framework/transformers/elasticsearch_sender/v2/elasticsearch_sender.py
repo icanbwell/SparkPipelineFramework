@@ -27,6 +27,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
@@ -106,6 +107,9 @@ class ElasticSearchSender(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        return AsyncHelper.run(self.transform_async(df))
+
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
         path: Optional[Union[Path, str]] = self.getFilePath()
         name: Optional[str] = self.getName()
@@ -171,11 +175,13 @@ class ElasticSearchSender(FrameworkTransformer):
                     rows_to_send: List[Dict[str, Any]] = [
                         r.asDict(recursive=True) for r in json_df.collect()
                     ]
-                    result_rows: List[Dict[str, Any] | None] = list(
-                        ElasticSearchProcessor.send_partition_to_server(
-                            partition_index=0,
-                            rows=rows_to_send,
-                            parameters=sender_parameters,
+                    result_rows: List[Dict[str, Any] | None] = (
+                        await AsyncHelper.collect_items(
+                            ElasticSearchProcessor.send_partition_to_server_async(
+                                partition_index=0,
+                                rows=rows_to_send,
+                                parameters=sender_parameters,
+                            )
                         )
                     )
                     result_rows = [r for r in result_rows if r is not None]
@@ -201,7 +207,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     "url", "success"
                 )
                 failed_df: DataFrame = result_df.where(col("failed") > 0).select(
-                    "url", "failed", "payload"
+                    "url", "failed", "payload", "error"
                 )
 
                 try:
@@ -211,8 +217,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     failed_df.show(truncate=False, n=1000)
                     self.logger.info("---- End Reply from server ----")
                 except PythonException as e:
-                    print(f"FriendlySparkException : {type(e)}")
-                    if "pyarrow.lib.ArrowTypeError" in e.desc:
+                    if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
                         raise FriendlySparkException(
                             exception=e,
                             message="Exception converting data to Arrow format."

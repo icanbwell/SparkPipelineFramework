@@ -49,6 +49,7 @@ def test_elasticsearch_sender(
         "failed",
         "payload",
         "partition_index",
+        "error",
     ]
     assert result_df.collect()[0]["success"] == 2
     assert result_df.collect()[0]["failed"] == 0

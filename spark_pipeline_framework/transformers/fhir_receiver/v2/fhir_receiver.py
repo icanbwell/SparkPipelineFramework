@@ -37,9 +37,10 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token,
+    fhir_get_access_token_async,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
@@ -49,6 +50,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_processor import (
     FhirReceiverProcessor,
+    GetBatchResult,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -89,6 +91,7 @@ class FhirReceiver(FrameworkTransformer):
         auth_client_secret: Optional[str] = None,
         auth_login_token: Optional[str] = None,
         auth_scopes: Optional[List[str]] = None,
+        auth_well_known_url: Optional[str] = None,
         separate_bundle_resources: bool = False,
         error_on_result_count: bool = True,
         expand_fhir_bundle: bool = True,
@@ -293,6 +296,12 @@ class FhirReceiver(FrameworkTransformer):
 
         self.auth_scopes: Param[Optional[List[str]]] = Param(self, "auth_scopes", "")
         self._setDefault(auth_scopes=None)
+
+        self.auth_well_known_url: Param[Optional[str]] = Param(
+            self, "auth_well_known_url", ""
+        )
+        self._setDefault(auth_well_known_url=None)
+
         self.separate_bundle_resources: Param[bool] = Param(
             self, "separate_bundle_resources", ""
         )
@@ -411,6 +420,9 @@ class FhirReceiver(FrameworkTransformer):
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        return AsyncHelper.run(self.transform_async(df))
+
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         server_url: Optional[str] = self.getServerUrl()
         resource_name: str = self.getResource()
         parameters = self.getParameters()
@@ -442,6 +454,7 @@ class FhirReceiver(FrameworkTransformer):
         auth_client_secret: Optional[str] = self.getAuthClientSecret()
         auth_login_token: Optional[str] = self.getAuthLoginToken()
         auth_scopes: Optional[List[str]] = self.getAuthScopes()
+        auth_well_known_url: Optional[str] = self.getOrDefault(self.auth_well_known_url)
 
         separate_bundle_resources: bool = self.getSeparateBundleResources()
         expand_fhir_bundle: bool = self.getExpandFhirBundle()
@@ -529,7 +542,7 @@ class FhirReceiver(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
-            auth_access_token = fhir_get_access_token(
+            auth_access_token = await fhir_get_access_token_async(
                 logger=self.logger,
                 server_url=server_url,
                 auth_server_url=auth_server_url,
@@ -538,6 +551,7 @@ class FhirReceiver(FrameworkTransformer):
                 auth_login_token=auth_login_token,
                 auth_scopes=auth_scopes,
                 log_level=log_level,
+                auth_well_known_url=auth_well_known_url,
             )
 
         with ProgressLogMetric(
@@ -606,6 +620,7 @@ class FhirReceiver(FrameworkTransformer):
                     auth_client_secret=auth_client_secret,
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
+                    auth_well_known_url=auth_well_known_url,
                     include_only_properties=include_only_properties,
                     separate_bundle_resources=separate_bundle_resources,
                     expand_fhir_bundle=expand_fhir_bundle,
@@ -629,8 +644,9 @@ class FhirReceiver(FrameworkTransformer):
                     id_rows: List[Dict[str, Any]] = [
                         r.asDict(recursive=True) for r in id_df.collect()
                     ]
-                    result_rows: List[Dict[str, Any]] = (
-                        FhirReceiverProcessor.send_partition_request_to_server(
+
+                    result_rows: List[Dict[str, Any]] = await AsyncHelper.collect_items(
+                        FhirReceiverProcessor.send_partition_request_to_server_async(
                             partition_index=0,
                             rows=id_rows,
                             parameters=receiver_parameters,
@@ -817,8 +833,7 @@ class FhirReceiver(FrameworkTransformer):
                                 request_id=first_request_id,
                             )
                 except PythonException as e:
-                    print(f"FriendlySparkException : {type(e)}")
-                    if "pyarrow.lib.ArrowTypeError" in e.desc:
+                    if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
                         raise FriendlySparkException(
                             exception=e,
                             message="Exception converting data to Arrow format."
@@ -976,6 +991,7 @@ class FhirReceiver(FrameworkTransformer):
                     auth_client_secret=auth_client_secret,
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
+                    auth_well_known_url=auth_well_known_url,
                     include_only_properties=include_only_properties,
                     separate_bundle_resources=separate_bundle_resources,
                     expand_fhir_bundle=expand_fhir_bundle,
@@ -996,21 +1012,54 @@ class FhirReceiver(FrameworkTransformer):
                     ignore_status_codes=ignore_status_codes,
                 )
 
-                result1 = FhirReceiverProcessor.get_batch_result(
-                    page_size=page_size,
-                    limit=limit,
-                    server_url=server_url,
-                    parameters=receiver_parameters,
-                    last_updated_after=last_updated_after,
-                    last_updated_before=last_updated_before,
-                )
-                resources = result1.resources
-                errors = result1.errors
-                list_df: DataFrame = df.sparkSession.createDataFrame(
-                    resources, schema=StringType()
-                )
                 file_format = "delta" if delta_lake_table else "text"
-                list_df.write.format(file_format).mode(mode).save(str(file_path))
+
+                if receiver_parameters.use_data_streaming:
+                    list_df: DataFrame = (
+                        await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
+                            df=df,
+                            server_url=server_url,
+                            parameters=receiver_parameters,
+                            last_updated_after=last_updated_after,
+                            last_updated_before=last_updated_before,
+                            schema=GetBatchResult.get_schema(),
+                            results_per_batch=batch_size,
+                        )
+                    )
+                    resource_df = list_df.select(
+                        explode(col("resources")).alias("resource")
+                    )
+                    errors_df = list_df.select(explode(col("errors")).alias("resource"))
+                    resource_df.write.format(file_format).mode(mode).save(
+                        str(file_path)
+                    )
+                else:
+                    resources: List[str] = []
+                    errors: List[str] = []
+
+                    async for (
+                        result1
+                    ) in FhirReceiverProcessor.get_batch_results_paging_async(
+                        page_size=page_size,
+                        limit=limit,
+                        server_url=server_url,
+                        parameters=receiver_parameters,
+                        last_updated_after=last_updated_after,
+                        last_updated_before=last_updated_before,
+                    ):
+                        resources.extend(result1.resources)
+                        errors.extend(result1.errors)
+
+                    list_df = df.sparkSession.createDataFrame(
+                        resources, schema=StringType()
+                    )
+                    errors_df = (
+                        sc(df).parallelize(errors).toDF().cache()
+                        if errors
+                        else df.sparkSession.createDataFrame([], schema=StringType())
+                    )
+                    list_df.write.format(file_format).mode(mode).save(str(file_path))
+
                 list_df = df.sparkSession.read.format(file_format).load(str(file_path))
 
                 self.logger.info(f"Wrote FHIR data to {file_path}")
@@ -1033,7 +1082,6 @@ class FhirReceiver(FrameworkTransformer):
                 if view:
                     list_df.createOrReplaceTempView(view)
                 if error_view:
-                    errors_df = sc(df).parallelize(errors).toDF().cache()
                     errors_df.createOrReplaceTempView(error_view)
                     if progress_logger and not spark_is_data_frame_empty(errors_df):
                         progress_logger.log_event(

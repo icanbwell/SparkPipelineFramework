@@ -1,7 +1,7 @@
 import os
 from typing import Tuple, Optional
 
-from opensearchpy import OpenSearch
+from opensearchpy import OpenSearch, AsyncOpenSearch
 
 from furl import furl
 
@@ -15,6 +15,16 @@ class ElasticSearchConnection:
         env_name = os.environ.get("ENV", "local")
         es_url = self._get_connection_string()
         client = OpenSearch(
+            hosts=es_url,
+            use_ssl=env_name != "local",
+            verify_certs=env_name != "local",
+        )
+        return client
+
+    def get_elastic_search_async_client(self) -> AsyncOpenSearch:
+        env_name = os.environ.get("ENV", "local")
+        es_url = self._get_connection_string()
+        client = AsyncOpenSearch(
             hosts=es_url,
             use_ssl=env_name != "local",
             verify_certs=env_name != "local",

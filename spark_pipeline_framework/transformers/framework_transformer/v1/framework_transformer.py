@@ -150,3 +150,9 @@ class FrameworkTransformer(
         :param loop_id: loop id
         """
         self.loop_id = loop_id
+
+    async def transform_async(self, dataset: DataFrame) -> DataFrame:
+        return await self._transform_async(df=dataset)
+
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
+        raise NotImplementedError("Subclasses should implement this method")

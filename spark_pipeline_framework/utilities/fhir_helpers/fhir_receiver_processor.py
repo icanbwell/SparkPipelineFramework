@@ -1,4 +1,4 @@
-import asyncio
+import dataclasses
 import json
 from datetime import datetime
 from json import JSONDecodeError
@@ -11,23 +11,36 @@ from typing import (
     Optional,
     Union,
     cast,
-    NamedTuple,
-    Coroutine,
     Callable,
+    AsyncGenerator,
+    Iterator,
 )
 
 import pandas as pd
 from furl import furl
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
 from helix_fhir_client_sdk.fhir_client import FhirClient
+from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
+from pyspark.sql import DataFrame
+from pyspark.sql.types import StructType, StructField, ArrayType, StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
+    AsyncPandasDataFrameUDF,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
+    HandlePandasBatchWithParametersFunction,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
+    FhirGetResponseSchema,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
@@ -38,19 +51,61 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
-from spark_pipeline_framework.utilities.flattener.flattener import flatten
 
 
-class GetBatchResult(NamedTuple):
+@dataclasses.dataclass
+class GetBatchResult:
     resources: List[str]
     errors: List[str]
 
+    @staticmethod
+    def get_schema() -> StructType:
+        return StructType(
+            [
+                StructField("resources", ArrayType(StringType()), True),
+                StructField("errors", ArrayType(StringType()), True),
+            ]
+        )
+
 
 class FhirReceiverProcessor:
+
+    @staticmethod
+    async def process_partition(
+        input_values: List[Dict[str, Any]], parameters: Optional[FhirReceiverParameters]
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        assert parameters
+        # count: int = 0
+        try:
+            async for r in FhirReceiverProcessor.send_partition_request_to_server_async(
+                partition_index=0, parameters=parameters, rows=input_values
+            ):
+                # response_item: FhirGetResponseItem = FhirGetResponseItem.from_dict(r)
+                # count += len(response_item.responses)
+                yield r
+        except Exception as e:
+            # if an exception is thrown then return an error for each row
+            for input_value in input_values:
+                # count += 1
+                yield {
+                    FhirGetResponseSchema.partition_index: 0,
+                    FhirGetResponseSchema.sent: 0,
+                    FhirGetResponseSchema.received: 0,
+                    FhirGetResponseSchema.url: parameters.server_url,
+                    FhirGetResponseSchema.responses: [],
+                    FhirGetResponseSchema.first: None,
+                    FhirGetResponseSchema.last: None,
+                    FhirGetResponseSchema.error_text: str(e),
+                    FhirGetResponseSchema.status_code: 400,
+                    FhirGetResponseSchema.request_id: None,
+                    FhirGetResponseSchema.access_token: None,
+                    FhirGetResponseSchema.extra_context_to_return: None,
+                }
+
     @staticmethod
     def get_process_batch_function(
         *, parameters: FhirReceiverParameters
-    ) -> Callable[[Iterable[pd.DataFrame]], Iterable[pd.DataFrame]]:
+    ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """
         Returns a function that includes the passed parameters so that function
         can be used in a pandas_udf
@@ -59,42 +114,22 @@ class FhirReceiverProcessor:
         :return: pandas_udf
         """
 
-        def process_batch(
-            batch_iter: Iterable[pd.DataFrame],
-        ) -> Iterable[pd.DataFrame]:
-            """
-            This function is passed a list of dataframes, each dataframe is a partition
-
-            :param batch_iter: Iterable[pd.DataFrame]
-            :return: Iterable[pd.DataFrame]
-            """
-            pdf: pd.DataFrame
-            index: int = 0
-            for pdf in batch_iter:
-                # convert the dataframe to a list of dictionaries
-                pdf_json: str = pdf.to_json(orient="records")
-                rows: List[Dict[str, Any]] = json.loads(pdf_json)
-                # print(f"Processing partition {pdf.index} with {len(rows)} rows")
-                # send the partition to the server
-                result_list: List[Dict[str, Any]] = (
-                    FhirReceiverProcessor.send_partition_request_to_server(
-                        partition_index=index, parameters=parameters, rows=rows
-                    )
-                )
-                index += 1
-                # yield the result as a dataframe
-                yield pd.DataFrame(result_list)
-
-        return process_batch
+        return AsyncPandasDataFrameUDF(
+            async_func=cast(
+                HandlePandasBatchWithParametersFunction[FhirReceiverParameters],
+                FhirReceiverProcessor.process_partition,
+            ),
+            parameters=parameters,
+        ).get_pandas_udf()
 
     @staticmethod
     # function that is called for each partition
-    def send_partition_request_to_server(
+    async def send_partition_request_to_server_async(
         *,
         partition_index: int,
         rows: Iterable[Dict[str, Any]],
         parameters: FhirReceiverParameters,
-    ) -> List[Dict[str, Any]]:
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         This function processes a partition calling fhir server for each row in the partition
 
@@ -145,20 +180,20 @@ class FhirReceiverProcessor:
             )
             for r in rows
         ]
-        result = FhirReceiverProcessor.process_with_token(
+        async for result in FhirReceiverProcessor.process_with_token_async(
             partition_index=partition_index,
             resource_id_with_token_list=resource_id_with_token_list,
             parameters=parameters,
-        )
-        return result
+        ):
+            yield result
 
     @staticmethod
-    def process_with_token(
+    async def process_with_token_async(
         *,
         partition_index: int,
         resource_id_with_token_list: List[Dict[str, Optional[str]]],
         parameters: FhirReceiverParameters,
-    ) -> List[Dict[str, Any]]:
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         try:
             first_id: Optional[str] = resource_id_with_token_list[0]["resource_id"]
         except IndexError:
@@ -172,24 +207,23 @@ class FhirReceiverProcessor:
         sent: int = len(resource_id_with_token_list)
 
         if sent == 0:
-            return [
-                FhirGetResponseItem(
-                    dict(
-                        partition_index=partition_index,
-                        sent=0,
-                        received=0,
-                        responses=[],
-                        first=None,
-                        last=None,
-                        error_text=None,
-                        url=parameters.server_url,
-                        status_code=200,
-                        request_id=None,
-                        access_token=None,
-                        extra_context_to_return=None,
-                    )
-                ).to_dict()
-            ]
+            yield FhirGetResponseItem(
+                dict(
+                    partition_index=partition_index,
+                    sent=0,
+                    received=0,
+                    responses=[],
+                    first=None,
+                    last=None,
+                    error_text=None,
+                    url=parameters.server_url,
+                    status_code=200,
+                    request_id=None,
+                    access_token=None,
+                    extra_context_to_return=None,
+                )
+            ).to_dict()
+            return
 
         # if batch and not has_token then send all ids at once as long as the access token is the same
         if (
@@ -197,48 +231,42 @@ class FhirReceiverProcessor:
             and parameters.batch_size > 1
             and not parameters.has_token_col
         ):
-            return FhirReceiverProcessor.process_batch(
+            async for r in FhirReceiverProcessor.process_batch_async(
                 partition_index=partition_index,
                 first_id=first_id,
                 last_id=last_id,
                 resource_id_with_token_list=resource_id_with_token_list,
                 parameters=parameters,
-            )
+            ):
+                yield r
         else:  # otherwise send one by one
-            return FhirReceiverProcessor.process_one_by_one(
+            async for r in FhirReceiverProcessor.process_one_by_one_async(
                 partition_index=partition_index,
                 first_id=first_id,
                 last_id=last_id,
                 resource_id_with_token_list=resource_id_with_token_list,
                 parameters=parameters,
-            )
+            ):
+                yield r
 
     @staticmethod
-    def process_one_by_one(
+    async def process_one_by_one_async(
         *,
         partition_index: int,
         first_id: Optional[str],
         last_id: Optional[str],
         resource_id_with_token_list: List[Dict[str, Optional[str]]],
         parameters: FhirReceiverParameters,
-    ) -> List[Dict[str, Any]]:
-        coroutines: List[Coroutine[Any, Any, List[Dict[str, Any]]]] = [
-            FhirReceiverProcessor.process_single_row_async(
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        for resource1 in resource_id_with_token_list:
+            async for r in FhirReceiverProcessor.process_single_row_async(
                 partition_index=partition_index,
                 first_id=first_id,
                 last_id=last_id,
                 parameters=parameters,
                 resource1=resource1,
-            )
-            for resource1 in resource_id_with_token_list
-        ]
-
-        async def get_functions() -> List[List[Dict[str, Any]]]:
-            # noinspection PyTypeChecker
-            return await asyncio.gather(*[asyncio.create_task(c) for c in coroutines])
-
-        result: List[List[Dict[str, Any]]] = asyncio.run(get_functions())
-        return flatten(result)
+            ):
+                yield r
 
     @staticmethod
     async def process_single_row_async(
@@ -248,7 +276,7 @@ class FhirReceiverProcessor:
         last_id: Optional[str],
         resource1: Dict[str, Optional[str]],
         parameters: FhirReceiverParameters,
-    ) -> List[Dict[str, Any]]:
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         id_ = resource1["resource_id"]
         access_token = resource1["access_token"]
         url_ = resource1.get(parameters.url_column) if parameters.url_column else None
@@ -260,45 +288,59 @@ class FhirReceiverProcessor:
         responses_from_fhir: List[str] = []
         extra_context_to_return: Optional[Dict[str, Any]] = None
         try:
-            result1: FhirGetResponse = (
-                await FhirReceiverProcessor.send_simple_fhir_request_async(
-                    id_=id_,
-                    server_url_=url_ or parameters.server_url,
-                    service_slug=service_slug,
-                    # resource_type=resource_type or parameters.resource_type,
-                    server_url=parameters.server_url,
-                    parameters=parameters,
-                )
-            )
-            resp_result: str = result1.responses.replace("\n", "")
-            try:
-                responses_from_fhir = FhirReceiverProcessor.json_str_to_list_str(
-                    resp_result
-                )
-            except JSONDecodeError as e2:
-                if parameters.error_view:
-                    result1.error = f"{(result1.error or '')}: {str(e2)}"
-                else:
-                    raise FhirParserException(
-                        url=result1.url,
-                        message="Parsing result as json failed",
-                        json_data=result1.responses,
-                        response_status_code=result1.status,
-                        request_id=result1.request_id,
-                    ) from e2
+            result1: FhirGetResponse
+            async for result1 in FhirReceiverProcessor.send_simple_fhir_request_async(
+                id_=id_,
+                server_url_=url_ or parameters.server_url,
+                service_slug=service_slug,
+                # resource_type=resource_type or parameters.resource_type,
+                server_url=parameters.server_url,
+                parameters=parameters,
+            ):
+                # resp_result: str = result1.responses.replace("\n", "")
+                try:
+                    responses_from_fhir = [
+                        json.dumps(r) for r in result1.get_resources()
+                    ]
+                except JSONDecodeError as e2:
+                    if parameters.error_view:
+                        result1.error = f"{(result1.error or '')}: {str(e2)}"
+                    else:
+                        raise FhirParserException(
+                            url=result1.url,
+                            message="Parsing result as json failed",
+                            json_data=result1.responses,
+                            response_status_code=result1.status,
+                            request_id=result1.request_id,
+                        ) from e2
 
-            error_text = result1.error
-            status_code = result1.status
-            request_url = result1.url
-            request_id = result1.request_id
-            extra_context_to_return = result1.extra_context_to_return
-            access_token = result1.access_token
+                error_text = result1.error
+                status_code = result1.status
+                request_url = result1.url
+                request_id = result1.request_id
+                extra_context_to_return = result1.extra_context_to_return
+                access_token = result1.access_token
+                yield FhirGetResponseItem(
+                    dict(
+                        partition_index=partition_index,
+                        sent=1,
+                        received=len(responses_from_fhir),
+                        responses=responses_from_fhir,
+                        first=first_id,
+                        last=last_id,
+                        error_text=error_text,
+                        url=request_url,
+                        status_code=status_code,
+                        request_id=request_id,
+                        extra_context_to_return=extra_context_to_return,
+                        access_token=access_token,
+                    )
+                ).to_dict()
         except FhirSenderException as e1:
             error_text = str(e1)
             status_code = e1.response_status_code or 0
             request_url = e1.url
-        result = [
-            FhirGetResponseItem(
+            yield FhirGetResponseItem(
                 dict(
                     partition_index=partition_index,
                     sent=1,
@@ -314,50 +356,43 @@ class FhirReceiverProcessor:
                     access_token=access_token,
                 )
             ).to_dict()
-        ]
-        return result
 
     @staticmethod
-    def process_batch(
+    async def process_batch_async(
         *,
         partition_index: int,
         first_id: Optional[str],
         last_id: Optional[str],
         resource_id_with_token_list: List[Dict[str, Optional[str]]],
         parameters: FhirReceiverParameters,
-    ) -> List[Dict[str, Any]]:
-        result1 = asyncio.run(
-            FhirReceiverProcessor.send_simple_fhir_request_async(
-                id_=[cast(str, r["resource_id"]) for r in resource_id_with_token_list],
-                server_url=parameters.server_url,
-                server_url_=parameters.server_url,
-                parameters=parameters,
-            )
-        )
-        resp_result: str = result1.responses.replace("\n", "")
-        responses_from_fhir = []
-        try:
-            responses_from_fhir = FhirReceiverProcessor.json_str_to_list_str(
-                resp_result
-            )
-        except JSONDecodeError as e1:
-            if parameters.error_view:
-                result1.error = f"{(result1.error or '')}: {str(e1)}"
-            else:
-                raise FhirParserException(
-                    url=result1.url,
-                    message="Parsing result as json failed",
-                    json_data=result1.responses,
-                    response_status_code=result1.status,
-                    request_id=result1.request_id,
-                ) from e1
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        result1: FhirGetResponse
+        async for result1 in FhirReceiverProcessor.send_simple_fhir_request_async(
+            id_=[cast(str, r["resource_id"]) for r in resource_id_with_token_list],
+            server_url=parameters.server_url,
+            server_url_=parameters.server_url,
+            parameters=parameters,
+        ):
+            responses_from_fhir = []
+            try:
+                responses_from_fhir = [json.dumps(r) for r in result1.get_resources()]
+            except JSONDecodeError as e1:
+                if parameters.error_view:
+                    result1.error = f"{(result1.error or '')}: {str(e1)}"
+                else:
+                    raise FhirParserException(
+                        url=result1.url,
+                        message="Parsing result as json failed",
+                        json_data=result1.responses,
+                        response_status_code=result1.status,
+                        request_id=result1.request_id,
+                    ) from e1
 
-        error_text = result1.error
-        status_code = result1.status
-        request_id: Optional[str] = result1.request_id
-        is_valid_response: bool = True if len(responses_from_fhir) > 0 else False
-        result = [
-            FhirGetResponseItem(
+            error_text = result1.error
+            status_code = result1.status
+            request_id: Optional[str] = result1.request_id
+            is_valid_response: bool = True if len(responses_from_fhir) > 0 else False
+            yield FhirGetResponseItem(
                 dict(
                     partition_index=partition_index,
                     sent=1,
@@ -373,8 +408,6 @@ class FhirReceiverProcessor:
                     extra_context_to_return=None,
                 )
             ).to_dict()
-        ]
-        return result
 
     @staticmethod
     async def send_simple_fhir_request_async(
@@ -384,10 +417,10 @@ class FhirReceiverProcessor:
         server_url_: Optional[str],
         service_slug: Optional[str] = None,
         parameters: FhirReceiverParameters,
-    ) -> FhirGetResponse:
+    ) -> AsyncGenerator[FhirGetResponse, None]:
         url = server_url_ or server_url
         assert url
-        return await FhirReceiverProcessor.send_fhir_request_async(
+        async for r in FhirReceiverProcessor.send_fhir_request_async(
             logger=get_logger(__name__),
             resource_id=id_,
             server_url=url,
@@ -397,7 +430,8 @@ class FhirReceiverProcessor:
                 else None
             ),
             parameters=parameters,
-        )
+        ):
+            yield r
 
     @staticmethod
     async def send_fhir_request_async(
@@ -411,7 +445,8 @@ class FhirReceiverProcessor:
         page_size: Optional[int] = None,
         last_updated_after: Optional[datetime] = None,
         last_updated_before: Optional[datetime] = None,
-    ) -> FhirGetResponse:
+        data_chunk_handler: Optional[HandleStreamingChunkFunction] = None,
+    ) -> AsyncGenerator[FhirGetResponse, None]:
         """
         Sends a fhir request to the fhir client sdk
 
@@ -426,6 +461,7 @@ class FhirReceiverProcessor:
         :param last_updated_before: last updated before date
         :param extra_context_to_return: a dict to return with every row (separate_bundle_resources is set)
                                         or with FhirGetResponse
+        :param data_chunk_handler: function to handle the data chunk
         :return:
         :rtype:
         """
@@ -440,6 +476,7 @@ class FhirReceiverProcessor:
             auth_access_token=parameters.auth_access_token,
             auth_scopes=parameters.auth_scopes,
             log_level=parameters.log_level,
+            auth_well_known_url=parameters.auth_well_known_url,
         )
         if (
             not parameters.graph_json
@@ -521,8 +558,8 @@ class FhirReceiverProcessor:
                 parameters.refresh_token_function
             )
 
-        return (
-            await fhir_client.simulate_graph_async(
+        if parameters.graph_json:
+            async for r in fhir_client.simulate_graph_streaming_async(
                 id_=(
                     cast(str, resource_id)
                     if not isinstance(resource_id, list)
@@ -531,34 +568,25 @@ class FhirReceiverProcessor:
                 graph_json=parameters.graph_json,
                 contained=False,
                 separate_bundle_resources=parameters.separate_bundle_resources,
-            )
-            if parameters.graph_json
-            else await fhir_client.get_async()
-        )
-
-    @staticmethod
-    def json_str_to_list_str(json_str: str) -> List[str]:
-        """
-        at some point helix.fhir.client.sdk changed, and now it sends json string instead of list of json strings
-        the PR: https://github.com/icanbwell/helix.fhir.client.sdk/pull/5
-        this function converts the new returning format to old one
-        """
-        full_json = json.loads(json_str) if json_str else []
-        if isinstance(full_json, list):
-            return [json.dumps(item) for item in full_json]
+            ):
+                yield r
         else:
-            return [json_str]
+            async for r in fhir_client.get_streaming_async(
+                data_chunk_handler=data_chunk_handler
+            ):
+                yield r
 
     @staticmethod
-    def get_batch_result(
+    async def get_batch_results_paging_async(
         *,
-        page_size: Optional[int],
-        limit: Optional[int],
-        server_url: Optional[str],
         last_updated_after: Optional[datetime],
         last_updated_before: Optional[datetime],
+        limit: Optional[int],
+        page_size: Optional[int],
         parameters: FhirReceiverParameters,
-    ) -> GetBatchResult:
+        server_url: Optional[str],
+    ) -> AsyncGenerator[GetBatchResult, None]:
+        assert server_url
         resources: List[str] = []
         errors: List[str] = []
         additional_parameters: Optional[List[str]] = parameters.additional_parameters
@@ -567,62 +595,25 @@ class FhirReceiverProcessor:
         # if paging is requested then iterate through the pages until the response is empty
         page_number: int = 0
         server_page_number: int = 0
-        assert server_url
-        result: FhirGetResponse
-        if parameters.use_data_streaming:
-            result = asyncio.run(
-                FhirReceiverProcessor.send_fhir_request_async(
-                    logger=get_logger(__name__),
-                    parameters=parameters,
-                    resource_id=None,
-                    server_url=server_url,
-                    last_updated_after=last_updated_after,
-                    last_updated_before=last_updated_before,
-                )
-            )
-            try:
-                resources = FhirReceiverProcessor.json_str_to_list_str(result.responses)
-            except JSONDecodeError as e:
-                if parameters.error_view:
-                    errors.append(
-                        json.dumps(
-                            {
-                                "url": result.url,
-                                "status_code": result.status,
-                                "error_text": str(e) + " : " + result.responses,
-                            },
-                            default=str,
-                        )
-                    )
-                else:
-                    raise FhirParserException(
-                        url=result.url,
-                        message="Parsing result as json failed",
-                        json_data=result.responses,
-                        response_status_code=result.status,
-                        request_id=result.request_id,
-                    ) from e
-        else:
-            while True:
-                result = asyncio.run(
-                    FhirReceiverProcessor.send_fhir_request_async(
-                        logger=get_logger(__name__),
-                        resource_id=None,
-                        server_url=server_url,
-                        page_number=server_page_number,  # since we're setting id:above we can leave this as 0
-                        page_size=page_size,
-                        last_updated_after=last_updated_after,
-                        last_updated_before=last_updated_before,
-                        parameters=parameters.clone().set_additional_parameters(
-                            additional_parameters
-                        ),
-                    )
-                )
+        has_next_page: bool = True
+        loop_number: int = 0
+        while has_next_page:
+            loop_number += 1
+            async for result in FhirReceiverProcessor.send_fhir_request_async(
+                logger=get_logger(__name__),
+                resource_id=None,
+                server_url=server_url,
+                page_number=server_page_number,  # since we're setting id:above we can leave this as 0
+                page_size=page_size,
+                last_updated_after=last_updated_after,
+                last_updated_before=last_updated_before,
+                parameters=parameters.clone().set_additional_parameters(
+                    additional_parameters
+                ),
+            ):
                 result_response: List[str] = []
                 try:
-                    result_response = FhirReceiverProcessor.json_str_to_list_str(
-                        result.responses
-                    )
+                    result_response = [json.dumps(r) for r in result.get_resources()]
                 except JSONDecodeError as e:
                     if parameters.error_view:
                         errors.append(
@@ -688,7 +679,7 @@ class FhirReceiverProcessor:
                         page_number += 1
                         if limit and limit > 0:
                             if not page_size or (page_number * page_size) >= limit:
-                                break
+                                has_next_page = False
                     else:
                         # Received an error
                         if result.status not in parameters.ignore_status_codes:
@@ -701,6 +692,87 @@ class FhirReceiverProcessor:
                                 request_id=result.request_id,
                             )
                 else:
-                    break
+                    has_next_page = False
+                yield GetBatchResult(resources=resources, errors=errors)
 
-        return GetBatchResult(resources=resources, errors=errors)
+    @staticmethod
+    async def get_batch_result_streaming_async(
+        *,
+        last_updated_after: Optional[datetime],
+        last_updated_before: Optional[datetime],
+        parameters: FhirReceiverParameters,
+        server_url: Optional[str],
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        assert server_url
+        errors: List[str] = []
+        resources: List[str] = []
+        async for result in FhirReceiverProcessor.send_fhir_request_async(
+            logger=get_logger(__name__),
+            parameters=parameters,
+            resource_id=None,
+            server_url=server_url,
+            last_updated_after=last_updated_after,
+            last_updated_before=last_updated_before,
+        ):
+            try:
+                resources = [json.dumps(r) for r in result.get_resources()]
+            except JSONDecodeError as e:
+                if parameters.error_view:
+                    errors.append(
+                        json.dumps(
+                            {
+                                "url": result.url,
+                                "status_code": result.status,
+                                "error_text": str(e) + " : " + result.responses,
+                            },
+                            default=str,
+                        )
+                    )
+                else:
+                    raise FhirParserException(
+                        url=result.url,
+                        message="Parsing result as json failed",
+                        json_data=result.responses,
+                        response_status_code=result.status,
+                        request_id=result.request_id,
+                    ) from e
+            batch_result: GetBatchResult = GetBatchResult(
+                resources=resources, errors=errors
+            )
+            yield dataclasses.asdict(batch_result)
+
+    @staticmethod
+    async def get_batch_result_streaming_dataframe_async(
+        *,
+        df: DataFrame,
+        schema: StructType,
+        last_updated_after: Optional[datetime],
+        last_updated_before: Optional[datetime],
+        parameters: FhirReceiverParameters,
+        server_url: Optional[str],
+        results_per_batch: Optional[int],
+    ) -> DataFrame:
+        """
+        Converts the results from a batch streaming request to a DataFrame iteratively using
+        batches of size `results_per_batch`
+
+        :param df: DataFrame
+        :param schema: StructType | AtomicType
+        :param last_updated_after: Optional[datetime]
+        :param last_updated_before: Optional[datetime]
+        :param parameters: FhirReceiverParameters
+        :param server_url: Optional[str]
+        :param results_per_batch: int
+        :return: DataFrame
+        """
+        return await AsyncHelper.async_generator_to_dataframe(
+            df=df,
+            async_gen=FhirReceiverProcessor.get_batch_result_streaming_async(
+                last_updated_after=last_updated_after,
+                last_updated_before=last_updated_before,
+                parameters=parameters,
+                server_url=server_url,
+            ),
+            schema=schema,
+            results_per_batch=results_per_batch,
+        )

@@ -26,3 +26,7 @@ class FhirGetResponseItem:
 
     def to_dict(self) -> Dict[str, Any]:
         return self.__dict__
+
+    @classmethod
+    def from_dict(cls, item: Dict[str, Any]) -> "FhirGetResponseItem":
+        return cls(item)

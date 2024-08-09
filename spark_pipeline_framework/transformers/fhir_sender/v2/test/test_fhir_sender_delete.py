@@ -4,6 +4,7 @@ from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urljoin
 
+import pytest
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender import FhirSender
@@ -18,7 +19,8 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 import requests
 
 
-def test_send_delete(spark_session: SparkSession) -> None:
+@pytest.mark.parametrize("run_synchronously", [True, False])
+def test_send_delete(spark_session: SparkSession, run_synchronously: bool) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("./temp")
@@ -53,6 +55,7 @@ def test_send_delete(spark_session: SparkSession) -> None:
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             auth_well_known_url=auth_well_known_url,
+            run_synchronously=run_synchronously,
         ).transform(df)
 
     # Act

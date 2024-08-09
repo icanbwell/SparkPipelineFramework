@@ -22,6 +22,7 @@ class FhirReceiverParameters:
     auth_client_secret: Optional[str]
     auth_login_token: Optional[str]
     auth_scopes: Optional[List[str]]
+    auth_well_known_url: Optional[str]
     include_only_properties: Optional[List[str]]
     separate_bundle_resources: bool
     expand_fhir_bundle: bool
@@ -65,6 +66,7 @@ class FhirReceiverParameters:
             auth_client_secret=self.auth_client_secret,
             auth_login_token=self.auth_login_token,
             auth_scopes=self.auth_scopes,
+            auth_well_known_url=self.auth_well_known_url,
             include_only_properties=self.include_only_properties,
             separate_bundle_resources=self.separate_bundle_resources,
             expand_fhir_bundle=self.expand_fhir_bundle,

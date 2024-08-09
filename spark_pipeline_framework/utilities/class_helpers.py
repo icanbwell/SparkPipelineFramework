@@ -57,3 +57,12 @@ class ClassHelpers:
         if strip and result.startswith(strip):
             result = result[len(strip) :]
         return result
+
+    @staticmethod
+    def get_calling_function_name() -> str:
+        import inspect
+
+        stack = inspect.stack()
+        # stack[0] is this function, stack[1] is its caller, stack[2] is the caller of its caller
+        caller_frame = stack[2]
+        return caller_frame.function
