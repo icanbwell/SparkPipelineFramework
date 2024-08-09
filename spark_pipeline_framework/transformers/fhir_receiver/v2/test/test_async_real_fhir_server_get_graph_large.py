@@ -22,9 +22,8 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-@pytest.mark.skip(reason="This test is too slow")
-@pytest.mark.parametrize("run_synchronously", [True])
-async def test_async_real_fhir_server_get_graph_large(
+@pytest.mark.parametrize("run_synchronously", [True, False])
+async def test_async_real_fhir_server_get_graph_by_id_large(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:
     print()
@@ -162,12 +161,19 @@ async def test_async_real_fhir_server_get_graph_large(
     # act
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
+    id_df = spark_session.createDataFrame(
+        [(s,) for s in id_dict[resource_type]], ["id"]
+    )
+
+    id_df.createOrReplaceTempView("id_view")
+
     parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
 
     with ProgressLogger() as progress_logger:
         await FhirReceiver(
             server_url=fhir_server_url,
             resource=resource_type,
+            id_view="id_view",
             action="$graph",
             additional_parameters=["contained=true"],
             separate_bundle_resources=True,

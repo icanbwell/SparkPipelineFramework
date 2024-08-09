@@ -23,8 +23,8 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-@pytest.mark.parametrize("run_synchronously", [True])
-@pytest.mark.parametrize("use_data_streaming", [True])
+@pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("use_data_streaming", [True, False])
 async def test_async_real_fhir_server_get_patients_large(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
