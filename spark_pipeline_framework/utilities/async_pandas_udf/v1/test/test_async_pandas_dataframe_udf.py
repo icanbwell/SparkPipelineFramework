@@ -71,6 +71,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
                 f"Print {message} | Process ID: {process_id} | Thread ID: {thread_id}"
                 f" | Spark Driver: {context is None}"
                 f" | Spark Partition ID: {context.partitionId() if context is not None else None}"
+                f" | Spark Stage Id: {context.stageId() if context is not None else None}"
                 f" | Spark Task Attempt ID: {context.taskAttemptId() if context is not None else None}"
                 f" | Spark CPUs: {context.cpus() if context is not None else None}"
             )
