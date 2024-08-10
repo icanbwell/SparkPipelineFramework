@@ -61,7 +61,9 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
             context: TaskContext | None = TaskContext.get()
 
             logger = get_logger(__name__)
-            message: str = "In test_async"
+            ids = [input_value["id"] for input_value in input_values]
+            # message: str = f"In test_async"
+            message: str = f"In test_async with ids: {ids}"
             process_id = os.getpid()
             thread_id = threading.current_thread().name
             logger.debug(
