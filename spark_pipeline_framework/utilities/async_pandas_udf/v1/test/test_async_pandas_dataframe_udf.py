@@ -68,9 +68,9 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
             # message: str = f"In test_async"
             message: str = f"In test_async with ids: {ids}"
             process_id = os.getpid()
-            thread_id = threading.current_thread().name
+            thread_name = threading.current_thread().name
             logger.debug(
-                f"{message} | Process ID: {process_id} | Thread ID: {thread_id}"
+                f"{message} | Process ID: {process_id} | Thread ID: {thread_name}"
             )
             resources = context.resources() if context is not None else {}
             resource_texts = [
@@ -93,8 +93,8 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
             print(
                 f"{formatted_time}: "
                 f"{message}"
-                f" | Process ID: {process_id}"
-                f" | Thread ID: {thread_id}"
+                f" | Process: {process_id}"
+                f" | Thread: {thread_name} ({threading.get_ident()})"
                 f" | Spark Driver: {context is None}"
                 f" | Spark Partition ID: {context.partitionId() if context is not None else None}"
                 f" | Spark Stage Id: {context.stageId() if context is not None else None}"
