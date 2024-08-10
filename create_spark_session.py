@@ -96,9 +96,10 @@ def create_spark_session(request: Any) -> SparkSession:
         .getOrCreate()
     )
 
-    configurations = session.sparkContext.getConf().getAll()
-    for item in configurations:
-        print(item)
+    if os.environ.get("LOGLEVEL") == "DEBUG":
+        configurations = session.sparkContext.getConf().getAll()
+        for item in configurations:
+            print(item)
 
     # Verify that Arrow is enabled
     # arrow_enabled = session.conf.get("spark.sql.execution.arrow.pyspark.enabled")
