@@ -2,7 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Iterator, AsyncIterator, Any, Dict, List, cast, Callable
+from typing import (
+    Iterator,
+    AsyncIterator,
+    Any,
+    Dict,
+    List,
+    cast,
+    Callable,
+    TypeVar,
+    Generic,
+    Optional,
+)
 
 import pandas as pd
 from pyspark.sql import Column
@@ -14,15 +25,24 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
 )
 
 
-class AsyncPandasColumnUDF:
-    def __init__(self, async_func: HandlePandasBatchFunction) -> None:
+TParameters = TypeVar("TParameters")
+
+
+class AsyncPandasColumnUDF(Generic[TParameters]):
+    def __init__(
+        self,
+        *,
+        async_func: HandlePandasBatchFunction[TParameters],
+        parameters: Optional[TParameters],
+    ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.
         This class is used to read one column and generate another column asynchronously.
 
         :param async_func: an async function that takes a list of dictionaries as input and returns a list of dictionaries
         """
-        self.async_func: HandlePandasBatchFunction = async_func
+        self.async_func: HandlePandasBatchFunction[TParameters] = async_func
+        self.parameters: Optional[TParameters] = parameters
 
     # noinspection PyMethodMayBeStatic
     async def to_async_iter(
@@ -50,7 +70,7 @@ class AsyncPandasColumnUDF:
                 yield pd.DataFrame([])
             else:
                 output_values: List[Dict[str, Any]] = []
-                async for output_value in self.async_func(input_values):  # type: ignore[attr-defined]
+                async for output_value in self.async_func(input_values=input_values, parameters=self.parameters):  # type: ignore[attr-defined]
                     output_values.append(output_value)
                 yield pd.DataFrame(output_values)
 

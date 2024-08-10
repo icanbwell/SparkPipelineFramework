@@ -22,14 +22,15 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
     HandlePandasBatchWithParametersFunction,
 )
 
-T = TypeVar("T")
+TParameters = TypeVar("TParameters")
 
 
-class AsyncPandasDataFrameUDF(Generic[T]):
+class AsyncPandasDataFrameUDF(Generic[TParameters]):
     def __init__(
         self,
-        async_func: HandlePandasBatchWithParametersFunction[T],
-        parameters: Optional[T],
+        *,
+        async_func: HandlePandasBatchWithParametersFunction[TParameters],
+        parameters: Optional[TParameters],
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.
@@ -38,8 +39,10 @@ class AsyncPandasDataFrameUDF(Generic[T]):
         :param async_func: an async function that takes a list of dictionaries as input and
                             returns a list of dictionaries
         """
-        self.async_func: HandlePandasBatchWithParametersFunction[T] = async_func
-        self.parameters: Optional[T] = parameters
+        self.async_func: HandlePandasBatchWithParametersFunction[TParameters] = (
+            async_func
+        )
+        self.parameters: Optional[TParameters] = parameters
 
     # noinspection PyMethodMayBeStatic
     async def to_async_iter(

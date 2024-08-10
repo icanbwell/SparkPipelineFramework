@@ -158,8 +158,15 @@ class AddressStandardization(FrameworkTransformer):
             )
             incoming_row_count: int = address_df.count()
 
+            class AddressStandardizationParameters:
+                # add parameters to pass to async function below here
+                pass
+
+            # noinspection PyUnusedLocal
             async def standardize_list(
+                *,
                 input_values: List[Dict[str, Any]],
+                parameters: Optional[AddressStandardizationParameters],
             ) -> AsyncGenerator[Dict[str, Any], None]:
                 """
                 Standardize a list of raw addresses.  raw address is a dictionary with the following keys
@@ -168,6 +175,7 @@ class AddressStandardization(FrameworkTransformer):
                 address1, address2, city, state, zip, latitude, longitude
 
                 :param input_values:
+                :param parameters:
                 :return:
                 """
                 assert all(
@@ -230,7 +238,11 @@ class AddressStandardization(FrameworkTransformer):
                 apply_process_batch_udf1: Callable[
                     [Column], Column
                 ] = AsyncPandasColumnUDF(
-                    async_func=cast(HandlePandasBatchFunction, standardize_list)
+                    async_func=cast(
+                        HandlePandasBatchFunction[AddressStandardizationParameters],
+                        standardize_list,
+                    ),
+                    parameters=AddressStandardizationParameters(),
                 ).get_pandas_udf(
                     return_type=self.get_standardization_df_schema(
                         address_column_mapping=address_column_mapping,

@@ -94,7 +94,9 @@ class FhirReceiverProcessor:
 
     @staticmethod
     async def process_partition(
-        input_values: List[Dict[str, Any]], parameters: Optional[FhirReceiverParameters]
+        *,
+        input_values: List[Dict[str, Any]],
+        parameters: Optional[FhirReceiverParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert parameters
         # count: int = 0

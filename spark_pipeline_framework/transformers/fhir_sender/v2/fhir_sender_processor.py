@@ -43,7 +43,9 @@ from spark_pipeline_framework.utilities.json_helpers import convert_dict_to_fhir
 class FhirSenderProcessor:
     @staticmethod
     async def process_partition(
-        input_values: List[Dict[str, Any]], parameters: Optional[FhirSenderParameters]
+        *,
+        input_values: List[Dict[str, Any]],
+        parameters: Optional[FhirSenderParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert parameters
         count: int = 0

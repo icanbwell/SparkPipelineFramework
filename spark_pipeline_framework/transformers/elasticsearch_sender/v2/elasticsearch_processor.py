@@ -34,6 +34,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
 class ElasticSearchProcessor:
     @staticmethod
     async def process_partition(
+        *,
         input_values: List[Dict[str, Any]],
         parameters: Optional[ElasticSearchSenderParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
