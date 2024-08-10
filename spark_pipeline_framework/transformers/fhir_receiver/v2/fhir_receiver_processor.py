@@ -308,17 +308,17 @@ class FhirReceiverProcessor:
         # resource_type = resource1.get("resourceType")
         request_id: Optional[str] = None
         extra_context_to_return: Optional[Dict[str, Any]] = None
-        responses_from_fhir: List[str] = []
+        responses_for_logging_only: List[str] = []
         try:
             response: FhirGetResponse
             async for response in FhirReceiverProcessor.send_simple_fhir_request_async(
                 id_=id_,
                 server_url_=url_ or parameters.server_url,
                 service_slug=service_slug,
-                # resource_type=resource_type or parameters.resource_type,
                 server_url=parameters.server_url,
                 parameters=parameters,
             ):
+                resources: List[str] = []
                 errors: List[GetBatchError] = []
                 try:
                     batch_result: GetBatchResult = (
@@ -326,7 +326,8 @@ class FhirReceiverProcessor:
                             response=response
                         )
                     )
-                    responses_from_fhir += batch_result.resources
+                    responses_for_logging_only += batch_result.resources
+                    resources = batch_result.resources
                     errors = batch_result.errors
                 except JSONDecodeError as e2:
                     if parameters.error_view:
@@ -352,8 +353,8 @@ class FhirReceiverProcessor:
                     dict(
                         partition_index=partition_index,
                         sent=1,
-                        received=len(responses_from_fhir),
-                        responses=responses_from_fhir,
+                        received=len(resources),
+                        responses=resources,
                         first=first_id,
                         last=last_id,
                         error_text=error_text,
@@ -372,8 +373,8 @@ class FhirReceiverProcessor:
                 dict(
                     partition_index=partition_index,
                     sent=1,
-                    received=len(responses_from_fhir),
-                    responses=responses_from_fhir,
+                    received=len(responses_for_logging_only),
+                    responses=responses_for_logging_only,
                     first=first_id,
                     last=last_id,
                     error_text=error_text,
@@ -763,25 +764,23 @@ class FhirReceiverProcessor:
             last_updated_after=last_updated_after,
             last_updated_before=last_updated_before,
         ):
-            errors: List[GetBatchError] = []
-            resources: List[str] = []
             try:
                 batch_result1: GetBatchResult = (
                     FhirReceiverProcessor.read_resources_and_errors_from_response(
                         response=result
                     )
                 )
-                resources = resources + batch_result1.resources
-                errors = errors + batch_result1.errors
+                yield dataclasses.asdict(batch_result1)
             except JSONDecodeError as e:
                 if parameters.error_view:
-                    errors.append(
-                        GetBatchError(
-                            url=result.url,
-                            status_code=result.status,
-                            error_text=str(e) + " : " + result.responses,
-                            request_id=result.request_id,
-                        )
+                    error = GetBatchError(
+                        url=result.url,
+                        status_code=result.status,
+                        error_text=str(e) + " : " + result.responses,
+                        request_id=result.request_id,
+                    )
+                    yield dataclasses.asdict(
+                        GetBatchResult(resources=[], errors=[error])
                     )
                 else:
                     raise FhirParserException(
@@ -791,10 +790,6 @@ class FhirReceiverProcessor:
                         response_status_code=result.status,
                         request_id=result.request_id,
                     ) from e
-            batch_result: GetBatchResult = GetBatchResult(
-                resources=resources, errors=errors
-            )
-            yield dataclasses.asdict(batch_result)
 
     @staticmethod
     async def get_batch_result_streaming_dataframe_async(
