@@ -1,6 +1,8 @@
+import asyncio
 import dataclasses
 import os
 import threading
+from datetime import datetime
 from typing import (
     List,
     Dict,
@@ -83,8 +85,16 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
                     if value is not None
                 ]
             )
+            # Get the current time
+            current_time = datetime.now()
+
+            # Format the time to include hours, minutes, seconds, and milliseconds
+            formatted_time = current_time.strftime("%H:%M:%S.%f")[:-3]
             print(
-                f"Print {message} | Process ID: {process_id} | Thread ID: {thread_id}"
+                f"{formatted_time}: "
+                f"{message}"
+                f" | Process ID: {process_id}"
+                f" | Thread ID: {thread_id}"
                 f" | Spark Driver: {context is None}"
                 f" | Spark Partition ID: {context.partitionId() if context is not None else None}"
                 f" | Spark Stage Id: {context.stageId() if context is not None else None}"
@@ -95,6 +105,8 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
 
         input_value: Dict[str, Any]
         for input_value in input_values:
+            # simulate a delay
+            await asyncio.sleep(5)
             yield {
                 "id": input_value["id"],
                 "name": input_value["name"] + "_processed",
