@@ -58,6 +58,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
     ) -> AsyncGenerator[Dict[str, Any], None]:
         if parameters is not None and parameters.log_level == "DEBUG":
             # Get the TaskContext
+            # https://spark.apache.org/docs/3.3.0/api/python/reference/api/pyspark.TaskContext.html
             context: TaskContext | None = TaskContext.get()
 
             logger = get_logger(__name__)
@@ -69,6 +70,19 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
             logger.debug(
                 f"{message} | Process ID: {process_id} | Thread ID: {thread_id}"
             )
+            resources = context.resources() if context is not None else {}
+            resource_texts = [
+                f"{key}: {value}"
+                for key, value in resources.items()
+                if value is not None
+            ]
+            resources_text = ", ".join(
+                [
+                    f"{key}: {value}"
+                    for key, value in resources.items()
+                    if value is not None
+                ]
+            )
             print(
                 f"Print {message} | Process ID: {process_id} | Thread ID: {thread_id}"
                 f" | Spark Driver: {context is None}"
@@ -76,6 +90,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
                 f" | Spark Stage Id: {context.stageId() if context is not None else None}"
                 f" | Spark Task Attempt ID: {context.taskAttemptId() if context is not None else None}"
                 f" | Spark CPUs: {context.cpus() if context is not None else None}"
+                f" | Spark Resources: {len(resource_texts)}: {resources_text}"
             )
 
         input_value: Dict[str, Any]
