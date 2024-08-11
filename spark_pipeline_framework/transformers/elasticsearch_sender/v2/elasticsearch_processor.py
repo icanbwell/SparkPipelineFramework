@@ -27,7 +27,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_datafra
     AsyncPandasDataFrameUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasBatchWithParametersFunction,
+    HandlePandasBatchFunction,
 )
 
 
@@ -103,7 +103,7 @@ class ElasticSearchProcessor:
 
         return AsyncPandasDataFrameUDF(
             async_func=cast(
-                HandlePandasBatchWithParametersFunction[ElasticSearchSenderParameters],
+                HandlePandasBatchFunction[ElasticSearchSenderParameters],
                 ElasticSearchProcessor.process_partition,
             ),
             parameters=parameters,

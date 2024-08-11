@@ -20,7 +20,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_datafra
     AsyncPandasDataFrameUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasBatchWithParametersFunction,
+    HandlePandasBatchFunction,
 )
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
@@ -77,7 +77,11 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
             # Format the time to include hours, minutes, seconds, and milliseconds
             formatted_time = current_time.strftime("%H:%M:%S.%f")[:-3]
             print(
-                f"{formatted_time}: " f"{message}" f" | {spark_partition_information}"
+                f"{formatted_time}: "
+                f"{message}"
+                f" | Partition: {partition_index}"
+                f" | Chunk: {chunk_index}"
+                f" | {spark_partition_information}"
             )
 
         input_value: Dict[str, Any]
@@ -92,9 +96,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
     result_df: DataFrame = df.mapInPandas(
         AsyncPandasDataFrameUDF(
             parameters=MyParameters(log_level="DEBUG"),
-            async_func=cast(
-                HandlePandasBatchWithParametersFunction[MyParameters], test_async
-            ),
+            async_func=cast(HandlePandasBatchFunction[MyParameters], test_async),
         ).get_pandas_udf(),
         schema=df.schema,
     )

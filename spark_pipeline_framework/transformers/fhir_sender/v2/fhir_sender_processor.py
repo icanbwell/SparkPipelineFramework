@@ -24,7 +24,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_datafra
     AsyncPandasDataFrameUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasBatchWithParametersFunction,
+    HandlePandasBatchFunction,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
@@ -118,7 +118,7 @@ class FhirSenderProcessor:
 
         return AsyncPandasDataFrameUDF(
             async_func=cast(
-                HandlePandasBatchWithParametersFunction[FhirSenderParameters],
+                HandlePandasBatchFunction[FhirSenderParameters],
                 FhirSenderProcessor.process_partition,
             ),
             parameters=parameters,

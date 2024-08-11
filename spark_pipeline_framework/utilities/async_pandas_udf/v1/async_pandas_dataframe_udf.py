@@ -21,7 +21,7 @@ import pandas as pd
 from pyspark import TaskContext
 
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasBatchWithParametersFunction,
+    HandlePandasBatchFunction,
 )
 
 TParameters = TypeVar("TParameters")
@@ -31,7 +31,7 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
     def __init__(
         self,
         *,
-        async_func: HandlePandasBatchWithParametersFunction[TParameters],
+        async_func: HandlePandasBatchFunction[TParameters],
         parameters: Optional[TParameters],
     ) -> None:
         """
@@ -41,9 +41,7 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         :param async_func: an async function that takes a list of dictionaries as input and
                             returns a list of dictionaries
         """
-        self.async_func: HandlePandasBatchWithParametersFunction[TParameters] = (
-            async_func
-        )
+        self.async_func: HandlePandasBatchFunction[TParameters] = async_func
         self.parameters: Optional[TParameters] = parameters
 
     # noinspection PyMethodMayBeStatic
