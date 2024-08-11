@@ -12,6 +12,7 @@ class HandlePandasBatchFunction(Protocol[T]):
         *,
         partition_index: int,
         chunk_index: int,
+        chunk_input_range: range,
         input_values: List[Dict[str, Any]],
         parameters: Optional[T],
     ) -> AsyncGenerator[Dict[str, Any], None]:
@@ -20,6 +21,7 @@ class HandlePandasBatchFunction(Protocol[T]):
 
         :param partition_index: The index of the partition.
         :param chunk_index: The index of the chunk within the partition.
+        :param chunk_input_range: The range of indices of the input values within the chunk.
         :param input_values: input values as a list of dictionaries
         :param parameters: additional parameters passed to the Pandas UDF
         :return: output values as a list of dictionaries

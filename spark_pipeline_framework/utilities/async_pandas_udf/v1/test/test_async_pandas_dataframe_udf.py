@@ -59,6 +59,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
         *,
         partition_index: int,
         chunk_index: int,
+        chunk_input_range: range,
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
@@ -81,6 +82,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
                 f"{message}"
                 f" | Partition: {partition_index}"
                 f" | Chunk: {chunk_index}"
+                f" | range: {chunk_input_range}"
                 f" | Ids ({len(ids)}): {ids}"
                 f" | {spark_partition_information}"
             )
@@ -98,6 +100,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
         AsyncPandasDataFrameUDF(
             parameters=MyParameters(log_level="DEBUG"),
             async_func=cast(HandlePandasBatchFunction[MyParameters], test_async),
+            batch_size=1,
         ).get_pandas_udf(),
         schema=df.schema,
     )

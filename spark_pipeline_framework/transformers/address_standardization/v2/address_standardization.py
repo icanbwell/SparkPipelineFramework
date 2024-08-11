@@ -63,6 +63,7 @@ class AddressStandardization(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
+        batch_size: int = 100,
     ):
         """
         Standardize and geocode addresses in a view using the specified standardizing vendor. Address columns in the view
@@ -119,10 +120,14 @@ class AddressStandardization(FrameworkTransformer):
         )
         self._setDefault(func_get_response_path=func_get_response_path)
 
+        self.batch_size: Param[int] = Param(self, "batch_size", "")
+        self._setDefault(batch_size=batch_size)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        batch_size: int = self.getOrDefault(self.batch_size)
         try:
             view: str = self.getView()
             # where to write the results
@@ -243,6 +248,7 @@ class AddressStandardization(FrameworkTransformer):
                         standardize_list,
                     ),
                     parameters=AddressStandardizationParameters(),
+                    batch_size=batch_size,
                 ).get_pandas_udf(
                     return_type=self.get_standardization_df_schema(
                         address_column_mapping=address_column_mapping,

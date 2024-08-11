@@ -33,6 +33,7 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         *,
         async_func: HandlePandasBatchFunction[TParameters],
         parameters: Optional[TParameters],
+        batch_size: int = 100,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.
@@ -43,14 +44,40 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         """
         self.async_func: HandlePandasBatchFunction[TParameters] = async_func
         self.parameters: Optional[TParameters] = parameters
+        self.batch_size: int = batch_size
 
-    # noinspection PyMethodMayBeStatic
+    @staticmethod
     async def to_async_iter(
-        self, sync_iter: Iterator[pd.DataFrame]
+        sync_iter: Iterator[pd.DataFrame],
     ) -> AsyncIterator[pd.DataFrame]:
         item: pd.DataFrame
         for item in sync_iter:
             yield item
+
+    @staticmethod
+    async def get_batches_of_size(
+        *, batch_size: int, batch_iter: AsyncIterator[pd.DataFrame]
+    ) -> AsyncGenerator[List[Dict[str, Any]], None]:
+        """
+        Given an async iterator of dataframes, this function will yield batches of the content of the dataframes.
+
+        :param batch_size: the size of the batches
+        :param batch_iter: the async iterator of dataframes
+        :return: an async generator of batches of dictionaries
+        """
+        batch: pd.DataFrame
+        batch_input_values: List[Dict[str, Any]] = []
+        async for batch in batch_iter:
+            # Convert JSON strings to dictionaries
+            # convert the dataframe to a list of dictionaries
+            pdf_json: str = batch.to_json(orient="records")
+            input_values: List[Dict[str, Any]] = json.loads(pdf_json)
+            batch_input_values.extend(input_values)
+            if len(batch_input_values) >= batch_size:
+                yield batch_input_values
+                batch_input_values = []
+        if len(batch_input_values) > 0:
+            yield batch_input_values
 
     async def async_apply_process_batch_udf(
         self, batch_iter: Iterator[pd.DataFrame]
@@ -66,23 +93,28 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         partition_index: int = task_context.partitionId() if task_context else 0
         chunk_index: int = 0
 
-        batch: pd.DataFrame
-        async for batch in self.to_async_iter(batch_iter):
+        chunk_input_values_index: int = 0
+        chunk_input_values: List[Dict[str, Any]]
+        async for chunk_input_values in self.get_batches_of_size(
+            batch_size=self.batch_size, batch_iter=self.to_async_iter(batch_iter)
+        ):
             chunk_index += 1
-            # Convert JSON strings to dictionaries
-            # convert the dataframe to a list of dictionaries
-            pdf_json: str = batch.to_json(orient="records")
-            input_values: List[Dict[str, Any]] = json.loads(pdf_json)
-            if len(input_values) == 0:
+            begin_chunk_input_values_index: int = chunk_input_values_index
+            chunk_input_values_index += len(chunk_input_values)
+            if len(chunk_input_values) == 0:
                 yield pd.DataFrame([])
             else:
                 output_values: List[Dict[str, Any]] = []
+                chunk_input_range: range = range(
+                    begin_chunk_input_values_index, chunk_input_values_index
+                )
                 async for output_value in cast(
                     AsyncGenerator[Dict[str, Any], None],
                     self.async_func(
                         partition_index=partition_index,
                         chunk_index=chunk_index,
-                        input_values=input_values,
+                        chunk_input_range=chunk_input_range,
+                        input_values=chunk_input_values,
                         parameters=self.parameters,
                     ),
                 ):

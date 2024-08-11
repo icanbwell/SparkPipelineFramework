@@ -37,6 +37,7 @@ class ElasticSearchProcessor:
         *,
         partition_index: int,
         chunk_index: int,
+        chunk_input_range: range,
         input_values: List[Dict[str, Any]],
         parameters: Optional[ElasticSearchSenderParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
@@ -45,6 +46,7 @@ class ElasticSearchProcessor:
 
         :param partition_index: partition index
         :param chunk_index: chunk index
+        :param chunk_input_range: chunk input range
         :param input_values: input values
         :param parameters: parameters
         :return: output values
@@ -91,13 +93,14 @@ class ElasticSearchProcessor:
 
     @staticmethod
     def get_process_batch_function(
-        *, parameters: ElasticSearchSenderParameters
+        *, parameters: ElasticSearchSenderParameters, batch_size: int
     ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """
         Returns a function that includes the passed parameters so that function
         can be used in a pandas_udf
 
         :param parameters: FhirSenderParameters
+        :param batch_size: batch size
         :return: pandas_udf
         """
 
@@ -107,6 +110,7 @@ class ElasticSearchProcessor:
                 ElasticSearchProcessor.process_partition,
             ),
             parameters=parameters,
+            batch_size=batch_size,
         ).get_pandas_udf()
 
     @staticmethod
