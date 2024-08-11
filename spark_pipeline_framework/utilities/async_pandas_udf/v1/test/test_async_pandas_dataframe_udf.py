@@ -56,8 +56,21 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
         log_level: str = "INFO"
 
     async def test_async(
-        *, input_values: List[Dict[str, Any]], parameters: Optional[MyParameters]
+        *,
+        partition_index: int,
+        chunk_index: int,
+        input_values: List[Dict[str, Any]],
+        parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Process a partition of data asynchronously
+
+        :param partition_index: partition index
+        :param chunk_index: chunk index
+        :param input_values: input values
+        :param parameters: parameters
+        :return: output values
+        """
         if parameters is not None and parameters.log_level == "DEBUG":
             # Get the TaskContext
             # https://spark.apache.org/docs/3.3.0/api/python/reference/api/pyspark.TaskContext.html

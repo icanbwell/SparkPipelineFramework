@@ -74,7 +74,11 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
         log_level: str = "INFO"
 
     async def test_async(
-        *, input_values: List[Dict[str, Any]], parameters: Optional[MyParameters]
+        *,
+        partition_index: int,
+        chunk_index: int,
+        input_values: List[Dict[str, Any]],
+        parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         if parameters is not None and parameters.log_level == "DEBUG":
             # Get the TaskContext

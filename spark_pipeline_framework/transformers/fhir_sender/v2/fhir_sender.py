@@ -534,6 +534,7 @@ class FhirSender(FrameworkTransformer):
                     ] = await AsyncHelper.collect_items(
                         FhirSenderProcessor.send_partition_to_server_async(
                             partition_index=0,
+                            chunk_index=0,
                             rows=rows_to_send,
                             parameters=sender_parameters,
                         )

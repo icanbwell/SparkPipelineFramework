@@ -95,9 +95,20 @@ class FhirReceiverProcessor:
     @staticmethod
     async def process_partition(
         *,
+        partition_index: int,
+        chunk_index: int,
         input_values: List[Dict[str, Any]],
         parameters: Optional[FhirReceiverParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Process a partition of data asynchronously
+
+        :param partition_index: partition index
+        :param chunk_index: chunk index
+        :param input_values: input values
+        :param parameters: parameters
+        :return: output values
+        """
         assert parameters
         # count: int = 0
         try:

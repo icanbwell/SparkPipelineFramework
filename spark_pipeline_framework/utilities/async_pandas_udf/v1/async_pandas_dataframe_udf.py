@@ -14,9 +14,11 @@ from typing import (
     Generic,
     Iterable,
     cast,
+    AsyncGenerator,
 )
 
 import pandas as pd
+from pyspark import TaskContext
 
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchWithParametersFunction,
@@ -62,8 +64,13 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         :param batch_iter: iterator of batches of input data
         :return: async iterator of batches of output data
         """
+        task_context: Optional[TaskContext] = TaskContext.get()
+        partition_index: int = task_context.partitionId() if task_context else 0
+        chunk_index: int = -1
+
         batch: pd.DataFrame
         async for batch in self.to_async_iter(batch_iter):
+            chunk_index += 1
             # Convert JSON strings to dictionaries
             # convert the dataframe to a list of dictionaries
             pdf_json: str = batch.to_json(orient="records")
@@ -72,9 +79,14 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
                 yield pd.DataFrame([])
             else:
                 output_values: List[Dict[str, Any]] = []
-                # noinspection PyTypeChecker
-                async for output_value in self.async_func(  # type:ignore[attr-defined]
-                    input_values=input_values, parameters=self.parameters
+                async for output_value in cast(
+                    AsyncGenerator[Dict[str, Any], None],
+                    self.async_func(
+                        partition_index=partition_index,
+                        chunk_index=0,
+                        input_values=input_values,
+                        parameters=self.parameters,
+                    ),
                 ):
                     output_values.append(output_value)
                 yield pd.DataFrame(output_values)
