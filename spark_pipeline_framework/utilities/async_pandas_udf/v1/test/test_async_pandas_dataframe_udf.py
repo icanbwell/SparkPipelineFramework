@@ -82,7 +82,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
                 f"{message}"
                 f" | Partition: {partition_index}"
                 f" | Chunk: {chunk_index}"
-                f" | range: {chunk_input_range}"
+                f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
                 f" | Ids ({len(ids)}): {ids}"
                 f" | {spark_partition_information}"
             )

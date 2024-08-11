@@ -14,10 +14,11 @@ from typing import (
 )
 
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StructType, StructField, StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
-    AsyncPandasDataFrameUDF,
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_column_udf import (
+    AsyncPandasColumnUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchFunction,
@@ -27,30 +28,12 @@ from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_par
 )
 
 
-def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
+def test_async_pandas_column_udf(spark_session: SparkSession) -> None:
     print()
     df: DataFrame = spark_session.createDataFrame(
         [
             ("00100000000", "Qureshi"),
             ("00200000000", "Vidal"),
-            ("00300000000", "Smith"),
-            ("00400000000", "Johnson"),
-            ("00500000000", "Williams"),
-            ("00600000000", "Brown"),
-            ("00700000000", "Jones"),
-            ("00800000000", "Garcia"),
-            ("00900000000", "Miller"),
-            ("01000000000", "Davis"),
-            ("01100000000", "Rodriguez"),
-            ("01200000000", "Martinez"),
-            ("01300000000", "Hernandez"),
-            ("01400000000", "Lopez"),
-            ("01500000000", "Gonzalez"),
-            ("01600000000", "Wilson"),
-            ("01700000000", "Anderson"),
-            ("01800000000", "Thomas"),
-            ("01900000000", "Taylor"),
-            ("02000000000", "Moore"),
         ],
         ["id", "name"],
     )
@@ -114,16 +97,23 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
                 "name": input_value["name"] + "_processed",
             }
 
-    result_df: DataFrame = df.mapInPandas(
-        AsyncPandasDataFrameUDF(
-            parameters=MyParameters(log_level="DEBUG"),
-            async_func=cast(HandlePandasBatchFunction[MyParameters], test_async),
+    result_df: DataFrame = df.withColumn(
+        colName="processed_name",
+        col=AsyncPandasColumnUDF(
+            async_func=cast(
+                HandlePandasBatchFunction[MyParameters],
+                test_async,
+            ),
+            parameters=MyParameters(),
             batch_size=2,
-        ).get_pandas_udf(),
-        schema=df.schema,
+        ).get_pandas_udf(
+            return_type=StructType([StructField("name", StringType())]),
+        )(
+            df["name"]
+        ),
     )
 
     print("result_df")
     result_df.show()
 
-    assert result_df.count() == 20
+    assert result_df.count() == 2

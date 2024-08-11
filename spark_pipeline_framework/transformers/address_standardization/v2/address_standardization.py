@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Callable, AsyncGenerator, cast
 
 from pyspark.ml.param import Param
-from pyspark.sql import Column
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import (
     to_json,
@@ -240,25 +239,24 @@ class AddressStandardization(FrameworkTransformer):
                 #         geolocation_column_prefix=geolocation_column_prefix,
                 #     ),
                 # )
-                apply_process_batch_udf1: Callable[
-                    [Column], Column
-                ] = AsyncPandasColumnUDF(
-                    async_func=cast(
-                        HandlePandasBatchFunction[AddressStandardizationParameters],
-                        standardize_list,
-                    ),
-                    parameters=AddressStandardizationParameters(),
-                    batch_size=batch_size,
-                ).get_pandas_udf(
-                    return_type=self.get_standardization_df_schema(
-                        address_column_mapping=address_column_mapping,
-                        geolocation_column_prefix=geolocation_column_prefix,
-                    )
-                )
                 # add a new column that will hold the result of standardization as a struct
                 combined_df = address_df.withColumn(
-                    "standardized_address",
-                    apply_process_batch_udf1(address_df["raw_address"]),
+                    colName="standardized_address",
+                    col=AsyncPandasColumnUDF(
+                        async_func=cast(
+                            HandlePandasBatchFunction[AddressStandardizationParameters],
+                            standardize_list,
+                        ),
+                        parameters=AddressStandardizationParameters(),
+                        batch_size=batch_size,
+                    ).get_pandas_udf(
+                        return_type=self.get_standardization_df_schema(
+                            address_column_mapping=address_column_mapping,
+                            geolocation_column_prefix=geolocation_column_prefix,
+                        )
+                    )(
+                        address_df["raw_address"]
+                    ),
                 )
                 # extract the latitude and longitude from the struct and add them as separate columns
                 combined_df = combined_df.select(
