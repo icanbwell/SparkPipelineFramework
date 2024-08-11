@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import json
 from typing import (
+    Any,
+    Dict,
     List,
     cast,
     Callable,
     TypeVar,
     Iterator,
     Optional,
-    Dict,
-    Any,
 )
 
 import pandas as pd
@@ -20,7 +21,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_ud
     AsyncBasePandasUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasScalarToStructBatchFunction,
+    HandlePandasStructToScalarBatchFunction,
 )
 
 TParameters = TypeVar("TParameters")
@@ -28,13 +29,13 @@ TParameters = TypeVar("TParameters")
 MyColumnDataType = int | float | str | bool
 
 
-class AsyncPandasScalarColumnToStructColumnUDF(
+class AsyncPandasStructColumnToScalarColumnUDF(
     AsyncBasePandasUDF[
         TParameters,
         pd.Series,  # type:ignore[type-arg]
-        pd.DataFrame,
-        MyColumnDataType,
+        pd.Series,  # type:ignore[type-arg]
         Dict[str, Any],
+        MyColumnDataType,
     ]
 ):
     """
@@ -47,7 +48,7 @@ class AsyncPandasScalarColumnToStructColumnUDF(
     def __init__(
         self,
         *,
-        async_func: HandlePandasScalarToStructBatchFunction[TParameters],
+        async_func: HandlePandasStructToScalarBatchFunction[TParameters],
         parameters: Optional[TParameters],
         batch_size: int,
     ) -> None:
@@ -59,18 +60,18 @@ class AsyncPandasScalarColumnToStructColumnUDF(
 
     async def get_input_values_from_batch(
         self, batch: pd.Series  # type:ignore[type-arg]
-    ) -> List[MyColumnDataType]:
-        input_values: List[MyColumnDataType] = batch.tolist()
+    ) -> List[Dict[str, Any]]:
+        input_values: List[Dict[str, Any]] = batch.apply(json.loads).tolist()
         return input_values
 
     async def create_output_from_dict(
-        self, output_values: List[Dict[str, Any]]
-    ) -> pd.DataFrame:
-        return pd.DataFrame(output_values)
+        self, output_values: List[MyColumnDataType]
+    ) -> pd.Series:  # type:ignore[type-arg]
+        return pd.Series(output_values)
 
     def my_apply_process_batch_udf(
         self, batch_iter: Iterator[pd.Series]  # type:ignore[type-arg]
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[pd.Series]:  # type:ignore[type-arg]
         # Need this so pandas_udf can use type hints on batch_iter
         return super().apply_process_batch_udf(batch_iter)
 

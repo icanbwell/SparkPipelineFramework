@@ -19,7 +19,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_
     AsyncPandasStructColumnToStructColumnUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasBatchFunction,
+    HandlePandasStructToStructBatchFunction,
 )
 
 # noinspection PyProtectedMember
@@ -244,8 +244,8 @@ class AddressStandardization(FrameworkTransformer):
                     colName="standardized_address",
                     col=AsyncPandasStructColumnToStructColumnUDF(
                         async_func=cast(
-                            HandlePandasBatchFunction[
-                                AddressStandardizationParameters, Dict[str, Any]
+                            HandlePandasStructToStructBatchFunction[
+                                AddressStandardizationParameters
                             ],
                             standardize_list,
                         ),

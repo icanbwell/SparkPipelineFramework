@@ -30,11 +30,22 @@ TInputDataSource = TypeVar(
 TOutputDataSource = TypeVar(
     "TOutputDataSource", pd.DataFrame, pd.Series  # type:ignore[type-arg]
 )
-TDataType = TypeVar("TDataType", Dict[str, Any], Union[int, float, str, bool])
+TInputColumnDataType = TypeVar(
+    "TInputColumnDataType", Dict[str, Any], Union[int, float, str, bool]
+)
+TOutputColumnDataType = TypeVar(
+    "TOutputColumnDataType", Dict[str, Any], Union[int, float, str, bool]
+)
 
 
 class AsyncBasePandasUDF(
-    Generic[TParameters, TInputDataSource, TOutputDataSource, TDataType]
+    Generic[
+        TParameters,
+        TInputDataSource,
+        TOutputDataSource,
+        TInputColumnDataType,
+        TOutputColumnDataType,
+    ]
 ):
     """
     This base class implements the logic to run an async function in Spark using Pandas UDFs.
@@ -49,7 +60,9 @@ class AsyncBasePandasUDF(
     def __init__(
         self,
         *,
-        async_func: HandlePandasBatchFunction[TParameters, TDataType],
+        async_func: HandlePandasBatchFunction[
+            TParameters, TInputColumnDataType, TOutputColumnDataType
+        ],
         parameters: Optional[TParameters],
         batch_size: int,
     ) -> None:
@@ -62,7 +75,9 @@ class AsyncBasePandasUDF(
         :param parameters: parameters to pass to the async function
         :param batch_size: the size of the batches
         """
-        self.async_func: HandlePandasBatchFunction[TParameters, TDataType] = async_func
+        self.async_func: HandlePandasBatchFunction[
+            TParameters, TInputColumnDataType, TOutputColumnDataType
+        ] = async_func
         self.parameters: Optional[TParameters] = parameters
         self.batch_size: int = batch_size
 
@@ -76,7 +91,7 @@ class AsyncBasePandasUDF(
 
     async def get_batches_of_size(
         self, *, batch_size: int, batch_iter: AsyncIterator[TInputDataSource]
-    ) -> AsyncGenerator[List[TDataType], None]:
+    ) -> AsyncGenerator[List[TInputColumnDataType], None]:
         """
         Given an async iterator of dataframes, this function will yield batches of the content of the dataframes.
 
@@ -86,7 +101,7 @@ class AsyncBasePandasUDF(
         """
         batch: TInputDataSource
         batch_number: int = 0
-        batch_input_values: List[TDataType] = []
+        batch_input_values: List[TInputColumnDataType] = []
         async for batch in batch_iter:
             batch_number += 1
             # Convert JSON strings to dictionaries
@@ -106,7 +121,7 @@ class AsyncBasePandasUDF(
     @abstractmethod
     async def get_input_values_from_batch(
         self, batch: TInputDataSource
-    ) -> List[TDataType]:
+    ) -> List[TInputColumnDataType]:
         """
         This abstract method is called to convert the input data to a list of dictionaries.
 
@@ -130,7 +145,7 @@ class AsyncBasePandasUDF(
         chunk_index: int = 0
 
         chunk_input_values_index: int = 0
-        chunk_input_values: List[TDataType]
+        chunk_input_values: List[TInputColumnDataType]
         async for chunk_input_values in self.get_batches_of_size(
             batch_size=self.batch_size, batch_iter=self.to_async_iter(batch_iter)
         ):
@@ -140,12 +155,12 @@ class AsyncBasePandasUDF(
             if len(chunk_input_values) == 0:
                 yield await self.create_output_from_dict([])
             else:
-                output_values: List[TDataType] = []
+                output_values: List[TOutputColumnDataType] = []
                 chunk_input_range: range = range(
                     begin_chunk_input_values_index + 1, chunk_input_values_index
                 )
                 async for output_value in cast(
-                    AsyncGenerator[TDataType, None],
+                    AsyncGenerator[TOutputColumnDataType, None],
                     self.async_func(
                         partition_index=partition_index,
                         chunk_index=chunk_index,
@@ -159,7 +174,7 @@ class AsyncBasePandasUDF(
 
     @abstractmethod
     async def create_output_from_dict(
-        self, output_values: List[TDataType]
+        self, output_values: List[TOutputColumnDataType]
     ) -> TOutputDataSource:
         """
         This abstract method is called to convert the output data from a list of dictionaries to the output data type.

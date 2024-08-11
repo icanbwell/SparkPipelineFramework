@@ -7,20 +7,18 @@ from typing import (
     TypeVar,
     Iterator,
     Optional,
-    Dict,
-    Any,
 )
 
 import pandas as pd
 from pyspark.sql import Column
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import StructType
+from pyspark.sql.types import StructType, AtomicType
 
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasScalarToStructBatchFunction,
+    HandlePandasScalarToScalarBatchFunction,
 )
 
 TParameters = TypeVar("TParameters")
@@ -28,13 +26,13 @@ TParameters = TypeVar("TParameters")
 MyColumnDataType = int | float | str | bool
 
 
-class AsyncPandasScalarColumnToStructColumnUDF(
+class AsyncPandasScalarColumnToScalarColumnUDF(
     AsyncBasePandasUDF[
         TParameters,
         pd.Series,  # type:ignore[type-arg]
-        pd.DataFrame,
+        pd.Series,  # type:ignore[type-arg]
         MyColumnDataType,
-        Dict[str, Any],
+        MyColumnDataType,
     ]
 ):
     """
@@ -47,7 +45,7 @@ class AsyncPandasScalarColumnToStructColumnUDF(
     def __init__(
         self,
         *,
-        async_func: HandlePandasScalarToStructBatchFunction[TParameters],
+        async_func: HandlePandasScalarToScalarBatchFunction[TParameters],
         parameters: Optional[TParameters],
         batch_size: int,
     ) -> None:
@@ -64,17 +62,19 @@ class AsyncPandasScalarColumnToStructColumnUDF(
         return input_values
 
     async def create_output_from_dict(
-        self, output_values: List[Dict[str, Any]]
-    ) -> pd.DataFrame:
-        return pd.DataFrame(output_values)
+        self, output_values: List[MyColumnDataType]
+    ) -> pd.Series:  # type:ignore[type-arg]
+        return pd.Series(output_values)
 
     def my_apply_process_batch_udf(
         self, batch_iter: Iterator[pd.Series]  # type:ignore[type-arg]
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[pd.Series]:  # type:ignore[type-arg]
         # Need this so pandas_udf can use type hints on batch_iter
         return super().apply_process_batch_udf(batch_iter)
 
-    def get_pandas_udf(self, return_type: StructType) -> Callable[[Column], Column]:
+    def get_pandas_udf(
+        self, return_type: StructType | AtomicType
+    ) -> Callable[[Column], Column]:
         """
         Returns a Pandas UDF function that can be used in Spark.
 

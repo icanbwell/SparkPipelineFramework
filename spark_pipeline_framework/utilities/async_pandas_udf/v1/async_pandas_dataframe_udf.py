@@ -10,6 +10,7 @@ from typing import (
     TypeVar,
     Iterable,
     cast,
+    Optional,
 )
 
 import pandas as pd
@@ -17,13 +18,32 @@ import pandas as pd
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
+    HandlePandasDataFrameBatchFunction,
+)
 
 TParameters = TypeVar("TParameters")
 
 
 class AsyncPandasDataFrameUDF(
-    AsyncBasePandasUDF[TParameters, pd.DataFrame, pd.DataFrame, Dict[str, Any]]
+    AsyncBasePandasUDF[
+        TParameters, pd.DataFrame, pd.DataFrame, Dict[str, Any], Dict[str, Any]
+    ]
 ):
+
+    def __init__(
+        self,
+        *,
+        async_func: HandlePandasDataFrameBatchFunction[TParameters],
+        parameters: Optional[TParameters],
+        batch_size: int,
+    ) -> None:
+        super().__init__(
+            async_func=async_func,
+            parameters=parameters,
+            batch_size=batch_size,
+        )
+
     async def get_input_values_from_batch(
         self, batch: pd.DataFrame
     ) -> List[Dict[str, Any]]:

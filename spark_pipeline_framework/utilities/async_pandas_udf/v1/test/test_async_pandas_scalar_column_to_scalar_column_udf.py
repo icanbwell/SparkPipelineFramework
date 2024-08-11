@@ -3,7 +3,6 @@ import dataclasses
 from datetime import datetime
 from typing import (
     List,
-    Dict,
     Any,
     Optional,
     AsyncGenerator,
@@ -14,23 +13,22 @@ from typing import (
 )
 
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.functions import struct, to_json
-from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql.types import StringType
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_struct_udf import (
-    AsyncPandasStructColumnToStructColumnUDF,
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_scalar_column_to_scalar_udf import (
+    AsyncPandasScalarColumnToScalarColumnUDF,
 )
-
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasBatchFunction,
+    HandlePandasScalarToScalarBatchFunction,
 )
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
 )
 
 
-def test_async_pandas_column_udf(spark_session: SparkSession) -> None:
+def test_async_pandas_scalar_column_to_scalar_column_udf(
+    spark_session: SparkSession,
+) -> None:
     print()
     df: DataFrame = spark_session.createDataFrame(
         [
@@ -39,9 +37,6 @@ def test_async_pandas_column_udf(spark_session: SparkSession) -> None:
         ],
         ["id", "name"],
     )
-
-    # add a json column
-    df = df.withColumn("name_struct", to_json(struct("*")))
 
     print(f"Partition Count: {df.rdd.getNumPartitions()}")
 
@@ -66,17 +61,15 @@ def test_async_pandas_column_udf(spark_session: SparkSession) -> None:
         partition_index: int,
         chunk_index: int,
         chunk_input_range: range,
-        input_values: List[Dict[str, Any]],
+        input_values: List[str],
         parameters: Optional[MyParameters],
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[str, None]:
         if parameters is not None and parameters.log_level == "DEBUG":
             spark_partition_information: SparkPartitionInformation = (
                 SparkPartitionInformation.from_current_task_context(
                     chunk_index=chunk_index,
                 )
             )
-            logger = get_logger(__name__)
-            ids = [input_value["id"] for input_value in input_values]
             message: str = f"In test_async"
             # Get the current time
             current_time = datetime.now()
@@ -89,36 +82,30 @@ def test_async_pandas_column_udf(spark_session: SparkSession) -> None:
                 f" | Partition: {partition_index}"
                 f" | Chunk: {chunk_index}"
                 f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
-                f" | Ids ({len(ids)}): {ids}"
                 f" | {spark_partition_information}"
             )
 
-        input_value: Dict[str, Any]
+        input_value: str
         for input_value in input_values:
             # simulate a delay
             await asyncio.sleep(0.1)
-            yield {
-                "id": input_value["id"],
-                "name": input_value["name"] + "_processed",
-            }
+            yield input_value + "_processed"
 
     result_df: DataFrame = df.withColumn(
         colName="processed_name",
-        col=AsyncPandasStructColumnToStructColumnUDF(
+        col=AsyncPandasScalarColumnToScalarColumnUDF(
             async_func=cast(
-                HandlePandasBatchFunction[MyParameters, Dict[str, Any]],
+                HandlePandasScalarToScalarBatchFunction[MyParameters],
                 test_async,
             ),
             parameters=MyParameters(),
             batch_size=2,
-        ).get_pandas_udf(
-            return_type=StructType([StructField("name", StringType())]),
-        )(
-            df["name_struct"]
-        ),
+        ).get_pandas_udf(return_type=StringType(),)(df["name"]),
     )
 
     print("result_df")
     result_df.show()
 
     assert result_df.count() == 2
+    assert result_df.collect()[0]["processed_name"] == "Qureshi_processed"
+    assert result_df.collect()[1]["processed_name"] == "Vidal_processed"

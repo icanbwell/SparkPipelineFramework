@@ -9,6 +9,7 @@ from typing import (
     Callable,
     TypeVar,
     Iterator,
+    Optional,
 )
 
 import pandas as pd
@@ -19,13 +20,20 @@ from pyspark.sql.types import StructType
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
+    HandlePandasStructToStructBatchFunction,
+)
 
 TParameters = TypeVar("TParameters")
 
 
 class AsyncPandasStructColumnToStructColumnUDF(
     AsyncBasePandasUDF[
-        TParameters, pd.Series, pd.DataFrame, Dict[str, Any]  # type:ignore[type-arg]
+        TParameters,
+        pd.Series,  # type:ignore[type-arg]
+        pd.DataFrame,
+        Dict[str, Any],
+        Dict[str, Any],
     ]
 ):
     """
@@ -34,6 +42,19 @@ class AsyncPandasStructColumnToStructColumnUDF(
 
 
     """
+
+    def __init__(
+        self,
+        *,
+        async_func: HandlePandasStructToStructBatchFunction[TParameters],
+        parameters: Optional[TParameters],
+        batch_size: int,
+    ) -> None:
+        super().__init__(
+            async_func=async_func,
+            parameters=parameters,
+            batch_size=batch_size,
+        )
 
     async def get_input_values_from_batch(
         self, batch: pd.Series  # type:ignore[type-arg]

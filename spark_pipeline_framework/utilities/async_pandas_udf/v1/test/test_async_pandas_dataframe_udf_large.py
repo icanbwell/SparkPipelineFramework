@@ -20,7 +20,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_datafra
     AsyncPandasDataFrameUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasBatchFunction,
+    HandlePandasDataFrameBatchFunction,
 )
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
@@ -118,7 +118,7 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
         AsyncPandasDataFrameUDF(
             parameters=MyParameters(log_level="DEBUG"),
             async_func=cast(
-                HandlePandasBatchFunction[MyParameters, Dict[str, Any]], test_async
+                HandlePandasDataFrameBatchFunction[MyParameters], test_async
             ),
             batch_size=2,
         ).get_pandas_udf(),
@@ -129,3 +129,5 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
     result_df.show()
 
     assert result_df.count() == 20
+    assert result_df.collect()[0]["name"] == "Qureshi_processed"
+    assert result_df.collect()[1]["name"] == "Vidal_processed"

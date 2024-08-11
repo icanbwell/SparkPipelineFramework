@@ -14,20 +14,25 @@ from typing import (
 )
 
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.functions import struct, to_json
+from pyspark.sql.types import StructType, StructField, StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
-    AsyncPandasDataFrameUDF,
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_struct_udf import (
+    AsyncPandasStructColumnToStructColumnUDF,
 )
+
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasDataFrameBatchFunction,
+    HandlePandasStructToStructBatchFunction,
 )
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
 )
 
 
-def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
+def test_async_pandas_struct_column_to_struct_column_udf(
+    spark_session: SparkSession,
+) -> None:
     print()
     df: DataFrame = spark_session.createDataFrame(
         [
@@ -36,6 +41,9 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
         ],
         ["id", "name"],
     )
+
+    # add a json column
+    df = df.withColumn("name_struct", to_json(struct("*")))
 
     print(f"Partition Count: {df.rdd.getNumPartitions()}")
 
@@ -96,20 +104,27 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
                 "name": input_value["name"] + "_processed",
             }
 
-    result_df: DataFrame = df.mapInPandas(
-        AsyncPandasDataFrameUDF(
-            parameters=MyParameters(log_level="DEBUG"),
+    result_df: DataFrame = df.withColumn(
+        colName="processed_name",
+        col=AsyncPandasStructColumnToStructColumnUDF(
             async_func=cast(
-                HandlePandasDataFrameBatchFunction[MyParameters], test_async
+                HandlePandasStructToStructBatchFunction[MyParameters],
+                test_async,
             ),
-            batch_size=1,
-        ).get_pandas_udf(),
-        schema=df.schema,
+            parameters=MyParameters(),
+            batch_size=2,
+        ).get_pandas_udf(
+            return_type=StructType([StructField("name", StringType())]),
+        )(
+            df["name_struct"]
+        ),
     )
 
     print("result_df")
     result_df.show()
 
     assert result_df.count() == 2
-    assert result_df.collect()[0]["name"] == "Qureshi_processed"
-    assert result_df.collect()[1]["name"] == "Vidal_processed"
+    assert result_df.select("processed_name.name").collect() == [
+        ("Qureshi_processed",),
+        ("Vidal_processed",),
+    ]
