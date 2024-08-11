@@ -1,7 +1,5 @@
 import asyncio
 import dataclasses
-import os
-import threading
 from datetime import datetime
 from typing import (
     List,
@@ -15,7 +13,6 @@ from typing import (
     Generator,
 )
 
-from pyspark import TaskContext
 from pyspark.sql import SparkSession, DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -24,6 +21,9 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_datafra
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchWithParametersFunction,
+)
+from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
+    SparkPartitionInformation,
 )
 
 
@@ -81,48 +81,21 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
         parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         if parameters is not None and parameters.log_level == "DEBUG":
-            # Get the TaskContext
-            # https://spark.apache.org/docs/3.3.0/api/python/reference/api/pyspark.TaskContext.html
-            context: TaskContext | None = TaskContext.get()
-
+            spark_partition_information: SparkPartitionInformation = (
+                SparkPartitionInformation.from_current_task_context(
+                    chunk_index=chunk_index,
+                )
+            )
             logger = get_logger(__name__)
             ids = [input_value["id"] for input_value in input_values]
             message: str = f"In test_async"
-            process_id = os.getpid()
-            thread_name = threading.current_thread().name
-            logger.debug(
-                f"{message} | Process ID: {process_id} | Thread ID: {thread_name}"
-            )
-            resources = context.resources() if context is not None else {}
-            resource_texts = [
-                f"{key}: {value}"
-                for key, value in resources.items()
-                if value is not None
-            ]
-            resources_text = ", ".join(
-                [
-                    f"{key}: {value}"
-                    for key, value in resources.items()
-                    if value is not None
-                ]
-            )
             # Get the current time
             current_time = datetime.now()
 
             # Format the time to include hours, minutes, seconds, and milliseconds
             formatted_time = current_time.strftime("%H:%M:%S.%f")[:-3]
             print(
-                f"{formatted_time}: "
-                f"{message}"
-                f" | Spark Partition ID: {context.partitionId() if context is not None else None}"
-                f" | Process: {process_id}"
-                f" | Thread: {thread_name} ({threading.get_ident()})"
-                f" | Ids: {ids}"
-                f" | Spark Driver: {context is None}"
-                f" | Spark Stage Id: {context.stageId() if context is not None else None}"
-                f" | Spark Task Attempt ID: {context.taskAttemptId() if context is not None else None}"
-                f" | Spark CPUs: {context.cpus() if context is not None else None}"
-                f" | Spark Resources: {len(resource_texts)}: {resources_text}"
+                f"{formatted_time}: " f"{message}" f" | {spark_partition_information}"
             )
 
         input_value: Dict[str, Any]
