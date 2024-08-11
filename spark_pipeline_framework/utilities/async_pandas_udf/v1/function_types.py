@@ -57,24 +57,38 @@ class HandlePandasBatchFunction(
         ...
 
 
-# This is the type alias for when we are operating on a full dataframe not on specific columns
+"""
+This is the type alias for when we are operating on a full dataframe not on specific columns
+"""
 HandlePandasDataFrameBatchFunction: TypeAlias = HandlePandasBatchFunction[
     T, Dict[str, Any], Dict[str, Any]
 ]
 
-# This is the type alias for when we are operating on a single column for type struct, and we want to output a struct
+"""
+This is the type alias for when we are operating on a single column for type struct, and we want to output a struct
+"""
 HandlePandasStructToStructBatchFunction: TypeAlias = HandlePandasBatchFunction[
     T, Dict[str, Any], Dict[str, Any]
 ]
-# This is the type alias for when we are operating on a single column for type scalar, and we want to output a struct
+
+"""
+This is the type alias for when we are operating on a single column for type scalar, and we want to output a struct
+"""
 HandlePandasScalarToStructBatchFunction: TypeAlias = HandlePandasBatchFunction[
     T, Union[int, float, str, bool], Dict[str, Any]
 ]
-# This is the type alias for when we are operating on a single column for type scalar, and we want to output a struct
+
+
+"""
+This is the type alias for when we are operating on a single column for type scalar, and we want to output a struct
+"""
 HandlePandasScalarToScalarBatchFunction: TypeAlias = HandlePandasBatchFunction[
     T, Union[int, float, str, bool], Union[int, float, str, bool]
 ]
-# This is the type alias for when we are operating on a single column for type struct, and we want to output a scalar
+
+"""
+This is the type alias for when we are operating on a single column for type struct, and we want to output a scalar
+"""
 HandlePandasStructToScalarBatchFunction: TypeAlias = HandlePandasBatchFunction[
     T, Dict[str, Any], Union[int, float, str, bool]
 ]
