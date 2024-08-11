@@ -74,10 +74,9 @@ class SparkPartitionInformation:
         :return: A string representation of the object.
         """
         return (
-            f" | Partition: {self.partition_index}" f" | Chunk: {self.chunk_index}"
-            if self.chunk_index
-            else ""
-            f" | Process: {self.process_id}"
+            f" | Partition: {self.partition_index}"
+            + (f" | Chunk: {self.chunk_index}" if self.chunk_index is not None else "")
+            + f" | Process: {self.process_id}"
             f" | Thread: {self.thread_name} ({threading.get_ident()})"
             f" | Spark Driver: {self.is_driver}"
             f" | Spark Stage Id: {self.stage_id}"

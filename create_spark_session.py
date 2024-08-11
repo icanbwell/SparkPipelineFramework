@@ -64,6 +64,11 @@ def create_spark_session(request: Any) -> SparkSession:
 
     logging.getLogger("org.apache.spark.deploy.SparkSubmit").setLevel(logging.ERROR)
     logging.getLogger("org.apache.ivy").setLevel(logging.ERROR)
+    logging.getLogger("org.apache.hadoop.hive.metastore.ObjectStore").setLevel(
+        logging.ERROR
+    )
+    logging.getLogger("org.apache.hadoop.hive.conf.HiveConf").setLevel(logging.ERROR)
+    logging.getLogger("org.apache.hadoop.util.NativeCodeLoader").setLevel(logging.ERROR)
 
     # make sure env variables are set correctly
     if "SPARK_HOME" not in os.environ:

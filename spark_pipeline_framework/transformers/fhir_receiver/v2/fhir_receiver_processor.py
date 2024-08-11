@@ -51,6 +51,9 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
+from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
+    SparkPartitionInformation,
+)
 
 
 @dataclasses.dataclass
@@ -112,20 +115,58 @@ class FhirReceiverProcessor:
         :return: output values
         """
         assert parameters
-        # count: int = 0
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
+        spark_partition_information: SparkPartitionInformation = (
+            SparkPartitionInformation.from_current_task_context(
+                chunk_index=chunk_index,
+            )
+        )
+        # ids = [input_value["id"] for input_value in input_values]
+        message: str = f"FhirReceiverProcessor.process_partition"
+        # Format the time to include hours, minutes, seconds, and milliseconds
+        formatted_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        formatted_message: str = (
+            f"{formatted_time}: "
+            f"{message}"
+            f" | Partition: {partition_index}"
+            f" | Chunk: {chunk_index}"
+            f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+            f" | {spark_partition_information}"
+        )
+        logger.info(formatted_message)
+
         try:
+            r: Dict[str, Any]
             async for r in FhirReceiverProcessor.send_partition_request_to_server_async(
-                partition_index=0, parameters=parameters, rows=input_values
+                partition_index=partition_index,
+                parameters=parameters,
+                rows=input_values,
             ):
-                # response_item: FhirGetResponseItem = FhirGetResponseItem.from_dict(r)
+                response_item: FhirGetResponseItem = FhirGetResponseItem.from_dict(r)
                 # count += len(response_item.responses)
+                logger.debug(
+                    f"Received result"
+                    f" | Partition: {partition_index}"
+                    f" | Chunk: {chunk_index}"
+                    f" | Status: {response_item.status_code}"
+                    f" | Url: {response_item.url}"
+                    f" | Count: {response_item.received}"
+                )
                 yield r
         except Exception as e:
+            logger.error(
+                f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"
+            )
             # if an exception is thrown then return an error for each row
             for input_value in input_values:
                 # count += 1
                 yield {
-                    FhirGetResponseSchema.partition_index: 0,
+                    FhirGetResponseSchema.partition_index: partition_index,
                     FhirGetResponseSchema.sent: 0,
                     FhirGetResponseSchema.received: 0,
                     FhirGetResponseSchema.url: parameters.server_url,
@@ -474,8 +515,14 @@ class FhirReceiverProcessor:
     ) -> AsyncGenerator[FhirGetResponse, None]:
         url = server_url_ or server_url
         assert url
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
         async for r in FhirReceiverProcessor.send_fhir_request_async(
-            logger=get_logger(__name__),
+            logger=logger,
             resource_id=id_,
             server_url=url,
             extra_context_to_return=(
@@ -649,10 +696,16 @@ class FhirReceiverProcessor:
         server_page_number: int = 0
         has_next_page: bool = True
         loop_number: int = 0
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
         while has_next_page:
             loop_number += 1
             async for result in FhirReceiverProcessor.send_fhir_request_async(
-                logger=get_logger(__name__),
+                logger=logger,
                 resource_id=None,
                 server_url=server_url,
                 page_number=server_page_number,  # since we're setting id:above we can leave this as 0
@@ -772,8 +825,14 @@ class FhirReceiverProcessor:
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert server_url
         result: FhirGetResponse
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
         async for result in FhirReceiverProcessor.send_fhir_request_async(
-            logger=get_logger(__name__),
+            logger=logger,
             parameters=parameters,
             resource_id=None,
             server_url=server_url,

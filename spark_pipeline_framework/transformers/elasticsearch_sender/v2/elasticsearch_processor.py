@@ -1,4 +1,6 @@
 import json
+from datetime import datetime
+from logging import Logger
 from typing import (
     Any,
     Dict,
@@ -29,6 +31,9 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_datafra
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasDataFrameBatchFunction,
 )
+from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
+    SparkPartitionInformation,
+)
 
 
 class ElasticSearchProcessor:
@@ -52,37 +57,77 @@ class ElasticSearchProcessor:
         :return: output values
         """
         assert parameters
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
+        spark_partition_information: SparkPartitionInformation = (
+            SparkPartitionInformation.from_current_task_context(
+                chunk_index=chunk_index,
+            )
+        )
+        if parameters is not None and parameters.log_level == "DEBUG":
+            # ids = [input_value["id"] for input_value in input_values]
+            message: str = f"ElasticSearchProcessor:process_partition"
+            # Get the current time
+            current_time = datetime.now()
+
+            # Format the time to include hours, minutes, seconds, and milliseconds
+            formatted_time = current_time.strftime("%H:%M:%S.%f")[:-3]
+            formatted_message: str = (
+                f"{formatted_time}: "
+                f"{message}"
+                f" | Partition: {partition_index}"
+                f" | Chunk: {chunk_index}"
+                f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+                f" | {spark_partition_information}"
+            )
+            logger.debug(formatted_message)
+
         count: int = 0
         try:
             # print(f"ElasticSearchProcessor:process_partition input_values [{len(input_values)}: {input_values}")
-            result: Dict[str, Any] | None
+            result: ElasticSearchResult
             async for result in ElasticSearchProcessor.send_partition_to_server_async(
-                partition_index=0, parameters=parameters, rows=input_values
+                partition_index=partition_index,
+                parameters=parameters,
+                rows=input_values,
             ):
                 if result:
-                    count += result.get("success", 0) + result.get("failed", 0)
-                    # print(f"ElasticSearchProcessor:process_partition count: {count} r: {r}")
-                    yield result
+                    count += result.success + result.failed
+                    logger.debug(
+                        f"Received result"
+                        f" | Partition: {partition_index}"
+                        f" | Chunk: {chunk_index}"
+                        f" | Successful: {result.success}"
+                        f" | Failed: {result.failed}"
+                    )
+                    yield result.to_dict_flatten_payload()
                 else:
                     count += 1
-                    # print(f"ElasticSearchProcessor:process_partition count: {count} r is None")
+                    logger.warning(
+                        f"Got None result for partition {partition_index} chunk {chunk_index}"
+                    )
                     yield {
                         "error": "Failed to send data to ElasticSearch",
-                        "partition_index": 0,
+                        "partition_index": partition_index,
                         "url": parameters.index,
                         "success": 0,
                         "failed": 1,
                         "payload": json.dumps(input_values),
                     }
         except Exception as e:
-            # print(f"ElasticSearchProcessor:process_partition exception: {e}")
+            logger.error(
+                f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"
+            )
             # if an exception is thrown then return an error for each row
             for input_value in input_values:
-                # print(f"ElasticSearchProcessor:process_partition exception input_value: {input_value}")
                 count += 1
                 yield {
                     "error": str(e),
-                    "partition_index": 0,
+                    "partition_index": partition_index,
                     "url": parameters.index,
                     "success": 0,
                     "failed": 1,
@@ -119,7 +164,7 @@ class ElasticSearchProcessor:
         partition_index: int,
         rows: Iterable[Dict[str, Any]],
         parameters: ElasticSearchSenderParameters,
-    ) -> AsyncGenerator[Optional[Dict[str, Any]], None]:
+    ) -> AsyncGenerator[ElasticSearchResult, None]:
         assert parameters.index is not None
         assert isinstance(parameters.index, str)
         assert parameters.operation is not None
@@ -134,7 +179,12 @@ class ElasticSearchProcessor:
         assert isinstance(json_data_list, list)
         assert all(isinstance(j, str) for j in json_data_list)
 
-        logger = get_logger(__name__)
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
 
         if len(json_data_list) > 0:
             logger.info(
@@ -153,9 +203,16 @@ class ElasticSearchProcessor:
                 )
             )
             response_json.partition_index = partition_index
-            yield response_json.to_dict_flatten_payload()
+            yield response_json
         else:
             logger.info(
                 f"Batch {partition_index}/{parameters.desired_partitions} is empty"
             )
-            yield None
+            yield ElasticSearchResult(
+                url=parameters.index,
+                success=0,
+                failed=0,
+                payload=[],
+                partition_index=partition_index,
+                error=None,
+            )

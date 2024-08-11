@@ -113,8 +113,10 @@ class AsyncBasePandasUDF(
             if len(batch_input_values) >= batch_size:
                 # print(f"yielding batch_input_values at batch {batch_number}: {len(batch_input_values)}"
                 #       f", batch_size: {batch_size}")
-                yield batch_input_values[:batch_size]
+                chunk: List[TInputColumnDataType] = batch_input_values[:batch_size]
+                # remove chunk from batch_input_values
                 batch_input_values = batch_input_values[batch_size:]
+                yield chunk
         if len(batch_input_values) > 0:
             # print(f"yielding batch_input_values at the end at batch {batch_number}: {len(batch_input_values)}"
             #       f", batch_size: {batch_size}")

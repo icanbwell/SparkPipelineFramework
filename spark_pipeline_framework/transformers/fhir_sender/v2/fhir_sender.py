@@ -98,6 +98,7 @@ class FhirSender(FrameworkTransformer):
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = False,
         source_view: Optional[str] = None,
+        log_level: Optional[str] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -159,7 +160,10 @@ class FhirSender(FrameworkTransformer):
 
         assert server_url
 
-        self.logger = get_logger(__name__)
+        self.log_level: Param[str] = Param(self, "log_level", "")
+        self._setDefault(log_level=log_level)
+
+        self.logger = get_logger(__name__, level=log_level or "INFO")
 
         self.server_url: Param[str] = Param(self, "server_url", "")
         self._setDefault(server_url=None)
@@ -362,7 +366,9 @@ class FhirSender(FrameworkTransformer):
         error_view: Optional[str] = self.getOrDefault(self.error_view)
         view: Optional[str] = self.getOrDefault(self.view)
 
-        log_level: Optional[str] = environ.get("LOGLEVEL")
+        log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
+            "LOGLEVEL"
+        )
 
         ignore_status_codes: List[int] | None = (
             self.getOrDefault(self.ignore_status_codes) or []

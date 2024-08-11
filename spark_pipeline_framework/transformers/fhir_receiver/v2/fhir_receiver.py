@@ -121,6 +121,7 @@ class FhirReceiver(FrameworkTransformer):
         refresh_token_function: Optional[RefreshTokenFunction] = None,
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = True,
+        log_level: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -207,7 +208,10 @@ class FhirReceiver(FrameworkTransformer):
 
         # assert not action == "$graph" or id_view, "id_view is required when action is $graph"
 
-        self.logger = get_logger(__name__)
+        self.log_level: Param[str] = Param(self, "log_level", "")
+        self._setDefault(log_level=log_level)
+
+        self.logger = get_logger(__name__, level=log_level or "INFO")
 
         self.server_url: Param[Optional[str]] = Param(self, "server_url", "")
         self._setDefault(server_url=None)
@@ -496,7 +500,9 @@ class FhirReceiver(FrameworkTransformer):
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = self.getOrDefault(self.checkpoint_path)
 
-        log_level: Optional[str] = environ.get("LOGLEVEL")
+        log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
+            "LOGLEVEL"
+        )
 
         use_data_streaming: Optional[bool] = self.getOrDefault(self.use_data_streaming)
 
@@ -641,6 +647,7 @@ class FhirReceiver(FrameworkTransformer):
                     use_data_streaming=use_data_streaming,
                     graph_json=graph_json,
                     ignore_status_codes=ignore_status_codes,
+                    refresh_token_function=refresh_token_function,
                 )
                 if run_synchronously:
                     id_rows: List[Dict[str, Any]] = [

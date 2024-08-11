@@ -1,4 +1,5 @@
 import math
+from os import environ
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, List
 
@@ -44,12 +45,13 @@ class ElasticSearchSender(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        batch_size: int = 0,
+        batch_size: int = 100,
         limit: int = -1,
         multi_line: bool = False,
         operation: str = "index",
         output_path: Optional[Union[Path, str]] = None,
         run_synchronously: Optional[bool] = None,
+        log_level: Optional[str] = None,
     ):
         """
         Sends a folder or a view to an ElasticSearch server
@@ -70,7 +72,10 @@ class ElasticSearchSender(FrameworkTransformer):
 
         assert progress_logger
 
-        self.logger = get_logger(__name__)
+        self.log_level: Param[str] = Param(self, "log_level", "")
+        self._setDefault(log_level=log_level)
+
+        self.logger = get_logger(__name__, level=log_level or "INFO")
 
         self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=view)
@@ -120,6 +125,9 @@ class ElasticSearchSender(FrameworkTransformer):
         operation: str = self.getOperation()
         parameters: Optional[Dict[str, Any]] = self.getParameters()
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+        log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
+            "LOGLEVEL"
+        )
         doc_id_prefix: Optional[str] = None
         if parameters is not None:
             doc_id_prefix = parameters.get("doc_id_prefix", None)
@@ -169,13 +177,14 @@ class ElasticSearchSender(FrameworkTransformer):
                         desired_partitions=desired_partitions,
                         doc_id_prefix=doc_id_prefix,
                         name=name,
+                        log_level=log_level,
                     )
                 )
                 if run_synchronously:
                     rows_to_send: List[Dict[str, Any]] = [
                         r.asDict(recursive=True) for r in json_df.collect()
                     ]
-                    result_rows: List[Dict[str, Any] | None] = (
+                    result_rows: List[ElasticSearchResult] = (
                         await AsyncHelper.collect_items(
                             ElasticSearchProcessor.send_partition_to_server_async(
                                 partition_index=0,
@@ -184,10 +193,14 @@ class ElasticSearchSender(FrameworkTransformer):
                             )
                         )
                     )
-                    result_rows = [r for r in result_rows if r is not None]
+                    result_dicts: List[Dict[str, Any]] = [
+                        r.to_dict_flatten_payload()
+                        for r in result_rows
+                        if r is not None
+                    ]
                     result_df = (
                         df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            result_rows, schema=ElasticSearchResult.get_schema()
+                            result_dicts, schema=ElasticSearchResult.get_schema()
                         )
                     )
                 else:

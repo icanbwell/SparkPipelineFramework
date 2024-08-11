@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 from datetime import datetime
+from logging import Logger
 from typing import (
     List,
     Dict,
@@ -82,13 +83,20 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
+
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
+
         spark_partition_information: SparkPartitionInformation = (
             SparkPartitionInformation.from_current_task_context(
                 chunk_index=chunk_index,
             )
         )
         if parameters is not None and parameters.log_level == "DEBUG":
-            logger = get_logger(__name__)
             ids = [input_value["id"] for input_value in input_values]
             message: str = f"In test_async"
             # Get the current time
@@ -96,7 +104,7 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
 
             # Format the time to include hours, minutes, seconds, and milliseconds
             formatted_time = current_time.strftime("%H:%M:%S.%f")[:-3]
-            print(
+            formatted_message: str = (
                 f"{formatted_time}: "
                 f"{message}"
                 f" | Partition: {partition_index}"
@@ -105,6 +113,8 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
                 f" | Ids ({len(ids)}): {ids}"
                 f" | {spark_partition_information}"
             )
+            # print(f"print: {formatted_message}")
+            logger.debug(f"logger: {formatted_message}")
 
         input_value: Dict[str, Any]
         for input_value in input_values:

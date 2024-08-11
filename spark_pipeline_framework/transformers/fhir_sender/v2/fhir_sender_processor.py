@@ -1,4 +1,6 @@
 import json
+from datetime import datetime
+from logging import Logger
 from typing import (
     Any,
     Dict,
@@ -38,6 +40,9 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation impor
     FhirSenderOperation,
 )
 from spark_pipeline_framework.utilities.json_helpers import convert_dict_to_fhir_json
+from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
+    SparkPartitionInformation,
+)
 
 
 class FhirSenderProcessor:
@@ -61,18 +66,47 @@ class FhirSenderProcessor:
         :return: output values
         """
         assert parameters
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
+        spark_partition_information: SparkPartitionInformation = (
+            SparkPartitionInformation.from_current_task_context(
+                chunk_index=chunk_index,
+            )
+        )
+        message: str = f"FhirSenderProcessor:process_partition"
+        # Format the time to include hours, minutes, seconds, and milliseconds
+        formatted_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        formatted_message: str = (
+            f"{formatted_time}: "
+            f"{message}"
+            f" | Partition: {partition_index}"
+            f" | Chunk: {chunk_index}"
+            f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+            f" | {spark_partition_information}"
+        )
+        logger.info(formatted_message)
+
         count: int = 0
         try:
-            # print(
-            #     f"FhirSenderProcessor.process_partition input_values [{len(input_values)}: {input_values}"
-            # )
             r: FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse
             async for r in FhirSenderProcessor.send_partition_to_server_async(
-                partition_index=0,
-                chunk_index=0,
+                partition_index=partition_index,
+                chunk_index=chunk_index,
                 parameters=parameters,
                 rows=input_values,
             ):
+                logger.debug(
+                    f"Received result"
+                    f" | Partition: {partition_index}"
+                    f" | Chunk: {chunk_index}"
+                    f" | Status: {r.status}"
+                    f" | Url: {r.url}"
+                    f" | Count: {len(r.responses)}"
+                )
                 if isinstance(r, FhirMergeResponse):
                     for merge_response in FhirMergeResponseItem.from_merge_response(
                         merge_response=r
@@ -89,11 +123,10 @@ class FhirSenderProcessor:
                     yield FhirMergeResponseItem.from_delete_response(
                         delete_response=r, resource_type=parameters.resource_name
                     ).to_dict()
-                # print(
-                #     f"FhirSenderProcessor.process_partition count: {count} r: {r.__dict__}"
-                # )
         except Exception as e:
-            print(f"FhirSenderProcessor.process_partition exception: {e}")
+            logger.error(
+                f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"
+            )
             # if an exception is thrown then return an error for each row
             for input_value in input_values:
                 count += 1
@@ -156,7 +189,14 @@ class FhirSenderProcessor:
             assert isinstance(json_data_list, list)
             if len(json_data_list) > 0:
                 assert isinstance(json_data_list[0], dict)
-            logger = get_logger(__name__)
+            logger: Logger = get_logger(
+                __name__,
+                level=(
+                    parameters.log_level
+                    if parameters and parameters.log_level
+                    else "INFO"
+                ),
+            )
             assert parameters
             assert isinstance(parameters, FhirSenderParameters)
             assert parameters.server_url
@@ -167,10 +207,13 @@ class FhirSenderProcessor:
             if len(json_data_list) == 0:
                 assert len(json_data_list) > 0, "json_data_list should not be empty"
             logger.info(
-                f"Sending batch {partition_index}/{parameters.desired_partitions} "
-                f"containing {len(json_data_list)} rows "
-                f"for operation {parameters.operation} "
-                f"to {parameters.server_url}/{parameters.resource_name}. [{parameters.name}].."
+                f"Sending batch "
+                f" | Partition: {partition_index}"
+                f" | Total Partition: {parameters.desired_partitions} "
+                f" | Chunk: {chunk_index}"
+                f" | Rows: {len(json_data_list)}"
+                f" | Operation: {parameters.operation}"
+                f" | Url: {parameters.server_url}/{parameters.resource_name}"
             )
             request_id_list: List[str] = []
             responses: List[Dict[str, Any]] = []

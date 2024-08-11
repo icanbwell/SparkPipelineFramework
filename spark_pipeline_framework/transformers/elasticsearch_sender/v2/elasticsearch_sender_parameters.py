@@ -9,3 +9,4 @@ class ElasticSearchSenderParameters:
     index: str
     operation: str
     doc_id_prefix: Optional[str]
+    log_level: Optional[str]
