@@ -120,7 +120,7 @@ class FhirSenderProcessor:
 
         return AsyncPandasDataFrameUDF(
             async_func=cast(
-                HandlePandasBatchFunction[FhirSenderParameters],
+                HandlePandasBatchFunction[FhirSenderParameters, Dict[str, Any]],
                 FhirSenderProcessor.process_partition,
             ),
             parameters=parameters,

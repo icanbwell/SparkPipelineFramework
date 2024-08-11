@@ -106,7 +106,9 @@ class ElasticSearchProcessor:
 
         return AsyncPandasDataFrameUDF(
             async_func=cast(
-                HandlePandasBatchFunction[ElasticSearchSenderParameters],
+                HandlePandasBatchFunction[
+                    ElasticSearchSenderParameters, Dict[str, Any]
+                ],
                 ElasticSearchProcessor.process_partition,
             ),
             parameters=parameters,

@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import json
 from typing import (
-    Any,
-    Dict,
     List,
     cast,
     Callable,
@@ -22,10 +19,12 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_ud
 
 TParameters = TypeVar("TParameters")
 
+MyColumnDataType = int | float | str | bool
 
-class AsyncPandasStructColumnToStructColumnUDF(
+
+class AsyncPandasScalarColumnToStructColumnUDF(
     AsyncBasePandasUDF[
-        TParameters, pd.Series, pd.DataFrame, Dict[str, Any]  # type:ignore[type-arg]
+        TParameters, pd.Series, pd.DataFrame, MyColumnDataType  # type:ignore[type-arg]
     ]
 ):
     """
@@ -37,12 +36,12 @@ class AsyncPandasStructColumnToStructColumnUDF(
 
     async def get_input_values_from_batch(
         self, batch: pd.Series  # type:ignore[type-arg]
-    ) -> List[Dict[str, Any]]:
-        input_values: List[Dict[str, Any]] = batch.apply(json.loads).tolist()
+    ) -> List[MyColumnDataType]:
+        input_values: List[MyColumnDataType] = batch.tolist()
         return input_values
 
     async def create_output_from_dict(
-        self, output_values: List[Dict[str, Any]]
+        self, output_values: List[MyColumnDataType]
     ) -> pd.DataFrame:
         return pd.DataFrame(output_values)
 

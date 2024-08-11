@@ -153,7 +153,7 @@ class FhirReceiverProcessor:
 
         return AsyncPandasDataFrameUDF(
             async_func=cast(
-                HandlePandasBatchFunction[FhirReceiverParameters],
+                HandlePandasBatchFunction[FhirReceiverParameters, Dict[str, Any]],
                 FhirReceiverProcessor.process_partition,
             ),
             parameters=parameters,

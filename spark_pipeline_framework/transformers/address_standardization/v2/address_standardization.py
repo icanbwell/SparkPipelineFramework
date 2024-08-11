@@ -244,7 +244,9 @@ class AddressStandardization(FrameworkTransformer):
                     colName="standardized_address",
                     col=AsyncPandasStructColumnToStructColumnUDF(
                         async_func=cast(
-                            HandlePandasBatchFunction[AddressStandardizationParameters],
+                            HandlePandasBatchFunction[
+                                AddressStandardizationParameters, Dict[str, Any]
+                            ],
                             standardize_list,
                         ),
                         parameters=AddressStandardizationParameters(),

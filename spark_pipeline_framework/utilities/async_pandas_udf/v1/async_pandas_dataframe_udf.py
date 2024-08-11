@@ -22,7 +22,7 @@ TParameters = TypeVar("TParameters")
 
 
 class AsyncPandasDataFrameUDF(
-    AsyncBasePandasUDF[TParameters, pd.DataFrame, pd.DataFrame]
+    AsyncBasePandasUDF[TParameters, pd.DataFrame, pd.DataFrame, Dict[str, Any]]
 ):
     async def get_input_values_from_batch(
         self, batch: pd.DataFrame

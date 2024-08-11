@@ -99,7 +99,9 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
     result_df: DataFrame = df.mapInPandas(
         AsyncPandasDataFrameUDF(
             parameters=MyParameters(log_level="DEBUG"),
-            async_func=cast(HandlePandasBatchFunction[MyParameters], test_async),
+            async_func=cast(
+                HandlePandasBatchFunction[MyParameters, Dict[str, Any]], test_async
+            ),
             batch_size=1,
         ).get_pandas_udf(),
         schema=df.schema,

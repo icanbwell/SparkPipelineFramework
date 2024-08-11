@@ -106,7 +106,7 @@ def test_async_pandas_column_udf(spark_session: SparkSession) -> None:
         colName="processed_name",
         col=AsyncPandasStructColumnToStructColumnUDF(
             async_func=cast(
-                HandlePandasBatchFunction[MyParameters],
+                HandlePandasBatchFunction[MyParameters, Dict[str, Any]],
                 test_async,
             ),
             parameters=MyParameters(),
