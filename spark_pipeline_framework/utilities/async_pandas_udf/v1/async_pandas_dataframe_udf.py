@@ -64,7 +64,7 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         """
         task_context: Optional[TaskContext] = TaskContext.get()
         partition_index: int = task_context.partitionId() if task_context else 0
-        chunk_index: int = -1
+        chunk_index: int = 0
 
         batch: pd.DataFrame
         async for batch in self.to_async_iter(batch_iter):
@@ -81,7 +81,7 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
                     AsyncGenerator[Dict[str, Any], None],
                     self.async_func(
                         partition_index=partition_index,
-                        chunk_index=0,
+                        chunk_index=chunk_index,
                         input_values=input_values,
                         parameters=self.parameters,
                     ),

@@ -65,7 +65,7 @@ class AsyncPandasColumnUDF(Generic[TParameters]):
         """
         task_context: Optional[TaskContext] = TaskContext.get()
         partition_index: int = task_context.partitionId() if task_context else 0
-        chunk_index: int = -1
+        chunk_index: int = 0
 
         batch: pd.Series  # type:ignore[type-arg]
         async for batch in self.to_async_iter(batch_iter):
