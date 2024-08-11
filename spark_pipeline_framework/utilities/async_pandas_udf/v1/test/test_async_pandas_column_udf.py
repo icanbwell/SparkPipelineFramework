@@ -14,6 +14,7 @@ from typing import (
 )
 
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.functions import struct, to_json
 from pyspark.sql.types import StructType, StructField, StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -37,6 +38,9 @@ def test_async_pandas_column_udf(spark_session: SparkSession) -> None:
         ],
         ["id", "name"],
     )
+
+    # add a json column
+    df = df.withColumn("name_struct", to_json(struct("*")))
 
     print(f"Partition Count: {df.rdd.getNumPartitions()}")
 
@@ -109,7 +113,7 @@ def test_async_pandas_column_udf(spark_session: SparkSession) -> None:
         ).get_pandas_udf(
             return_type=StructType([StructField("name", StringType())]),
         )(
-            df["name"]
+            df["name_struct"]
         ),
     )
 

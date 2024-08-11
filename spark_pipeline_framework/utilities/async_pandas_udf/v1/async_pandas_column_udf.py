@@ -8,6 +8,7 @@ from typing import (
     cast,
     Callable,
     TypeVar,
+    Iterator,
 )
 
 import pandas as pd
@@ -31,6 +32,12 @@ class AsyncPandasColumnUDF(
         input_values: List[Dict[str, Any]] = batch.apply(json.loads).tolist()
         return input_values
 
+    def my_apply_process_batch_udf(
+        self, batch_iter: Iterator[pd.Series]  # type:ignore[type-arg]
+    ) -> Iterator[pd.DataFrame]:
+        # Need this so pandas_udf can use type hints on batch_iter
+        return super().apply_process_batch_udf(batch_iter)
+
     def get_pandas_udf(self, return_type: StructType) -> Callable[[Column], Column]:
         """
         Returns a Pandas UDF function that can be used in Spark.
@@ -41,7 +48,7 @@ class AsyncPandasColumnUDF(
         return cast(
             Callable[[Column], Column],
             pandas_udf(  # type:ignore[call-overload]
-                self.apply_process_batch_udf,
+                self.my_apply_process_batch_udf,
                 returnType=return_type,
             ),
         )
