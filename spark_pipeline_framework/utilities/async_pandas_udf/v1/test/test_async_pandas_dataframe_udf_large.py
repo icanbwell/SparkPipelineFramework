@@ -14,6 +14,7 @@ from typing import (
 )
 
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StructType, StructField, StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
@@ -81,12 +82,12 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
-        if parameters is not None and parameters.log_level == "DEBUG":
-            spark_partition_information: SparkPartitionInformation = (
-                SparkPartitionInformation.from_current_task_context(
-                    chunk_index=chunk_index,
-                )
+        spark_partition_information: SparkPartitionInformation = (
+            SparkPartitionInformation.from_current_task_context(
+                chunk_index=chunk_index,
             )
+        )
+        if parameters is not None and parameters.log_level == "DEBUG":
             logger = get_logger(__name__)
             ids = [input_value["id"] for input_value in input_values]
             message: str = f"In test_async"
@@ -112,7 +113,16 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
             yield {
                 "id": input_value["id"],
                 "name": input_value["name"] + "_processed",
+                "partition_info": spark_partition_information.to_json(),
             }
+
+    output_schema: StructType = StructType(
+        [
+            StructField("id", StringType(), False),
+            StructField("name", StringType(), False),
+            StructField("partition_info", StringType(), False),
+        ]
+    )
 
     result_df: DataFrame = df.mapInPandas(
         AsyncPandasDataFrameUDF(
@@ -122,12 +132,13 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
             ),
             batch_size=2,
         ).get_pandas_udf(),
-        schema=df.schema,
+        schema=output_schema,
     )
 
     print("result_df")
-    result_df.show()
+    result_df.show(truncate=False)
 
     assert result_df.count() == 20
     assert result_df.collect()[0]["name"] == "Qureshi_processed"
     assert result_df.collect()[1]["name"] == "Vidal_processed"
+    assert result_df.collect()[0]["partition_info"] != ""

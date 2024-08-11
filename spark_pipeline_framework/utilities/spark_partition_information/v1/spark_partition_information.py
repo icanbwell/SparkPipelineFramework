@@ -1,9 +1,17 @@
 import dataclasses
+import json
 import os
 import threading
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from pyspark import TaskContext
+from pyspark.sql.types import (
+    StructType,
+    StructField,
+    IntegerType,
+    StringType,
+    BooleanType,
+)
 
 
 @dataclasses.dataclass
@@ -76,3 +84,32 @@ class SparkPartitionInformation:
             f" | Spark Task Attempt ID: {self.task_attempt_id}"
             f" | Spark CPUs: {self.cpus}"
         )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
+    @staticmethod
+    def get_schema() -> StructType:
+        return StructType(
+            [
+                StructField("partition_index", IntegerType(), True),
+                StructField("chunk_index", IntegerType(), True),
+                StructField("process_id", IntegerType(), False),
+                StructField("thread_name", StringType(), False),
+                StructField("stage_id", IntegerType(), True),
+                StructField("task_attempt_id", IntegerType(), True),
+                StructField("cpus", IntegerType(), True),
+                StructField("is_driver", BooleanType(), False),
+            ]
+        )
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json_string: str) -> "SparkPartitionInformation":
+        return cls(**json.loads(json_string))
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, Any]) -> "SparkPartitionInformation":
+        return cls(**dictionary)

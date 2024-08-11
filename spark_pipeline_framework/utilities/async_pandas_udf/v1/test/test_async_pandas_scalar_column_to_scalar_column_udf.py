@@ -104,7 +104,7 @@ def test_async_pandas_scalar_column_to_scalar_column_udf(
     )
 
     print("result_df")
-    result_df.show()
+    result_df.show(truncate=False)
 
     assert result_df.count() == 2
     assert result_df.collect()[0]["processed_name"] == "Qureshi_processed"

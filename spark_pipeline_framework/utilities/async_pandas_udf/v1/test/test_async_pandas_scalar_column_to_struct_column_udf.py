@@ -112,7 +112,7 @@ def test_async_pandas_scalar_column_to_struct_column_udf(
     )
 
     print("result_df")
-    result_df.show()
+    result_df.show(truncate=False)
 
     assert result_df.count() == 2
     assert result_df.select("processed_name.name").collect() == [

@@ -108,7 +108,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
     )
 
     print("result_df")
-    result_df.show()
+    result_df.show(truncate=False)
 
     assert result_df.count() == 2
     assert result_df.collect()[0]["name"] == "Qureshi_processed"
