@@ -21,13 +21,20 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_ud
 TParameters = TypeVar("TParameters")
 
 
-class AsyncPandasDataFrameUDF(AsyncBasePandasUDF[TParameters, pd.DataFrame]):
+class AsyncPandasDataFrameUDF(
+    AsyncBasePandasUDF[TParameters, pd.DataFrame, pd.DataFrame]
+):
     async def get_input_values_from_batch(
         self, batch: pd.DataFrame
     ) -> List[Dict[str, Any]]:
         pdf_json: str = batch.to_json(orient="records")
         input_values: List[Dict[str, Any]] = json.loads(pdf_json)
         return input_values
+
+    async def create_output_from_dict(
+        self, output_values: List[Dict[str, Any]]
+    ) -> pd.DataFrame:
+        return pd.DataFrame(output_values)
 
     def get_pandas_udf(
         self,

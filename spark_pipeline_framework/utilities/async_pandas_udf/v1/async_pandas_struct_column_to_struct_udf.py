@@ -23,14 +23,26 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_ud
 TParameters = TypeVar("TParameters")
 
 
-class AsyncPandasColumnUDF(
-    AsyncBasePandasUDF[TParameters, pd.Series]  # type:ignore[type-arg]
+class AsyncPandasStructColumnToStructColumnUDF(
+    AsyncBasePandasUDF[TParameters, pd.Series, pd.DataFrame]  # type:ignore[type-arg]
 ):
+    """
+    This class wraps an async function in a Pandas UDF for use in Spark.  This class is used
+    when the input is a struct column and the output is a struct column.
+
+
+    """
+
     async def get_input_values_from_batch(
         self, batch: pd.Series  # type:ignore[type-arg]
     ) -> List[Dict[str, Any]]:
         input_values: List[Dict[str, Any]] = batch.apply(json.loads).tolist()
         return input_values
+
+    async def create_output_from_dict(
+        self, output_values: List[Dict[str, Any]]
+    ) -> pd.DataFrame:
+        return pd.DataFrame(output_values)
 
     def my_apply_process_batch_udf(
         self, batch_iter: Iterator[pd.Series]  # type:ignore[type-arg]

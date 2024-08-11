@@ -26,9 +26,12 @@ TParameters = TypeVar("TParameters")
 TInputDataSource = TypeVar(
     "TInputDataSource", pd.DataFrame, pd.Series  # type:ignore[type-arg]
 )
+TOutputDataSource = TypeVar(
+    "TOutputDataSource", pd.DataFrame, pd.Series  # type:ignore[type-arg]
+)
 
 
-class AsyncBasePandasUDF(Generic[TParameters, TInputDataSource]):
+class AsyncBasePandasUDF(Generic[TParameters, TInputDataSource, TOutputDataSource]):
     def __init__(
         self,
         *,
@@ -89,11 +92,18 @@ class AsyncBasePandasUDF(Generic[TParameters, TInputDataSource]):
     @abstractmethod
     async def get_input_values_from_batch(
         self, batch: TInputDataSource
-    ) -> List[Dict[str, Any]]: ...
+    ) -> List[Dict[str, Any]]:
+        """
+        This abstract method is called to convert the input data to a list of dictionaries.
+
+        :param batch: the input data
+        :return: a list of dictionaries
+        """
+        ...
 
     async def async_apply_process_batch_udf(
         self, batch_iter: Iterator[TInputDataSource]
-    ) -> AsyncIterator[pd.DataFrame]:
+    ) -> AsyncIterator[TOutputDataSource]:
         """
         Apply the custom function `standardize_batch` to the input batch iterator asynchronously.
         This is an async function that processes the input data in batches.
@@ -114,7 +124,7 @@ class AsyncBasePandasUDF(Generic[TParameters, TInputDataSource]):
             begin_chunk_input_values_index: int = chunk_input_values_index
             chunk_input_values_index += len(chunk_input_values)
             if len(chunk_input_values) == 0:
-                yield pd.DataFrame([])
+                yield await self.create_output_from_dict([])
             else:
                 output_values: List[Dict[str, Any]] = []
                 chunk_input_range: range = range(
@@ -131,24 +141,36 @@ class AsyncBasePandasUDF(Generic[TParameters, TInputDataSource]):
                     ),
                 ):
                     output_values.append(output_value)
-                yield pd.DataFrame(output_values)
+                yield await self.create_output_from_dict(output_values)
+
+    @abstractmethod
+    async def create_output_from_dict(
+        self, output_values: List[Dict[str, Any]]
+    ) -> TOutputDataSource:
+        """
+        This abstract method is called to convert the output data from a list of dictionaries to the output data type.
+
+        :param output_values: the output data
+        :return: the output data
+        """
+        ...
 
     # noinspection PyMethodMayBeStatic
     async def collect_async_iterator(
-        self, async_iter: AsyncIterator[pd.DataFrame]
-    ) -> List[pd.DataFrame]:
+        self, async_iter: AsyncIterator[TOutputDataSource]
+    ) -> List[TOutputDataSource]:
         return [item async for item in async_iter]
 
     def apply_process_batch_udf(
         self, batch_iter: Iterator[TInputDataSource]
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[TOutputDataSource]:
         """
         This function will be called for each partition in Spark.  It will run on worker nodes in parallel.
         Within each partition, the input data will be processed in batches using Pandas.  The size of the batches
         is controlled by the `spark.sql.execution.arrow.maxRecordsPerBatch` configuration.
 
-        :param batch_iter: Iterable[pd.DataFrame]
-        :return: Iterable[pd.DataFrame]
+        :param batch_iter: Iterable[pd.DataFrame | pd.Series]
+        :return: Iterable[pd.DataFrame | pd.Series]
         """
         try:
             loop = asyncio.get_running_loop()
@@ -156,8 +178,8 @@ class AsyncBasePandasUDF(Generic[TParameters, TInputDataSource]):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        async_iter: AsyncIterator[pd.DataFrame] = self.async_apply_process_batch_udf(
-            batch_iter
+        async_iter: AsyncIterator[TOutputDataSource] = (
+            self.async_apply_process_batch_udf(batch_iter)
         )
         async_gen = loop.run_until_complete(self.collect_async_iterator(async_iter))
         return iter(async_gen)

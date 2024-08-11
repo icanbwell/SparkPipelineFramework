@@ -15,8 +15,8 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_column_udf import (
-    AsyncPandasColumnUDF,
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_struct_udf import (
+    AsyncPandasStructColumnToStructColumnUDF,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchFunction,
@@ -242,7 +242,7 @@ class AddressStandardization(FrameworkTransformer):
                 # add a new column that will hold the result of standardization as a struct
                 combined_df = address_df.withColumn(
                     colName="standardized_address",
-                    col=AsyncPandasColumnUDF(
+                    col=AsyncPandasStructColumnToStructColumnUDF(
                         async_func=cast(
                             HandlePandasBatchFunction[AddressStandardizationParameters],
                             standardize_list,
