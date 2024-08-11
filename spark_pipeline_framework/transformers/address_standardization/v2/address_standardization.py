@@ -169,6 +169,9 @@ class AddressStandardization(FrameworkTransformer):
             # noinspection PyUnusedLocal
             async def standardize_list(
                 *,
+                partition_index: int,
+                chunk_index: int,
+                chunk_input_range: range,
                 input_values: List[Dict[str, Any]],
                 parameters: Optional[AddressStandardizationParameters],
             ) -> AsyncGenerator[Dict[str, Any], None]:
@@ -179,6 +182,9 @@ class AddressStandardization(FrameworkTransformer):
                 address1, address2, city, state, zip, latitude, longitude
 
                 :param input_values:
+                :param partition_index:
+                :param chunk_index:
+                :param chunk_input_range:
                 :param parameters:
                 :return:
                 """

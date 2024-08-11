@@ -61,6 +61,10 @@ def clean_close(session: SparkSession) -> None:
 
 
 def create_spark_session(request: Any) -> SparkSession:
+
+    logging.getLogger("org.apache.spark.deploy.SparkSubmit").setLevel(logging.ERROR)
+    logging.getLogger("org.apache.ivy").setLevel(logging.ERROR)
+
     # make sure env variables are set correctly
     if "SPARK_HOME" not in os.environ:
         os.environ["SPARK_HOME"] = "/usr/local/opt/spark"

@@ -12,7 +12,7 @@ from typing import (
 import pandas as pd
 from pyspark.sql import Column
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import StructType, AtomicType
+from pyspark.sql.types import AtomicType
 
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
@@ -75,9 +75,7 @@ class AsyncPandasScalarColumnToScalarColumnUDF(
         # Need this so pandas_udf can use type hints on batch_iter
         return super().apply_process_batch_udf(batch_iter)
 
-    def get_pandas_udf(
-        self, return_type: StructType | AtomicType
-    ) -> Callable[[Column], Column]:
+    def get_pandas_udf(self, return_type: AtomicType) -> Callable[[Column], Column]:
         """
         Returns a Pandas UDF function that can be used in Spark.
 

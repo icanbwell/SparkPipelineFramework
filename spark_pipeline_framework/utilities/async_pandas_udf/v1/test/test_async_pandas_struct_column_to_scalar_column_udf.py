@@ -15,15 +15,15 @@ from typing import (
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import struct, to_json
-from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql.types import StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_struct_udf import (
-    AsyncPandasStructColumnToStructColumnUDF,
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_scalar_udf import (
+    AsyncPandasStructColumnToScalarColumnUDF,
 )
 
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasStructToStructBatchFunction,
+    HandlePandasStructToScalarBatchFunction,
 )
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
@@ -70,7 +70,7 @@ def test_async_pandas_struct_column_to_struct_column_udf(
         chunk_input_range: range,
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[str, None]:
         if parameters is not None and parameters.log_level == "DEBUG":
             spark_partition_information: SparkPartitionInformation = (
                 SparkPartitionInformation.from_current_task_context(
@@ -99,32 +99,23 @@ def test_async_pandas_struct_column_to_struct_column_udf(
         for input_value in input_values:
             # simulate a delay
             await asyncio.sleep(0.1)
-            yield {
-                "id": input_value["id"],
-                "name": input_value["name"] + "_processed",
-            }
+            yield input_value["name"] + "_processed"
 
     result_df: DataFrame = df.withColumn(
         colName="processed_name",
-        col=AsyncPandasStructColumnToStructColumnUDF(
+        col=AsyncPandasStructColumnToScalarColumnUDF(
             async_func=cast(
-                HandlePandasStructToStructBatchFunction[MyParameters],
+                HandlePandasStructToScalarBatchFunction[MyParameters],
                 test_async,
             ),
             parameters=MyParameters(),
             batch_size=2,
-        ).get_pandas_udf(
-            return_type=StructType([StructField("name", StringType())]),
-        )(
-            df["name_struct"]
-        ),
+        ).get_pandas_udf(return_type=StringType())(df["name_struct"]),
     )
 
     print("result_df")
     result_df.show(truncate=False)
 
     assert result_df.count() == 2
-    assert result_df.select("processed_name.name").collect() == [
-        ("Qureshi_processed",),
-        ("Vidal_processed",),
-    ]
+    assert result_df.collect()[0]["processed_name"] == "Qureshi_processed"
+    assert result_df.collect()[1]["processed_name"] == "Vidal_processed"
