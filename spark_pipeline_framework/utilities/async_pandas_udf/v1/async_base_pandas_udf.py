@@ -53,8 +53,10 @@ class AsyncBasePandasUDF(
 
     TInputDataSource is the type of the input data.  It can be a pd.DataFrame or pd.Series.
     TOutputDataSource is the type of the output data. It can be a pd.DataFrame or pd.Series.
-    TDataType is the type of the data in the dictionaries.  It can be dict for struct columns otherwise the type of
-    the column
+    TInputColumnDataType is the type of the data in the incoming dictionaries.  It can be dict for struct columns
+        otherwise the type of the column
+    TOutputColumnDataType is the type of the data in the outgoing dictionaries. It can be dict for struct columns
+        otherwise the type of the column
     """
 
     def __init__(

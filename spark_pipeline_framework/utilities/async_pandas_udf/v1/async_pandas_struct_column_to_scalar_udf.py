@@ -38,13 +38,6 @@ class AsyncPandasStructColumnToScalarColumnUDF(
         MyColumnDataType,
     ]
 ):
-    """
-    This class wraps an async function in a Pandas UDF for use in Spark.  This class is used
-    when the input is a struct column and the output is a struct column.
-
-
-    """
-
     def __init__(
         self,
         *,
@@ -52,6 +45,15 @@ class AsyncPandasStructColumnToScalarColumnUDF(
         parameters: Optional[TParameters],
         batch_size: int,
     ) -> None:
+        """
+        This class wraps an async function in a Pandas UDF for use in Spark.  This class is used
+        when the input is a struct column and the output is a scalar column.
+
+
+        :param async_func: the async function to run
+        :param parameters: the parameters to pass to the async function
+        :param batch_size: the size of the batches to process
+        """
         super().__init__(
             async_func=async_func,
             parameters=parameters,
