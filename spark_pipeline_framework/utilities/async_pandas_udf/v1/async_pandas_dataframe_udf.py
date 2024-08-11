@@ -33,7 +33,7 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         *,
         async_func: HandlePandasBatchFunction[TParameters],
         parameters: Optional[TParameters],
-        batch_size: int = 100,
+        batch_size: int,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.
@@ -54,9 +54,8 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         for item in sync_iter:
             yield item
 
-    @staticmethod
     async def get_batches_of_size(
-        *, batch_size: int, batch_iter: AsyncIterator[pd.DataFrame]
+        self, *, batch_size: int, batch_iter: AsyncIterator[pd.DataFrame]
     ) -> AsyncGenerator[List[Dict[str, Any]], None]:
         """
         Given an async iterator of dataframes, this function will yield batches of the content of the dataframes.
@@ -66,18 +65,31 @@ class AsyncPandasDataFrameUDF(Generic[TParameters]):
         :return: an async generator of batches of dictionaries
         """
         batch: pd.DataFrame
+        batch_number: int = 0
         batch_input_values: List[Dict[str, Any]] = []
         async for batch in batch_iter:
+            batch_number += 1
             # Convert JSON strings to dictionaries
             # convert the dataframe to a list of dictionaries
-            pdf_json: str = batch.to_json(orient="records")
-            input_values: List[Dict[str, Any]] = json.loads(pdf_json)
+            input_values = await self.get_input_values_from_batch(batch)
             batch_input_values.extend(input_values)
             if len(batch_input_values) >= batch_size:
-                yield batch_input_values
-                batch_input_values = []
+                # print(f"yielding batch_input_values at batch {batch_number}: {len(batch_input_values)}"
+                #       f", batch_size: {batch_size}")
+                yield batch_input_values[:batch_size]
+                batch_input_values = batch_input_values[batch_size:]
         if len(batch_input_values) > 0:
+            # print(f"yielding batch_input_values at the end at batch {batch_number}: {len(batch_input_values)}"
+            #       f", batch_size: {batch_size}")
             yield batch_input_values
+
+    # noinspection PyMethodMayBeStatic
+    async def get_input_values_from_batch(
+        self, batch: pd.DataFrame
+    ) -> List[Dict[str, Any]]:
+        pdf_json: str = batch.to_json(orient="records")
+        input_values: List[Dict[str, Any]] = json.loads(pdf_json)
+        return input_values
 
     async def async_apply_process_batch_udf(
         self, batch_iter: Iterator[pd.DataFrame]
