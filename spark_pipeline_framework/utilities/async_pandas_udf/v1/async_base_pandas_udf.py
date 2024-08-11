@@ -37,11 +37,13 @@ class AsyncBasePandasUDF(Generic[TParameters, TInputDataSource]):
         batch_size: int,
     ) -> None:
         """
-        This class wraps an async function in a Pandas UDF for use in Spark.
-        This class is used to read rows in a dataframe and return rows after processing that row.
+        This class wraps an async function in a Pandas UDF for use in Spark.  The subclass must
+        supply TInputDataSource and implement the abstract methods in this class
 
         :param async_func: an async function that takes a list of dictionaries as input and
                             returns a list of dictionaries
+        :param parameters: parameters to pass to the async function
+        :param batch_size: the size of the batches
         """
         self.async_func: HandlePandasBatchFunction[TParameters] = async_func
         self.parameters: Optional[TParameters] = parameters
@@ -116,7 +118,7 @@ class AsyncBasePandasUDF(Generic[TParameters, TInputDataSource]):
             else:
                 output_values: List[Dict[str, Any]] = []
                 chunk_input_range: range = range(
-                    begin_chunk_input_values_index, chunk_input_values_index
+                    begin_chunk_input_values_index + 1, chunk_input_values_index
                 )
                 async for output_value in cast(
                     AsyncGenerator[Dict[str, Any], None],
