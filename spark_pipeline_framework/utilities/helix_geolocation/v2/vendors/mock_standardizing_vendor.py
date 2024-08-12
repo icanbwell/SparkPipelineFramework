@@ -46,9 +46,11 @@ class MockStandardizingVendor(StandardizingVendor[MockStandardizingVendorApiResp
 
     def vendor_specific_to_std(
         self,
+        *,
         vendor_specific_addresses: List[
             VendorResponse[MockStandardizingVendorApiResponse]
         ],
+        raw_addresses: List[RawAddress],
     ) -> List[StandardizedAddress]:
         """
         each vendor class knows how to convert its response to StdAddress

@@ -429,22 +429,38 @@ class CensusStandardizingVendor(
 
     def vendor_specific_to_std(
         self,
+        *,
         vendor_specific_addresses: List[
             VendorResponse[CensusStandardizingVendorApiResponse]
         ],
+        raw_addresses: List[RawAddress],
     ) -> List[StandardizedAddress]:
         """
         Each vendor class knows how to convert its response to StdAddress
         """
+        assert all([r.get_id() for r in raw_addresses])
+        assert all(
+            [r.related_raw_address is not None for r in vendor_specific_addresses]
+        )
+        assert all([r.related_raw_address.get_id() for r in vendor_specific_addresses])
         std_addresses = [
             a.api_call_response.to_standardized_address(
-                address_id=(
-                    a.related_raw_address.get_id() if a.related_raw_address else None
-                )
+                address_id=(a.related_raw_address.get_id())
             )
             for a in vendor_specific_addresses
         ]
-        return [s for s in std_addresses if s is not None]
+        # if no standardized address found then use raw_address
+        std_addresses = [
+            (
+                r
+                if r is not None
+                else self.get_matching_address(
+                    raw_addresses=raw_addresses, address_id=r.address_id
+                )
+            )
+            for r in std_addresses
+        ]
+        return std_addresses
 
     def _to_vendor_response(
         self,
@@ -454,7 +470,7 @@ class CensusStandardizingVendor(
         response_version: str,
     ) -> List[VendorResponse[CensusStandardizingVendorApiResponse]]:
         # create the map
-        id_response_map = {a.get_id(): a for a in raw_addresses}
+        id_response_map: Dict[str, RawAddress] = {a.get_id(): a for a in raw_addresses}
         # find and assign
         return [
             VendorResponse(

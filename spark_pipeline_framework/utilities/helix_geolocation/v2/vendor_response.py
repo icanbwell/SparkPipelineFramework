@@ -22,7 +22,7 @@ class VendorResponse(Generic[T]):
     """version of the response"""
     api_call_response: T
     """response from the vendor"""
-    related_raw_address: Optional[RawAddress] = None
+    related_raw_address: RawAddress
     """related raw address"""
     error: Optional[str] = None
     """error message if any"""

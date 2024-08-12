@@ -102,9 +102,11 @@ class MelissaStandardizingVendor(
 
     def vendor_specific_to_std(
         self,
+        *,
         vendor_specific_addresses: List[
             VendorResponse[MelissaStandardizingVendorApiResponse]
         ],
+        raw_addresses: List[RawAddress],
     ) -> List[StandardizedAddress]:
         """
         Each vendor class knows how to convert its response to StdAddress

@@ -65,7 +65,10 @@ class StandardizeAddr:
             )
 
             new_std_addresses.extend(
-                vendor_obj.vendor_specific_to_std(vendor_responses_batch)
+                vendor_obj.vendor_specific_to_std(
+                    vendor_specific_addresses=vendor_responses_batch,
+                    raw_addresses=raw_addresses,
+                )
             )
             # save new address to cache
             cache_handler_obj.save_to_cache(vendor_responses_batch)

@@ -41,12 +41,22 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
         line2=None,
     )
 
+    raw_addr_obj3 = RawAddress(
+        address_id="1000",
+        line1=None,
+        city=None,
+        state=None,
+        zipcode=None,
+        country="US",
+        line2=None,
+    )
+
     vendor_responses: List[VendorResponse[CensusStandardizingVendorApiResponse]] = (
         await CensusStandardizingVendor(use_bulk_api=use_bulk_api).standardize_async(
-            [raw_addr_obj, raw_addr_obj2]
+            [raw_addr_obj, raw_addr_obj2, raw_addr_obj3]
         )
     )
-    assert len(vendor_responses) == 2
+    assert len(vendor_responses) == 3
 
     # test first address
     assert vendor_responses[0].vendor_name == "census"
@@ -82,3 +92,9 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
     assert second_response.latitude.startswith("38.84")
     assert second_response.longitude is not None
     assert second_response.longitude.startswith("-76.92")
+
+    third_response: StandardizedAddress | None = vendor_responses[
+        2
+    ].api_call_response.to_standardized_address(address_id="1000")
+    assert third_response is None
+    assert vendor_responses[2].api_call_response.input is not None

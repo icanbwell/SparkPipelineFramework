@@ -51,6 +51,14 @@ def test_address_standardization_with_census_vendor(
             "state": "ca",
             "zip": "23434",
         },
+        {
+            "address_id": 3,
+            "address1": None,
+            "address2": None,
+            "city": None,
+            "state": None,
+            "zip": None,
+        },
     ]
 
     df: DataFrame = create_dataframe_from_dictionary(
@@ -68,6 +76,6 @@ def test_address_standardization_with_census_vendor(
     ).transform(df)
     final_df: DataFrame = df.sql_ctx.table(view_name)
     # assert that we have long and lat columns on the dataframe
-    assert 2 == final_df.count()
+    assert 3 == final_df.count()
     assert "latitude" in final_df.columns
     assert "longitude" in final_df.columns

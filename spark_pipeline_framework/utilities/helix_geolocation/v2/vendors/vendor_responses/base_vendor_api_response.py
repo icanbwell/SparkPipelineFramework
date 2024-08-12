@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, Any, Optional, TypeVar, Type
+from typing import Dict, Any, TypeVar, Type
 
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
@@ -15,9 +15,7 @@ class BaseVendorApiResponse:
         pass
 
     @abstractmethod
-    def to_standardized_address(
-        self, *, address_id: Optional[str]
-    ) -> Optional[StandardizedAddress]:
+    def to_standardized_address(self, *, address_id: str) -> StandardizedAddress:
         pass
 
     @classmethod

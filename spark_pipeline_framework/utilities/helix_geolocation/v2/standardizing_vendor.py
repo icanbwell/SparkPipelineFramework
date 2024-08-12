@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import List, Generic, TypeVar, Type
+from typing import List, Generic, TypeVar, Type, Optional
 
 import structlog
 
@@ -43,10 +43,16 @@ class StandardizingVendor(Generic[T], metaclass=ABCMeta):
     @abstractmethod
     def vendor_specific_to_std(
         self,
+        *,
         vendor_specific_addresses: List[VendorResponse[T]],
+        raw_addresses: List[RawAddress],
     ) -> List[StandardizedAddress]:
         """
         each vendor class knows how to convert its response to StdAddress
+
+        :param vendor_specific_addresses: vendor specific addresses
+        :param raw_addresses: raw addresses
+        :return: standardized addresses
         """
 
     @abstractmethod
@@ -80,3 +86,16 @@ class StandardizingVendor(Generic[T], metaclass=ABCMeta):
     @abstractmethod
     def get_api_response_class(cls) -> Type[T]:
         pass
+
+    # noinspection PyMethodMayBeStatic
+    def get_matching_address(
+        self, raw_addresses: List[RawAddress], address_id: str
+    ) -> Optional[RawAddress]:
+        """
+        get the matching address from the list of raw addresses
+
+        :param raw_addresses: list of raw addresses
+        :param address_id: address id
+        :return: matching address if found
+        """
+        return next(iter([r for r in raw_addresses if r.get_id() == address_id]))

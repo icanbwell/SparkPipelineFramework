@@ -20,7 +20,7 @@ class GeocodioStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
 
-    RecordID: Optional[str]
+    RecordID: str
     line1: Optional[str]
     line2: Optional[str]
     city: Optional[str]
@@ -46,9 +46,7 @@ class GeocodioStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
             Longitude=None,
         )
 
-    def to_standardized_address(
-        self, *, address_id: Optional[str]
-    ) -> Optional[StandardizedAddress]:
+    def to_standardized_address(self, *, address_id: str) -> StandardizedAddress:
         return StandardizedAddress(
             address_id=address_id,
             line1=self.line1,

@@ -18,7 +18,7 @@ class MelissaStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
 
-    RecordID: Optional[str]
+    RecordID: str
     FormattedAddress: Optional[str]
     Locality: Optional[str]
     AdministrativeArea: Optional[str]
@@ -28,9 +28,7 @@ class MelissaStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     Latitude: Optional[str]
     Longitude: Optional[str]
 
-    def to_standardized_address(
-        self, *, address_id: Optional[str]
-    ) -> StandardizedAddress:
+    def to_standardized_address(self, *, address_id: str) -> StandardizedAddress:
         return StandardizedAddress(
             address_id=address_id,
             line1=next(iter((self.FormattedAddress or "").split(";"))),

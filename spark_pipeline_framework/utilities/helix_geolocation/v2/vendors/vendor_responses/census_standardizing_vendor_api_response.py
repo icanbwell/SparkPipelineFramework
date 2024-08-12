@@ -64,7 +64,7 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
 
     input: CensusStandardizingVendorInput
     addressMatches: Optional[List[CensusStandardizingVendorAddressMatch]]
-    address_id: Optional[str] = None
+    address_id: str
 
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
@@ -122,11 +122,12 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
             ],
         )
 
-    def to_standardized_address(
-        self, *, address_id: Optional[str]
-    ) -> Optional[StandardizedAddress]:
+    def to_standardized_address(self, *, address_id: str) -> StandardizedAddress:
         if not self.addressMatches or len(self.addressMatches) == 0:
-            return None
+            return StandardizedAddress.from_address_id(
+                address_id=address_id,
+                vendor_name="census",
+            )
 
         # Get the address matches
         address_matches: List[CensusStandardizingVendorAddressMatch] | None = (
@@ -134,8 +135,10 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         )
 
         if not address_matches or len(address_matches) == 0:
-            return None
-
+            return StandardizedAddress.from_address_id(
+                address_id=address_id,
+                vendor_name="census",
+            )
         # Get the first address match
         first_address_match: CensusStandardizingVendorAddressMatch = address_matches[0]
 
@@ -153,7 +156,10 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         )
 
         if not address_components:
-            return None
+            return StandardizedAddress.from_address_id(
+                address_id=address_id,
+                vendor_name="census",
+            )
 
         # Get the street number
         # street_number: Optional[str] = address_components.get("fromAddress")
