@@ -4,7 +4,7 @@ from typing import Optional
 
 @dataclasses.dataclass
 class ElasticSearchSenderParameters:
-    desired_partitions: int
+    total_partitions: int
     name: Optional[str]
     index: str
     operation: str

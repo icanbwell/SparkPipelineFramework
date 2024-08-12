@@ -1,5 +1,4 @@
 import json
-import math
 from os import environ
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable
@@ -53,6 +52,9 @@ from spark_pipeline_framework.utilities.map_functions import remove_field_from_j
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
+from spark_pipeline_framework.utilities.spark_partition_helper.v1.spark_partition_helper import (
+    SparkPartitionHelper,
+)
 
 
 class FhirSender(FrameworkTransformer):
@@ -65,6 +67,7 @@ class FhirSender(FrameworkTransformer):
         file_path: Path | str | Callable[[str | None], Path | str] | None = None,
         response_path: Path | str | Callable[[str | None], Path | str] | None = None,
         resource: str,
+        partition_size: Optional[int] = None,
         batch_size: Optional[int] = 30,
         limit: int = -1,
         file_format: str = "json",
@@ -186,6 +189,9 @@ class FhirSender(FrameworkTransformer):
 
         self.batch_size: Param[Optional[int]] = Param(self, "batch_size", "")
         self._setDefault(batch_size=batch_size)
+
+        self.partition_size: Param[Optional[int]] = Param(self, "partition_size", "")
+        self._setDefault(partition_size=partition_size)
 
         self.throw_exception_on_validation_failure: Param[Optional[bool]] = Param(
             self, "throw_exception_on_validation_failure", ""
@@ -325,6 +331,7 @@ class FhirSender(FrameworkTransformer):
         )
         server_url: str = self.getOrDefault(self.server_url)
         batch_size: Optional[int] = self.getOrDefault(self.batch_size)
+        partition_size: Optional[int] = self.getOrDefault(self.partition_size)
         throw_exception_on_validation_failure: Optional[bool] = self.getOrDefault(
             self.throw_exception_on_validation_failure
         )
@@ -388,9 +395,6 @@ class FhirSender(FrameworkTransformer):
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
         source_view: Optional[str] = self.getOrDefault(self.source_view)
-
-        if not enable_repartitioning:
-            assert (partition_by_column_name or num_partitions) is None
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -473,17 +477,20 @@ class FhirSender(FrameworkTransformer):
                     f" with batch_size {batch_size}  -----"
                 )
                 assert batch_size and batch_size > 0
+                # see if we need to partition the incoming dataframe
                 desired_partitions: int = (
-                    (num_partitions or math.ceil(row_count / batch_size))
-                    if enable_repartitioning
-                    else json_df.rdd.getNumPartitions()
+                    SparkPartitionHelper.calculate_desired_partitions(
+                        df=json_df,
+                        num_partitions=num_partitions,
+                        partition_size=partition_size,
+                    )
                 )
-                if partition_by_column_name:
-                    json_df = json_df.withColumn(
-                        partition_by_column_name,
-                        get_json_object(col("value"), f"$.{partition_by_column_name}"),
-                    ).repartition(desired_partitions, partition_by_column_name)
-                    json_df = json_df.drop(partition_by_column_name)
+                json_df = SparkPartitionHelper.partition_if_needed(
+                    df=json_df,
+                    desired_partitions=desired_partitions,
+                    enable_repartitioning=enable_repartitioning,
+                    partition_by_column_name=partition_by_column_name,
+                )
 
                 if sort_by_column_name_and_type:
                     column_name, column_type = sort_by_column_name_and_type
@@ -512,7 +519,7 @@ class FhirSender(FrameworkTransformer):
 
                 result_df: Optional[DataFrame] = None
                 sender_parameters: FhirSenderParameters = FhirSenderParameters(
-                    desired_partitions=desired_partitions,
+                    total_partitions=desired_partitions,
                     operation=operation,
                     server_url=server_url,
                     resource_name=resource_name,
@@ -555,11 +562,6 @@ class FhirSender(FrameworkTransformer):
                         )
                     )
                 else:
-                    # ---- Now process all the results ----
-                    if enable_repartitioning and not partition_by_column_name:
-                        # repartition only when we haven't already repartitioned by column
-                        # and enable_repartitioning is True
-                        json_df = json_df.repartition(desired_partitions)
                     # use mapInPandas
                     # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#map
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map

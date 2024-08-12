@@ -7,6 +7,7 @@ from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 
 @dataclasses.dataclass
 class FhirReceiverParameters:
+    total_partitions: Optional[int]
     batch_size: Optional[int]
     has_token_col: bool
     server_url: Optional[str]
@@ -51,6 +52,7 @@ class FhirReceiverParameters:
 
     def clone(self) -> "FhirReceiverParameters":
         return FhirReceiverParameters(
+            total_partitions=self.total_partitions,
             batch_size=self.batch_size,
             has_token_col=self.has_token_col,
             server_url=self.server_url,

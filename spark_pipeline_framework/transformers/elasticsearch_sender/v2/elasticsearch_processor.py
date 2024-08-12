@@ -79,7 +79,7 @@ class ElasticSearchProcessor:
             formatted_message: str = (
                 f"{formatted_time}: "
                 f"{message}"
-                f" | Partition: {partition_index}"
+                f" | Partition: {partition_index}/{parameters.total_partitions}"
                 f" | Chunk: {chunk_index}"
                 f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
                 f" | {spark_partition_information}"
@@ -188,7 +188,7 @@ class ElasticSearchProcessor:
 
         if len(json_data_list) > 0:
             logger.info(
-                f"Sending batch {partition_index}/{parameters.desired_partitions} "
+                f"Sending batch {partition_index}/{parameters.total_partitions} "
                 f"containing {len(json_data_list)} rows "
                 f"to ES Server/{parameters.index}. [{parameters.name}].."
             )
@@ -207,7 +207,7 @@ class ElasticSearchProcessor:
             yield response_json
         else:
             logger.info(
-                f"Batch {partition_index}/{parameters.desired_partitions} is empty"
+                f"Batch {partition_index}/{parameters.total_partitions} is empty"
             )
             yield ElasticSearchResult(
                 url=parameters.index,

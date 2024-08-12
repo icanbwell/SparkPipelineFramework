@@ -132,11 +132,12 @@ class FhirReceiverProcessor:
         formatted_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         formatted_message: str = (
             f"{formatted_time}: "
-            f"{message}"
-            f" | Partition: {partition_index}"
-            f" | Chunk: {chunk_index}"
-            f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
-            f" | {spark_partition_information}"
+            + f"{message}"
+            + f" | Partition: {partition_index}"
+            + (f"/{parameters.total_partitions}" if parameters.total_partitions else "")
+            + f" | Chunk: {chunk_index}"
+            + f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+            + f" | {spark_partition_information}"
         )
         logger.info(formatted_message)
 

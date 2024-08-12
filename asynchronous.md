@@ -210,5 +210,13 @@ This can be memory intensive.
 
 However, this framework uses Arrow (a columnar memory framework) so the data is shared between JVM and Python without needing to serialize and deserialize between Python and JVM.
 
+# Use asyncio drivers for external systems
+To make this work you need to use an async driver for the external system you are calling.  The synchronous drivers will block the worker node and prevent it from making other async calls.
+
+For example for HTTP calls, you can use `aiohttp` library and for elastic search you can use `opensearch-py` library.
+
+You can find a list of async drivers here: https://github.com/timofurrer/awesome-asyncio
+
+
 # Summary
 By using these classes you can easily use async functions with Spark data frames. This can be useful when you need to perform tasks that are time-consuming, such as reading from a file, accessing a web server (e.g. FHIR or Elasticsearch) or making a network request. By using asynchronous processing, a system can handle multiple requests at the same time, which can improve performance and reduce latency.

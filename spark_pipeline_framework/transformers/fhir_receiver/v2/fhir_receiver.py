@@ -1,5 +1,4 @@
 import json
-import math
 import uuid
 from datetime import datetime
 from os import environ
@@ -31,6 +30,11 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
+from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
+    FhirReceiverProcessor,
+    GetBatchResult,
+    GetBatchError,
+)
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
@@ -48,15 +52,13 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema im
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
-from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
-    FhirReceiverProcessor,
-    GetBatchResult,
-    GetBatchError,
-)
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
+)
+from spark_pipeline_framework.utilities.spark_partition_helper.v1.spark_partition_helper import (
+    SparkPartitionHelper,
 )
 
 
@@ -122,6 +124,7 @@ class FhirReceiver(FrameworkTransformer):
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = True,
         log_level: Optional[str] = None,
+        partition_size: Optional[int] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -148,8 +151,8 @@ class FhirReceiver(FrameworkTransformer):
         :param action: (Optional) do an action e.g., $everything
         :param action_payload: (Optional) in case action needs a http request payload
         :param page_size: (Optional) use paging and get this many items in each page
-        :param batch_size: (Optional) How many rows to have in each parallel partition to use for
-                            retrieving from FHIR server
+        :param partition_size: (Optional) How many rows to have in each parallel partition to use for
+        :param batch_size: (Optional) How many id rows to send to FHIR server in one call
         :param last_updated_after: (Optional) Only get records newer than this
         :param last_updated_before: (Optional) Only get records older than this
         :param sort_fields: sort by fields in the resource
@@ -268,6 +271,9 @@ class FhirReceiver(FrameworkTransformer):
 
         self.batch_size: Param[Optional[int]] = Param(self, "batch_size", "")
         self._setDefault(batch_size=None)
+
+        self.partition_size: Param[Optional[int]] = Param(self, "partition_size", "")
+        self._setDefault(partition_size=None)
 
         self.last_updated_after: Param[Optional[datetime]] = Param(
             self, "last_updated_after", ""
@@ -450,6 +456,7 @@ class FhirReceiver(FrameworkTransformer):
         include_only_properties: Optional[List[str]] = self.getIncludeOnlyProperties()
         page_size: Optional[int] = self.getPageSize()
         batch_size: Optional[int] = self.getBatchSize()
+        partition_size: Optional[int] = self.getOrDefault(self.partition_size)
         limit: Optional[int] = self.getLimit()
         last_updated_before: Optional[datetime] = self.getLastUpdatedBefore()
         last_updated_after: Optional[datetime] = self.getLastUpdateAfter()
@@ -600,19 +607,28 @@ class FhirReceiver(FrameworkTransformer):
                 self.logger.info(
                     f"----- Total {row_count} rows to request from {server_url or ''}/{resource_name}  -----"
                 )
+                # see if we need to partition the incoming dataframe
                 desired_partitions: int = (
-                    math.ceil(row_count / batch_size)
-                    if batch_size and batch_size > 0
-                    else 1
+                    SparkPartitionHelper.calculate_desired_partitions(
+                        df=id_df,
+                        num_partitions=num_partitions,
+                        partition_size=partition_size,
+                    )
                 )
-                if not batch_size:  # if batching is disabled then call one at a time
-                    desired_partitions = row_count
+                id_df = SparkPartitionHelper.partition_if_needed(
+                    df=id_df,
+                    desired_partitions=desired_partitions,
+                    partition_by_column_name=partition_by_column_name,
+                    enable_repartitioning=enable_repartitioning,
+                )
+
                 self.logger.info(
                     f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
                 result_with_counts_and_responses: DataFrame
                 receiver_parameters: FhirReceiverParameters = FhirReceiverParameters(
+                    total_partitions=desired_partitions,
                     batch_size=batch_size,
                     has_token_col=has_token_col,
                     server_url=server_url,
@@ -670,10 +686,6 @@ class FhirReceiver(FrameworkTransformer):
                     )
                 else:
                     # ---- Now process all the results ----
-                    if enable_repartitioning:
-                        # repartition only when we haven't already repartitioned by column
-                        # and enable_repartitioning is True
-                        id_df = id_df.repartition(desired_partitions)
                     if has_token_col and not server_url:
                         assert slug_column
                         assert url_column
@@ -985,6 +997,7 @@ class FhirReceiver(FrameworkTransformer):
                     result_df.createOrReplaceTempView(view)
             else:  # get all resources
                 receiver_parameters = FhirReceiverParameters(
+                    total_partitions=None,  # in this case we are just reading from Spark so don't know partitions
                     batch_size=batch_size,
                     has_token_col=False,
                     server_url=server_url,

@@ -1,3 +1,5 @@
+from datetime import datetime
+from logging import Logger
 from typing import Any, Dict, List, Optional, Callable, AsyncGenerator, cast
 
 from pyspark.ml.param import Param
@@ -45,6 +47,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
+)
+from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
+    SparkPartitionInformation,
 )
 
 
@@ -164,7 +169,7 @@ class AddressStandardization(FrameworkTransformer):
 
             class AddressStandardizationParameters:
                 # add parameters to pass to async function below here
-                pass
+                log_level: str = "INFO"
 
             # noinspection PyUnusedLocal
             async def standardize_list(
@@ -191,6 +196,32 @@ class AddressStandardization(FrameworkTransformer):
                 assert all(
                     r.get(address_column_mapping["address_id"]) for r in input_values
                 )
+                logger: Logger = get_logger(
+                    __name__,
+                    level=(
+                        parameters.log_level
+                        if parameters and parameters.log_level
+                        else "INFO"
+                    ),
+                )
+                spark_partition_information: SparkPartitionInformation = (
+                    SparkPartitionInformation.from_current_task_context(
+                        chunk_index=chunk_index,
+                    )
+                )
+                message: str = f"FhirReceiverProcessor.process_partition"
+                # Format the time to include hours, minutes, seconds, and milliseconds
+                formatted_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+                formatted_message: str = (
+                    f"{formatted_time}: "
+                    f"{message}"
+                    f" | Partition: {partition_index}"
+                    f" | Chunk: {chunk_index}"
+                    f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+                    f" | {spark_partition_information}"
+                )
+                logger.info(formatted_message)
+
                 try:
                     # create raw address raw_addresses to send to the standardization module...
                     raw_address_list: List[RawAddress] = [
@@ -213,6 +244,13 @@ class AddressStandardization(FrameworkTransformer):
                         raw_addresses=raw_address_list,
                         cache_handler_obj=cache_handler,
                         vendor_obj=standardizing_vendor,
+                    )
+                    logger.debug(
+                        f"Received result"
+                        f" | Partition: {partition_index}"
+                        f" | Chunk: {chunk_index}"
+                        f" | Vendor: {standardizing_vendor.get_vendor_name()}"
+                        f" | Count: {len(standard_addresses)}"
                     )
                     assert len(standard_addresses) == len(
                         input_values

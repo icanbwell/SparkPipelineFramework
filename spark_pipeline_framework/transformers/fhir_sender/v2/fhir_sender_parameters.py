@@ -8,7 +8,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation impor
 
 @dataclasses.dataclass
 class FhirSenderParameters:
-    desired_partitions: int
+    total_partitions: int
     operation: Union[FhirSenderOperation, str]
     server_url: str
     resource_name: str

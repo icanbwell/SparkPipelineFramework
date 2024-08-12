@@ -1,4 +1,3 @@
-import math
 from os import environ
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, List
@@ -33,6 +32,9 @@ from spark_pipeline_framework.utilities.capture_parameters import capture_parame
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
+from spark_pipeline_framework.utilities.spark_partition_helper.v1.spark_partition_helper import (
+    SparkPartitionHelper,
+)
 
 
 class ElasticSearchSender(FrameworkTransformer):
@@ -45,6 +47,7 @@ class ElasticSearchSender(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
+        partition_size: Optional[int] = None,
         batch_size: int = 100,
         limit: int = -1,
         multi_line: bool = False,
@@ -53,6 +56,8 @@ class ElasticSearchSender(FrameworkTransformer):
         run_synchronously: Optional[bool] = None,
         log_level: Optional[str] = None,
         timeout: int = 60,
+        num_partitions: Optional[int] = None,
+        enable_repartitioning: Optional[bool] = None,
     ):
         """
         Sends a folder or a view to an ElasticSearch server
@@ -93,6 +98,9 @@ class ElasticSearchSender(FrameworkTransformer):
         self.batch_size: Param[int] = Param(self, "batch_size", "")
         self._setDefault(batch_size=batch_size)
 
+        self.partition_size: Param[Optional[int]] = Param(self, "partition_size", "")
+        self._setDefault(partition_size=partition_size)
+
         self.multi_line: Param[bool] = Param(self, "multi_line", "")
         self._setDefault(multi_line=multi_line)
 
@@ -112,6 +120,14 @@ class ElasticSearchSender(FrameworkTransformer):
         self.timeout: Param[int] = Param(self, "timeout", "")
         self._setDefault(timeout=timeout)
 
+        self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
+        self._setDefault(num_partitions=num_partitions)
+
+        self.enable_repartitioning: Param[Optional[bool]] = Param(
+            self, "enable_repartitioning", ""
+        )
+        self._setDefault(enable_repartitioning=enable_repartitioning)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -125,6 +141,7 @@ class ElasticSearchSender(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         index: str = self.getIndex()
         batch_size: int = self.getBatchSize()
+        partition_size: Optional[int] = self.getOrDefault(self.partition_size)
         limit: Optional[int] = self.getLimit()
         operation: str = self.getOperation()
         parameters: Optional[Dict[str, Any]] = self.getParameters()
@@ -133,6 +150,10 @@ class ElasticSearchSender(FrameworkTransformer):
             "LOGLEVEL"
         )
         timeout: int = self.getOrDefault(self.timeout)
+        num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
+        enable_repartitioning: Optional[bool] = self.getOrDefault(
+            self.enable_repartitioning
+        )
         doc_id_prefix: Optional[str] = None
         if parameters is not None:
             doc_id_prefix = parameters.get("doc_id_prefix", None)
@@ -170,16 +191,26 @@ class ElasticSearchSender(FrameworkTransformer):
                 self.logger.info(
                     f"----- Sending {index} (rows={row_count}) to ElasticSearch server -----"
                 )
-                if not batch_size or batch_size < 1:
-                    batch_size = 1
-                desired_partitions: int = math.ceil(row_count / batch_size)
+                desired_partitions: int = (
+                    SparkPartitionHelper.calculate_desired_partitions(
+                        df=json_df,
+                        num_partitions=num_partitions,
+                        partition_size=partition_size,
+                    )
+                )
+                json_df = SparkPartitionHelper.partition_if_needed(
+                    df=json_df,
+                    desired_partitions=desired_partitions,
+                    enable_repartitioning=enable_repartitioning,
+                    partition_by_column_name=None,
+                )
                 self.logger.info(f"----- Total Batches: {desired_partitions}  -----")
 
                 sender_parameters: ElasticSearchSenderParameters = (
                     ElasticSearchSenderParameters(
                         index=index,
                         operation=operation,
-                        desired_partitions=desired_partitions,
+                        total_partitions=desired_partitions,
                         doc_id_prefix=doc_id_prefix,
                         name=name,
                         log_level=log_level,
@@ -214,7 +245,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#map
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
                     # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
-                    result_df = json_df.repartition(desired_partitions).mapInPandas(
+                    result_df = json_df.mapInPandas(
                         ElasticSearchProcessor.get_process_batch_function(
                             parameters=sender_parameters,
                             batch_size=batch_size,

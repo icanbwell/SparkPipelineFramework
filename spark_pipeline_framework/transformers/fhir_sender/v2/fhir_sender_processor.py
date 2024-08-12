@@ -208,8 +208,7 @@ class FhirSenderProcessor:
                 assert len(json_data_list) > 0, "json_data_list should not be empty"
             logger.info(
                 f"Sending batch "
-                f" | Partition: {partition_index}"
-                f" | Total Partition: {parameters.desired_partitions} "
+                f" | Partition: {partition_index}/{parameters.total_partitions}"
                 f" | Chunk: {chunk_index}"
                 f" | Rows: {len(json_data_list)}"
                 f" | Operation: {parameters.operation}"
