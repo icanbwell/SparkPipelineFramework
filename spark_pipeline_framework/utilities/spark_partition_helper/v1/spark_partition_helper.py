@@ -12,7 +12,9 @@ class SparkPartitionHelper:
         df: DataFrame,
         desired_partitions: int,
         enable_repartitioning: Optional[bool] = None,
+        force_partition: Optional[bool] = None,
         partition_by_column_name: Optional[str] = None,
+        enable_coalesce: Optional[bool] = None,
     ) -> DataFrame:
         """
         This function is used to partition the incoming dataframe based on the number of partitions or the partition size
@@ -21,6 +23,11 @@ class SparkPartitionHelper:
         :param desired_partitions: desired number of partitions
         :param enable_repartitioning: If this is not true then the incoming dataframe will not be repartitioned
         :param partition_by_column_name: column_name to partition by
+        :param force_partition: If this is true then the incoming dataframe will be repartitioned even
+                                if the number of partitions is the same
+        :param enable_coalesce: If this is true then the incoming dataframe will be coalesced if
+                                it has more partitions than desired
+                                https://medium.com/@ashwin_kumar_/spark-repartition-vs-coalesce-034d748aab2e
         :return: repartitioned dataframe (if it was needed)
         """
         # see if we need to partition the incoming dataframe
@@ -33,9 +40,13 @@ class SparkPartitionHelper:
                     get_json_object(col("value"), f"$.{partition_by_column_name}"),
                 ).repartition(desired_partitions, partition_by_column_name)
                 df = df.drop(partition_by_column_name)
-            elif desired_partitions != df.rdd.getNumPartitions():
-                # repartition the incoming dataframe only if the number of partitions is different
-                df = df.repartition(desired_partitions)
+            elif (
+                not force_partition and desired_partitions != df.rdd.getNumPartitions()
+            ):
+                if enable_coalesce and desired_partitions < df.rdd.getNumPartitions():
+                    df = df.coalesce(desired_partitions)
+                else:
+                    df = df.repartition(desired_partitions)
 
         return df
 
