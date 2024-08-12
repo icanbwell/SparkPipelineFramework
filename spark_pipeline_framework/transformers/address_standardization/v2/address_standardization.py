@@ -1,4 +1,5 @@
 import dataclasses
+import os
 from datetime import datetime
 from logging import Logger
 from typing import Any, Dict, List, Optional, Callable, AsyncGenerator, cast
@@ -296,7 +297,8 @@ class AddressStandardization(FrameworkTransformer):
                             standardize_list,
                         ),
                         parameters=AddressStandardizationParameters(
-                            total_partitions=total_partitions
+                            total_partitions=total_partitions,
+                            log_level=os.getenv("LOGLEVEL", "INFO"),
                         ),
                         batch_size=batch_size,
                     ).get_pandas_udf(
