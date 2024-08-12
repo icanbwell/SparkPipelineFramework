@@ -87,6 +87,7 @@ class ElasticSearchHelpers:
             timeout=timeout
         )
         server_url = es_connection.get_elastic_search_host()
+
         payload: List[Dict[str, Any]] = list(
             ElasticSearchHelpers.generate_es_bulk(
                 json_data_list=json_data_list,
@@ -111,7 +112,6 @@ class ElasticSearchHelpers:
             assert isinstance(success, int)
             # since we passed stats_only=True, failed will be an int
             assert isinstance(failed, int)
-
         except BulkIndexError as e:
             for error in e.errors:
                 logger.error(f"The following record failed to index: {error}")
@@ -119,6 +119,10 @@ class ElasticSearchHelpers:
         except ConnectionTimeout as e:
             logger.error(f"ConnectionTimeout: {e}")
             failed = len(payload)
+        finally:
+            # close connection manually to avoid this error:
+            # https://elasticsearch-py.readthedocs.io/en/v7.14.0/async.html#receiving-unclosed-client-session-connector-warning
+            await es_client.close()
 
         full_uri: furl = furl(server_url)
         full_uri /= index
