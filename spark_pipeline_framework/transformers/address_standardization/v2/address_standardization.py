@@ -91,6 +91,7 @@ class AddressStandardization(FrameworkTransformer):
         :param name: name for the stage in spark
         :param parameters: additional parameters
         :param progress_logger: progress logger
+        :param batch_size: batch size for standardization
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger

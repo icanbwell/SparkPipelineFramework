@@ -73,3 +73,15 @@ class ElasticSearchResult:
                 StructField("error", StringType(), True),
             ]
         )
+
+    def append(self, other: "ElasticSearchResult") -> None:
+        """
+        Appends the other ElasticSearchResult to this one
+
+        :param other: The other ElasticSearchResult
+        """
+        self.success += other.success
+        self.failed += other.failed
+        self.payload.extend(other.payload)
+        if other.error:
+            self.error = other.error

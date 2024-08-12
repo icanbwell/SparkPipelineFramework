@@ -88,7 +88,7 @@ class ElasticSearchProcessor:
 
         count: int = 0
         try:
-            # print(f"ElasticSearchProcessor:process_partition input_values [{len(input_values)}: {input_values}")
+            full_result: Optional[ElasticSearchResult] = None
             result: ElasticSearchResult
             async for result in ElasticSearchProcessor.send_partition_to_server_async(
                 partition_index=partition_index,
@@ -104,20 +104,30 @@ class ElasticSearchProcessor:
                         f" | Successful: {result.success}"
                         f" | Failed: {result.failed}"
                     )
-                    yield result.to_dict_flatten_payload()
+                    if full_result is None:
+                        full_result = result
+                    else:
+                        full_result.append(result)
                 else:
                     count += 1
                     logger.warning(
                         f"Got None result for partition {partition_index} chunk {chunk_index}"
                     )
-                    yield {
-                        "error": "Failed to send data to ElasticSearch",
-                        "partition_index": partition_index,
-                        "url": parameters.index,
-                        "success": 0,
-                        "failed": 1,
-                        "payload": json.dumps(input_values),
-                    }
+                    error_result: ElasticSearchResult = ElasticSearchResult(
+                        url=parameters.index,
+                        success=0,
+                        failed=1,
+                        payload=[],
+                        partition_index=partition_index,
+                        error="Got None result",
+                    )
+
+                    if full_result is None:
+                        full_result = error_result
+                    else:
+                        full_result.append(error_result)
+            assert full_result is not None
+            yield full_result.to_dict_flatten_payload()
         except Exception as e:
             logger.error(
                 f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"

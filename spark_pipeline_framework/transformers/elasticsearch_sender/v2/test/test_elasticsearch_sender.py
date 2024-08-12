@@ -23,6 +23,9 @@ def test_elasticsearch_sender(
         [StructField("id", StringType()), StructField("json", StringType())]
     )
     df: DataFrame = spark_session.createDataFrame(data, schema)
+
+    # use just one partition to match the synchronous test
+    df = df.coalesce(1)
     view: str = "test_view"
     df.createOrReplaceTempView(view)
 
