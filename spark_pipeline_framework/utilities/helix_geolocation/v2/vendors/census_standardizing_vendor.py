@@ -3,6 +3,7 @@ from io import StringIO
 from typing import List, Dict, Any, Optional, cast, AsyncGenerator, Type
 
 import aiohttp
+from aiohttp import ClientTimeout
 from helix_fhir_client_sdk.utilities.list_chunker import ListChunker
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.address_parser import (
@@ -40,13 +41,17 @@ class CensusStandardizingVendor(
         return CensusStandardizingVendorApiResponse
 
     def __init__(
-        self, use_bulk_api: bool = True, batch_request_max_size: Optional[int] = None
+        self,
+        use_bulk_api: bool = True,
+        batch_request_max_size: Optional[int] = None,
+        timeout: int = 5 * 60,
     ) -> None:
         super().__init__(version="1")
         self._use_bulk_api: bool = use_bulk_api
         # The Census service has a limit of 10,000 addresses per batch
         # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
         self._batch_request_max_size: Optional[int] = batch_request_max_size or 9000
+        self._timeout: int = timeout
 
     @classmethod
     def get_vendor_name(cls) -> str:
@@ -145,7 +150,8 @@ class CensusStandardizingVendor(
         form_data.add_field("benchmark", "4")
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=form_data) as response:
+            timeout = ClientTimeout(total=self._timeout)
+            async with session.post(url, data=form_data, timeout=timeout) as response:
                 response_text: str = await response.text()
                 assert (
                     response.status == 200

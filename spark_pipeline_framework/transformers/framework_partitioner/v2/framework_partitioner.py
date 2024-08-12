@@ -35,6 +35,9 @@ class FrameworkPartitioner(FrameworkTransformer):
         input_row_count: Optional[int] = None,
         percentage_of_memory_to_use: float = 0.5,  # plan on using only half of the memory
         maximum_number_of_partitions: Optional[int] = None,
+        executor_count: Optional[int] = None,
+        executor_cores: Optional[int] = None,
+        executor_memory: Optional[str] = None,
     ):
         """
         Transformer that partitions a DataFrame if needed based on the parameters provided.
@@ -81,6 +84,12 @@ class FrameworkPartitioner(FrameworkTransformer):
         :param percentage_of_memory_to_use: The percentage of memory available to use in each executor.
         :param maximum_number_of_partitions: The maximum number of partitions to create.  If the calculated
                                             number of partitions is more than this, then this value is used.
+        :param executor_count: The number of executors to use in calculation of partitions.  If this is not provided,
+                                then it is calculated based on the spark.executor.instances config
+        :param executor_cores: The number of cores per executor to use in calculation of partitions.  If this is not
+                                provided, then it is calculated based on the spark.executor.cores config
+        :param executor_memory: The memory available to each executor to use in calculation of partitions.  If this is
+                                not provided, then it is calculated based on the spark.executor.memory config
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -140,6 +149,15 @@ class FrameworkPartitioner(FrameworkTransformer):
         )
         self._setDefault(maximum_number_of_partitions=maximum_number_of_partitions)
 
+        self.executor_count: Param[Optional[int]] = Param(self, "executor_count", "")
+        self._setDefault(executor_count=executor_count)
+
+        self.executor_cores: Param[Optional[int]] = Param(self, "executor_cores", "")
+        self._setDefault(executor_cores=executor_cores)
+
+        self.executor_memory: Param[Optional[str]] = Param(self, "executor_memory", "")
+        self._setDefault(executor_memory=executor_memory)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -165,6 +183,9 @@ class FrameworkPartitioner(FrameworkTransformer):
         maximum_number_of_partitions: Optional[int] = self.getOrDefault(
             self.maximum_number_of_partitions
         )
+        executor_count: Optional[int] = self.getOrDefault(self.executor_count)
+        executor_cores: Optional[int] = self.getOrDefault(self.executor_cores)
+        executor_memory: Optional[str] = self.getOrDefault(self.executor_memory)
 
         result_df: DataFrame = df.sparkSession.table(view)
         current_partitions: int = result_df.rdd.getNumPartitions()
@@ -222,27 +243,34 @@ class FrameworkPartitioner(FrameworkTransformer):
         calculated_partitions: Optional[int] = None
         if calculate_automatically:
             # Calculate the number of executors
-            executor_instances: int | None = safe_str_to_int(
-                result_df.sparkSession.sparkContext.getConf().get(
-                    "spark.executor.instances"
+            current_executor_instances: int | None = (
+                safe_str_to_int(
+                    result_df.sparkSession.sparkContext.getConf().get(
+                        "spark.executor.instances"
+                    )
                 )
+                or executor_count
             )
-            executor_cores: int | None = safe_str_to_int(
-                result_df.sparkSession.sparkContext.getConf().get(
-                    "spark.executor.cores"
+            current_executor_cores: int | None = (
+                safe_str_to_int(
+                    result_df.sparkSession.sparkContext.getConf().get(
+                        "spark.executor.cores"
+                    )
                 )
+                or executor_cores
+                or 1
             )
             # memory is defined as text like "2g" etc
-            executor_memory: int | None = parse_memory_string(
+            current_executor_memory: int | None = parse_memory_string(
                 result_df.sparkSession.sparkContext.getConf().get(
                     "spark.executor.memory"
                 )
-            )
+            ) or parse_memory_string(executor_memory)
             # assume we can use only half of the executor memory
             executor_memory_available: Optional[int] = (
-                executor_memory // 2 if executor_memory else None
+                current_executor_memory // 2 if current_executor_memory else None
             )
-            if executor_instances is not None:
+            if current_executor_instances is not None:
                 size_available_per_executor: Optional[int] = (
                     partition_size if partition_size else executor_memory_available
                 )
@@ -269,7 +297,7 @@ class FrameworkPartitioner(FrameworkTransformer):
                 # now calculate the partitions as maximum of number of executors and the total size of the dataframe
                 # but make sure we don't get more partitions than the number of rows
                 calculated_partitions = max(
-                    executor_instances,
+                    current_executor_instances,
                     int(estimated_total_size // size_available_per_executor),
                 )
                 # partitions should not be more than the number of rows
@@ -285,14 +313,15 @@ class FrameworkPartitioner(FrameworkTransformer):
                     f" | Rows: {num_rows}"
                     f" | Estimated row size: {convert_bytes_to_human_readable(estimated_row_size)}"
                     f" | Executor Memory To Use: {convert_bytes_to_human_readable(size_available_per_executor)}"
-                    f" | Executors: {executor_instances}"
-                    f" | Cores: {executor_cores}"
-                    f" | Executor Memory: {convert_bytes_to_human_readable(executor_memory)}"
+                    f" | Executors: {current_executor_instances}"
+                    f" | Cores: {current_executor_cores}"
+                    f" | Executor Memory: {convert_bytes_to_human_readable(current_executor_memory)}"
                     f" | Executor Memory Available: {convert_bytes_to_human_readable(executor_memory_available)}"
                 )
             else:
                 self.logger.warning(
                     "Could not calculate partitions automatically as `spark.executor.instances` config is not set"
+                    " and no executor_count is provided"
                 )
 
         desired_partitions: int = (
