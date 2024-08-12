@@ -1,5 +1,6 @@
 from typing import Dict, Any, List, cast
 
+import pytest
 from pyspark.sql import SparkSession, DataFrame
 
 from spark_pipeline_framework.transformers.address_standardization.v2.address_standardization import (
@@ -22,8 +23,9 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
+@pytest.mark.parametrize("use_bulk_api", [True, False])
 def test_address_standardization_with_census_vendor(
-    spark_session: SparkSession,
+    spark_session: SparkSession, use_bulk_api: bool
 ) -> None:
     view_name: str = "foo"
     address_column_mapping: Dict[str, str] = {
@@ -70,7 +72,7 @@ def test_address_standardization_with_census_vendor(
         address_column_mapping=address_column_mapping,
         standardizing_vendor=cast(
             StandardizingVendor[BaseVendorApiResponse],
-            CensusStandardizingVendor(use_bulk_api=True),
+            CensusStandardizingVendor(use_bulk_api=use_bulk_api),
         ),
         cache_handler=MockCacheHandler(),
     ).transform(df)

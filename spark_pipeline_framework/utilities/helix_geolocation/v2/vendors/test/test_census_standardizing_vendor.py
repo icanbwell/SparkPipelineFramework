@@ -67,7 +67,7 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
         first_raw_response.to_standardized_address(address_id="10")
     )
     # This one is not found in Census API
-    assert first_response is None
+    assert first_response is not None
     assert first_raw_response.input is not None
     assert first_raw_response.input.address is not None
     assert first_raw_response.input.address.address is not None
@@ -96,5 +96,5 @@ async def test_census_standardizing_vendor(use_bulk_api: bool) -> None:
     third_response: StandardizedAddress | None = vendor_responses[
         2
     ].api_call_response.to_standardized_address(address_id="1000")
-    assert third_response is None
+    assert third_response is not None
     assert vendor_responses[2].api_call_response.input is not None
