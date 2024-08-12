@@ -217,6 +217,15 @@ For example for HTTP calls, you can use `aiohttp` library and for elastic search
 
 You can find a list of async drivers here: https://github.com/timofurrer/awesome-asyncio
 
+# Controlling how big of a batch to send to the async function
+Set the `batch_size` parameter in the `AsyncPandasDataFrameUDF` or `AsyncPandasScalarColumnToScalarColumnUDF` class to control how many rows to send to the async function at a time.  
+
+The partition will be divided into chunks of `batch_size` rows and each chunk will be sent to the async function at the same time.
+
+Hence you should set the `partition_size` to be as large as can fit in memory and then let this divide into batches of `batch_size` to send to async function at one time.
+
+This will be most efficient since you'll have multiple async calls (one for each batch) waiting in each partition.
+
 
 # Summary
 By using these classes you can easily use async functions with Spark data frames. This can be useful when you need to perform tasks that are time-consuming, such as reading from a file, accessing a web server (e.g. FHIR or Elasticsearch) or making a network request. By using asynchronous processing, a system can handle multiple requests at the same time, which can improve performance and reduce latency.
