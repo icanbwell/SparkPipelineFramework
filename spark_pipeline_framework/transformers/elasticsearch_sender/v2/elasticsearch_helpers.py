@@ -3,7 +3,7 @@ from logging import Logger
 from typing import Any, Dict, Iterator, List, Optional, Union, cast
 
 from opensearchpy._async.helpers.actions import async_bulk
-from opensearchpy import AsyncOpenSearch
+from opensearchpy import AsyncOpenSearch, ConnectionTimeout
 from furl import furl
 from opensearchpy.helpers.errors import BulkIndexError
 
@@ -93,7 +93,11 @@ class ElasticSearchHelpers:
         try:
             # https://github.com/opensearch-project/opensearch-py/blob/main/opensearchpy/_async/helpers/actions.py
             success, failed = await async_bulk(
-                client=es_client, actions=payload, index=index, stats_only=True
+                client=es_client,
+                actions=payload,
+                index=index,
+                stats_only=True,
+                request_timeout=60,
             )
             assert isinstance(success, int)
             # since we passed stats_only=True, failed will be an int
@@ -103,6 +107,9 @@ class ElasticSearchHelpers:
             for error in e.errors:
                 logger.error(f"The following record failed to index: {error}")
                 errors.append(error)
+        except ConnectionTimeout as e:
+            logger.error(f"ConnectionTimeout: {e}")
+            failed = len(payload)
 
         full_uri: furl = furl(server_url)
         full_uri /= index

@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import os
+import socket
 import threading
 from typing import Optional, Dict, Any
 
@@ -24,6 +25,7 @@ class SparkPartitionInformation:
     task_attempt_id: Optional[int]
     cpus: Optional[int]
     is_driver: bool
+    host_name: Optional[str]
 
     @classmethod
     def from_current_task_context(
@@ -65,6 +67,7 @@ class SparkPartitionInformation:
             ),
             cpus=task_context.cpus() if task_context is not None else None,
             is_driver=task_context is None,
+            host_name=os.getenv("HOSTNAME") or socket.gethostname(),
         )
 
     def __str__(self) -> str:
@@ -76,12 +79,13 @@ class SparkPartitionInformation:
         return (
             f" | Partition: {self.partition_index}"
             + (f" | Chunk: {self.chunk_index}" if self.chunk_index is not None else "")
+            + (f" | Host: {self.host_name}" if self.host_name is not None else "")
             + f" | Process: {self.process_id}"
-            f" | Thread: {self.thread_name} ({threading.get_ident()})"
-            f" | Spark Driver: {self.is_driver}"
-            f" | Spark Stage Id: {self.stage_id}"
-            f" | Spark Task Attempt ID: {self.task_attempt_id}"
-            f" | Spark CPUs: {self.cpus}"
+            + f" | Thread: {self.thread_name} ({threading.get_ident()})"
+            + (f" | Spark Driver: {self.is_driver}" if self.is_driver else "")
+            + f" | Spark Stage Id: {self.stage_id}"
+            + f" | Spark Task Attempt ID: {self.task_attempt_id}"
+            + f" | Spark CPUs: {self.cpus}"
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -99,6 +103,7 @@ class SparkPartitionInformation:
                 StructField("task_attempt_id", IntegerType(), True),
                 StructField("cpus", IntegerType(), True),
                 StructField("is_driver", BooleanType(), False),
+                StructField("host_name", StringType(), True),
             ]
         )
 
