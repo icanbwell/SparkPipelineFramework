@@ -123,7 +123,7 @@ class ElasticSearchProcessor:
                 f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"
             )
             # if an exception is thrown then return an error for each row
-            for input_value in input_values:
+            for _ in input_values:
                 count += 1
                 yield {
                     "error": str(e),
@@ -200,6 +200,7 @@ class ElasticSearchProcessor:
                     operation=parameters.operation,
                     logger=logger,
                     doc_id_prefix=parameters.doc_id_prefix,
+                    timeout=parameters.timeout or 60,
                 )
             )
             response_json.partition_index = partition_index

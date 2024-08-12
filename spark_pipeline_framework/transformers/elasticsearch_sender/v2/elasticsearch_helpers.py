@@ -2,9 +2,9 @@ import json
 from logging import Logger
 from typing import Any, Dict, Iterator, List, Optional, Union, cast
 
-from opensearchpy._async.helpers.actions import async_bulk
 from opensearchpy import AsyncOpenSearch, ConnectionTimeout
 from furl import furl
+from opensearchpy.helpers import async_bulk
 from opensearchpy.helpers.errors import BulkIndexError
 
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_result import (
@@ -18,7 +18,8 @@ from spark_pipeline_framework.utilities.elastic_search.elastic_search_connection
 class ElasticSearchHelpers:
     @staticmethod
     def generate_es_bulk(
-        input_data_json_str: List[str],
+        *,
+        json_data_list: List[str],
         operation: str,
         index: str,
         doc_id_prefix: Optional[str] = None,
@@ -26,7 +27,7 @@ class ElasticSearchHelpers:
         """this is how ES bulk function likes the input be served
         https://elasticsearch-py.readthedocs.io/en/v7.12.0/helpers.html#bulk-helpers
         """
-        for item in input_data_json_str:
+        for item in json_data_list:
             item_json = json.loads(item)
             try:
                 doc_id = item_json["id"]
@@ -54,11 +55,13 @@ class ElasticSearchHelpers:
 
     @staticmethod
     async def send_json_bundle_to_elasticsearch_async(
+        *,
         json_data_list: List[str],
         index: str,
         operation: str,
         logger: Logger,
         doc_id_prefix: Optional[str] = None,
+        timeout: int = 60,
     ) -> ElasticSearchResult:
         """
         Sends a list of json strings to the server
@@ -69,6 +72,7 @@ class ElasticSearchHelpers:
         :param operation:
         :param logger: logger
         :param doc_id_prefix: a string to be prepended to the _id field for a document
+        :param timeout: timeout in seconds for calls made by this client
         """
         assert isinstance(json_data_list, list)
         assert all(isinstance(j, str) for j in json_data_list)
@@ -79,11 +83,16 @@ class ElasticSearchHelpers:
         assert doc_id_prefix is None or isinstance(doc_id_prefix, str)
 
         es_connection = ElasticSearchConnection()
-        es_client: AsyncOpenSearch = es_connection.get_elastic_search_async_client()
+        es_client: AsyncOpenSearch = es_connection.get_elastic_search_async_client(
+            timeout=timeout
+        )
         server_url = es_connection.get_elastic_search_host()
         payload: List[Dict[str, Any]] = list(
             ElasticSearchHelpers.generate_es_bulk(
-                json_data_list, operation, index, doc_id_prefix
+                json_data_list=json_data_list,
+                operation=operation,
+                index=index,
+                doc_id_prefix=doc_id_prefix,
             )
         )
         success: int = 0
