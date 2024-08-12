@@ -1,5 +1,10 @@
 from typing import Dict, Any, Optional, List
 
+from pyspark import SparkConf
+
+from spark_pipeline_framework.utilities.aws.instance_helper.v1.instance_helper import (
+    InstanceHelper,
+)
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -243,33 +248,62 @@ class FrameworkPartitioner(FrameworkTransformer):
         calculated_partitions: Optional[int] = None
         if calculate_automatically:
             # Calculate the number of executors
-            current_executor_instances: int | None = (
-                safe_str_to_int(
-                    result_df.sparkSession.sparkContext.getConf().get(
-                        "spark.executor.instances"
-                    )
-                )
-                or executor_count
+            spark_configuration: SparkConf = (
+                result_df.sparkSession.sparkContext.getConf()
             )
-            current_executor_cores: int | None = (
-                safe_str_to_int(
-                    result_df.sparkSession.sparkContext.getConf().get(
-                        "spark.executor.cores"
-                    )
+            spark_executor_instances: Optional[str] = spark_configuration.get(
+                "spark.executor.instances"
+            )
+            spark_cluster_target_workers: Optional[str] = spark_configuration.get(
+                "spark.databricks.clusterUsageTags.clusterTargetWorkers"
+            )
+            spark_executor_cores: Optional[str] = spark_configuration.get(
+                "spark.executor.cores"
+            )
+            spark_executor_memory: Optional[str] = spark_configuration.get(
+                "spark.executor.memory"
+            )
+            spark_cloud_provider: Optional[str] = spark_configuration.get(
+                "spark.databricks.cloudProvider"
+            )
+            # if we're in AWS read instance type from spark.databricks.workerNodeTypeId and look up memory
+            if not spark_executor_memory and spark_cloud_provider == "AWS":
+                spark_worker_note_type: Optional[str] = spark_configuration.get(
+                    "spark.databricks.workerNodeTypeId"
                 )
-                or executor_cores
+                if spark_worker_note_type:
+                    spark_executor_memory = InstanceHelper.get_instance_memory(
+                        instance_type=spark_worker_note_type
+                    )
+
+            spark_cluster_target_workers_count: Optional[int] = (
+                safe_str_to_int(spark_cluster_target_workers)
+                if spark_cluster_target_workers
+                else None
+            )
+            if spark_cluster_target_workers_count is not None:
+                spark_cluster_target_workers_count += 1
+            # calculate number of executors
+            current_executor_instances: int | None = (
+                executor_count
+                or safe_str_to_int(spark_executor_instances)
+                or spark_cluster_target_workers_count
                 or 1
             )
-            # memory is defined as text like "2g" etc
+            # Calculate number of cores per executor
+            current_executor_cores: int | None = (
+                safe_str_to_int(spark_executor_cores) or executor_cores or 1
+            )
+            # Calculate memory available to each executor
             current_executor_memory: int | None = parse_memory_string(
-                result_df.sparkSession.sparkContext.getConf().get(
-                    "spark.executor.memory"
-                )
+                spark_executor_memory
             ) or parse_memory_string(executor_memory)
+
             # assume we can use only half of the executor memory
             executor_memory_available: Optional[int] = (
                 current_executor_memory // 2 if current_executor_memory else None
             )
+            # calculate the size available per executor
             if current_executor_instances is not None:
                 size_available_per_executor: Optional[int] = (
                     partition_size if partition_size else executor_memory_available
