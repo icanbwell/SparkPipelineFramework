@@ -57,7 +57,7 @@ class ElasticSearchSender(FrameworkTransformer):
         log_level: Optional[str] = None,
         timeout: int = 60,
         num_partitions: Optional[int] = None,
-        enable_repartitioning: Optional[bool] = None,
+        enable_repartitioning: Optional[bool] = True,
     ):
         """
         Sends a folder or a view to an ElasticSearch server
@@ -69,6 +69,12 @@ class ElasticSearchSender(FrameworkTransformer):
         :param batch_size: how many documents to process at one time
         :param multi_line: when reading data from folder, whether to expect multiline json files
         :param output_path: writes bulk output to this folder before sending to ES
+        :param run_synchronously: if True, will send all data to ES in one go, otherwise will send in batches
+        :param log_level: log level
+        :param timeout: timeout in seconds
+        :param num_partitions: number of partitions to use
+        :param enable_repartitioning: whether to repartition the data before sending
+        :param partition_size: size of each partition
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger

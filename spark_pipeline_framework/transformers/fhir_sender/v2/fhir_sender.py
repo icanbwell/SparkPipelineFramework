@@ -99,7 +99,7 @@ class FhirSender(FrameworkTransformer):
         sort_by_column_name_and_type: Optional[tuple[str, Any]] = None,
         drop_fields_from_json: Optional[List[str]] = None,
         partition_by_column_name: Optional[str] = None,
-        enable_repartitioning: bool = False,
+        enable_repartitioning: bool = True,
         source_view: Optional[str] = None,
         log_level: Optional[str] = None,
     ):

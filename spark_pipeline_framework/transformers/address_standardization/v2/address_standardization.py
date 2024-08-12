@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import datetime
 from logging import Logger
 from typing import Any, Dict, List, Optional, Callable, AsyncGenerator, cast
@@ -24,7 +25,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
     HandlePandasStructToStructBatchFunction,
 )
 
-# noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler import (
@@ -48,6 +48,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
+from spark_pipeline_framework.utilities.spark_partition_helper.v1.spark_partition_helper import (
+    SparkPartitionHelper,
+)
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
 )
@@ -68,6 +71,10 @@ class AddressStandardization(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         batch_size: int = 100,
+        num_partitions: Optional[int] = None,
+        partition_size: Optional[int] = None,
+        enable_repartitioning: bool = False,
+        partition_by_column_name: Optional[str] = None,
     ):
         """
         Standardize and geocode addresses in a view using the specified standardizing vendor. Address columns in the view
@@ -127,6 +134,22 @@ class AddressStandardization(FrameworkTransformer):
         self.batch_size: Param[int] = Param(self, "batch_size", "")
         self._setDefault(batch_size=batch_size)
 
+        self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
+        self._setDefault(num_partitions=num_partitions)
+
+        self.partition_size: Param[Optional[int]] = Param(self, "partition_size", "")
+        self._setDefault(partition_size=partition_size)
+
+        self.enable_repartitioning: Param[bool] = Param(
+            self, "enable_repartitioning", ""
+        )
+        self._setDefault(enable_repartitioning=enable_repartitioning)
+
+        self.partition_by_column_name: Param[Optional[str]] = Param(
+            self, "partition_by_column_name", ""
+        )
+        self._setDefault(partition_by_column_name=partition_by_column_name)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -152,8 +175,32 @@ class AddressStandardization(FrameworkTransformer):
             cache_handler: CacheHandler = self.getCacheHandler()
             # what column prefix to use for lat/long columns (if any)
             geolocation_column_prefix: Optional[str] = self.getGeolocationColumnPrefix()
+
+            num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
+            partition_size: Optional[int] = self.getOrDefault(self.partition_size)
+            enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
+            partition_by_column_name: Optional[str] = self.getOrDefault(
+                self.partition_by_column_name
+            )
+
+            # Load view into a dataframe
+            address_df: DataFrame = df.sql_ctx.table(view)
+
+            # see if we need to partition the incoming dataframe
+            desired_partitions: int = SparkPartitionHelper.calculate_desired_partitions(
+                df=address_df,
+                num_partitions=num_partitions,
+                partition_size=partition_size,
+            )
+            address_df = SparkPartitionHelper.partition_if_needed(
+                df=address_df,
+                desired_partitions=desired_partitions,
+                enable_repartitioning=enable_repartitioning,
+                partition_by_column_name=partition_by_column_name,
+            )
+
             # create a `raw_address` column to store all the address parts as a json string
-            address_df: DataFrame = df.sql_ctx.table(view).withColumn(
+            address_df = address_df.withColumn(
                 # create a new column that contains all the address parts as json string
                 "raw_address",
                 to_json(
@@ -167,7 +214,9 @@ class AddressStandardization(FrameworkTransformer):
             )
             incoming_row_count: int = address_df.count()
 
+            @dataclasses.dataclass
             class AddressStandardizationParameters:
+                total_partitions: int
                 # add parameters to pass to async function below here
                 log_level: str = "INFO"
 
@@ -275,14 +324,6 @@ class AddressStandardization(FrameworkTransformer):
 
             # if there are rows then standardize them
             if not spark_is_data_frame_empty(address_df):
-                # wrap the function into a pandas udf specifying the output schema
-                # apply_process_batch_udf1 = pandas_udf(  # type:ignore[call-overload]
-                #     apply_process_batch_udf,
-                #     returnType=self.get_standardization_df_schema(
-                #         address_column_mapping=address_column_mapping,
-                #         geolocation_column_prefix=geolocation_column_prefix,
-                #     ),
-                # )
                 # add a new column that will hold the result of standardization as a struct
                 combined_df = address_df.withColumn(
                     colName="standardized_address",
@@ -293,7 +334,9 @@ class AddressStandardization(FrameworkTransformer):
                             ],
                             standardize_list,
                         ),
-                        parameters=AddressStandardizationParameters(),
+                        parameters=AddressStandardizationParameters(
+                            total_partitions=address_df.rdd.getNumPartitions()
+                        ),
                         batch_size=batch_size,
                     ).get_pandas_udf(
                         return_type=self.get_standardization_df_schema(

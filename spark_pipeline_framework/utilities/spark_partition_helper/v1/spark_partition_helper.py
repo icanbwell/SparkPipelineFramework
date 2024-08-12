@@ -25,13 +25,16 @@ class SparkPartitionHelper:
         """
         # see if we need to partition the incoming dataframe
         if enable_repartitioning:
-            if partition_by_column_name:
+            if (
+                partition_by_column_name
+            ):  # repartition even if the number of partitions is the same
                 df = df.withColumn(
                     partition_by_column_name,
                     get_json_object(col("value"), f"$.{partition_by_column_name}"),
                 ).repartition(desired_partitions, partition_by_column_name)
                 df = df.drop(partition_by_column_name)
             elif desired_partitions != df.rdd.getNumPartitions():
+                # repartition the incoming dataframe only if the number of partitions is different
                 df = df.repartition(desired_partitions)
 
         return df
