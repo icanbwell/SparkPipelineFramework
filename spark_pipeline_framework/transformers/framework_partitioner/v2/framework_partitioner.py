@@ -303,8 +303,10 @@ class FrameworkPartitioner(FrameworkTransformer):
             executor_memory_available: Optional[int] = (
                 current_executor_memory // 2 if current_executor_memory else None
             )
-            # calculate the size available per executor
+
+            # if we have calculated executor instances then we can calculate the partitions
             if current_executor_instances is not None:
+                # calculate the size available per executor
                 size_available_per_executor: Optional[int] = (
                     partition_size if partition_size else executor_memory_available
                 )
@@ -341,7 +343,7 @@ class FrameworkPartitioner(FrameworkTransformer):
                     calculated_partitions = min(
                         maximum_number_of_partitions, calculated_partitions
                     )
-
+                # Log the calculated partitions
                 self.logger.info(
                     f"Calculated Partitions: {calculated_partitions}"
                     f" | Rows: {num_rows}"
