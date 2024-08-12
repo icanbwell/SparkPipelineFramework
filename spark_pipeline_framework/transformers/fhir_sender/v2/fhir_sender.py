@@ -52,9 +52,6 @@ from spark_pipeline_framework.utilities.map_functions import remove_field_from_j
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
-from spark_pipeline_framework.utilities.spark_partition_helper.v1.spark_partition_helper import (
-    SparkPartitionHelper,
-)
 
 
 class FhirSender(FrameworkTransformer):
@@ -67,7 +64,6 @@ class FhirSender(FrameworkTransformer):
         file_path: Path | str | Callable[[str | None], Path | str] | None = None,
         response_path: Path | str | Callable[[str | None], Path | str] | None = None,
         resource: str,
-        partition_size: Optional[int] = None,
         batch_size: Optional[int] = 30,
         limit: int = -1,
         file_format: str = "json",
@@ -92,14 +88,11 @@ class FhirSender(FrameworkTransformer):
         ignore_status_codes: Optional[List[int]] = None,
         retry_count: Optional[int] = None,
         exclude_status_codes_from_retry: Optional[List[int]] = None,
-        num_partitions: Optional[int] = None,
         delta_lake_table: Optional[str] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         run_synchronously: Optional[bool] = None,
         sort_by_column_name_and_type: Optional[tuple[str, Any]] = None,
         drop_fields_from_json: Optional[List[str]] = None,
-        partition_by_column_name: Optional[str] = None,
-        enable_repartitioning: bool = True,
         source_view: Optional[str] = None,
         log_level: Optional[str] = None,
     ):
@@ -132,8 +125,6 @@ class FhirSender(FrameworkTransformer):
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         :param sort_by_column_name_and_type: (Optional) tuple of columnName, columnType to be used for sorting
         :param drop_fields_from_json: (Optional) List of field names to drop from json
-        :param partition_by_column_name: (Optional) Name of the column that will be used to repartition df
-        :param enable_repartitioning: Enable repartitioning or not, default True
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -189,9 +180,6 @@ class FhirSender(FrameworkTransformer):
 
         self.batch_size: Param[Optional[int]] = Param(self, "batch_size", "")
         self._setDefault(batch_size=batch_size)
-
-        self.partition_size: Param[Optional[int]] = Param(self, "partition_size", "")
-        self._setDefault(partition_size=partition_size)
 
         self.throw_exception_on_validation_failure: Param[Optional[bool]] = Param(
             self, "throw_exception_on_validation_failure", ""
@@ -259,9 +247,6 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(exclude_status_codes_from_retry=None)
 
-        self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
-        self._setDefault(num_partitions=None)
-
         self.ignore_status_codes: Param[Optional[List[int]]] = Param(
             self, "ignore_status_codes", ""
         )
@@ -292,16 +277,6 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(drop_fields_from_json=drop_fields_from_json)
 
-        self.partition_by_column_name: Param[Optional[str]] = Param(
-            self, "partition_by_column_name", ""
-        )
-        self._setDefault(partition_by_column_name=partition_by_column_name)
-
-        self.enable_repartitioning: Param[bool] = Param(
-            self, "enable_repartitioning", ""
-        )
-        self._setDefault(enable_repartitioning=enable_repartitioning)
-
         self.source_view: Param[Optional[str]] = Param(self, "source_view", "")
         self._setDefault(source_view=None)
 
@@ -331,7 +306,6 @@ class FhirSender(FrameworkTransformer):
         )
         server_url: str = self.getOrDefault(self.server_url)
         batch_size: Optional[int] = self.getOrDefault(self.batch_size)
-        partition_size: Optional[int] = self.getOrDefault(self.partition_size)
         throw_exception_on_validation_failure: Optional[bool] = self.getOrDefault(
             self.throw_exception_on_validation_failure
         )
@@ -348,9 +322,6 @@ class FhirSender(FrameworkTransformer):
         )
         drop_fields_from_json: Optional[List[str]] = self.getOrDefault(
             self.drop_fields_from_json
-        )
-        partition_by_column_name: Optional[str] = self.getOrDefault(
-            self.partition_by_column_name
         )
 
         if not batch_size or batch_size == 0:
@@ -388,9 +359,6 @@ class FhirSender(FrameworkTransformer):
         exclude_status_codes_from_retry: Optional[List[int]] = self.getOrDefault(
             self.exclude_status_codes_from_retry
         )
-
-        num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
-        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
 
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
@@ -477,20 +445,8 @@ class FhirSender(FrameworkTransformer):
                     f" with batch_size {batch_size}  -----"
                 )
                 assert batch_size and batch_size > 0
-                # see if we need to partition the incoming dataframe
-                desired_partitions: int = (
-                    SparkPartitionHelper.calculate_desired_partitions(
-                        df=json_df,
-                        num_partitions=num_partitions,
-                        partition_size=partition_size,
-                    )
-                )
-                json_df = SparkPartitionHelper.partition_if_needed(
-                    df=json_df,
-                    desired_partitions=desired_partitions,
-                    enable_repartitioning=enable_repartitioning,
-                    partition_by_column_name=partition_by_column_name,
-                )
+                # get the number of partitions
+                total_partitions: int = json_df.rdd.getNumPartitions()
 
                 if sort_by_column_name_and_type:
                     column_name, column_type = sort_by_column_name_and_type
@@ -514,12 +470,12 @@ class FhirSender(FrameworkTransformer):
                     ).toDF(json_schema)
 
                 self.logger.info(
-                    f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
+                    f"----- Total Batches for {resource_name}: {total_partitions}  -----"
                 )
 
                 result_df: Optional[DataFrame] = None
                 sender_parameters: FhirSenderParameters = FhirSenderParameters(
-                    total_partitions=desired_partitions,
+                    total_partitions=total_partitions,
                     operation=operation,
                     server_url=server_url,
                     resource_name=resource_name,

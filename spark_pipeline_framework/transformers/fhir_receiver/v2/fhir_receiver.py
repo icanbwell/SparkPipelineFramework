@@ -57,9 +57,6 @@ from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_fram
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
-from spark_pipeline_framework.utilities.spark_partition_helper.v1.spark_partition_helper import (
-    SparkPartitionHelper,
-)
 
 
 class FhirReceiver(FrameworkTransformer):
@@ -110,7 +107,6 @@ class FhirReceiver(FrameworkTransformer):
         view: Optional[str] = None,
         retry_count: Optional[int] = None,
         exclude_status_codes_from_retry: Optional[List[int]] = None,
-        num_partitions: Optional[int] = None,
         checkpoint_path: Optional[
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = None,
@@ -121,10 +117,7 @@ class FhirReceiver(FrameworkTransformer):
         graph_json: Optional[Dict[str, Any]] = None,
         run_synchronously: Optional[bool] = None,
         refresh_token_function: Optional[RefreshTokenFunction] = None,
-        partition_by_column_name: Optional[str] = None,
-        enable_repartitioning: bool = True,
         log_level: Optional[str] = None,
-        partition_size: Optional[int] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -151,7 +144,6 @@ class FhirReceiver(FrameworkTransformer):
         :param action: (Optional) do an action e.g., $everything
         :param action_payload: (Optional) in case action needs a http request payload
         :param page_size: (Optional) use paging and get this many items in each page
-        :param partition_size: (Optional) How many rows to have in each parallel partition to use for
         :param batch_size: (Optional) How many id rows to send to FHIR server in one call
         :param last_updated_after: (Optional) Only get records newer than this
         :param last_updated_before: (Optional) Only get records older than this
@@ -272,9 +264,6 @@ class FhirReceiver(FrameworkTransformer):
         self.batch_size: Param[Optional[int]] = Param(self, "batch_size", "")
         self._setDefault(batch_size=None)
 
-        self.partition_size: Param[Optional[int]] = Param(self, "partition_size", "")
-        self._setDefault(partition_size=None)
-
         self.last_updated_after: Param[Optional[datetime]] = Param(
             self, "last_updated_after", ""
         )
@@ -374,9 +363,6 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(exclude_status_codes_from_retry=None)
 
-        self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
-        self._setDefault(num_partitions=None)
-
         self.checkpoint_path: Param[
             Optional[Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]]
         ] = Param(self, "checkpoint_path", "")
@@ -418,16 +404,6 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(refresh_token_function=refresh_token_function)
 
-        self.partition_by_column_name: Param[Optional[str]] = Param(
-            self, "partition_by_column_name", ""
-        )
-        self._setDefault(partition_by_column_name=partition_by_column_name)
-
-        self.enable_repartitioning: Param[bool] = Param(
-            self, "enable_repartitioning", ""
-        )
-        self._setDefault(enable_repartitioning=enable_repartitioning)
-
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -456,7 +432,6 @@ class FhirReceiver(FrameworkTransformer):
         include_only_properties: Optional[List[str]] = self.getIncludeOnlyProperties()
         page_size: Optional[int] = self.getPageSize()
         batch_size: Optional[int] = self.getBatchSize()
-        partition_size: Optional[int] = self.getOrDefault(self.partition_size)
         limit: Optional[int] = self.getLimit()
         last_updated_before: Optional[datetime] = self.getLastUpdatedBefore()
         last_updated_after: Optional[datetime] = self.getLastUpdateAfter()
@@ -501,8 +476,6 @@ class FhirReceiver(FrameworkTransformer):
             self.exclude_status_codes_from_retry
         )
 
-        num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
-
         checkpoint_path: Optional[
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = self.getOrDefault(self.checkpoint_path)
@@ -528,11 +501,6 @@ class FhirReceiver(FrameworkTransformer):
         refresh_token_function: Optional[RefreshTokenFunction] = self.getOrDefault(
             self.refresh_token_function
         )
-
-        partition_by_column_name: Optional[str] = self.getOrDefault(
-            self.partition_by_column_name
-        )
-        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -608,27 +576,15 @@ class FhirReceiver(FrameworkTransformer):
                     f"----- Total {row_count} rows to request from {server_url or ''}/{resource_name}  -----"
                 )
                 # see if we need to partition the incoming dataframe
-                desired_partitions: int = (
-                    SparkPartitionHelper.calculate_desired_partitions(
-                        df=id_df,
-                        num_partitions=num_partitions,
-                        partition_size=partition_size,
-                    )
-                )
-                id_df = SparkPartitionHelper.partition_if_needed(
-                    df=id_df,
-                    desired_partitions=desired_partitions,
-                    partition_by_column_name=partition_by_column_name,
-                    enable_repartitioning=enable_repartitioning,
-                )
+                total_partitions: int = id_df.rdd.getNumPartitions()
 
                 self.logger.info(
-                    f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
+                    f"----- Total Batches: {total_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
                 result_with_counts_and_responses: DataFrame
                 receiver_parameters: FhirReceiverParameters = FhirReceiverParameters(
-                    total_partitions=desired_partitions,
+                    total_partitions=total_partitions,
                     batch_size=batch_size,
                     has_token_col=has_token_col,
                     server_url=server_url,
