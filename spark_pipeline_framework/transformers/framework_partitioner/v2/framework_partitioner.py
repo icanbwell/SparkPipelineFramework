@@ -292,12 +292,12 @@ class FrameworkPartitioner(FrameworkTransformer):
             )
             # Calculate number of cores per executor
             current_executor_cores: int | None = (
-                safe_str_to_int(spark_executor_cores) or executor_cores or 1
+                executor_cores or safe_str_to_int(spark_executor_cores) or 1
             )
             # Calculate memory available to each executor
             current_executor_memory: int | None = parse_memory_string(
-                spark_executor_memory
-            ) or parse_memory_string(executor_memory)
+                executor_memory
+            ) or parse_memory_string(spark_executor_memory)
 
             # assume we can use only half of the executor memory
             executor_memory_available: Optional[int] = (
