@@ -150,7 +150,6 @@ class CensusStandardizingVendor(
                 assert (
                     response.status == 200
                 ), f"Error in the Census API call. Response code: {response.status}: {response_text}"
-                responses: List[CensusStandardizingVendorApiResponse] = []
                 # Check if the request was successful
                 if response.status == 200:
                     # Use StringIO to treat the response text as a file-like object
@@ -438,10 +437,14 @@ class CensusStandardizingVendor(
         Each vendor class knows how to convert its response to StdAddress
         """
         std_addresses = [
-            StandardizedAddress.from_dict(a.api_call_response.to_dict())
+            a.api_call_response.to_standardized_address(
+                address_id=(
+                    a.related_raw_address.get_id() if a.related_raw_address else None
+                )
+            )
             for a in vendor_specific_addresses
         ]
-        return std_addresses
+        return [s for s in std_addresses if s is not None]
 
     def _to_vendor_response(
         self,

@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, cast
 
 from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
@@ -46,6 +46,11 @@ class FhirMergeResponseItem:
         self.token: Optional[str] = token
         self.resource_json: Optional[str] = resource_json
         self.status: Optional[int] = status
+
+    def get_issue(self) -> Optional[Dict[str, Any]]:
+        if not self.issue:
+            return None
+        return cast(Dict[str, Any], json.loads(self.issue))
 
     def to_dict(self) -> Dict[str, Any]:
         return {
