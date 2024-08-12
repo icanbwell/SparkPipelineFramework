@@ -64,11 +64,11 @@ def test_framework_partitioner_large_output_row_size(
             calculate_automatically=True,
             name="FrameworkPartitioner",
             progress_logger=progress_logger,
-            output_row_size=1 * 1024 * 1024,  # 1 MB
-            input_row_count=100,  # give an artificial row count to test the input row size
+            output_row_size=10 * 1024 * 1024,  # 1 MB
+            input_row_count=1000,  # give an artificial row count to test the input row size
         ).transform(df)
 
     # Assert
-    assert result_df.rdd.getNumPartitions() == 2
+    assert result_df.rdd.getNumPartitions() == 19
     assert result_df.count() == 20
     assert result_df.columns == ["id", "name"]

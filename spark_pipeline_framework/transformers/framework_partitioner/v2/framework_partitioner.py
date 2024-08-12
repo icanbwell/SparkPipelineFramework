@@ -34,6 +34,7 @@ class FrameworkPartitioner(FrameworkTransformer):
         input_row_size: Optional[int] = None,
         input_row_count: Optional[int] = None,
         percentage_of_memory_to_use: float = 0.5,  # plan on using only half of the memory
+        maximum_number_of_partitions: Optional[int] = None,
     ):
         """
         Transformer that partitions a DataFrame if needed based on the parameters provided.
@@ -78,6 +79,8 @@ class FrameworkPartitioner(FrameworkTransformer):
         :param input_row_count: The number of rows in the input dataframe.  If this is provided, it is used
                                 in calculation of partitions otherwise it is calculated based on the dataframe count
         :param percentage_of_memory_to_use: The percentage of memory available to use in each executor.
+        :param maximum_number_of_partitions: The maximum number of partitions to create.  If the calculated
+                                            number of partitions is more than this, then this value is used.
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -132,6 +135,11 @@ class FrameworkPartitioner(FrameworkTransformer):
         )
         self._setDefault(percentage_of_memory_to_use=percentage_of_memory_to_use)
 
+        self.maximum_number_of_partitions: Param[Optional[int]] = Param(
+            self, "maximum_number_of_partitions", ""
+        )
+        self._setDefault(maximum_number_of_partitions=maximum_number_of_partitions)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -153,6 +161,9 @@ class FrameworkPartitioner(FrameworkTransformer):
         input_row_count: Optional[int] = self.getOrDefault(self.input_row_count)
         percentage_of_memory_to_use: float = self.getOrDefault(
             self.percentage_of_memory_to_use
+        )
+        maximum_number_of_partitions: Optional[int] = self.getOrDefault(
+            self.maximum_number_of_partitions
         )
 
         result_df: DataFrame = df.sparkSession.table(view)
@@ -261,7 +272,14 @@ class FrameworkPartitioner(FrameworkTransformer):
                     executor_instances,
                     int(estimated_total_size // size_available_per_executor),
                 )
+                # partitions should not be more than the number of rows
                 calculated_partitions = min(num_rows, calculated_partitions)
+                # partitions should not be more than the maximum number of partitions if passed
+                if maximum_number_of_partitions is not None:
+                    calculated_partitions = min(
+                        maximum_number_of_partitions, calculated_partitions
+                    )
+
                 self.logger.info(
                     f"Calculated Partitions: {calculated_partitions}"
                     f" | Rows: {num_rows}"
