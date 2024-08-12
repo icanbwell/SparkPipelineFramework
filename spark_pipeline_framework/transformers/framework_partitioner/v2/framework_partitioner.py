@@ -266,14 +266,14 @@ class FrameworkPartitioner(FrameworkTransformer):
             spark_cloud_provider: Optional[str] = spark_configuration.get(
                 "spark.databricks.cloudProvider"
             )
+            spark_worker_node_type: Optional[str] = spark_configuration.get(
+                "spark.databricks.workerNodeTypeId"
+            )
             # if we're in AWS read instance type from spark.databricks.workerNodeTypeId and look up memory
             if not spark_executor_memory and spark_cloud_provider == "AWS":
-                spark_worker_note_type: Optional[str] = spark_configuration.get(
-                    "spark.databricks.workerNodeTypeId"
-                )
-                if spark_worker_note_type:
+                if spark_worker_node_type:
                     spark_executor_memory = InstanceHelper.get_instance_memory(
-                        instance_type=spark_worker_note_type
+                        instance_type=spark_worker_node_type
                     )
 
             spark_cluster_target_workers_count: Optional[int] = (
@@ -319,7 +319,9 @@ class FrameworkPartitioner(FrameworkTransformer):
                 )
                 # calculate estimated row size if input row size is not provided
                 estimated_row_size: int = (
-                    len(str(df.rdd.first())) if not input_row_size else input_row_size
+                    len(str(result_df.rdd.first()))
+                    if not input_row_size
+                    else input_row_size
                 )
                 # if output row size is provided then add it to the input row size else double input row size
                 if output_row_size is not None:
@@ -327,7 +329,9 @@ class FrameworkPartitioner(FrameworkTransformer):
                 else:
                     estimated_row_size += estimated_row_size  # assume output row size will be same as input size
                 # calculate number of rows if not provided
-                num_rows: int = df.count() if not input_row_count else input_row_count
+                num_rows: int = (
+                    result_df.count() if not input_row_count else input_row_count
+                )
                 # calculate total size of the dataframe
                 estimated_total_size: int = num_rows * estimated_row_size
                 # now calculate the partitions as maximum of number of executors and the total size of the dataframe
@@ -353,6 +357,16 @@ class FrameworkPartitioner(FrameworkTransformer):
                     f" | Cores: {current_executor_cores}"
                     f" | Executor Memory: {convert_bytes_to_human_readable(current_executor_memory)}"
                     f" | Executor Memory Available: {convert_bytes_to_human_readable(executor_memory_available)}"
+                    + (
+                        f" | AWS Instance Type: {spark_worker_node_type}"
+                        if spark_worker_node_type
+                        else ""
+                    )
+                    + (
+                        f" | Cluster Target Workers: {spark_cluster_target_workers_count}"
+                        if spark_cluster_target_workers_count
+                        else ""
+                    )
                 )
             else:
                 self.logger.warning(
