@@ -10,3 +10,4 @@ class ElasticSearchSenderParameters:
     operation: str
     doc_id_prefix: Optional[str]
     log_level: Optional[str]
+    timeout: Optional[int]

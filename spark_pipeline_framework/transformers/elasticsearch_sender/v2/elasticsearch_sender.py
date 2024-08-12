@@ -52,6 +52,7 @@ class ElasticSearchSender(FrameworkTransformer):
         output_path: Optional[Union[Path, str]] = None,
         run_synchronously: Optional[bool] = None,
         log_level: Optional[str] = None,
+        timeout: int = 60,
     ):
         """
         Sends a folder or a view to an ElasticSearch server
@@ -108,6 +109,9 @@ class ElasticSearchSender(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
+        self.timeout: Param[int] = Param(self, "timeout", "")
+        self._setDefault(timeout=timeout)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -128,6 +132,7 @@ class ElasticSearchSender(FrameworkTransformer):
         log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
             "LOGLEVEL"
         )
+        timeout: int = self.getOrDefault(self.timeout)
         doc_id_prefix: Optional[str] = None
         if parameters is not None:
             doc_id_prefix = parameters.get("doc_id_prefix", None)
@@ -178,6 +183,7 @@ class ElasticSearchSender(FrameworkTransformer):
                         doc_id_prefix=doc_id_prefix,
                         name=name,
                         log_level=log_level,
+                        timeout=timeout,
                     )
                 )
                 if run_synchronously:
