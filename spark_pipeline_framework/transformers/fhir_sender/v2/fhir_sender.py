@@ -1,13 +1,15 @@
 import json
-import math
 from os import environ
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable
 
+from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
+from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
+from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col, get_json_object
+from pyspark.sql.functions import col, get_json_object, to_json, struct
 from pyspark.sql.types import Row
 from pyspark.sql.utils import AnalysisException, PythonException
 
@@ -28,11 +30,13 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
-
-# noinspection PyProtectedMember
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token,
+    fhir_get_access_token_async,
+)
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
+    FhirMergeResponseItem,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
@@ -55,9 +59,10 @@ class FhirSender(FrameworkTransformer):
     @capture_parameters
     def __init__(
         self,
+        *,
         server_url: str,
-        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
-        response_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]],
+        file_path: Path | str | Callable[[str | None], Path | str] | None = None,
+        response_path: Path | str | Callable[[str | None], Path | str] | None = None,
         resource: str,
         batch_size: Optional[int] = 30,
         limit: int = -1,
@@ -83,14 +88,13 @@ class FhirSender(FrameworkTransformer):
         ignore_status_codes: Optional[List[int]] = None,
         retry_count: Optional[int] = None,
         exclude_status_codes_from_retry: Optional[List[int]] = None,
-        num_partitions: Optional[int] = None,
         delta_lake_table: Optional[str] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         run_synchronously: Optional[bool] = None,
         sort_by_column_name_and_type: Optional[tuple[str, Any]] = None,
         drop_fields_from_json: Optional[List[str]] = None,
-        partition_by_column_name: Optional[str] = None,
-        enable_repartitioning: bool = True,
+        source_view: Optional[str] = None,
+        log_level: Optional[str] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -121,37 +125,50 @@ class FhirSender(FrameworkTransformer):
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         :param sort_by_column_name_and_type: (Optional) tuple of columnName, columnType to be used for sorting
         :param drop_fields_from_json: (Optional) List of field names to drop from json
-        :param partition_by_column_name: (Optional) Name of the column that will be used to repartition df
-        :param enable_repartitioning: Enable repartitioning or not, default True
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
 
-        assert (
-            isinstance(file_path, Path)
-            or isinstance(file_path, str)
-            or callable(file_path)
-        ), type(file_path)
+        assert file_path or source_view, "Either file_path or source_view must be set"
+        if file_path is not None:
+            assert (
+                isinstance(file_path, Path)
+                or isinstance(file_path, str)
+                or callable(file_path)
+            ), type(file_path)
+        else:
+            assert source_view, "source_view must be set"
 
-        assert file_path
+        assert response_path or view, "Either response_path or view must be set"
+        if response_path is not None:
+            assert (
+                isinstance(response_path, Path)
+                or isinstance(response_path, str)
+                or callable(response_path)
+            ), type(response_path)
+        else:
+            assert view, "view must be set"
 
         assert progress_logger
 
         assert server_url
 
-        self.logger = get_logger(__name__)
+        self.log_level: Param[str] = Param(self, "log_level", "")
+        self._setDefault(log_level=log_level)
+
+        self.logger = get_logger(__name__, level=log_level or "INFO")
 
         self.server_url: Param[str] = Param(self, "server_url", "")
         self._setDefault(server_url=None)
 
         self.file_path: Param[
-            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+            Path | str | Callable[[str | None], Path | str] | None
         ] = Param(self, "file_path", "")
         self._setDefault(file_path=None)
 
         self.response_path: Param[
-            Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
+            Path | str | Callable[[str | None], Path | str] | None
         ] = Param(self, "response_path", "")
         self._setDefault(response_path=None)
 
@@ -230,9 +247,6 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(exclude_status_codes_from_retry=None)
 
-        self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
-        self._setDefault(num_partitions=None)
-
         self.ignore_status_codes: Param[Optional[List[int]]] = Param(
             self, "ignore_status_codes", ""
         )
@@ -263,44 +277,40 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(drop_fields_from_json=drop_fields_from_json)
 
-        self.partition_by_column_name: Param[Optional[str]] = Param(
-            self, "partition_by_column_name", ""
-        )
-        self._setDefault(partition_by_column_name=partition_by_column_name)
-
-        self.enable_repartitioning: Param[bool] = Param(
-            self, "enable_repartitioning", ""
-        )
-        self._setDefault(enable_repartitioning=enable_repartitioning)
+        self.source_view: Param[Optional[str]] = Param(self, "source_view", "")
+        self._setDefault(source_view=None)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
-            self.getFilePath()
+        return AsyncHelper.run(self._transform_async(df))
+
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
+        file_path: Path | str | Callable[[str | None], Path | str] | None = (
+            self.getOrDefault(self.file_path)
         )
-        if callable(file_path):
+        if file_path is not None and callable(file_path):
             file_path = file_path(self.loop_id)
-        response_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
-            self.getResponsePath()
+        response_path: Path | str | Callable[[str | None], Path | str] | None = (
+            self.getOrDefault(self.response_path)
         )
-        if callable(response_path):
+        if response_path is not None and callable(response_path):
             response_path = response_path(self.loop_id)
         name: Optional[str] = self.getName()
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
-        resource_name: str = self.getResource()
+        resource_name: str = self.getOrDefault(self.resource)
         parameters = self.getParameters()
-        additional_request_headers: Optional[Dict[str, str]] = (
-            self.getAdditionalRequestHeaders()
+        additional_request_headers: Optional[Dict[str, str]] = self.getOrDefault(
+            self.additional_request_headers
         )
-        server_url: str = self.getServerUrl()
-        batch_size: Optional[int] = self.getBatchSize()
-        throw_exception_on_validation_failure: Optional[bool] = (
-            self.getThrowExceptionOnValidationFailure()
+        server_url: str = self.getOrDefault(self.server_url)
+        batch_size: Optional[int] = self.getOrDefault(self.batch_size)
+        throw_exception_on_validation_failure: Optional[bool] = self.getOrDefault(
+            self.throw_exception_on_validation_failure
         )
         operation: Union[FhirSenderOperation, str] = self.getOrDefault(self.operation)
-        mode: str = self.getMode()
+        mode: str = self.getOrDefault(self.mode)
 
         delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
 
@@ -313,31 +323,36 @@ class FhirSender(FrameworkTransformer):
         drop_fields_from_json: Optional[List[str]] = self.getOrDefault(
             self.drop_fields_from_json
         )
-        partition_by_column_name: Optional[str] = self.getOrDefault(
-            self.partition_by_column_name
-        )
 
         if not batch_size or batch_size == 0:
             batch_size = 30
         else:
             batch_size = int(batch_size)
 
-        file_format: str = self.getFileFormat()
-        validation_server_url: Optional[str] = self.getValidationServerUrl()
-        auth_server_url: Optional[str] = self.getAuthServerUrl()
+        file_format: str = self.getOrDefault(self.file_format)
+        validation_server_url: Optional[str] = self.getOrDefault(
+            self.validation_server_url
+        )
+        auth_server_url: Optional[str] = self.getOrDefault(self.auth_server_url)
         auth_well_known_url: Optional[str] = self.getOrDefault(self.auth_well_known_url)
-        auth_client_id: Optional[str] = self.getAuthClientId()
-        auth_client_secret: Optional[str] = self.getAuthClientSecret()
-        auth_login_token: Optional[str] = self.getAuthLoginToken()
-        auth_scopes: Optional[List[str]] = self.getAuthScopes()
+        auth_client_id: Optional[str] = self.getOrDefault(self.auth_client_id)
+        auth_client_secret: Optional[str] = self.getOrDefault(self.auth_client_secret)
+        auth_login_token: Optional[str] = self.getOrDefault(self.auth_login_token)
+        auth_scopes: Optional[List[str]] = self.getOrDefault(self.auth_scopes)
         auth_access_token: Optional[str] = None
 
         error_view: Optional[str] = self.getOrDefault(self.error_view)
         view: Optional[str] = self.getOrDefault(self.view)
 
-        log_level: Optional[str] = environ.get("LOGLEVEL")
+        log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
+            "LOGLEVEL"
+        )
 
-        ignore_status_codes: List[int] = self.getIgnoreStatusCodes() or []
+        ignore_status_codes: List[int] | None = (
+            self.getOrDefault(self.ignore_status_codes) or []
+        )
+        if ignore_status_codes is None:
+            ignore_status_codes = []
         ignore_status_codes.append(200)
 
         retry_count: Optional[int] = self.getOrDefault(self.retry_count)
@@ -345,13 +360,9 @@ class FhirSender(FrameworkTransformer):
             self.exclude_status_codes_from_retry
         )
 
-        num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
-        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
-
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
-        if not enable_repartitioning:
-            assert (partition_by_column_name or num_partitions) is None
+        source_view: Optional[str] = self.getOrDefault(self.source_view)
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -376,7 +387,7 @@ class FhirSender(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id:
-            auth_access_token = fhir_get_access_token(
+            auth_access_token = await fhir_get_access_token_async(
                 logger=self.logger,
                 server_url=server_url,
                 auth_server_url=auth_server_url,
@@ -395,21 +406,31 @@ class FhirSender(FrameworkTransformer):
             name=f"{name}_fhir_sender", progress_logger=progress_logger
         ):
             # read all the files at path into a dataframe
-            path_to_files: str = str(file_path)
             try:
-                if delta_lake_table:
-                    json_df: DataFrame = df.sparkSession.read.format("delta").load(
-                        path_to_files
-                    )
-                elif file_format == "parquet":
-                    json_df = df.sparkSession.read.format(file_format).load(
-                        path_to_files
-                    )
+                if source_view:
+                    json_df: DataFrame = df.sparkSession.table(source_view)
                 else:
-                    json_df = df.sparkSession.read.text(
-                        path_to_files, pathGlobFilter="*.json", recursiveFileLookup=True
-                    )
-
+                    path_to_files: str = str(file_path)
+                    if delta_lake_table:
+                        json_df = df.sparkSession.read.format("delta").load(
+                            path_to_files
+                        )
+                    elif file_format == "parquet":
+                        json_df = df.sparkSession.read.format(file_format).load(
+                            path_to_files
+                        )
+                    else:
+                        json_df = df.sparkSession.read.text(
+                            path_to_files,
+                            pathGlobFilter="*.json",
+                            recursiveFileLookup=True,
+                        )
+                # if source dataframe is not a single column dataframe then convert it to a single column dataframe
+                # the column name should be "value"
+                # we use string column because we accept resources of different resourceTypes that have different
+                # schemas
+                if len(json_df.columns) > 1 or "value" not in json_df.columns:
+                    json_df = json_df.select(to_json(struct("*")).alias("value"))
             except AnalysisException as e:
                 if str(e).startswith("Path does not exist:"):
                     if progress_logger:
@@ -424,17 +445,8 @@ class FhirSender(FrameworkTransformer):
                     f" with batch_size {batch_size}  -----"
                 )
                 assert batch_size and batch_size > 0
-                desired_partitions: int = (
-                    (num_partitions or math.ceil(row_count / batch_size))
-                    if enable_repartitioning
-                    else json_df.rdd.getNumPartitions()
-                )
-                if partition_by_column_name:
-                    json_df = json_df.withColumn(
-                        partition_by_column_name,
-                        get_json_object(col("value"), f"$.{partition_by_column_name}"),
-                    ).repartition(desired_partitions, partition_by_column_name)
-                    json_df = json_df.drop(partition_by_column_name)
+                # get the number of partitions
+                total_partitions: int = json_df.rdd.getNumPartitions()
 
                 if sort_by_column_name_and_type:
                     column_name, column_type = sort_by_column_name_and_type
@@ -458,12 +470,12 @@ class FhirSender(FrameworkTransformer):
                     ).toDF(json_schema)
 
                 self.logger.info(
-                    f"----- Total Batches for {resource_name}: {desired_partitions}  -----"
+                    f"----- Total Batches for {resource_name}: {total_partitions}  -----"
                 )
 
                 result_df: Optional[DataFrame] = None
                 sender_parameters: FhirSenderParameters = FhirSenderParameters(
-                    desired_partitions=desired_partitions,
+                    total_partitions=total_partitions,
                     operation=operation,
                     server_url=server_url,
                     resource_name=resource_name,
@@ -474,6 +486,7 @@ class FhirSender(FrameworkTransformer):
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
                     auth_access_token=auth_access_token,
+                    auth_well_known_url=auth_well_known_url,
                     additional_request_headers=additional_request_headers,
                     log_level=log_level,
                     batch_size=batch_size,
@@ -485,24 +498,26 @@ class FhirSender(FrameworkTransformer):
                     rows_to_send: List[Dict[str, Any]] = [
                         r.asDict(recursive=True) for r in json_df.collect()
                     ]
-                    result_rows: List[Dict[str, Any]] = (
-                        FhirSenderProcessor.send_partition_to_server(
+                    result_rows: List[
+                        FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse
+                    ] = await AsyncHelper.collect_items(
+                        FhirSenderProcessor.send_partition_to_server_async(
                             partition_index=0,
+                            chunk_index=0,
                             rows=rows_to_send,
                             parameters=sender_parameters,
                         )
                     )
+                    merge_items: List[FhirMergeResponseItem] = (
+                        FhirMergeResponseItem.from_responses(responses=result_rows)
+                    )
                     result_df = (
                         df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            result_rows, schema=FhirMergeResponseItemSchema.get_schema()
+                            merge_items,
+                            schema=FhirMergeResponseItemSchema.get_schema(),
                         )
                     )
                 else:
-                    # ---- Now process all the results ----
-                    if enable_repartitioning and not partition_by_column_name:
-                        # repartition only when we haven't already repartitioned by column
-                        # and enable_repartitioning is True
-                        json_df = json_df.repartition(desired_partitions)
                     # use mapInPandas
                     # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#map
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
@@ -519,23 +534,28 @@ class FhirSender(FrameworkTransformer):
 
                 if result_df is not None:
                     try:
-                        self.logger.info(
-                            f"Executing requests and writing FHIR {resource_name} responses to disk..."
-                        )
-                        result_df.write.mode(mode).format(file_format).save(
-                            str(response_path)
-                        )
-                        # result_df.show(truncate=False, n=100)
-                        self.logger.info(
-                            f"Reading from disk and counting rows for {resource_name}..."
-                        )
-                        result_df = df.sparkSession.read.format(file_format).load(
-                            str(response_path)
-                        )
-                        file_row_count: int = result_df.count()
-                        self.logger.info(
-                            f"Wrote {file_row_count} FHIR {resource_name} responses to {response_path}"
-                        )
+                        if response_path is not None:
+                            self.logger.info(
+                                f"Executing requests and writing FHIR {resource_name} responses to disk..."
+                            )
+                            result_df.write.mode(mode).format(file_format).save(
+                                str(response_path)
+                            )
+                            # result_df.show(truncate=False, n=100)
+                            self.logger.info(
+                                f"Reading from disk and counting rows for {resource_name}..."
+                            )
+                            result_df = (
+                                result_df.sparkSession.read.schema(
+                                    FhirMergeResponseItemSchema.get_schema()
+                                )
+                                .format(file_format)
+                                .load(str(response_path))
+                            )
+                            file_row_count: int = result_df.count()
+                            self.logger.info(
+                                f"Wrote {file_row_count} FHIR {resource_name} responses to {response_path}"
+                            )
                         if view:
                             result_df.createOrReplaceTempView(view)
 
@@ -576,9 +596,22 @@ class FhirSender(FrameworkTransformer):
                                     self.logger.info(
                                         f"------- End Failed validations for {resource_name} ---------"
                                     )
+                            else:
+                                if error_view:
+                                    df.sparkSession.createDataFrame(
+                                        [],
+                                        schema=FhirMergeResponseItemSchema.get_schema(),
+                                    ).createOrReplaceTempView(error_view)
+                        else:
+                            if error_view:
+                                df.sparkSession.createDataFrame(
+                                    [], schema=FhirMergeResponseItemSchema.get_schema()
+                                ).createOrReplaceTempView(error_view)
                     except PythonException as e:
-                        print(f"FriendlySparkException : {type(e)}")
-                        if "pyarrow.lib.ArrowTypeError" in e.desc:
+                        if (
+                            hasattr(e, "desc")
+                            and "pyarrow.lib.ArrowTypeError" in e.desc
+                        ):
                             raise FriendlySparkException(
                                 exception=e,
                                 message="Exception converting data to Arrow format."
@@ -596,77 +629,5 @@ class FhirSender(FrameworkTransformer):
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getServerUrl(self) -> str:
-        return self.getOrDefault(self.server_url)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFilePath(
-        self,
-    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
-        return self.getOrDefault(self.file_path)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getResponsePath(
-        self,
-    ) -> Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]:
-        return self.getOrDefault(self.response_path)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getLimit(self) -> int:
-        return self.getOrDefault(self.limit)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getResource(self) -> str:
-        return self.getOrDefault(self.resource)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getBatchSize(self) -> Optional[int]:
-        return self.getOrDefault(self.batch_size)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getName(self) -> Optional[str]:
-        return self.getOrDefault(self.name) or f" - {self.getResource()}"
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getFileFormat(self) -> str:
-        return self.getOrDefault(self.file_format)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getValidationServerUrl(self) -> Optional[str]:
-        return self.getOrDefault(self.validation_server_url)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getThrowExceptionOnValidationFailure(self) -> Optional[bool]:
-        return self.getOrDefault(self.throw_exception_on_validation_failure)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getAuthServerUrl(self) -> Optional[str]:
-        return self.getOrDefault(self.auth_server_url)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getAuthClientId(self) -> Optional[str]:
-        return self.getOrDefault(self.auth_client_id)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getAuthClientSecret(self) -> Optional[str]:
-        return self.getOrDefault(self.auth_client_secret)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getAuthLoginToken(self) -> Optional[str]:
-        return self.getOrDefault(self.auth_login_token)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getAuthScopes(self) -> Optional[List[str]]:
-        return self.getOrDefault(self.auth_scopes)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getMode(self) -> str:
-        return self.getOrDefault(self.mode)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getIgnoreStatusCodes(self) -> Optional[List[int]]:
-        return self.getOrDefault(self.ignore_status_codes)
-
-    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
-    def getAdditionalRequestHeaders(self) -> Optional[Dict[str, str]]:
-        return self.getOrDefault(self.additional_request_headers)
+        return self.getOrDefault(self.name) or f" - {self.getOrDefault(self.resource)}"

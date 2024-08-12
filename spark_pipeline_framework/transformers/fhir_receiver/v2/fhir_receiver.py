@@ -1,5 +1,4 @@
 import json
-import math
 import uuid
 from datetime import datetime
 from os import environ
@@ -31,15 +30,21 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
+from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
+    FhirReceiverProcessor,
+    GetBatchResult,
+    GetBatchError,
+)
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token,
+    fhir_get_access_token_async,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
@@ -47,14 +52,10 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema im
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_processor import (
-    FhirReceiverProcessor,
-)
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
-    sc,
 )
 
 
@@ -89,6 +90,7 @@ class FhirReceiver(FrameworkTransformer):
         auth_client_secret: Optional[str] = None,
         auth_login_token: Optional[str] = None,
         auth_scopes: Optional[List[str]] = None,
+        auth_well_known_url: Optional[str] = None,
         separate_bundle_resources: bool = False,
         error_on_result_count: bool = True,
         expand_fhir_bundle: bool = True,
@@ -105,19 +107,17 @@ class FhirReceiver(FrameworkTransformer):
         view: Optional[str] = None,
         retry_count: Optional[int] = None,
         exclude_status_codes_from_retry: Optional[List[int]] = None,
-        num_partitions: Optional[int] = None,
         checkpoint_path: Optional[
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = None,
-        use_data_streaming: Optional[bool] = None,
+        use_data_streaming: Optional[bool] = True,
         delta_lake_table: Optional[str] = None,
         schema: Optional[Union[StructType, DataType]] = None,
         cache_storage_level: Optional[StorageLevel] = None,
         graph_json: Optional[Dict[str, Any]] = None,
         run_synchronously: Optional[bool] = None,
         refresh_token_function: Optional[RefreshTokenFunction] = None,
-        partition_by_column_name: Optional[str] = None,
-        enable_repartitioning: bool = True,
+        log_level: Optional[str] = None,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -144,8 +144,7 @@ class FhirReceiver(FrameworkTransformer):
         :param action: (Optional) do an action e.g., $everything
         :param action_payload: (Optional) in case action needs a http request payload
         :param page_size: (Optional) use paging and get this many items in each page
-        :param batch_size: (Optional) How many rows to have in each parallel partition to use for
-                            retrieving from FHIR server
+        :param batch_size: (Optional) How many id rows to send to FHIR server in one call
         :param last_updated_after: (Optional) Only get records newer than this
         :param last_updated_before: (Optional) Only get records older than this
         :param sort_fields: sort by fields in the resource
@@ -202,7 +201,12 @@ class FhirReceiver(FrameworkTransformer):
 
         assert file_path
 
-        self.logger = get_logger(__name__)
+        # assert not action == "$graph" or id_view, "id_view is required when action is $graph"
+
+        self.log_level: Param[str] = Param(self, "log_level", "")
+        self._setDefault(log_level=log_level)
+
+        self.logger = get_logger(__name__, level=log_level or "INFO")
 
         self.server_url: Param[Optional[str]] = Param(self, "server_url", "")
         self._setDefault(server_url=None)
@@ -293,6 +297,12 @@ class FhirReceiver(FrameworkTransformer):
 
         self.auth_scopes: Param[Optional[List[str]]] = Param(self, "auth_scopes", "")
         self._setDefault(auth_scopes=None)
+
+        self.auth_well_known_url: Param[Optional[str]] = Param(
+            self, "auth_well_known_url", ""
+        )
+        self._setDefault(auth_well_known_url=None)
+
         self.separate_bundle_resources: Param[bool] = Param(
             self, "separate_bundle_resources", ""
         )
@@ -353,9 +363,6 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(exclude_status_codes_from_retry=None)
 
-        self.num_partitions: Param[Optional[int]] = Param(self, "num_partitions", "")
-        self._setDefault(num_partitions=None)
-
         self.checkpoint_path: Param[
             Optional[Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]]
         ] = Param(self, "checkpoint_path", "")
@@ -364,7 +371,7 @@ class FhirReceiver(FrameworkTransformer):
         self.use_data_streaming: Param[Optional[bool]] = Param(
             self, "use_data_streaming", ""
         )
-        self._setDefault(use_data_streaming=None)
+        self._setDefault(use_data_streaming=True)
 
         self.delta_lake_table: Param[Optional[str]] = Param(
             self, "delta_lake_table", ""
@@ -397,20 +404,13 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(refresh_token_function=refresh_token_function)
 
-        self.partition_by_column_name: Param[Optional[str]] = Param(
-            self, "partition_by_column_name", ""
-        )
-        self._setDefault(partition_by_column_name=partition_by_column_name)
-
-        self.enable_repartitioning: Param[bool] = Param(
-            self, "enable_repartitioning", ""
-        )
-        self._setDefault(enable_repartitioning=enable_repartitioning)
-
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        return AsyncHelper.run(self.transform_async(df))
+
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         server_url: Optional[str] = self.getServerUrl()
         resource_name: str = self.getResource()
         parameters = self.getParameters()
@@ -442,6 +442,7 @@ class FhirReceiver(FrameworkTransformer):
         auth_client_secret: Optional[str] = self.getAuthClientSecret()
         auth_login_token: Optional[str] = self.getAuthLoginToken()
         auth_scopes: Optional[List[str]] = self.getAuthScopes()
+        auth_well_known_url: Optional[str] = self.getOrDefault(self.auth_well_known_url)
 
         separate_bundle_resources: bool = self.getSeparateBundleResources()
         expand_fhir_bundle: bool = self.getExpandFhirBundle()
@@ -475,13 +476,13 @@ class FhirReceiver(FrameworkTransformer):
             self.exclude_status_codes_from_retry
         )
 
-        num_partitions: Optional[int] = self.getOrDefault(self.num_partitions)
-
         checkpoint_path: Optional[
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = self.getOrDefault(self.checkpoint_path)
 
-        log_level: Optional[str] = environ.get("LOGLEVEL")
+        log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
+            "LOGLEVEL"
+        )
 
         use_data_streaming: Optional[bool] = self.getOrDefault(self.use_data_streaming)
 
@@ -500,11 +501,6 @@ class FhirReceiver(FrameworkTransformer):
         refresh_token_function: Optional[RefreshTokenFunction] = self.getOrDefault(
             self.refresh_token_function
         )
-
-        partition_by_column_name: Optional[str] = self.getOrDefault(
-            self.partition_by_column_name
-        )
-        enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -529,7 +525,7 @@ class FhirReceiver(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
-            auth_access_token = fhir_get_access_token(
+            auth_access_token = await fhir_get_access_token_async(
                 logger=self.logger,
                 server_url=server_url,
                 auth_server_url=auth_server_url,
@@ -538,6 +534,7 @@ class FhirReceiver(FrameworkTransformer):
                 auth_login_token=auth_login_token,
                 auth_scopes=auth_scopes,
                 log_level=log_level,
+                auth_well_known_url=auth_well_known_url,
             )
 
         with ProgressLogMetric(
@@ -578,19 +575,16 @@ class FhirReceiver(FrameworkTransformer):
                 self.logger.info(
                     f"----- Total {row_count} rows to request from {server_url or ''}/{resource_name}  -----"
                 )
-                desired_partitions: int = (
-                    math.ceil(row_count / batch_size)
-                    if batch_size and batch_size > 0
-                    else 1
-                )
-                if not batch_size:  # if batching is disabled then call one at a time
-                    desired_partitions = row_count
+                # see if we need to partition the incoming dataframe
+                total_partitions: int = id_df.rdd.getNumPartitions()
+
                 self.logger.info(
-                    f"----- Total Batches: {desired_partitions} for {server_url or ''}/{resource_name}  -----"
+                    f"----- Total Batches: {total_partitions} for {server_url or ''}/{resource_name}  -----"
                 )
 
                 result_with_counts_and_responses: DataFrame
                 receiver_parameters: FhirReceiverParameters = FhirReceiverParameters(
+                    total_partitions=total_partitions,
                     batch_size=batch_size,
                     has_token_col=has_token_col,
                     server_url=server_url,
@@ -606,6 +600,7 @@ class FhirReceiver(FrameworkTransformer):
                     auth_client_secret=auth_client_secret,
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
+                    auth_well_known_url=auth_well_known_url,
                     include_only_properties=include_only_properties,
                     separate_bundle_resources=separate_bundle_resources,
                     expand_fhir_bundle=expand_fhir_bundle,
@@ -624,13 +619,15 @@ class FhirReceiver(FrameworkTransformer):
                     use_data_streaming=use_data_streaming,
                     graph_json=graph_json,
                     ignore_status_codes=ignore_status_codes,
+                    refresh_token_function=refresh_token_function,
                 )
                 if run_synchronously:
                     id_rows: List[Dict[str, Any]] = [
                         r.asDict(recursive=True) for r in id_df.collect()
                     ]
-                    result_rows: List[Dict[str, Any]] = (
-                        FhirReceiverProcessor.send_partition_request_to_server(
+
+                    result_rows: List[Dict[str, Any]] = await AsyncHelper.collect_items(
+                        FhirReceiverProcessor.send_partition_request_to_server_async(
                             partition_index=0,
                             rows=id_rows,
                             parameters=receiver_parameters,
@@ -645,10 +642,6 @@ class FhirReceiver(FrameworkTransformer):
                     )
                 else:
                     # ---- Now process all the results ----
-                    if enable_repartitioning:
-                        # repartition only when we haven't already repartitioned by column
-                        # and enable_repartitioning is True
-                        id_df = id_df.repartition(desired_partitions)
                     if has_token_col and not server_url:
                         assert slug_column
                         assert url_column
@@ -817,8 +810,7 @@ class FhirReceiver(FrameworkTransformer):
                                 request_id=first_request_id,
                             )
                 except PythonException as e:
-                    print(f"FriendlySparkException : {type(e)}")
-                    if "pyarrow.lib.ArrowTypeError" in e.desc:
+                    if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
                         raise FriendlySparkException(
                             exception=e,
                             message="Exception converting data to Arrow format."
@@ -961,6 +953,7 @@ class FhirReceiver(FrameworkTransformer):
                     result_df.createOrReplaceTempView(view)
             else:  # get all resources
                 receiver_parameters = FhirReceiverParameters(
+                    total_partitions=None,  # in this case we are just reading from Spark so don't know partitions
                     batch_size=batch_size,
                     has_token_col=False,
                     server_url=server_url,
@@ -976,6 +969,7 @@ class FhirReceiver(FrameworkTransformer):
                     auth_client_secret=auth_client_secret,
                     auth_login_token=auth_login_token,
                     auth_scopes=auth_scopes,
+                    auth_well_known_url=auth_well_known_url,
                     include_only_properties=include_only_properties,
                     separate_bundle_resources=separate_bundle_resources,
                     expand_fhir_bundle=expand_fhir_bundle,
@@ -996,21 +990,59 @@ class FhirReceiver(FrameworkTransformer):
                     ignore_status_codes=ignore_status_codes,
                 )
 
-                result1 = FhirReceiverProcessor.get_batch_result(
-                    page_size=page_size,
-                    limit=limit,
-                    server_url=server_url,
-                    parameters=receiver_parameters,
-                    last_updated_after=last_updated_after,
-                    last_updated_before=last_updated_before,
-                )
-                resources = result1.resources
-                errors = result1.errors
-                list_df: DataFrame = df.sparkSession.createDataFrame(
-                    resources, schema=StringType()
-                )
                 file_format = "delta" if delta_lake_table else "text"
-                list_df.write.format(file_format).mode(mode).save(str(file_path))
+
+                if receiver_parameters.use_data_streaming:
+                    list_df: DataFrame = (
+                        await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
+                            df=df,
+                            server_url=server_url,
+                            parameters=receiver_parameters,
+                            last_updated_after=last_updated_after,
+                            last_updated_before=last_updated_before,
+                            schema=GetBatchResult.get_schema(),
+                            results_per_batch=batch_size,
+                        )
+                    )
+                    resource_df = list_df.select(
+                        explode(col("resources")).alias("resource")
+                    )
+                    errors_df = list_df.select(
+                        explode(col("errors")).alias("resource")
+                    ).select("resource.*")
+                    resource_df.write.format(file_format).mode(mode).save(
+                        str(file_path)
+                    )
+                else:
+                    resources: List[str] = []
+                    errors: List[GetBatchError] = []
+
+                    async for (
+                        result1
+                    ) in FhirReceiverProcessor.get_batch_results_paging_async(
+                        page_size=page_size,
+                        limit=limit,
+                        server_url=server_url,
+                        parameters=receiver_parameters,
+                        last_updated_after=last_updated_after,
+                        last_updated_before=last_updated_before,
+                    ):
+                        resources.extend(result1.resources)
+                        errors.extend(result1.errors)
+
+                    list_df = df.sparkSession.createDataFrame(
+                        resources, schema=StringType()
+                    )
+                    errors_df = (
+                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                            [e.to_dict() for e in errors],
+                            schema=GetBatchError.get_schema(),
+                        )
+                        if errors
+                        else df.sparkSession.createDataFrame([], schema=StringType())
+                    )
+                    list_df.write.format(file_format).mode(mode).save(str(file_path))
+
                 list_df = df.sparkSession.read.format(file_format).load(str(file_path))
 
                 self.logger.info(f"Wrote FHIR data to {file_path}")
@@ -1033,7 +1065,6 @@ class FhirReceiver(FrameworkTransformer):
                 if view:
                     list_df.createOrReplaceTempView(view)
                 if error_view:
-                    errors_df = sc(df).parallelize(errors).toDF().cache()
                     errors_df.createOrReplaceTempView(error_view)
                     if progress_logger and not spark_is_data_frame_empty(errors_df):
                         progress_logger.log_event(

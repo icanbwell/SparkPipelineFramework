@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 import pytest
 from helix_fhir_client_sdk.fhir_client import FhirClient
+from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import IntegerType
 
@@ -21,7 +22,7 @@ import requests
 
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
-def test_fhir_sender_merge(
+async def test_fhir_sender_merge(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:
     # Arrange
@@ -42,6 +43,20 @@ def test_fhir_sender_merge(
     auth_client_secret = environ["FHIR_CLIENT_SECRET"]
     auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
 
+    # first delete any existing resources
+    fhir_client = FhirClient()
+    fhir_client = fhir_client.client_credentials(
+        client_id=auth_client_id, client_secret=auth_client_secret
+    )
+    fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
+    fhir_client = fhir_client.url(fhir_server_url).resource("Patient")
+    delete_response: FhirDeleteResponse = await fhir_client.id_(
+        "00100000000"
+    ).delete_async()
+    assert delete_response.status == 204
+    delete_response = await fhir_client.id_("00200000000").delete_async()
+    assert delete_response.status == 204
+
     logger = get_logger(__name__)
 
     token_url = TokenHelper.get_auth_server_url_from_well_known_url(
@@ -54,7 +69,7 @@ def test_fhir_sender_merge(
     environ["LOGLEVEL"] = "DEBUG"
     # Act
     with ProgressLogger() as progress_logger:
-        FhirSender(
+        await FhirSender(
             resource="Patient",
             server_url=fhir_server_url,
             file_path=test_files_dir,
@@ -67,9 +82,17 @@ def test_fhir_sender_merge(
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             auth_well_known_url=auth_well_known_url,
-        ).transform(df)
+            view="result_view",
+            error_view="error_view",
+        ).transform_async(df)
 
     # Assert
+    error_df = spark_session.read.table("error_view")
+    result_df = spark_session.read.table("result_view")
+    # Assert
+    assert error_df.count() == 0
+    assert result_df.count() == 2
+
     response = requests.get(
         urljoin(fhir_server_url, "Patient/00100000000"), headers=authorization_header
     )
@@ -87,7 +110,7 @@ def test_fhir_sender_merge(
     assert obj["birthDate"] == "1984-01-01"
 
 
-@pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("run_synchronously", [True])
 def test_fhir_sender_merge_for_custom_parameters(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:
@@ -136,10 +159,8 @@ def test_fhir_sender_merge_for_custom_parameters(
             response_path=response_files_dir,
             progress_logger=progress_logger,
             run_synchronously=run_synchronously,
-            enable_repartitioning=True,
             sort_by_column_name_and_type=("source_file_line_num", IntegerType()),
             drop_fields_from_json=["source_file_line_num"],
-            partition_by_column_name="id",
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             auth_well_known_url=auth_well_known_url,

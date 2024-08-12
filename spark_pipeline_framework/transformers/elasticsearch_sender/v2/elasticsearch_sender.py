@@ -1,4 +1,4 @@
-import math
+from os import environ
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, List
 
@@ -27,6 +27,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
@@ -43,12 +44,14 @@ class ElasticSearchSender(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
-        batch_size: int = 0,
+        batch_size: int = 100,
         limit: int = -1,
         multi_line: bool = False,
         operation: str = "index",
         output_path: Optional[Union[Path, str]] = None,
         run_synchronously: Optional[bool] = None,
+        log_level: Optional[str] = None,
+        timeout: int = 60,
     ):
         """
         Sends a folder or a view to an ElasticSearch server
@@ -60,6 +63,9 @@ class ElasticSearchSender(FrameworkTransformer):
         :param batch_size: how many documents to process at one time
         :param multi_line: when reading data from folder, whether to expect multiline json files
         :param output_path: writes bulk output to this folder before sending to ES
+        :param run_synchronously: if True, will send all data to ES in one go, otherwise will send in batches
+        :param log_level: log level
+        :param timeout: timeout in seconds
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -69,13 +75,16 @@ class ElasticSearchSender(FrameworkTransformer):
 
         assert progress_logger
 
-        self.logger = get_logger(__name__)
+        self.log_level: Param[str] = Param(self, "log_level", "")
+        self._setDefault(log_level=log_level)
+
+        self.logger = get_logger(__name__, level=log_level or "INFO")
 
         self.view: Param[Optional[str]] = Param(self, "view", "")
         self._setDefault(view=view)
 
         self.file_path: Param[Optional[Union[Path, str]]] = Param(self, "file_path", "")
-        self._setDefault(file_path=None)
+        self._setDefault(file_path=file_path)
 
         self.index: Param[str] = Param(self, "index", "")
         self._setDefault(index=index)
@@ -102,10 +111,16 @@ class ElasticSearchSender(FrameworkTransformer):
         )
         self._setDefault(run_synchronously=run_synchronously)
 
+        self.timeout: Param[int] = Param(self, "timeout", "")
+        self._setDefault(timeout=timeout)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
     def _transform(self, df: DataFrame) -> DataFrame:
+        return AsyncHelper.run(self.transform_async(df))
+
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
         path: Optional[Union[Path, str]] = self.getFilePath()
         name: Optional[str] = self.getName()
@@ -116,6 +131,10 @@ class ElasticSearchSender(FrameworkTransformer):
         operation: str = self.getOperation()
         parameters: Optional[Dict[str, Any]] = self.getParameters()
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+        log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
+            "LOGLEVEL"
+        )
+        timeout: int = self.getOrDefault(self.timeout)
         doc_id_prefix: Optional[str] = None
         if parameters is not None:
             doc_id_prefix = parameters.get("doc_id_prefix", None)
@@ -153,35 +172,41 @@ class ElasticSearchSender(FrameworkTransformer):
                 self.logger.info(
                     f"----- Sending {index} (rows={row_count}) to ElasticSearch server -----"
                 )
-                if not batch_size or batch_size < 1:
-                    batch_size = 1
-                desired_partitions: int = math.ceil(row_count / batch_size)
-                self.logger.info(f"----- Total Batches: {desired_partitions}  -----")
+                total_partitions: int = json_df.rdd.getNumPartitions()
+                self.logger.info(f"----- Total Batches: {total_partitions}  -----")
 
                 sender_parameters: ElasticSearchSenderParameters = (
                     ElasticSearchSenderParameters(
                         index=index,
                         operation=operation,
-                        desired_partitions=desired_partitions,
+                        total_partitions=total_partitions,
                         doc_id_prefix=doc_id_prefix,
                         name=name,
+                        log_level=log_level,
+                        timeout=timeout,
                     )
                 )
                 if run_synchronously:
                     rows_to_send: List[Dict[str, Any]] = [
                         r.asDict(recursive=True) for r in json_df.collect()
                     ]
-                    result_rows: List[Dict[str, Any] | None] = list(
-                        ElasticSearchProcessor.send_partition_to_server(
-                            partition_index=0,
-                            rows=rows_to_send,
-                            parameters=sender_parameters,
+                    result_rows: List[ElasticSearchResult] = (
+                        await AsyncHelper.collect_items(
+                            ElasticSearchProcessor.send_partition_to_server_async(
+                                partition_index=0,
+                                rows=rows_to_send,
+                                parameters=sender_parameters,
+                            )
                         )
                     )
-                    result_rows = [r for r in result_rows if r is not None]
+                    result_dicts: List[Dict[str, Any]] = [
+                        r.to_dict_flatten_payload()
+                        for r in result_rows
+                        if r is not None
+                    ]
                     result_df = (
                         df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            result_rows, schema=ElasticSearchResult.get_schema()
+                            result_dicts, schema=ElasticSearchResult.get_schema()
                         )
                     )
                 else:
@@ -189,9 +214,10 @@ class ElasticSearchSender(FrameworkTransformer):
                     # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#map
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
                     # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
-                    result_df = json_df.repartition(desired_partitions).mapInPandas(
+                    result_df = json_df.mapInPandas(
                         ElasticSearchProcessor.get_process_batch_function(
-                            parameters=sender_parameters
+                            parameters=sender_parameters,
+                            batch_size=batch_size,
                         ),
                         schema=ElasticSearchResult.get_schema(),
                     )
@@ -201,7 +227,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     "url", "success"
                 )
                 failed_df: DataFrame = result_df.where(col("failed") > 0).select(
-                    "url", "failed", "payload"
+                    "url", "failed", "payload", "error"
                 )
 
                 try:
@@ -211,8 +237,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     failed_df.show(truncate=False, n=1000)
                     self.logger.info("---- End Reply from server ----")
                 except PythonException as e:
-                    print(f"FriendlySparkException : {type(e)}")
-                    if "pyarrow.lib.ArrowTypeError" in e.desc:
+                    if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
                         raise FriendlySparkException(
                             exception=e,
                             message="Exception converting data to Arrow format."

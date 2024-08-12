@@ -61,6 +61,15 @@ def clean_close(session: SparkSession) -> None:
 
 
 def create_spark_session(request: Any) -> SparkSession:
+
+    logging.getLogger("org.apache.spark.deploy.SparkSubmit").setLevel(logging.ERROR)
+    logging.getLogger("org.apache.ivy").setLevel(logging.ERROR)
+    logging.getLogger("org.apache.hadoop.hive.metastore.ObjectStore").setLevel(
+        logging.ERROR
+    )
+    logging.getLogger("org.apache.hadoop.hive.conf.HiveConf").setLevel(logging.ERROR)
+    logging.getLogger("org.apache.hadoop.util.NativeCodeLoader").setLevel(logging.ERROR)
+
     # make sure env variables are set correctly
     if "SPARK_HOME" not in os.environ:
         os.environ["SPARK_HOME"] = "/usr/local/opt/spark"
@@ -80,6 +89,9 @@ def create_spark_session(request: Any) -> SparkSession:
         SparkSession.builder.appName("pytest-pyspark-local-testing")
         .master(master)
         .config("spark.ui.showConsoleProgress", "false")
+        .config("spark.executor.instances", "2")
+        .config("spark.executor.cores", "1")
+        .config("spark.executor.memory", "2g")
         .config("spark.sql.shuffle.partitions", "2")
         .config("spark.default.parallelism", "4")
         .config("spark.sql.broadcastTimeout", "2400")
@@ -96,9 +108,10 @@ def create_spark_session(request: Any) -> SparkSession:
         .getOrCreate()
     )
 
-    configurations = session.sparkContext.getConf().getAll()
-    for item in configurations:
-        print(item)
+    if os.environ.get("LOGLEVEL") == "DEBUG":
+        configurations = session.sparkContext.getConf().getAll()
+        for item in configurations:
+            print(item)
 
     # Verify that Arrow is enabled
     # arrow_enabled = session.conf.get("spark.sql.execution.arrow.pyspark.enabled")

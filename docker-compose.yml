@@ -1,12 +1,21 @@
 version: '3.5'
 services:
   dev:
+    depends_on:
+      - fhir
+      - warehouse
+      - elasticsearch
     user: root
     build:
       dockerfile: spark.Dockerfile
       context: .
     environment:
-      # configuration for local testing
+        # These environment variables put the python interpreter into debug mode
+#        PYTHONDEVMODE: 1
+#        PYTHONMALLOC: debug
+        PYTHONASYNCIODEBUG: 1
+#        PYTHONTRACEMALLOC: 1
+        # These environment variables are used to configure the spark pipeline framework
         FHIR_SERVER_URL: 'http://fhir:3000/4_0_0/'
         AUTH_CONFIGURATION_URI: 'http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration'
         FHIR_CLIENT_ID: bwell-client-id
@@ -15,14 +24,13 @@ services:
     volumes:
       - ./:/SparkpipelineFramework/
 #      - ~/.local/share/virtualenvs:/root/.local/share/virtualenvs:rw
-#      - ../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.7/dist-packages/helix_fhir_client_sdk
+#      - ../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.10/dist-packages/helix_fhir_client_sdk
+#      - ../mockserver_client/mockserver_client:/usr/local/lib/python3.10/dist-packages/mockserver_client
     container_name: spf_dev
     working_dir: /SparkpipelineFramework
 
   warehouse:
     image: mysql:8.0.39
-    volumes:
-      - mysql_data:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: fhir_rpt
@@ -51,7 +59,8 @@ services:
   fhir:
     depends_on:
       - mongo
-    image: imranq2/node-fhir-server-mongo:5.3.8
+      - keycloak
+    image: imranq2/node-fhir-server-mongo:5.3.16
     # To use local fhir code, comment above line and uncomment below
 #    build:
 #      dockerfile: Dockerfile
@@ -110,8 +119,6 @@ services:
       - '27017:27017'
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
-    volumes:
-      - mongo_data:/data/db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
 
@@ -138,9 +145,6 @@ services:
       nofile:
         soft: 65536 # maximum number of open files for the Elasticsearch user, set to at least 65536 on modern systems
         hard: 65536
-    volumes:
-      - es_data:/usr/share/opensearch/data:delegated
-#      - ./conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:cached
     ports:
       - '9200:9200'
       - '9600:9600' # required for Performance Analyzer
@@ -194,8 +198,3 @@ services:
     command: ["start-dev", "--import-realm", "--verbose"]
     volumes:
       - ./keycloak-config/realm-import.json:/opt/keycloak/data/import/realm-import.json
-
-volumes:
-  mysql_data:
-  mongo_data:
-  es_data:

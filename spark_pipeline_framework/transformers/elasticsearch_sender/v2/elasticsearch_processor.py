@@ -1,11 +1,23 @@
 import json
-from typing import Any, Dict, Iterable, List, Optional, Callable
+from datetime import datetime
+from logging import Logger
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Callable,
+    Iterator,
+    AsyncGenerator,
+    cast,
+)
 
 import pandas as pd
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_helpers import (
-    send_json_bundle_to_elasticsearch,
+    ElasticSearchHelpers,
 )
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_result import (
     ElasticSearchResult,
@@ -13,62 +25,156 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_sender_parameters import (
     ElasticSearchSenderParameters,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
+    AsyncPandasDataFrameUDF,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
+    HandlePandasDataFrameBatchFunction,
+)
+from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
+    SparkPartitionInformation,
+)
 
 
 class ElasticSearchProcessor:
     @staticmethod
+    async def process_partition(
+        *,
+        partition_index: int,
+        chunk_index: int,
+        chunk_input_range: range,
+        input_values: List[Dict[str, Any]],
+        parameters: Optional[ElasticSearchSenderParameters],
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Process a partition of data asynchronously
+
+        :param partition_index: partition index
+        :param chunk_index: chunk index
+        :param chunk_input_range: chunk input range
+        :param input_values: input values
+        :param parameters: parameters
+        :return: output values
+        """
+        assert parameters
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
+        spark_partition_information: SparkPartitionInformation = (
+            SparkPartitionInformation.from_current_task_context(
+                chunk_index=chunk_index,
+            )
+        )
+        if parameters is not None and parameters.log_level == "DEBUG":
+            # ids = [input_value["id"] for input_value in input_values]
+            message: str = f"ElasticSearchProcessor:process_partition"
+            # Get the current time
+            current_time = datetime.now()
+
+            # Format the time to include hours, minutes, seconds, and milliseconds
+            formatted_time = current_time.strftime("%H:%M:%S.%f")[:-3]
+            formatted_message: str = (
+                f"{formatted_time}: "
+                f"{message}"
+                f" | Partition: {partition_index}/{parameters.total_partitions}"
+                f" | Chunk: {chunk_index}"
+                f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+                f" | {spark_partition_information}"
+            )
+            logger.debug(formatted_message)
+
+        count: int = 0
+        try:
+            full_result: Optional[ElasticSearchResult] = None
+            result: ElasticSearchResult
+            async for result in ElasticSearchProcessor.send_partition_to_server_async(
+                partition_index=partition_index,
+                parameters=parameters,
+                rows=input_values,
+            ):
+                if result:
+                    count += result.success + result.failed
+                    logger.debug(
+                        f"Received result"
+                        f" | Partition: {partition_index}"
+                        f" | Chunk: {chunk_index}"
+                        f" | Successful: {result.success}"
+                        f" | Failed: {result.failed}"
+                    )
+                    if full_result is None:
+                        full_result = result
+                    else:
+                        full_result.append(result)
+                else:
+                    count += 1
+                    logger.warning(
+                        f"Got None result for partition {partition_index} chunk {chunk_index}"
+                    )
+                    error_result: ElasticSearchResult = ElasticSearchResult(
+                        url=parameters.index,
+                        success=0,
+                        failed=1,
+                        payload=[],
+                        partition_index=partition_index,
+                        error="Got None result",
+                    )
+
+                    if full_result is None:
+                        full_result = error_result
+                    else:
+                        full_result.append(error_result)
+            assert full_result is not None
+            yield full_result.to_dict_flatten_payload()
+        except Exception as e:
+            logger.error(
+                f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"
+            )
+            # if an exception is thrown then return an error for each row
+            for _ in input_values:
+                count += 1
+                yield {
+                    "error": str(e),
+                    "partition_index": partition_index,
+                    "url": parameters.index,
+                    "success": 0,
+                    "failed": 1,
+                    "payload": json.dumps(input_values),
+                }
+        # we actually want to error here since something strange happened
+        assert count == len(input_values), f"count={count}, len={len(input_values)}"
+
+    @staticmethod
     def get_process_batch_function(
-        *, parameters: ElasticSearchSenderParameters
-    ) -> Callable[[Iterable[pd.DataFrame]], Iterable[pd.DataFrame]]:
+        *, parameters: ElasticSearchSenderParameters, batch_size: int
+    ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """
         Returns a function that includes the passed parameters so that function
         can be used in a pandas_udf
 
         :param parameters: FhirSenderParameters
+        :param batch_size: batch size
         :return: pandas_udf
         """
 
-        def process_batch(
-            batch_iter: Iterable[pd.DataFrame],
-        ) -> Iterable[pd.DataFrame]:
-            """
-            This function is passed a list of dataframes, each dataframe is a partition
-
-            :param batch_iter: Iterable[pd.DataFrame]
-            :return: Iterable[pd.DataFrame]
-            """
-            pdf: pd.DataFrame
-            index: int = 0
-            # print(f"batch type: {type(batch_iter)}")
-            for pdf in batch_iter:
-                # print(f"pdf type: {type(pdf)}")
-                # convert the dataframe to a list of dictionaries
-                pdf_json: str = pdf.to_json(orient="records")
-                rows: List[Dict[str, Any]] = json.loads(pdf_json)
-                # print(f"Processing partition {pdf.index}: {pdf_json}")
-                # print(f"Processing partition {pdf.index} with {len(rows)} rows")
-                # send the partition to the server
-                result_list: Iterable[Dict[str, Any] | None] = (
-                    ElasticSearchProcessor.send_partition_to_server(
-                        partition_index=index, parameters=parameters, rows=rows
-                    )
-                )
-                # remove any nulls
-                result_list = [r for r in result_list if r is not None]
-                index += 1
-                # print(f"output: {json.dumps(result_list)}")
-                # yield the result as a dataframe
-                yield pd.DataFrame(result_list)
-
-        return process_batch
+        return AsyncPandasDataFrameUDF(
+            async_func=cast(
+                HandlePandasDataFrameBatchFunction[ElasticSearchSenderParameters],
+                ElasticSearchProcessor.process_partition,
+            ),
+            parameters=parameters,
+            batch_size=batch_size,
+        ).get_pandas_udf()
 
     @staticmethod
-    def send_partition_to_server(
+    async def send_partition_to_server_async(
         *,
         partition_index: int,
         rows: Iterable[Dict[str, Any]],
         parameters: ElasticSearchSenderParameters,
-    ) -> Iterable[Optional[Dict[str, Any]]]:
+    ) -> AsyncGenerator[ElasticSearchResult, None]:
         assert parameters.index is not None
         assert isinstance(parameters.index, str)
         assert parameters.operation is not None
@@ -83,26 +189,41 @@ class ElasticSearchProcessor:
         assert isinstance(json_data_list, list)
         assert all(isinstance(j, str) for j in json_data_list)
 
-        logger = get_logger(__name__)
+        logger: Logger = get_logger(
+            __name__,
+            level=(
+                parameters.log_level if parameters and parameters.log_level else "INFO"
+            ),
+        )
 
         if len(json_data_list) > 0:
             logger.info(
-                f"Sending batch {partition_index}/{parameters.desired_partitions} "
+                f"Sending batch {partition_index}/{parameters.total_partitions} "
                 f"containing {len(json_data_list)} rows "
                 f"to ES Server/{parameters.index}. [{parameters.name}].."
             )
             # send to server
-            response_json: ElasticSearchResult = send_json_bundle_to_elasticsearch(
-                json_data_list=json_data_list,
-                index=parameters.index,
-                operation=parameters.operation,
-                logger=logger,
-                doc_id_prefix=parameters.doc_id_prefix,
+            response_json: ElasticSearchResult = (
+                await ElasticSearchHelpers.send_json_bundle_to_elasticsearch_async(
+                    json_data_list=json_data_list,
+                    index=parameters.index,
+                    operation=parameters.operation,
+                    logger=logger,
+                    doc_id_prefix=parameters.doc_id_prefix,
+                    timeout=parameters.timeout or 60,
+                )
             )
             response_json.partition_index = partition_index
-            yield response_json.to_dict_flatten_payload()
+            yield response_json
         else:
             logger.info(
-                f"Batch {partition_index}/{parameters.desired_partitions} is empty"
+                f"Batch {partition_index}/{parameters.total_partitions} is empty"
             )
-            yield None
+            yield ElasticSearchResult(
+                url=parameters.index,
+                success=0,
+                failed=0,
+                payload=[],
+                partition_index=partition_index,
+                error=None,
+            )
