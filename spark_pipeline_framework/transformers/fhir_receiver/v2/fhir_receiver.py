@@ -563,6 +563,15 @@ class FhirReceiver(FrameworkTransformer):
                     # nothing to do
                     return df
 
+                # if id is not in the columns but we have a value column with StructType then select the id in there
+                # This means the data frame contains the id in a nested structure
+                if not "id" in id_df.columns and "value" in id_df.columns:
+                    if isinstance(id_df.schema["value"].dataType, StructType):
+                        id_df = id_df.select(
+                            F.col("value.resourceType").alias("resourceType"),
+                            F.col("value.id").alias("id"),
+                        )
+
                 assert "id" in id_df.columns
 
                 has_token_col: bool = "token" in id_df.columns
@@ -1043,7 +1052,7 @@ class FhirReceiver(FrameworkTransformer):
                     )
                     list_df.write.format(file_format).mode(mode).save(str(file_path))
 
-                list_df = df.sparkSession.read.format(file_format).load(str(file_path))
+                list_df = df.sparkSession.read.format("json").load(str(file_path))
 
                 self.logger.info(f"Wrote FHIR data to {file_path}")
 
