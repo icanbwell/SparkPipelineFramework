@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/icanbwell/mockserver_client/main/mockserver_client/schemas/source_api_json_responses.json",
   "request_parameters": {
     "method": "GET"
   },
