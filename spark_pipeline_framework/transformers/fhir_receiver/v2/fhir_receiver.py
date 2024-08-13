@@ -668,30 +668,17 @@ class FhirReceiver(FrameworkTransformer):
                 parameters=parameters,
             )
         else:
-            resources: List[str] = []
-            errors: List[GetBatchError] = []
-
-            async for result1 in FhirReceiverProcessor.get_batch_results_paging_async(
-                page_size=page_size,
-                limit=limit,
-                server_url=parameters.server_url,
-                parameters=parameters,
+            errors_df = await self.get_all_resources_non_streaming_async(
+                df=df,
+                file_format=file_format,
+                file_path=file_path,
                 last_updated_after=last_updated_after,
                 last_updated_before=last_updated_before,
-            ):
-                resources.extend(result1.resources)
-                errors.extend(result1.errors)
-
-            list_df = df.sparkSession.createDataFrame(resources, schema=StringType())
-            errors_df = (
-                df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                    [e.to_dict() for e in errors],
-                    schema=GetBatchError.get_schema(),
-                )
-                if errors
-                else df.sparkSession.createDataFrame([], schema=StringType())
+                limit=limit,
+                mode=mode,
+                page_size=page_size,
+                parameters=parameters,
             )
-            list_df.write.format(file_format).mode(mode).save(str(file_path))
 
         list_df = df.sparkSession.read.format("json").load(str(file_path))
 
@@ -728,6 +715,44 @@ class FhirReceiver(FrameworkTransformer):
                 )
 
         return df
+
+    # noinspection PyMethodMayBeStatic
+    async def get_all_resources_non_streaming_async(
+        self,
+        *,
+        df: DataFrame,
+        file_format: str,
+        file_path: Path | str | None,
+        last_updated_after: Optional[datetime],
+        last_updated_before: Optional[datetime],
+        limit: Optional[int],
+        mode: str,
+        page_size: Optional[int],
+        parameters: FhirReceiverParameters,
+    ) -> DataFrame:
+        resources: List[str] = []
+        errors: List[GetBatchError] = []
+        async for result1 in FhirReceiverProcessor.get_batch_results_paging_async(
+            page_size=page_size,
+            limit=limit,
+            server_url=parameters.server_url,
+            parameters=parameters,
+            last_updated_after=last_updated_after,
+            last_updated_before=last_updated_before,
+        ):
+            resources.extend(result1.resources)
+            errors.extend(result1.errors)
+        list_df = df.sparkSession.createDataFrame(resources, schema=StringType())
+        errors_df = (
+            df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                [e.to_dict() for e in errors],
+                schema=GetBatchError.get_schema(),
+            )
+            if errors
+            else df.sparkSession.createDataFrame([], schema=StringType())
+        )
+        list_df.write.format(file_format).mode(mode).save(str(file_path))
+        return errors_df
 
     @staticmethod
     async def get_all_resources_streaming_async(
