@@ -844,44 +844,16 @@ class FhirReceiver(FrameworkTransformer):
 
         result_with_counts_and_responses: DataFrame
         if run_synchronously:
-            id_rows: List[Dict[str, Any]] = [
-                r.asDict(recursive=True) for r in id_df.collect()
-            ]
-
-            result_rows: List[Dict[str, Any]] = await AsyncHelper.collect_items(
-                FhirReceiverProcessor.send_partition_request_to_server_async(
-                    partition_index=0,
-                    rows=id_rows,
-                    parameters=parameters,
-                )
-            )
-            response_schema = FhirGetResponseSchema.get_schema()
-
-            result_with_counts_and_responses = (
-                df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                    result_rows, schema=response_schema
-                )
+            result_with_counts_and_responses = await self.get_resources_by_id_sync(
+                df=df,
+                id_df=id_df,
+                parameters=parameters,
             )
         else:
-            # ---- Now process all the results ----
-            if has_token_col and not parameters.server_url:
-                assert parameters.slug_column
-                assert parameters.url_column
-                assert all(
-                    [
-                        c
-                        for c in [
-                            parameters.url_column,
-                            parameters.slug_column,
-                            "resourceType",
-                        ]
-                        if [c in id_df.columns]
-                    ]
-                )
-            # use mapInPandas
-            result_with_counts_and_responses = id_df.mapInPandas(
-                FhirReceiverProcessor.get_process_batch_function(parameters=parameters),
-                schema=FhirGetResponseSchema.get_schema(),
+            result_with_counts_and_responses = await self.get_resources_by_id_async(
+                has_token_col=has_token_col,
+                id_df=id_df,
+                parameters=parameters,
             )
 
         try:
@@ -1160,6 +1132,62 @@ class FhirReceiver(FrameworkTransformer):
         if view:
             result_df.createOrReplaceTempView(view)
         return df
+
+    # noinspection PyMethodMayBeStatic
+    async def get_resources_by_id_async(
+        self,
+        *,
+        has_token_col: Optional[bool],
+        id_df: DataFrame,
+        parameters: FhirReceiverParameters,
+    ) -> DataFrame:
+        # ---- Now process all the results ----
+        if has_token_col and not parameters.server_url:
+            assert parameters.slug_column
+            assert parameters.url_column
+            assert all(
+                [
+                    c
+                    for c in [
+                        parameters.url_column,
+                        parameters.slug_column,
+                        "resourceType",
+                    ]
+                    if [c in id_df.columns]
+                ]
+            )
+        # use mapInPandas
+        result_with_counts_and_responses = id_df.mapInPandas(
+            FhirReceiverProcessor.get_process_batch_function(parameters=parameters),
+            schema=FhirGetResponseSchema.get_schema(),
+        )
+        return result_with_counts_and_responses
+
+    # noinspection PyMethodMayBeStatic
+    async def get_resources_by_id_sync(
+        self,
+        *,
+        df: DataFrame,
+        id_df: DataFrame,
+        parameters: FhirReceiverParameters,
+    ) -> DataFrame:
+        id_rows: List[Dict[str, Any]] = [
+            r.asDict(recursive=True) for r in id_df.collect()
+        ]
+        result_rows: List[Dict[str, Any]] = await AsyncHelper.collect_items(
+            FhirReceiverProcessor.send_partition_request_to_server_async(
+                partition_index=0,
+                rows=id_rows,
+                parameters=parameters,
+            )
+        )
+        response_schema = FhirGetResponseSchema.get_schema()
+        result_with_counts_and_responses = (
+            df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                result_rows, schema=response_schema
+            )
+        )
+        return result_with_counts_and_responses
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getServerUrl(self) -> Optional[str]:
