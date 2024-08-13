@@ -3,8 +3,6 @@ from typing import Optional, List
 
 from helix_fhir_client_sdk.fhir_client import FhirClient
 
-from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper
-
 
 def get_fhir_client(
     logger: Logger,
@@ -29,13 +27,7 @@ def get_fhir_client(
     if auth_server_url:
         fhir_client = fhir_client.auth_server_url(auth_server_url)
     if auth_well_known_url:
-        auth_server_url_from_wellknown: Optional[str] = (
-            TokenHelper.get_auth_server_url_from_well_known_url(
-                well_known_url=auth_well_known_url
-            )
-        )
-        if auth_server_url_from_wellknown:
-            fhir_client = fhir_client.auth_server_url(auth_server_url_from_wellknown)
+        fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
     if auth_client_id and auth_client_secret:
         fhir_client = fhir_client.client_credentials(auth_client_id, auth_client_secret)
     if auth_login_token:
