@@ -859,34 +859,19 @@ class FhirReceiver(FrameworkTransformer):
         try:
             # Now write to checkpoint if requested
             if checkpoint_path:
-                if callable(checkpoint_path):
-                    checkpoint_path = checkpoint_path(self.loop_id)
-                checkpoint_file = (
-                    f"{checkpoint_path}/{parameters.resource_type}/{uuid.uuid4()}"
+                result_with_counts_and_responses = await self.write_to_checkpoint_async(
+                    checkpoint_path=checkpoint_path,
+                    delta_lake_table=delta_lake_table,
+                    df=result_with_counts_and_responses,
+                    parameters=parameters,
+                    progress_logger=progress_logger,
+                    result_with_counts_and_responses=result_with_counts_and_responses,
                 )
-                if progress_logger:
-                    progress_logger.write_to_log(
-                        self.getName() or self.__class__.__name__,
-                        f"Writing checkpoint to {checkpoint_file}",
-                    )
-                checkpoint_file_format = "delta" if delta_lake_table else "parquet"
-                result_with_counts_and_responses.write.format(
-                    checkpoint_file_format
-                ).save(checkpoint_file)
-                result_with_counts_and_responses = df.sparkSession.read.format(
-                    checkpoint_file_format
-                ).load(checkpoint_file)
             else:
-                if cache_storage_level is None:
-                    result_with_counts_and_responses = (
-                        result_with_counts_and_responses.cache()
-                    )
-                else:
-                    result_with_counts_and_responses = (
-                        result_with_counts_and_responses.persist(
-                            storageLevel=cache_storage_level
-                        )
-                    )
+                result_with_counts_and_responses = await self.write_to_cache_async(
+                    cache_storage_level=cache_storage_level,
+                    result_with_counts_and_responses=result_with_counts_and_responses,
+                )
             # don't need the large responses column to figure out if we had errors or not
             result_with_counts: DataFrame = result_with_counts_and_responses.select(
                 FhirGetResponseSchema.partition_index,
@@ -915,84 +900,13 @@ class FhirReceiver(FrameworkTransformer):
             count_bad_requests: int = results_with_counts_errored.count()
 
             if count_bad_requests > 0:
-                result_with_counts.select(
-                    FhirGetResponseSchema.partition_index,
-                    FhirGetResponseSchema.sent,
-                    FhirGetResponseSchema.received,
-                    FhirGetResponseSchema.error_text,
-                    FhirGetResponseSchema.status_code,
-                    FhirGetResponseSchema.request_id,
-                ).show(truncate=False, n=1000)
-                results_with_counts_errored.select(
-                    FhirGetResponseSchema.partition_index,
-                    FhirGetResponseSchema.sent,
-                    FhirGetResponseSchema.received,
-                    FhirGetResponseSchema.error_text,
-                    FhirGetResponseSchema.url,
-                    FhirGetResponseSchema.status_code,
-                    FhirGetResponseSchema.request_id,
-                ).show(truncate=False, n=1000)
-                first_error: str = (
-                    results_with_counts_errored.select(FhirGetResponseSchema.error_text)
-                    .limit(1)
-                    .collect()[0][0]
+                result_with_counts = await self.handle_error_async(
+                    error_view=error_view,
+                    parameters=parameters,
+                    progress_logger=progress_logger,
+                    result_with_counts=result_with_counts,
+                    results_with_counts_errored=results_with_counts_errored,
                 )
-                first_url: str = (
-                    results_with_counts_errored.select(FhirGetResponseSchema.url)
-                    .limit(1)
-                    .collect()[0][0]
-                )
-                first_error_status_code: Optional[int] = (
-                    results_with_counts_errored.select(
-                        FhirGetResponseSchema.status_code
-                    )
-                    .limit(1)
-                    .collect()[0][0]
-                )
-                first_request_id: Optional[str] = (
-                    results_with_counts_errored.select(FhirGetResponseSchema.request_id)
-                    .limit(1)
-                    .collect()[0][0]
-                )
-                if error_view:
-                    errors_df = results_with_counts_errored.select(
-                        FhirGetResponseSchema.url,
-                        FhirGetResponseSchema.error_text,
-                        FhirGetResponseSchema.status_code,
-                        FhirGetResponseSchema.request_id,
-                    )
-                    errors_df.createOrReplaceTempView(error_view)
-                    if progress_logger and not spark_is_data_frame_empty(errors_df):
-                        progress_logger.log_event(
-                            event_name="Errors receiving FHIR",
-                            event_text=get_pretty_data_frame(
-                                df=errors_df,
-                                limit=100,
-                                name="Errors Receiving FHIR",
-                            ),
-                            log_level=LogLevel.INFO,
-                        )
-                    # filter out bad records
-                    result_with_counts = result_with_counts.where(
-                        ~(
-                            (col(FhirGetResponseSchema.status_code).isNotNull())
-                            & (
-                                ~col(FhirGetResponseSchema.status_code).isin(
-                                    parameters.ignore_status_codes
-                                )
-                            )
-                        )
-                        | (col(FhirGetResponseSchema.error_text).isNotNull())
-                    )
-                else:
-                    raise FhirReceiverException(
-                        url=first_url,
-                        response_text=first_error,
-                        response_status_code=first_error_status_code,
-                        message="Error receiving FHIR",
-                        json_data=first_error,
-                        request_id=first_request_id,
-                    )
         except PythonException as e:
             if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
                 raise FriendlySparkException(
@@ -1127,6 +1041,136 @@ class FhirReceiver(FrameworkTransformer):
         if view:
             result_df.createOrReplaceTempView(view)
         return df
+
+    # noinspection PyMethodMayBeStatic
+    async def handle_error_async(
+        self,
+        *,
+        error_view: Optional[str],
+        parameters: FhirReceiverParameters,
+        progress_logger: Optional[ProgressLogger],
+        result_with_counts: DataFrame,
+        results_with_counts_errored: DataFrame,
+    ) -> DataFrame:
+        result_with_counts.select(
+            FhirGetResponseSchema.partition_index,
+            FhirGetResponseSchema.sent,
+            FhirGetResponseSchema.received,
+            FhirGetResponseSchema.error_text,
+            FhirGetResponseSchema.status_code,
+            FhirGetResponseSchema.request_id,
+        ).show(truncate=False, n=1000)
+        results_with_counts_errored.select(
+            FhirGetResponseSchema.partition_index,
+            FhirGetResponseSchema.sent,
+            FhirGetResponseSchema.received,
+            FhirGetResponseSchema.error_text,
+            FhirGetResponseSchema.url,
+            FhirGetResponseSchema.status_code,
+            FhirGetResponseSchema.request_id,
+        ).show(truncate=False, n=1000)
+        first_error: str = (
+            results_with_counts_errored.select(FhirGetResponseSchema.error_text)
+            .limit(1)
+            .collect()[0][0]
+        )
+        first_url: str = (
+            results_with_counts_errored.select(FhirGetResponseSchema.url)
+            .limit(1)
+            .collect()[0][0]
+        )
+        first_error_status_code: Optional[int] = (
+            results_with_counts_errored.select(FhirGetResponseSchema.status_code)
+            .limit(1)
+            .collect()[0][0]
+        )
+        first_request_id: Optional[str] = (
+            results_with_counts_errored.select(FhirGetResponseSchema.request_id)
+            .limit(1)
+            .collect()[0][0]
+        )
+        if error_view:
+            errors_df = results_with_counts_errored.select(
+                FhirGetResponseSchema.url,
+                FhirGetResponseSchema.error_text,
+                FhirGetResponseSchema.status_code,
+                FhirGetResponseSchema.request_id,
+            )
+            errors_df.createOrReplaceTempView(error_view)
+            if progress_logger and not spark_is_data_frame_empty(errors_df):
+                progress_logger.log_event(
+                    event_name="Errors receiving FHIR",
+                    event_text=get_pretty_data_frame(
+                        df=errors_df,
+                        limit=100,
+                        name="Errors Receiving FHIR",
+                    ),
+                    log_level=LogLevel.INFO,
+                )
+            # filter out bad records
+            result_with_counts = result_with_counts.where(
+                ~(
+                    (col(FhirGetResponseSchema.status_code).isNotNull())
+                    & (
+                        ~col(FhirGetResponseSchema.status_code).isin(
+                            parameters.ignore_status_codes
+                        )
+                    )
+                )
+                | (col(FhirGetResponseSchema.error_text).isNotNull())
+            )
+        else:
+            raise FhirReceiverException(
+                url=first_url,
+                response_text=first_error,
+                response_status_code=first_error_status_code,
+                message="Error receiving FHIR",
+                json_data=first_error,
+                request_id=first_request_id,
+            )
+        return result_with_counts
+
+    # noinspection PyMethodMayBeStatic
+    async def write_to_cache_async(
+        self,
+        *,
+        cache_storage_level: Optional[StorageLevel],
+        result_with_counts_and_responses: DataFrame,
+    ) -> DataFrame:
+        if cache_storage_level is None:
+            result_with_counts_and_responses = result_with_counts_and_responses.cache()
+        else:
+            result_with_counts_and_responses = result_with_counts_and_responses.persist(
+                storageLevel=cache_storage_level
+            )
+        return result_with_counts_and_responses
+
+    async def write_to_checkpoint_async(
+        self,
+        *,
+        checkpoint_path: Path | str,
+        delta_lake_table: Optional[str],
+        df: DataFrame,
+        parameters: FhirReceiverParameters,
+        progress_logger: Optional[ProgressLogger],
+        result_with_counts_and_responses: DataFrame,
+    ) -> DataFrame:
+        if callable(checkpoint_path):
+            checkpoint_path = checkpoint_path(self.loop_id)
+        checkpoint_file = f"{checkpoint_path}/{parameters.resource_type}/{uuid.uuid4()}"
+        if progress_logger:
+            progress_logger.write_to_log(
+                self.getName() or self.__class__.__name__,
+                f"Writing checkpoint to {checkpoint_file}",
+            )
+        checkpoint_file_format = "delta" if delta_lake_table else "parquet"
+        result_with_counts_and_responses.write.format(checkpoint_file_format).save(
+            checkpoint_file
+        )
+        result_with_counts_and_responses = df.sparkSession.read.format(
+            checkpoint_file_format
+        ).load(checkpoint_file)
+        return result_with_counts_and_responses
 
     # noinspection PyMethodMayBeStatic
     async def write_to_disk_async(
