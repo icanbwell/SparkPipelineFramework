@@ -25,7 +25,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
 @pytest.mark.parametrize("use_data_streaming", [True, False])
-async def test_async_real_fhir_server_get_patients_large(
+async def test_async_real_fhir_server_get_patients_large_with_limit(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     print()
@@ -113,6 +113,7 @@ async def test_async_real_fhir_server_get_patients_large(
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             use_data_streaming=use_data_streaming,
+            limit=5,
         ).transform_async(df)
 
     # Assert
@@ -120,4 +121,4 @@ async def test_async_real_fhir_server_get_patients_large(
     json_df.show()
     json_df.printSchema()
 
-    assert json_df.count() == count
+    assert json_df.count() == 5
