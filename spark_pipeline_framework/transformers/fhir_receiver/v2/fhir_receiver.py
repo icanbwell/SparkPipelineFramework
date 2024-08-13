@@ -730,7 +730,7 @@ class FhirReceiver(FrameworkTransformer):
                             FhirGetResponseSchema.error_text,
                             FhirGetResponseSchema.status_code,
                             FhirGetResponseSchema.request_id,
-                        ).show(truncate=False, n=1000000)
+                        ).show(truncate=False, n=1000)
                         results_with_counts_errored.select(
                             FhirGetResponseSchema.partition_index,
                             FhirGetResponseSchema.sent,
@@ -739,7 +739,7 @@ class FhirReceiver(FrameworkTransformer):
                             FhirGetResponseSchema.url,
                             FhirGetResponseSchema.status_code,
                             FhirGetResponseSchema.request_id,
-                        ).show(truncate=False, n=1000000)
+                        ).show(truncate=False, n=1000)
                         first_error: str = (
                             results_with_counts_errored.select(
                                 FhirGetResponseSchema.error_text
