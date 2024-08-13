@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "43c45e0fd0451b9acc1ce9a690e928011ba44056fe42a6ed30a709375d198768"
+            "sha256": "0f0bb6c0bfe278ce8349f7270dc120d3c331d26c35fd1386aaa33845f47849f6"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -617,11 +617,11 @@
         },
         "helix.fhir.client.sdk": {
             "hashes": [
-                "sha256:570f67723403679274b744adc9ce947f7df87bc60acbae3cbe9cb301a5385bf0",
-                "sha256:72696205e2171fd459820d1cd7f2aeb6f51756e0c04e2acc994bec8a1b76e8da"
+                "sha256:8dc6c14b8daddeec919625261b1340313404f83a97912405b5ea99073aef9730",
+                "sha256:9da35debdd11f03dd88620cbf29b4f32c77550cc8b3f552ab4e13f33ecc02436"
             ],
             "markers": "python_version >= '3.10'",
-            "version": "==2.0.17"
+            "version": "==2.0.20"
         },
         "idna": {
             "hashes": [
@@ -1514,7 +1514,7 @@
                 "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472",
                 "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"
             ],
-            "markers": "python_version >= '3.8'",
+            "markers": "python_version >= '3.10'",
             "version": "==2.2.2"
         },
         "usaddress": {
@@ -3494,7 +3494,7 @@
                 "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472",
                 "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"
             ],
-            "markers": "python_version >= '3.8'",
+            "markers": "python_version >= '3.10'",
             "version": "==2.2.2"
         },
         "virtualenv": {
@@ -3926,7 +3926,7 @@
                 "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472",
                 "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"
             ],
-            "markers": "python_version >= '3.8'",
+            "markers": "python_version >= '3.10'",
             "version": "==2.2.2"
         },
         "vistir": {
