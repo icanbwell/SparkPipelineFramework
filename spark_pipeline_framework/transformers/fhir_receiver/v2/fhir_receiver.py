@@ -920,81 +920,16 @@ class FhirReceiver(FrameworkTransformer):
         except Exception as e:
             raise FriendlySparkException(exception=e, stage_name=name)
 
-        if expand_fhir_bundle:
-            # noinspection PyUnresolvedReferences
-            count_sent_df: DataFrame = result_with_counts.agg(
-                F.sum(FhirGetResponseSchema.sent).alias(FhirGetResponseSchema.sent)
-            )
-            # count_sent_df.show()
-            # noinspection PyUnresolvedReferences
-            count_received_df: DataFrame = result_with_counts.agg(
-                F.sum(FhirGetResponseSchema.received).alias(
-                    FhirGetResponseSchema.received
-                )
-            )
-            # count_received_df.show()
-            count_sent: Optional[int] = count_sent_df.collect()[0][0]
-            count_received: Optional[int] = count_received_df.collect()[0][0]
-            if (
-                (count_sent is not None and count_received is not None)
-                and (count_sent > count_received)
-                and error_on_result_count
-                and verify_counts_match
-            ):
-                result_with_counts.where(
-                    col(FhirGetResponseSchema.sent)
-                    != col(FhirGetResponseSchema.received)
-                ).select(
-                    FhirGetResponseSchema.partition_index,
-                    FhirGetResponseSchema.sent,
-                    FhirGetResponseSchema.received,
-                    FhirGetResponseSchema.error_text,
-                    FhirGetResponseSchema.url,
-                    FhirGetResponseSchema.request_id,
-                ).show(
-                    truncate=False, n=1000000
-                )
-                first_url = (
-                    result_with_counts.select(FhirGetResponseSchema.url)
-                    .limit(1)
-                    .collect()[0][0]
-                )
-                first_error_status_code = (
-                    result_with_counts.select(FhirGetResponseSchema.status_code)
-                    .limit(1)
-                    .collect()[0][0]
-                )
-                first_request_id = (
-                    result_with_counts.select(FhirGetResponseSchema.request_id)
-                    .limit(1)
-                    .collect()[0][0]
-                )
-                raise FhirReceiverException(
-                    url=first_url,
-                    response_text=None,
-                    response_status_code=first_error_status_code,
-                    message=f"Sent ({count_sent}) and Received ({count_received}) counts did not match",
-                    json_data="",
-                    request_id=first_request_id,
-                )
-            elif count_sent == count_received:
-                self.logger.info(
-                    f"Sent ({count_sent}) and Received ({count_received}) counts matched "
-                    + f"for {parameters.server_url or ''}/{parameters.resource_type}"
-                )
-            else:
-                self.logger.info(
-                    f"Sent ({count_sent}) and Received ({count_received}) for "
-                    + f"{parameters.server_url or ''}/{parameters.resource_type}"
-                )
-
         result_df: DataFrame = (
-            result_with_counts_and_responses.select(
-                explode(col(FhirGetResponseSchema.responses))
+            await self.expand_bundle_async(
+                error_on_result_count=error_on_result_count,
+                parameters=parameters,
+                result_with_counts=result_with_counts,
+                verify_counts_match=verify_counts_match,
+                result_with_counts_and_responses=result_with_counts_and_responses,
             )
             if expand_fhir_bundle
             else result_with_counts_and_responses.select(
-                # col("responses")[0]["id"].alias("id"),
                 col(FhirGetResponseSchema.responses)[0].alias("bundle")
             )
         )
@@ -1041,6 +976,83 @@ class FhirReceiver(FrameworkTransformer):
         if view:
             result_df.createOrReplaceTempView(view)
         return df
+
+    async def expand_bundle_async(
+        self,
+        *,
+        error_on_result_count: Optional[bool],
+        parameters: FhirReceiverParameters,
+        result_with_counts: DataFrame,
+        verify_counts_match: Optional[bool],
+        result_with_counts_and_responses: DataFrame,
+    ) -> DataFrame:
+        # noinspection PyUnresolvedReferences
+        count_sent_df: DataFrame = result_with_counts.agg(
+            F.sum(FhirGetResponseSchema.sent).alias(FhirGetResponseSchema.sent)
+        )
+        # count_sent_df.show()
+        # noinspection PyUnresolvedReferences
+        count_received_df: DataFrame = result_with_counts.agg(
+            F.sum(FhirGetResponseSchema.received).alias(FhirGetResponseSchema.received)
+        )
+        # count_received_df.show()
+        count_sent: Optional[int] = count_sent_df.collect()[0][0]
+        count_received: Optional[int] = count_received_df.collect()[0][0]
+        if (
+            (count_sent is not None and count_received is not None)
+            and (count_sent > count_received)
+            and error_on_result_count
+            and verify_counts_match
+        ):
+            result_with_counts.where(
+                col(FhirGetResponseSchema.sent) != col(FhirGetResponseSchema.received)
+            ).select(
+                FhirGetResponseSchema.partition_index,
+                FhirGetResponseSchema.sent,
+                FhirGetResponseSchema.received,
+                FhirGetResponseSchema.error_text,
+                FhirGetResponseSchema.url,
+                FhirGetResponseSchema.request_id,
+            ).show(
+                truncate=False, n=1000000
+            )
+            first_url = (
+                result_with_counts.select(FhirGetResponseSchema.url)
+                .limit(1)
+                .collect()[0][0]
+            )
+            first_error_status_code = (
+                result_with_counts.select(FhirGetResponseSchema.status_code)
+                .limit(1)
+                .collect()[0][0]
+            )
+            first_request_id = (
+                result_with_counts.select(FhirGetResponseSchema.request_id)
+                .limit(1)
+                .collect()[0][0]
+            )
+            raise FhirReceiverException(
+                url=first_url,
+                response_text=None,
+                response_status_code=first_error_status_code,
+                message=f"Sent ({count_sent}) and Received ({count_received}) counts did not match",
+                json_data="",
+                request_id=first_request_id,
+            )
+        elif count_sent == count_received:
+            self.logger.info(
+                f"Sent ({count_sent}) and Received ({count_received}) counts matched "
+                + f"for {parameters.server_url or ''}/{parameters.resource_type}"
+            )
+        else:
+            self.logger.info(
+                f"Sent ({count_sent}) and Received ({count_received}) for "
+                + f"{parameters.server_url or ''}/{parameters.resource_type}"
+            )
+
+        return result_with_counts_and_responses.select(
+            explode(col(FhirGetResponseSchema.responses))
+        )
 
     # noinspection PyMethodMayBeStatic
     async def handle_error_async(
