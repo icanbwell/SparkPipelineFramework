@@ -601,7 +601,7 @@ class FhirReceiver(FrameworkTransformer):
             )
 
             if id_view:
-                return await self.transform_by_id_view_async(
+                return await self.get_resources_by_id_view_async(
                     df=df,
                     id_view=id_view,
                     parameters=receiver_parameters,
@@ -621,7 +621,7 @@ class FhirReceiver(FrameworkTransformer):
                     verify_counts_match=verify_counts_match,
                 )
             else:  # get all resources
-                return await self.transform_all_resources_async(
+                return await self.get_all_resources_async(
                     df=df,
                     parameters=receiver_parameters,
                     delta_lake_table=delta_lake_table,
@@ -637,7 +637,7 @@ class FhirReceiver(FrameworkTransformer):
                     error_view=error_view,
                 )
 
-    async def transform_all_resources_async(
+    async def get_all_resources_async(
         self,
         *,
         df: DataFrame,
@@ -654,6 +654,25 @@ class FhirReceiver(FrameworkTransformer):
         view: Optional[str],
         error_view: Optional[str],
     ) -> DataFrame:
+        """
+        This function gets all the resources from the FHIR server based on the resourceType and
+        any additional query parameters and writes them to a file
+
+        :param df: the data frame
+        :param parameters: the parameters
+        :param delta_lake_table: whether to use delta lake for reading and writing files
+        :param last_updated_after: only get records newer than this
+        :param last_updated_before: only get records older than this
+        :param batch_size: how many id rows to send to FHIR server in one call
+        :param mode: if output files exist, should we overwrite or append
+        :param file_path: where to store the FHIR resources retrieved
+        :param page_size: use paging and get this many items in each page
+        :param limit: maximum number of resources to get
+        :param progress_logger: progress logger
+        :param view: view to create
+        :param error_view: view to create for errors
+        :return: the data frame
+        """
         file_format = "delta" if delta_lake_table else "text"
 
         if parameters.use_data_streaming:
@@ -730,6 +749,22 @@ class FhirReceiver(FrameworkTransformer):
         page_size: Optional[int],
         parameters: FhirReceiverParameters,
     ) -> DataFrame:
+        """
+        This function gets all the resources from the FHIR server based on the resourceType and
+        any additional query parameters and writes them to a file.  This function does not use data streaming
+
+
+        :param df: the data frame
+        :param file_format: the file format
+        :param file_path: where to store the FHIR resources retrieved
+        :param last_updated_after: only get records newer than this
+        :param last_updated_before: only get records older than this
+        :param limit: maximum number of resources to get
+        :param mode: if output files exist, should we overwrite or append
+        :param page_size: use paging and get this many items in each page
+        :param parameters: the parameters
+        :return: the data frame
+        """
         resources: List[str] = []
         errors: List[GetBatchError] = []
         async for result1 in FhirReceiverProcessor.get_batch_results_paging_async(
@@ -766,6 +801,20 @@ class FhirReceiver(FrameworkTransformer):
         mode: str,
         parameters: FhirReceiverParameters,
     ) -> DataFrame:
+        """
+        Get all resources from the FHIR server based on the resourceType and any additional query parameters
+        and write them to a file.  This function uses data streaming.
+
+        :param df: the data frame
+        :param batch_size: how many id rows to send to FHIR server in one call
+        :param file_format: the file format
+        :param file_path: where to store the FHIR resources retrieved
+        :param last_updated_after: only get records newer than this
+        :param last_updated_before: only get records older than this
+        :param mode: if output files exist, should we overwrite or append
+        :param parameters: the parameters
+        :return: the data frame
+        """
         list_df: DataFrame = (
             await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
                 df=df,
@@ -784,7 +833,7 @@ class FhirReceiver(FrameworkTransformer):
         resource_df.write.format(file_format).mode(mode).save(str(file_path))
         return errors_df
 
-    async def transform_by_id_view_async(
+    async def get_resources_by_id_view_async(
         self,
         *,
         df: DataFrame,
@@ -805,6 +854,28 @@ class FhirReceiver(FrameworkTransformer):
         mode: str,
         view: Optional[str],
     ) -> DataFrame:
+        """
+        Gets the resources by id from id_view and writes them to a file
+
+        :param df: the data frame
+        :param id_view: the view that contains the ids to retrieve
+        :param parameters: the parameters
+        :param run_synchronously: run synchronously
+        :param checkpoint_path: where to store the checkpoint
+        :param progress_logger: progress logger
+        :param delta_lake_table: whether to use delta lake for reading and writing files
+        :param cache_storage_level: how to store the cache
+        :param error_view: view to create for errors
+        :param name: name of transformer
+        :param expand_fhir_bundle: expand the FHIR bundle
+        :param error_on_result_count: throw exception when the response from FHIR count does not match the request count
+        :param verify_counts_match: verify counts match
+        :param file_path: where to store the FHIR resources retrieved
+        :param schema: the schema to apply after we receive the data
+        :param mode: if output files exist, should we overwrite or append
+        :param view: view to create
+        :return: the data frame
+        """
         id_df: DataFrame = df.sparkSession.table(id_view)
         if spark_is_data_frame_empty(df=id_df):
             # nothing to do
@@ -844,16 +915,20 @@ class FhirReceiver(FrameworkTransformer):
 
         result_with_counts_and_responses: DataFrame
         if run_synchronously:
-            result_with_counts_and_responses = await self.get_resources_by_id_sync(
-                df=df,
-                id_df=id_df,
-                parameters=parameters,
+            result_with_counts_and_responses = (
+                await self.get_resources_by_id_non_streaming_async(
+                    df=df,
+                    id_df=id_df,
+                    parameters=parameters,
+                )
             )
         else:
-            result_with_counts_and_responses = await self.get_resources_by_id_async(
-                has_token_col=has_token_col,
-                id_df=id_df,
-                parameters=parameters,
+            result_with_counts_and_responses = (
+                await self.get_resources_by_id_streaming_async(
+                    has_token_col=has_token_col,
+                    id_df=id_df,
+                    parameters=parameters,
+                )
             )
 
         try:
@@ -986,6 +1061,16 @@ class FhirReceiver(FrameworkTransformer):
         verify_counts_match: Optional[bool],
         result_with_counts_and_responses: DataFrame,
     ) -> DataFrame:
+        """
+        Expand the FHIR bundle to return the included resources
+
+        :param error_on_result_count: throw exception when the response from FHIR count does not match the request count
+        :param parameters: the parameters
+        :param result_with_counts: the result with counts
+        :param verify_counts_match: verify counts match
+        :param result_with_counts_and_responses: the result with counts and responses
+        :return: the data frame
+        """
         # noinspection PyUnresolvedReferences
         count_sent_df: DataFrame = result_with_counts.agg(
             F.sum(FhirGetResponseSchema.sent).alias(FhirGetResponseSchema.sent)
@@ -1064,6 +1149,16 @@ class FhirReceiver(FrameworkTransformer):
         result_with_counts: DataFrame,
         results_with_counts_errored: DataFrame,
     ) -> DataFrame:
+        """
+        Display errors and filter out bad records
+
+        :param error_view: view to create for errors
+        :param parameters: the parameters
+        :param progress_logger: progress logger
+        :param result_with_counts: the result with counts
+        :param results_with_counts_errored: the result with counts and errors
+        :return: the data frame
+        """
         result_with_counts.select(
             FhirGetResponseSchema.partition_index,
             FhirGetResponseSchema.sent,
@@ -1149,6 +1244,13 @@ class FhirReceiver(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel],
         result_with_counts_and_responses: DataFrame,
     ) -> DataFrame:
+        """
+        Write the results to cache depending on the storage level
+
+        :param cache_storage_level: how to store the cache
+        :param result_with_counts_and_responses: the result with counts and responses
+        :return: the data frame
+        """
         if cache_storage_level is None:
             result_with_counts_and_responses = result_with_counts_and_responses.cache()
         else:
@@ -1167,6 +1269,17 @@ class FhirReceiver(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger],
         result_with_counts_and_responses: DataFrame,
     ) -> DataFrame:
+        """
+        Writes the data frame to the checkpoint path
+
+        :param checkpoint_path: where to store the checkpoint
+        :param delta_lake_table: whether to use delta lake for reading and writing files
+        :param df: the data frame
+        :param parameters: the parameters
+        :param progress_logger: progress logger
+        :param result_with_counts_and_responses: the result with counts and responses
+        :return: the data frame
+        """
         if callable(checkpoint_path):
             checkpoint_path = checkpoint_path(self.loop_id)
         checkpoint_file = f"{checkpoint_path}/{parameters.resource_type}/{uuid.uuid4()}"
@@ -1195,6 +1308,17 @@ class FhirReceiver(FrameworkTransformer):
         result_df: DataFrame,
         schema: Optional[Union[StructType, DataType]],
     ) -> DataFrame:
+        """
+        Writes the data frame to disk
+
+        :param delta_lake_table: whether to use delta lake for reading and writing files
+        :param df: the data frame
+        :param file_path: where to store the FHIR resources retrieved
+        :param mode: if output files exist, should we overwrite or append
+        :param result_df: the result data frame
+        :param schema: the schema to apply after we receive the data
+        :return: the data frame
+        """
         if delta_lake_table:
             if schema:
                 result_df = result_df.select(
@@ -1211,13 +1335,21 @@ class FhirReceiver(FrameworkTransformer):
         return result_df
 
     # noinspection PyMethodMayBeStatic
-    async def get_resources_by_id_async(
+    async def get_resources_by_id_streaming_async(
         self,
         *,
         has_token_col: Optional[bool],
         id_df: DataFrame,
         parameters: FhirReceiverParameters,
     ) -> DataFrame:
+        """
+        Get resources by id using data streaming
+
+        :param has_token_col: whether we have a token column
+        :param id_df: the data frame containing the ids to use for retrieving resources
+        :param parameters: the parameters
+        :return: the data frame
+        """
         # ---- Now process all the results ----
         if has_token_col and not parameters.server_url:
             assert parameters.slug_column
@@ -1241,13 +1373,21 @@ class FhirReceiver(FrameworkTransformer):
         return result_with_counts_and_responses
 
     # noinspection PyMethodMayBeStatic
-    async def get_resources_by_id_sync(
+    async def get_resources_by_id_non_streaming_async(
         self,
         *,
         df: DataFrame,
         id_df: DataFrame,
         parameters: FhirReceiverParameters,
     ) -> DataFrame:
+        """
+        Gets the resources by id from id_df and writes them to a file.  Does not use streaming.
+
+        :param df: the data frame
+        :param id_df: the data frame containing the ids to use for retrieving resources
+        :param parameters: the parameters
+        :return: the data frame
+        """
         id_rows: List[Dict[str, Any]] = [
             r.asDict(recursive=True) for r in id_df.collect()
         ]
