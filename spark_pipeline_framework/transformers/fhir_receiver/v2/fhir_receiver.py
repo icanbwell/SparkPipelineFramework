@@ -1091,19 +1091,14 @@ class FhirReceiver(FrameworkTransformer):
         self.logger.info(
             f"Executing requests and writing FHIR {parameters.resource_type} resources to {file_path}..."
         )
-        if delta_lake_table:
-            if schema:
-                result_df = result_df.select(
-                    from_json(col("col"), schema=cast(StructType, schema)).alias(
-                        "resource"
-                    )
-                )
-                result_df = result_df.selectExpr("resource.*")
-            result_df.write.format("delta").mode(mode).save(str(file_path))
-            result_df = df.sparkSession.read.format("delta").load(str(file_path))
-        else:
-            result_df.write.format("text").mode(mode).save(str(file_path))
-            result_df = df.sparkSession.read.format("text").load(str(file_path))
+        result_df = await self.write_to_disk_async(
+            delta_lake_table=delta_lake_table,
+            df=df,
+            file_path=file_path,
+            mode=mode,
+            result_df=result_df,
+            schema=schema,
+        )
 
         self.logger.info(
             f"Received {result_df.count()} FHIR {parameters.resource_type} resources."
@@ -1132,6 +1127,32 @@ class FhirReceiver(FrameworkTransformer):
         if view:
             result_df.createOrReplaceTempView(view)
         return df
+
+    # noinspection PyMethodMayBeStatic
+    async def write_to_disk_async(
+        self,
+        *,
+        delta_lake_table: Optional[str],
+        df: DataFrame,
+        file_path: Union[Path, str],
+        mode: str,
+        result_df: DataFrame,
+        schema: Optional[Union[StructType, DataType]],
+    ) -> DataFrame:
+        if delta_lake_table:
+            if schema:
+                result_df = result_df.select(
+                    from_json(col("col"), schema=cast(StructType, schema)).alias(
+                        "resource"
+                    )
+                )
+                result_df = result_df.selectExpr("resource.*")
+            result_df.write.format("delta").mode(mode).save(str(file_path))
+            result_df = df.sparkSession.read.format("delta").load(str(file_path))
+        else:
+            result_df.write.format("text").mode(mode).save(str(file_path))
+            result_df = df.sparkSession.read.format("text").load(str(file_path))
+        return result_df
 
     # noinspection PyMethodMayBeStatic
     async def get_resources_by_id_async(
