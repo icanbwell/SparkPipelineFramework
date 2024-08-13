@@ -657,22 +657,16 @@ class FhirReceiver(FrameworkTransformer):
         file_format = "delta" if delta_lake_table else "text"
 
         if parameters.use_data_streaming:
-            list_df: DataFrame = (
-                await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
-                    df=df,
-                    server_url=parameters.server_url,
-                    parameters=parameters,
-                    last_updated_after=last_updated_after,
-                    last_updated_before=last_updated_before,
-                    schema=GetBatchResult.get_schema(),
-                    results_per_batch=batch_size,
-                )
+            errors_df = await self.get_all_resources_streaming_async(
+                df=df,
+                batch_size=batch_size,
+                file_format=file_format,
+                file_path=file_path,
+                last_updated_after=last_updated_after,
+                last_updated_before=last_updated_before,
+                mode=mode,
+                parameters=parameters,
             )
-            resource_df = list_df.select(explode(col("resources")).alias("resource"))
-            errors_df = list_df.select(explode(col("errors")).alias("resource")).select(
-                "resource.*"
-            )
-            resource_df.write.format(file_format).mode(mode).save(str(file_path))
         else:
             resources: List[str] = []
             errors: List[GetBatchError] = []
@@ -734,6 +728,36 @@ class FhirReceiver(FrameworkTransformer):
                 )
 
         return df
+
+    @staticmethod
+    async def get_all_resources_streaming_async(
+        *,
+        df: DataFrame,
+        batch_size: Optional[int],
+        file_format: str,
+        file_path: Path | str | None,
+        last_updated_after: Optional[datetime],
+        last_updated_before: Optional[datetime],
+        mode: str,
+        parameters: FhirReceiverParameters,
+    ) -> DataFrame:
+        list_df: DataFrame = (
+            await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
+                df=df,
+                server_url=parameters.server_url,
+                parameters=parameters,
+                last_updated_after=last_updated_after,
+                last_updated_before=last_updated_before,
+                schema=GetBatchResult.get_schema(),
+                results_per_batch=batch_size,
+            )
+        )
+        resource_df = list_df.select(explode(col("resources")).alias("resource"))
+        errors_df = list_df.select(explode(col("errors")).alias("resource")).select(
+            "resource.*"
+        )
+        resource_df.write.format(file_format).mode(mode).save(str(file_path))
+        return errors_df
 
     async def transform_by_id_view_async(
         self,
