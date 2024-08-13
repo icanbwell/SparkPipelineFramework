@@ -65,23 +65,31 @@ class AsyncHelper:
         """
 
         # iterate through the async generator and collect the data in chunks
-        collected_data = []
-        async for chunk in AsyncHelper.collect_async_data(
-            async_gen=async_gen, chunk_size=results_per_batch or 1
-        ):
-            df_chunk = df.sparkSession.createDataFrame(chunk, schema)  # type: ignore[type-var]
-            collected_data.append(df_chunk)
+        collected_data_frames: List[DataFrame] = []
+        if results_per_batch is not None:
+            # if batching is requested
+            async for chunk in AsyncHelper.collect_async_data(
+                async_gen=async_gen, chunk_size=results_per_batch
+            ):
+                df_chunk = df.sparkSession.createDataFrame(chunk, schema)  # type: ignore[type-var]
+                collected_data_frames.append(df_chunk)
 
-        # Combine all chunks into a single DataFrame
-        if collected_data:
-            # if data was already collected, combine it into a single DataFrame
-            final_df = collected_data[0]
-            for df in collected_data[1:]:
-                final_df = final_df.union(df)
-            return final_df
+            # Combine all chunks into a single DataFrame
+            if len(collected_data_frames) > 0:
+                # if data was already collected, combine it into a single DataFrame
+                final_df = collected_data_frames[0]
+                for df in collected_data_frames[1:]:
+                    final_df = final_df.union(df)
+                return final_df
+            else:
+                # create a DataFrame with the schema but no data
+                return df.sparkSession.createDataFrame([], schema)
         else:
-            # create a DataFrame with the schema but no data
-            return df.sparkSession.createDataFrame([], schema)
+            # no batching required
+            collected_data: List[T] = []
+            async for item in async_gen:
+                collected_data.append(item)
+            return df.sparkSession.createDataFrame(collected_data, schema)  # type: ignore[type-var]
 
     @staticmethod
     def run(fn: Coroutine[Any, Any, T], timeout: Optional[float] = None) -> T:
