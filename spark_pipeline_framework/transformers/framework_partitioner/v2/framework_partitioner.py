@@ -1,18 +1,17 @@
 from typing import Dict, Any, Optional, List
 
-from pyspark import SparkConf
-
-from spark_pipeline_framework.utilities.aws.instance_helper.v1.instance_helper import (
-    InstanceHelper,
-)
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
+
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.framework_partitioner.v2.partition_calculator import (
+    PartitionCalculator,
+)
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_partition_helper.v1.spark_partition_helper import (
     SparkPartitionHelper,
 )
@@ -203,176 +202,21 @@ class FrameworkPartitioner(FrameworkTransformer):
             result_df.createOrReplaceTempView(view)
             return result_df
 
-        # figure out whether we need to repartition the dataframe
-        def safe_str_to_int(s: Optional[str]) -> Optional[int]:
-            if not s:
-                return None
-            try:
-                return int(s)
-            except (ValueError, TypeError):
-                return None  # Or any other default value you prefer
-
-        def parse_memory_string(memory_str: Optional[str]) -> Optional[int]:
-            if not memory_str:
-                return None
-            units = {
-                "b": 1,
-                "k": 1024,
-                "m": 1024**2,
-                "g": 1024**3,
-                "t": 1024**4,
-                "p": 1024**5,
-            }
-
-            # Extract the numeric part and the unit part
-            value = memory_str[:-1]
-            unit = memory_str[-1].lower()
-
-            # Convert the value to an integer and multiply by the appropriate unit
-            if unit in units:
-                return int(value) * units[unit]
-            else:
-                return None
-
-        def convert_bytes_to_human_readable(
-            num: Optional[int], suffix: str = "B"
-        ) -> Optional[str]:
-            if num is None:
-                return None
-            for unit in ("", "K", "M", "G", "T"):
-                if abs(num) < 1024:
-                    return f"{num:3.1f}{unit}{suffix}"
-                num //= 1024
-            return f"{num:.1f}Yi{suffix}"
-
         calculated_partitions: Optional[int] = None
         if calculate_automatically:
-            # Calculate the number of executors
-            spark_configuration: SparkConf = (
-                result_df.sparkSession.sparkContext.getConf()
+            calculated_partitions = PartitionCalculator.calculate_ideal_partitions(
+                executor_cores=executor_cores,
+                executor_count=executor_count,
+                executor_memory=executor_memory,
+                input_row_count=input_row_count,
+                input_row_size=input_row_size,
+                maximum_number_of_partitions=maximum_number_of_partitions,
+                output_row_size=output_row_size,
+                partition_size=partition_size,
+                percentage_of_memory_to_use=percentage_of_memory_to_use,
+                df=result_df,
+                logger=self.logger,
             )
-            spark_executor_instances: Optional[str] = spark_configuration.get(
-                "spark.executor.instances"
-            )
-            spark_cluster_target_workers: Optional[str] = spark_configuration.get(
-                "spark.databricks.clusterUsageTags.clusterTargetWorkers"
-            )
-            spark_executor_cores: Optional[str] = spark_configuration.get(
-                "spark.executor.cores"
-            )
-            spark_executor_memory: Optional[str] = spark_configuration.get(
-                "spark.executor.memory"
-            )
-            spark_cloud_provider: Optional[str] = spark_configuration.get(
-                "spark.databricks.cloudProvider"
-            )
-            spark_worker_node_type: Optional[str] = spark_configuration.get(
-                "spark.databricks.workerNodeTypeId"
-            )
-            # if we're in AWS read instance type from spark.databricks.workerNodeTypeId and look up memory
-            if not spark_executor_memory and spark_cloud_provider == "AWS":
-                if spark_worker_node_type:
-                    spark_executor_memory = InstanceHelper.get_instance_memory(
-                        instance_type=spark_worker_node_type
-                    )
-
-            spark_cluster_target_workers_count: Optional[int] = (
-                safe_str_to_int(spark_cluster_target_workers)
-                if spark_cluster_target_workers
-                else None
-            )
-            if spark_cluster_target_workers_count is not None:
-                spark_cluster_target_workers_count += 1
-            # calculate number of executors
-            current_executor_instances: int | None = (
-                executor_count
-                or safe_str_to_int(spark_executor_instances)
-                or spark_cluster_target_workers_count
-                or 1
-            )
-            # Calculate number of cores per executor
-            current_executor_cores: int | None = (
-                executor_cores or safe_str_to_int(spark_executor_cores) or 1
-            )
-            # Calculate memory available to each executor
-            current_executor_memory: int | None = parse_memory_string(
-                executor_memory
-            ) or parse_memory_string(spark_executor_memory)
-
-            # assume we can use only half of the executor memory
-            executor_memory_available: Optional[int] = (
-                current_executor_memory // 2 if current_executor_memory else None
-            )
-
-            # if we have calculated executor instances then we can calculate the partitions
-            if current_executor_instances is not None:
-                # calculate the size available per executor
-                size_available_per_executor: Optional[int] = (
-                    partition_size if partition_size else executor_memory_available
-                )
-                assert (
-                    size_available_per_executor is not None
-                ), "partition_size is not set and spark.executor.memory config is also not set"
-                # use only a percentage of the memory
-                size_available_per_executor = int(
-                    size_available_per_executor * percentage_of_memory_to_use
-                )
-                # calculate estimated row size if input row size is not provided
-                estimated_row_size: int = (
-                    len(str(result_df.rdd.first()))
-                    if not input_row_size
-                    else input_row_size
-                )
-                # if output row size is provided then add it to the input row size else double input row size
-                if output_row_size is not None:
-                    estimated_row_size += output_row_size
-                else:
-                    estimated_row_size += estimated_row_size  # assume output row size will be same as input size
-                # calculate number of rows if not provided
-                num_rows: int = (
-                    result_df.count() if not input_row_count else input_row_count
-                )
-                # calculate total size of the dataframe
-                estimated_total_size: int = num_rows * estimated_row_size
-                # now calculate the partitions as maximum of number of executors and the total size of the dataframe
-                # but make sure we don't get more partitions than the number of rows
-                calculated_partitions = max(
-                    current_executor_instances,
-                    int(estimated_total_size // size_available_per_executor),
-                )
-                # partitions should not be more than the number of rows
-                calculated_partitions = min(num_rows, calculated_partitions)
-                # partitions should not be more than the maximum number of partitions if passed
-                if maximum_number_of_partitions is not None:
-                    calculated_partitions = min(
-                        maximum_number_of_partitions, calculated_partitions
-                    )
-                # Log the calculated partitions
-                self.logger.info(
-                    f"Calculated Partitions: {calculated_partitions}"
-                    f" | Rows: {num_rows}"
-                    f" | Estimated row size: {convert_bytes_to_human_readable(estimated_row_size)}"
-                    f" | Executor Memory To Use: {convert_bytes_to_human_readable(size_available_per_executor)}"
-                    f" | Executors: {current_executor_instances}"
-                    f" | Cores: {current_executor_cores}"
-                    f" | Executor Memory: {convert_bytes_to_human_readable(current_executor_memory)}"
-                    f" | Executor Memory Available: {convert_bytes_to_human_readable(executor_memory_available)}"
-                    + (
-                        f" | AWS Instance Type: {spark_worker_node_type}"
-                        if spark_worker_node_type
-                        else ""
-                    )
-                    + (
-                        f" | Cluster Target Workers: {spark_cluster_target_workers_count}"
-                        if spark_cluster_target_workers_count
-                        else ""
-                    )
-                )
-            else:
-                self.logger.warning(
-                    "Could not calculate partitions automatically as `spark.executor.instances` config is not set"
-                    " and no executor_count is provided"
-                )
 
         desired_partitions: int = (
             SparkPartitionHelper.calculate_desired_partitions(
