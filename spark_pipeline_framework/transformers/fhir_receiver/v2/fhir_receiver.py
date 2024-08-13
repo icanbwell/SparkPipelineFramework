@@ -561,47 +561,46 @@ class FhirReceiver(FrameworkTransformer):
                     # add it to the additional_parameters
                     additional_parameters += [f"{parameter_values}"]
 
-            # if we're calling for individual ids
-            # noinspection GrazieInspection
+            receiver_parameters: FhirReceiverParameters = FhirReceiverParameters(
+                total_partitions=None,  # will be calculated later
+                batch_size=batch_size,
+                has_token_col=False,  # will be calculated later
+                server_url=server_url,
+                log_level=log_level,
+                action=action,
+                action_payload=action_payload,
+                additional_parameters=additional_parameters,
+                filter_by_resource=filter_by_resource,
+                filter_parameter=filter_parameter,
+                sort_fields=sort_fields,
+                auth_server_url=auth_server_url,
+                auth_client_id=auth_client_id,
+                auth_client_secret=auth_client_secret,
+                auth_login_token=auth_login_token,
+                auth_scopes=auth_scopes,
+                auth_well_known_url=auth_well_known_url,
+                include_only_properties=include_only_properties,
+                separate_bundle_resources=separate_bundle_resources,
+                expand_fhir_bundle=expand_fhir_bundle,
+                accept_type=accept_type,
+                content_type=content_type,
+                additional_request_headers=additional_request_headers,
+                accept_encoding=accept_encoding,
+                slug_column=slug_column,
+                retry_count=retry_count,
+                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                limit=limit,
+                auth_access_token=auth_access_token,
+                resource_type=resource_name,
+                error_view=error_view,
+                url_column=url_column,
+                use_data_streaming=use_data_streaming,
+                graph_json=graph_json,
+                ignore_status_codes=ignore_status_codes,
+                refresh_token_function=refresh_token_function,
+            )
+
             if id_view:
-                receiver_parameters: FhirReceiverParameters = FhirReceiverParameters(
-                    total_partitions=None,  # will be calculated later
-                    batch_size=batch_size,
-                    has_token_col=False,  # will be calculated later
-                    server_url=server_url,
-                    log_level=log_level,
-                    action=action,
-                    action_payload=action_payload,
-                    additional_parameters=additional_parameters,
-                    filter_by_resource=filter_by_resource,
-                    filter_parameter=filter_parameter,
-                    sort_fields=sort_fields,
-                    auth_server_url=auth_server_url,
-                    auth_client_id=auth_client_id,
-                    auth_client_secret=auth_client_secret,
-                    auth_login_token=auth_login_token,
-                    auth_scopes=auth_scopes,
-                    auth_well_known_url=auth_well_known_url,
-                    include_only_properties=include_only_properties,
-                    separate_bundle_resources=separate_bundle_resources,
-                    expand_fhir_bundle=expand_fhir_bundle,
-                    accept_type=accept_type,
-                    content_type=content_type,
-                    additional_request_headers=additional_request_headers,
-                    accept_encoding=accept_encoding,
-                    slug_column=slug_column,
-                    retry_count=retry_count,
-                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                    limit=limit,
-                    auth_access_token=auth_access_token,
-                    resource_type=resource_name,
-                    error_view=error_view,
-                    url_column=url_column,
-                    use_data_streaming=use_data_streaming,
-                    graph_json=graph_json,
-                    ignore_status_codes=ignore_status_codes,
-                    refresh_token_function=refresh_token_function,
-                )
                 return await self.transform_by_id_view_async(
                     df=df,
                     id_view=id_view,
@@ -622,130 +621,117 @@ class FhirReceiver(FrameworkTransformer):
                     verify_counts_match=verify_counts_match,
                 )
             else:  # get all resources
-                receiver_parameters = FhirReceiverParameters(
-                    total_partitions=None,  # in this case we are just reading from Spark so don't know partitions
+                return await self.transform_all_resources_async(
+                    df=df,
+                    parameters=receiver_parameters,
+                    delta_lake_table=delta_lake_table,
+                    last_updated_after=last_updated_after,
+                    last_updated_before=last_updated_before,
                     batch_size=batch_size,
-                    has_token_col=False,
-                    server_url=server_url,
-                    log_level=log_level,
-                    action=action,
-                    action_payload=action_payload,
-                    additional_parameters=additional_parameters,
-                    filter_by_resource=filter_by_resource,
-                    filter_parameter=filter_parameter,
-                    sort_fields=sort_fields,
-                    auth_server_url=auth_server_url,
-                    auth_client_id=auth_client_id,
-                    auth_client_secret=auth_client_secret,
-                    auth_login_token=auth_login_token,
-                    auth_scopes=auth_scopes,
-                    auth_well_known_url=auth_well_known_url,
-                    include_only_properties=include_only_properties,
-                    separate_bundle_resources=separate_bundle_resources,
-                    expand_fhir_bundle=expand_fhir_bundle,
-                    accept_type=accept_type,
-                    content_type=content_type,
-                    additional_request_headers=additional_request_headers,
-                    accept_encoding=accept_encoding,
-                    slug_column=slug_column,
-                    retry_count=retry_count,
-                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                    mode=mode,
+                    file_path=file_path,
+                    page_size=page_size,
                     limit=limit,
-                    auth_access_token=auth_access_token,
-                    resource_type=resource_name,
+                    progress_logger=progress_logger,
+                    view=view,
                     error_view=error_view,
-                    url_column=url_column,
-                    use_data_streaming=use_data_streaming,
-                    graph_json=graph_json,
-                    ignore_status_codes=ignore_status_codes,
                 )
 
-                file_format = "delta" if delta_lake_table else "text"
+    async def transform_all_resources_async(
+        self,
+        *,
+        df: DataFrame,
+        parameters: FhirReceiverParameters,
+        delta_lake_table: Optional[str],
+        last_updated_after: Optional[datetime],
+        last_updated_before: Optional[datetime],
+        batch_size: Optional[int],
+        mode: str,
+        file_path: Path | str | None,
+        page_size: Optional[int],
+        limit: Optional[int],
+        progress_logger: Optional[ProgressLogger],
+        view: Optional[str],
+        error_view: Optional[str],
+    ) -> DataFrame:
+        file_format = "delta" if delta_lake_table else "text"
 
-                if receiver_parameters.use_data_streaming:
-                    list_df: DataFrame = (
-                        await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
-                            df=df,
-                            server_url=server_url,
-                            parameters=receiver_parameters,
-                            last_updated_after=last_updated_after,
-                            last_updated_before=last_updated_before,
-                            schema=GetBatchResult.get_schema(),
-                            results_per_batch=batch_size,
-                        )
-                    )
-                    resource_df = list_df.select(
-                        explode(col("resources")).alias("resource")
-                    )
-                    errors_df = list_df.select(
-                        explode(col("errors")).alias("resource")
-                    ).select("resource.*")
-                    resource_df.write.format(file_format).mode(mode).save(
-                        str(file_path)
-                    )
-                else:
-                    resources: List[str] = []
-                    errors: List[GetBatchError] = []
+        if parameters.use_data_streaming:
+            list_df: DataFrame = (
+                await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
+                    df=df,
+                    server_url=parameters.server_url,
+                    parameters=parameters,
+                    last_updated_after=last_updated_after,
+                    last_updated_before=last_updated_before,
+                    schema=GetBatchResult.get_schema(),
+                    results_per_batch=batch_size,
+                )
+            )
+            resource_df = list_df.select(explode(col("resources")).alias("resource"))
+            errors_df = list_df.select(explode(col("errors")).alias("resource")).select(
+                "resource.*"
+            )
+            resource_df.write.format(file_format).mode(mode).save(str(file_path))
+        else:
+            resources: List[str] = []
+            errors: List[GetBatchError] = []
 
-                    async for (
-                        result1
-                    ) in FhirReceiverProcessor.get_batch_results_paging_async(
-                        page_size=page_size,
-                        limit=limit,
-                        server_url=server_url,
-                        parameters=receiver_parameters,
-                        last_updated_after=last_updated_after,
-                        last_updated_before=last_updated_before,
-                    ):
-                        resources.extend(result1.resources)
-                        errors.extend(result1.errors)
+            async for result1 in FhirReceiverProcessor.get_batch_results_paging_async(
+                page_size=page_size,
+                limit=limit,
+                server_url=parameters.server_url,
+                parameters=parameters,
+                last_updated_after=last_updated_after,
+                last_updated_before=last_updated_before,
+            ):
+                resources.extend(result1.resources)
+                errors.extend(result1.errors)
 
-                    list_df = df.sparkSession.createDataFrame(
-                        resources, schema=StringType()
-                    )
-                    errors_df = (
-                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            [e.to_dict() for e in errors],
-                            schema=GetBatchError.get_schema(),
-                        )
-                        if errors
-                        else df.sparkSession.createDataFrame([], schema=StringType())
-                    )
-                    list_df.write.format(file_format).mode(mode).save(str(file_path))
+            list_df = df.sparkSession.createDataFrame(resources, schema=StringType())
+            errors_df = (
+                df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                    [e.to_dict() for e in errors],
+                    schema=GetBatchError.get_schema(),
+                )
+                if errors
+                else df.sparkSession.createDataFrame([], schema=StringType())
+            )
+            list_df.write.format(file_format).mode(mode).save(str(file_path))
 
-                list_df = df.sparkSession.read.format("json").load(str(file_path))
+        list_df = df.sparkSession.read.format("json").load(str(file_path))
 
-                self.logger.info(f"Wrote FHIR data to {file_path}")
+        self.logger.info(f"Wrote FHIR data to {file_path}")
 
-                if progress_logger:
-                    progress_logger.log_event(
-                        event_name="Finished receiving FHIR",
-                        event_text=json.dumps(
-                            {
-                                "message": f"Wrote {list_df.count()} FHIR {resource_name} resources to "
-                                + f"{file_path} (query)",
-                                "count": list_df.count(),
-                                "resourceType": resource_name,
-                                "path": str(file_path),
-                            },
-                            default=str,
-                        ),
-                    )
+        if progress_logger:
+            progress_logger.log_event(
+                event_name="Finished receiving FHIR",
+                event_text=json.dumps(
+                    {
+                        "message": f"Wrote {list_df.count()} FHIR {parameters.resource_type} resources to "
+                        + f"{file_path} (query)",
+                        "count": list_df.count(),
+                        "resourceType": parameters.resource_type,
+                        "path": str(file_path),
+                    },
+                    default=str,
+                ),
+            )
 
-                if view:
-                    list_df.createOrReplaceTempView(view)
-                if error_view:
-                    errors_df.createOrReplaceTempView(error_view)
-                    if progress_logger and not spark_is_data_frame_empty(errors_df):
-                        progress_logger.log_event(
-                            event_name="Errors receiving FHIR",
-                            event_text=get_pretty_data_frame(
-                                df=errors_df,
-                                limit=100,
-                                name="Errors Receiving FHIR",
-                            ),
-                            log_level=LogLevel.INFO,
-                        )
+        if view:
+            list_df.createOrReplaceTempView(view)
+        if error_view:
+            errors_df.createOrReplaceTempView(error_view)
+            if progress_logger and not spark_is_data_frame_empty(errors_df):
+                progress_logger.log_event(
+                    event_name="Errors receiving FHIR",
+                    event_text=get_pretty_data_frame(
+                        df=errors_df,
+                        limit=100,
+                        name="Errors Receiving FHIR",
+                    ),
+                    log_level=LogLevel.INFO,
+                )
 
         return df
 
