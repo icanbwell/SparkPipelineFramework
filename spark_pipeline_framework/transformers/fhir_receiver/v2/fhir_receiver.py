@@ -179,7 +179,14 @@ class FhirReceiver(FrameworkTransformer):
 
         assert file_path
 
-        # assert not action == "$graph" or id_view, "id_view is required when action is $graph"
+        if action == "$graph":
+            assert id_view, "id_view is required when action is $graph"
+            assert action_payload, "action_payload is required when action is $graph"
+            assert not view, (
+                "view cannot be specified if action is $graph since $graph returns"
+                " many different resource types."
+                "  Use FhirReader to read the file_path and specify the schema."
+            )
 
         self.log_level: Param[str] = Param(self, "log_level", "")
         self._setDefault(log_level=log_level)

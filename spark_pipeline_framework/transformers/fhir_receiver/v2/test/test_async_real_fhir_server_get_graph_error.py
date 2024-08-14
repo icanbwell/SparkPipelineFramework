@@ -162,6 +162,12 @@ async def test_async_real_fhir_server_get_graph_error(
     # act
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
+    id_df = spark_session.createDataFrame(
+        [(s,) for s in id_dict[resource_type]], ["id"]
+    )
+
+    id_df.createOrReplaceTempView("id_view")
+
     parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
 
     with ProgressLogger() as progress_logger:
@@ -169,6 +175,7 @@ async def test_async_real_fhir_server_get_graph_error(
             server_url=fhir_server_url,
             resource=resource_type,
             action="$graph",
+            id_view="id_view",
             additional_parameters=["contained=true"],
             separate_bundle_resources=True,
             action_payload=slot_practitioner_graph,

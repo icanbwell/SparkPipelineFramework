@@ -1011,7 +1011,7 @@ class FhirReceiverProcessor:
                 )
             )
 
-        list_df = df.sparkSession.read.format("json").load(str(file_path))
+        list_df = df.sparkSession.read.format(file_format).load(str(file_path))
 
         logger.info(f"Wrote FHIR data to {file_path}")
 
@@ -1031,7 +1031,8 @@ class FhirReceiverProcessor:
             )
 
         if view:
-            list_df.createOrReplaceTempView(view)
+            resource_df = df.sparkSession.read.format("json").load(str(file_path))
+            resource_df.createOrReplaceTempView(view)
         if error_view:
             errors_df.createOrReplaceTempView(error_view)
             if progress_logger and not spark_is_data_frame_empty(errors_df):

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, cast
 
 from pyspark.ml.base import Transformer
 
@@ -152,7 +152,10 @@ class FrameworkTransformer(
         self.loop_id = loop_id
 
     async def transform_async(self, dataset: DataFrame) -> DataFrame:
-        return await self._transform_async(df=dataset)
+        if hasattr(self, "_transform_async"):
+            return cast(DataFrame, await self._transform_async(df=dataset))
+        else:
+            return self.transform(dataset)
 
-    async def _transform_async(self, df: DataFrame) -> DataFrame:
-        raise NotImplementedError("Subclasses should implement this method")
+    # async def _transform_async(self, df: DataFrame) -> DataFrame:
+    #     raise NotImplementedError("Subclasses should implement this method")

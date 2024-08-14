@@ -9,9 +9,11 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
 from helix_fhir_client_sdk.utilities.fhir_server_helpers import FhirServerHelpers
 from pyspark.sql import DataFrame, SparkSession
+from spark_fhir_schemas.r4.resources.patient import PatientSchema
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.fhir_reader.v1.fhir_reader import FhirReader
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,
 )
@@ -131,6 +133,15 @@ async def test_async_real_fhir_server_get_patients_by_id_large(
             auth_client_id=auth_client_id,
             auth_client_secret=auth_client_secret,
             use_data_streaming=use_data_streaming,
+        ).transform_async(df)
+
+        # now try to read it
+        await FhirReader(
+            file_path=patient_json_path,
+            view="patients",
+            name="fhir_reader",
+            progress_logger=progress_logger,
+            schema=PatientSchema.get_schema(),
         ).transform_async(df)
 
     # Assert
