@@ -1,7 +1,7 @@
-import pytest
+import logging
+
 from aioresponses import aioresponses
 from typing import List, Dict, Any
-from logging import Logger, getLogger
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_helpers import (
     ElasticSearchHelpers,
 )
@@ -10,13 +10,7 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 )
 
 
-@pytest.fixture
-def logger() -> Logger:
-    return getLogger("test_logger")
-
-
-@pytest.mark.asyncio
-async def test_send_json_bundle_to_elasticsearch_async(logger: Logger) -> None:
+async def test_send_json_bundle_to_elasticsearch_async() -> None:
     json_data_list: List[str] = [
         '{"id": "1", "name": "test1"}',
         '{"id": "2", "name": "test2"}',
@@ -68,7 +62,7 @@ async def test_send_json_bundle_to_elasticsearch_async(logger: Logger) -> None:
                 json_data_list=json_data_list,
                 index=index,
                 operation=operation,
-                logger=logger,
+                logger=logging.getLogger(__name__),
                 doc_id_prefix=doc_id_prefix,
                 timeout=timeout,
             )
@@ -80,6 +74,33 @@ async def test_send_json_bundle_to_elasticsearch_async(logger: Logger) -> None:
             result.url == "https://elasticsearch:9200/test_index"
         ), f"result: {result}"
         assert result.error is None, f"result: {result}"
+
+
+async def test_send_json_bundle_to_real_elasticsearch_async() -> None:
+    json_data_list: List[str] = [
+        '{"id": "1", "name": "test1"}',
+        '{"id": "2", "name": "test2"}',
+    ]
+    index = "test_index"
+    operation = "index"
+    doc_id_prefix = "prefix"
+    timeout = 60
+
+    result: ElasticSearchResult = (
+        await ElasticSearchHelpers.send_json_bundle_to_elasticsearch_async(
+            json_data_list=json_data_list,
+            index=index,
+            operation=operation,
+            logger=logging.getLogger(__name__),
+            doc_id_prefix=doc_id_prefix,
+            timeout=timeout,
+        )
+    )
+
+    assert result.success == 2, f"result: {result}"
+    assert result.failed == 0, f"result: {result}"
+    assert result.url == "https://elasticsearch:9200/test_index", f"result: {result}"
+    assert result.error is None, f"result: {result}"
 
 
 def test_generate_es_bulk() -> None:
