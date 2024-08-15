@@ -2,6 +2,7 @@ import json
 from typing import Dict, List, Optional, Any, AsyncGenerator, Protocol, Type
 
 import aiohttp
+from aiohttp import ClientResponseError
 
 from spark_pipeline_framework.utilities.aws.config import get_ssm_config
 import structlog
@@ -45,6 +46,9 @@ class CustomApiCallFunction(Protocol):
 class MelissaStandardizingVendor(
     StandardizingVendor[MelissaStandardizingVendorApiResponse]
 ):
+    def batch_request_max_size(self) -> int:
+        return 100
+
     @classmethod
     def get_api_response_class(cls) -> Type[MelissaStandardizingVendorApiResponse]:
         return MelissaStandardizingVendorApiResponse
@@ -160,33 +164,22 @@ class MelissaStandardizingVendor(
             )
 
             # adding vendor, so we can parse it correctly after reading response from cache in the future
-            vendor_specific_addresses: List[Dict[str, str]] = api_server_response[
-                "Records"
-            ]
-            if len(vendor_specific_addresses) == 0:
+            vendor_specific_addresses: List[Dict[str, str]] | None = (
+                api_server_response.get("Records")
+            )
+            if vendor_specific_addresses is None:
                 raise VendorResponseKeyError
             else:
+                # we may not get records from all the addresses we sent
                 yield [
                     MelissaStandardizingVendorApiResponse.from_dict(v)
                     for v in vendor_specific_addresses
                 ]
-        except Exception as e:
+        except (ClientResponseError, VendorResponseKeyError) as e:
             logger.exception(
-                f"{self.get_vendor_name()} response does not have a Records key. Are we out of credit?"
+                f"{self.get_vendor_name()} response does not have a Records key. Are we out of credit? Error: {e}"
             )
-            self._error_counter += 1
-            if self._error_counter > self._response_key_error_threshold:
-                raise VendorResponseKeyError
-            else:
-                yield [
-                    MelissaStandardizingVendorApiResponse.from_standardized_address(
-                        StandardizedAddress.from_raw_address(
-                            raw_address=raw_address, vendor_name=self.get_vendor_name()
-                        )
-                    )
-                    for raw_address in raw_addresses
-                ]
-                return
+            raise e
 
     async def _api_call_async(self, raw_addresses: List[RawAddress]) -> Dict[str, Any]:
         addresses_to_lookup: List[Dict[str, str]] = [
@@ -235,9 +228,6 @@ class MelissaStandardizingVendor(
             c = get_ssm_config(base_path)
             license_key = c[f"{base_path}license_key_credit"]
         return {"license_key": license_key}
-
-    def batch_request_max_size(self) -> int:
-        return 100
 
     @classmethod
     def get_vendor_name(cls) -> str:
