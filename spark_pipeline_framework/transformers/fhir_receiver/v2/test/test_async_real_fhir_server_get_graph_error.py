@@ -150,14 +150,14 @@ async def test_async_real_fhir_server_get_graph_error(
     # Assert
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     print("------- Result DataFrame -------")
-    json_df.show()
-    json_df.printSchema()
+    json_df.show(truncate=False)
+    # json_df.printSchema()
 
     assert json_df.count() == 0
 
     error_df: DataFrame = df.sparkSession.table("error_view")
     print("------- Error DataFrame -------")
-    error_df.show()
+    error_df.show(truncate=False)
 
     assert error_df.count() == 1
     first_row = error_df.first()
