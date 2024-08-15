@@ -187,6 +187,12 @@ class FhirReceiver(FrameworkTransformer):
                 " many different resource types."
                 "  Use FhirReader to read the file_path and specify the schema."
             )
+            assert (
+                additional_parameters
+            ), "additional_parameters must be specified if action is $graph"
+            assert [
+                a for a in additional_parameters if a.startswith("contained")
+            ], "additional_parameters must contain 'contained' when action is $graph"
 
         self.log_level: Param[str] = Param(self, "log_level", "")
         self._setDefault(log_level=log_level)

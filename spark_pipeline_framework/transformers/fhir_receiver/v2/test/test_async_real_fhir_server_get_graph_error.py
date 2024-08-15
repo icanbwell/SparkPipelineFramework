@@ -108,56 +108,13 @@ async def test_async_real_fhir_server_get_graph_error(
     ), merge_response.responses
     # assert merge_response.responses[0]["created"] is True, merge_response.responses
 
-    slot_practitioner_graph = {
+    bad_practitioner_graph = {
         "resourceType": "GraphDefinition",
         "id": "o",
         "name": "provider_slots",
         "status": "active",
         "start": resource_type,
-        "link": [
-            {
-                "target": [
-                    {
-                        "type": "PractitionerRole",
-                        "params": "practitioner={ref}",
-                        "link": [
-                            {
-                                "path": "organization",
-                                "target": [
-                                    {
-                                        "type": "Organization",
-                                        "link": [
-                                            {
-                                                "path": "endpoint[x]",
-                                                "target": [{"type": "Endpoint"}],
-                                            }
-                                        ],
-                                    }
-                                ],
-                            },
-                            {
-                                "target": [
-                                    {
-                                        "type": "Schedule",
-                                        "params": "actor={ref}",
-                                        "link": [
-                                            {
-                                                "target": [
-                                                    {
-                                                        "type": "Slot",
-                                                        "params": "schedule={ref}",
-                                                    }
-                                                ]
-                                            }
-                                        ],
-                                    }
-                                ]
-                            },
-                        ],
-                    }
-                ]
-            }
-        ],
+        "link": ["foo"],
     }
     # act
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
@@ -178,7 +135,7 @@ async def test_async_real_fhir_server_get_graph_error(
             id_view="id_view",
             additional_parameters=["contained=true"],
             separate_bundle_resources=True,
-            action_payload=slot_practitioner_graph,
+            action_payload=bad_practitioner_graph,
             file_path=patient_json_path,
             progress_logger=progress_logger,
             parameters=parameters,

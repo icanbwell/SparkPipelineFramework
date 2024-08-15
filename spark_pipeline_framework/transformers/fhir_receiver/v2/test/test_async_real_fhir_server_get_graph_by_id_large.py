@@ -33,8 +33,8 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 
 
-@pytest.mark.parametrize("run_synchronously", [True])
-@pytest.mark.parametrize("use_data_streaming", [False])
+@pytest.mark.parametrize("run_synchronously", [True, False])
+@pytest.mark.parametrize("use_data_streaming", [True, False])
 async def test_async_real_fhir_server_get_graph_by_id_large(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
@@ -237,7 +237,9 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
 
         # Assert
         json_df: DataFrame = df.sparkSession.read.text(str(patient_json_path))
-        json_df.show()
+        print(" ---- Result of $graph call ------")
+        json_df.show(truncate=False)
+        print(" ---- Schema of $graph call ------")
         json_df.printSchema()
 
         assert json_df.count() == 2
@@ -325,8 +327,10 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
 
         # Assert
         practitioner_graphs_df: DataFrame = spark_session.table("practitioner_graphs")
-        practitioner_graphs_df.printSchema()
+        print(" ---- Result of FhirReader ------")
         practitioner_graphs_df.show(truncate=False)
+        print(" ---- Schema of FhirReader ------")
+        practitioner_graphs_df.printSchema()
 
         assert practitioner_graphs_df.count() == 2
 
