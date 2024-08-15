@@ -31,7 +31,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers_async import (
+from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_helpers_async import (
     update_json_bundle_to_fhir_async,
     send_fhir_delete_async,
     send_json_bundle_to_fhir_async,

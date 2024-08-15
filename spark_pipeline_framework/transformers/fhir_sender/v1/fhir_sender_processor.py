@@ -11,7 +11,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation impor
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers import (
+from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_helpers import (
     send_fhir_delete,
     send_json_bundle_to_fhir,
     update_json_bundle_to_fhir,
