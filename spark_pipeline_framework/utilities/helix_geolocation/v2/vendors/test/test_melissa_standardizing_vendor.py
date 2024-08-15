@@ -2,7 +2,7 @@ import pytest
 from aioresponses import aioresponses
 from typing import List, Dict, Any
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response_key_error import (

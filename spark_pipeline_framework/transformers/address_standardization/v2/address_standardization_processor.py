@@ -4,16 +4,16 @@ from logging import Logger
 from typing import Any, Dict, List, Optional, AsyncGenerator
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.helix_geolocation.v2.address_standardizer import (
+    AddressStandardizer,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler import (
     CacheHandler,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardize_address import (
-    StandardizeAddr,
-)
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
@@ -115,7 +115,7 @@ class AddressStandardizationProcessor:
             # standardize the raw addresses which also calculates the lat/long
             standard_addresses: List[
                 StandardizedAddress
-            ] = await StandardizeAddr().standardize_async(
+            ] = await AddressStandardizer().standardize_async(
                 raw_addresses=raw_address_list,
                 cache_handler_obj=cache_handler,
                 vendor_obj=standardizing_vendor,

@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Dict, Any, TypeVar, Type
 
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 

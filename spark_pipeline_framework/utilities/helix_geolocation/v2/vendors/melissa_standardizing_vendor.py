@@ -7,16 +7,16 @@ from aiohttp import ClientResponseError
 from spark_pipeline_framework.utilities.aws.config import get_ssm_config
 import structlog
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.vendor_response import (
     VendorResponse,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response_key_error import (

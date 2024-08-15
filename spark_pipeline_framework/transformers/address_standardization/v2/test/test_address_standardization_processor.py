@@ -13,10 +13,10 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_result import (
     CacheResult,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (

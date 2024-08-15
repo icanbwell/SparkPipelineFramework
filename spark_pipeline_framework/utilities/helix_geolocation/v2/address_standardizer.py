@@ -8,16 +8,16 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_result import (
     CacheResult,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.vendor_response import (
     VendorResponse,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
@@ -25,7 +25,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 )
 
 
-class StandardizeAddr:
+class AddressStandardizer:
     def __init__(self) -> None:
         self.logger = get_logger(__file__)
 

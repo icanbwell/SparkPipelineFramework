@@ -19,19 +19,19 @@ from requests import Session
 
 import pymongo
 
+from spark_pipeline_framework.utilities.helix_geolocation.v2.address_standardizer import (
+    AddressStandardizer,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.document_db_cache_handler import (
     DocumentDBCacheHandler,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.mock_cache_handler import (
     MockCacheHandler,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardize_address import (
-    StandardizeAddr,
-)
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
@@ -265,7 +265,7 @@ async def test_address_api_call(mocked_session: MagicMock) -> None:
         response.raw = BytesIO(json.dumps(response_data).encode())
         mocked_session.return_value = response
         # act
-        r: List[StandardizedAddress] = await StandardizeAddr().standardize_async(
+        r: List[StandardizedAddress] = await AddressStandardizer().standardize_async(
             raw_addrs,
             vendor_obj=cast(
                 StandardizingVendor[BaseVendorApiResponse], MockStandardizingVendor()
@@ -290,7 +290,7 @@ async def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> Non
         return response_data
 
     # act
-    r: List[StandardizedAddress] = await StandardizeAddr().standardize_async(
+    r: List[StandardizedAddress] = await AddressStandardizer().standardize_async(
         raw_addrs,
         cache_handler_obj=MockCacheHandler(),
         vendor_obj=cast(
@@ -403,7 +403,7 @@ async def test_standardize_stress_test() -> None:
     ).get_collection(mongo_collection_name).delete_many({})
 
     # act
-    r = await StandardizeAddr().standardize_async(
+    r = await AddressStandardizer().standardize_async(
         raw_addresses=raw_addr_objs,
         vendor_obj=cast(
             StandardizingVendor[BaseVendorApiResponse],
@@ -463,7 +463,7 @@ async def test_bad_request() -> None:
     ).get_collection(mongo_collection_name).delete_many({})
 
     # act
-    r = await StandardizeAddr().standardize_async(
+    r = await AddressStandardizer().standardize_async(
         raw_addresses=[empty_raw_address],
         vendor_obj=cast(
             StandardizingVendor[BaseVendorApiResponse],
@@ -496,7 +496,7 @@ async def test_vendor_http_error_call(mocked_session: MagicMock) -> None:
 
     # act / assert
     with pytest.raises(VendorResponseKeyError):
-        await StandardizeAddr().standardize_async(
+        await AddressStandardizer().standardize_async(
             raw_addrs,
             cache_handler_obj=MockCacheHandler(),
             vendor_obj=cast(
@@ -524,7 +524,7 @@ async def test_vendor_empty_response_call(mocked_session: MagicMock) -> None:
     logging.basicConfig(level=logging.DEBUG)
     # act / assert
     with pytest.raises(VendorResponseKeyError):
-        await StandardizeAddr().standardize_async(
+        await AddressStandardizer().standardize_async(
             raw_addrs,
             cache_handler_obj=MockCacheHandler(),
             vendor_obj=cast(StandardizingVendor[BaseVendorApiResponse], vendor),

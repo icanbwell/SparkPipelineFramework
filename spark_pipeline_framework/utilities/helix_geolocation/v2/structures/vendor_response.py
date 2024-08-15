@@ -1,7 +1,7 @@
 import dataclasses
 from typing import TypeVar, Generic, Optional
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
 
