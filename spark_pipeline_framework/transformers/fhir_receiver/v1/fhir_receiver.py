@@ -39,7 +39,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token impor
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_helpers import (
+from spark_pipeline_framework.transformers.fhir_receiver.v1.fhir_receiver_helpers import (
     FhirReceiverHelpers,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
