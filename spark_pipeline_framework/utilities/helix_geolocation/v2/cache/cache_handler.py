@@ -33,13 +33,13 @@ class CacheHandler(metaclass=ABCMeta):
     """
 
     @abc.abstractmethod
-    def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
+    async def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
         """
         returns {'found': <list of addresses found in cache>, 'not_found': <list of addresses not found in cache>}
         """
 
     @abc.abstractmethod
-    def save_to_cache(
+    async def save_to_cache(
         self, vendor_responses: List[VendorResponse[BaseVendorApiResponse]]
     ) -> None:
         pass

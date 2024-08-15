@@ -132,6 +132,8 @@ types-pytz=">=2024.1.0"
 pydantic=">=2.8.2"
 # aioresponses is needed for mocking HTTP requests
 aioresponses=">=0.7.6"
+# motor is needed for interacting with MongoDB asynchronously
+motor={ extras = ['srv', 'snappy', 'zstd'], version = ">=3.5.1" }
 
 # These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
 # only when running pipenv-setup

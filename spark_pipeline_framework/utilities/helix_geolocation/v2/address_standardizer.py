@@ -41,7 +41,9 @@ class AddressStandardizer:
             [r.get_id() is not None for r in raw_addresses]
         ), f"{vendor_obj.get_vendor_name()} requires all addresses to have an id. {[r.to_dict for r in raw_addresses]}"
 
-        cache_lookup_result: CacheResult = cache_handler_obj.check_cache(raw_addresses)
+        cache_lookup_result: CacheResult = await cache_handler_obj.check_cache(
+            raw_addresses
+        )
         self.logger.info(
             f"cache lookup result -- not found records: {len(cache_lookup_result.not_found)}"
             f" -- found records: {(len(cache_lookup_result.found))}"
@@ -71,7 +73,7 @@ class AddressStandardizer:
                 )
             )
             # save new address to cache
-            cache_handler_obj.save_to_cache(vendor_responses_batch)
+            await cache_handler_obj.save_to_cache(vendor_responses_batch)
 
         # combine and return
         assert len(cache_lookup_result.found) + len(new_std_addresses) == len(

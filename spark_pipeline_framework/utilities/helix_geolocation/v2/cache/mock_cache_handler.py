@@ -31,10 +31,10 @@ class MockCacheHandler(CacheHandler):
     ) -> Type[StandardizingVendor[BaseVendorApiResponse]]:
         return StandardizingVendor
 
-    def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
+    async def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
         return CacheResult(found=[], not_found=raw_addresses)
 
-    def save_to_cache(
+    async def save_to_cache(
         self, vendor_responses: List[VendorResponse[BaseVendorApiResponse]]
     ) -> None:
         pass

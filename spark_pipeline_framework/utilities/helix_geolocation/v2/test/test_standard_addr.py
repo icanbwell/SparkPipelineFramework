@@ -304,13 +304,13 @@ async def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> Non
     assert r[0].formatted_address == expected_result[0].formatted_address
 
 
-def test_documentdb_cache() -> None:
+async def test_documentdb_cache() -> None:
     # arrange
     arrange_mongo()
     raw_addrs = [raw_addr_obj, raw_addr_obj2]
 
     # act
-    r = DocumentDBCacheHandler().check_cache(raw_addrs)
+    r = await DocumentDBCacheHandler().check_cache(raw_addrs)
     print(r.found)
     print(r.not_found)
     assert len(r.found) == 1
@@ -477,9 +477,9 @@ async def test_bad_request() -> None:
     assert r[0].get_id() == "1"
 
 
-def test_none_cache() -> None:
+async def test_none_cache() -> None:
     raw_addrs = [raw_addr_obj, raw_addr_obj2]
-    r = MockCacheHandler().check_cache(raw_addrs)
+    r = await MockCacheHandler().check_cache(raw_addrs)
     assert len(r.not_found) == 2
     assert r.not_found[0].get_id() == "10"
 
