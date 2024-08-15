@@ -13,15 +13,6 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_proces
 from pyspark.sql import SparkSession
 
 
-@pytest.fixture(scope="module")
-def spark_session() -> SparkSession:
-    return (
-        SparkSession.builder.master("local[2]")
-        .appName("pytest-pyspark-local-testing")
-        .getOrCreate()
-    )
-
-
 @pytest.mark.asyncio
 async def test_get_batch_results_paging_async(spark_session: SparkSession) -> None:
     parameters = FhirReceiverParameters(
@@ -153,8 +144,7 @@ async def test_process_partition(spark_session: SparkSession) -> None:
             parameters=parameters,
         ):
             assert isinstance(result, dict)
-            assert result["resourceType"] == "Patient"
-            assert result["id"] == "1"
+            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
 
 
 @pytest.mark.asyncio
@@ -215,5 +205,4 @@ async def test_send_partition_request_to_server_async(
             partition_index=0, rows=rows, parameters=parameters
         ):
             assert isinstance(result, dict)
-            assert result["resourceType"] == "Patient"
-            assert result["id"] == "1"
+            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
