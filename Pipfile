@@ -130,6 +130,8 @@ pandas-stubs=">=2.2.2"
 types-pytz=">=2024.1.0"
 # pydantic is needed for data class loading
 pydantic=">=2.8.2"
+# aioresponses is needed for mocking HTTP requests
+aioresponses=">=0.7.6"
 
 # These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
 # only when running pipenv-setup
