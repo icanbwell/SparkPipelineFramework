@@ -174,16 +174,39 @@ class CensusStandardizingVendor(
                     ]
 
                     # Use DictReader to parse the CSV response
-                    reader = csv.DictReader(f, fieldnames=fieldnames)
+                    reader: csv.DictReader[Any] = csv.DictReader(
+                        f, fieldnames=fieldnames, skipinitialspace=True, quotechar='"'
+                    )
 
                     # Convert reader to a list of dictionaries
                     # noinspection PyTypeChecker
-                    results: List[Dict[str, Any]] = [row for row in reader]
+                    results: List[Dict[str, Any]] = [
+                        row for row in reader if any(row.values())
+                    ]
                     # Now parse the results
                     responses = [
                         self._parse_csv_response(r, raw_addresses=raw_addresses)
                         for r in results
                     ]
+                    # Find any records that are missing in responses that are present in raw_addresses
+                    missing_raw_addresses = [
+                        r
+                        for r in raw_addresses
+                        if r.get_id() not in [r.address_id for r in responses]
+                    ]
+                    if missing_raw_addresses:
+                        responses.extend(
+                            [
+                                CensusStandardizingVendorApiResponse.from_standardized_address(
+                                    StandardizedAddress.from_raw_address(
+                                        raw_address=r,
+                                        vendor_name=self.get_vendor_name(),
+                                    )
+                                )
+                                for r in missing_raw_addresses
+                            ]
+                        )
+
                     assert len(responses) == len(raw_addresses), (
                         f"Number of standardized addresses {len(responses)} does not match "
                         f"number of raw addresses {len(raw_addresses)}"

@@ -11,59 +11,59 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 
 
 class CensusStandardizingVendorAddress(BaseModel):
-    address: Optional[str]
+    address: Optional[str] = None
 
 
 class CensusStandardizingVendorBenchmark(BaseModel):
-    isDefault: Optional[bool]
-    benchmarkDescription: Optional[str]
-    id: Optional[str]
-    benchmarkName: Optional[str]
+    isDefault: Optional[bool] = None
+    benchmarkDescription: Optional[str] = None
+    id: Optional[str] = None
+    benchmarkName: Optional[str] = None
 
 
 class CensusStandardizingVendorInput(BaseModel):
-    address: CensusStandardizingVendorAddress
-    benchmark: CensusStandardizingVendorBenchmark
+    address: CensusStandardizingVendorAddress | None = None
+    benchmark: CensusStandardizingVendorBenchmark | None = None
 
 
 class CensusStandardizingVendorTigerLine(BaseModel):
-    side: Optional[str]
-    tigerLineId: Optional[str]
+    side: Optional[str] = None
+    tigerLineId: Optional[str] = None
 
 
 class CensusStandardizingVendorCoordinates(BaseModel):
-    x: Optional[float]
-    y: Optional[float]
+    x: Optional[float] = None
+    y: Optional[float] = None
 
 
 class CensusStandardizingVendorAddressComponents(BaseModel):
-    zip: Optional[str]
-    streetName: Optional[str]
-    preType: Optional[str]
-    city: Optional[str]
-    preDirection: Optional[str]
-    suffixDirection: Optional[str]
-    fromAddress: Optional[str]
-    state: Optional[str]
-    suffixType: Optional[str]
-    toAddress: Optional[str]
-    suffixQualifier: Optional[str]
-    preQualifier: Optional[str]
+    zip: Optional[str] = None
+    streetName: Optional[str] = None
+    preType: Optional[str] = None
+    city: Optional[str] = None
+    preDirection: Optional[str] = None
+    suffixDirection: Optional[str] = None
+    fromAddress: Optional[str] = None
+    state: Optional[str] = None
+    suffixType: Optional[str] = None
+    toAddress: Optional[str] = None
+    suffixQualifier: Optional[str] = None
+    preQualifier: Optional[str] = None
 
 
 class CensusStandardizingVendorAddressMatch(BaseModel):
-    tigerLine: CensusStandardizingVendorTigerLine
-    coordinates: CensusStandardizingVendorCoordinates
-    addressComponents: CensusStandardizingVendorAddressComponents
-    matchedAddress: Optional[str]
+    tigerLine: CensusStandardizingVendorTigerLine | None = None
+    coordinates: CensusStandardizingVendorCoordinates | None = None
+    addressComponents: CensusStandardizingVendorAddressComponents | None = None
+    matchedAddress: Optional[str] = None
 
 
 class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     class Config:
         extra = "ignore"
 
-    input: CensusStandardizingVendorInput
-    addressMatches: Optional[List[CensusStandardizingVendorAddressMatch]]
+    input: CensusStandardizingVendorInput | None = None
+    addressMatches: Optional[List[CensusStandardizingVendorAddressMatch]] = None
     address_id: str
 
     def to_dict(self) -> Dict[str, Any]:
