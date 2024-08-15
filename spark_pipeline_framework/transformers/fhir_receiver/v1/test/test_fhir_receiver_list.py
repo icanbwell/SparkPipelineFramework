@@ -1,4 +1,4 @@
-from os import path, makedirs
+from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
 
@@ -19,6 +19,8 @@ def test_fhir_receiver_list(spark_session: SparkSession) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
+
+    environ["LOGLEVEL"] = "DEBUG"
 
     temp_folder = data_dir.joinpath("./temp")
     if path.isdir(temp_folder):
