@@ -19,14 +19,14 @@ class MelissaStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         return self.model_dump()
 
     RecordID: str
-    FormattedAddress: Optional[str]
-    Locality: Optional[str]
-    AdministrativeArea: Optional[str]
-    SubAdministrativeArea: Optional[str]
-    PostalCode: Optional[str]
-    CountryISO3166_1_Alpha2: Optional[str]
-    Latitude: Optional[str]
-    Longitude: Optional[str]
+    FormattedAddress: Optional[str] = None
+    Locality: Optional[str] = None
+    AdministrativeArea: Optional[str] = None
+    SubAdministrativeArea: Optional[str] = None
+    PostalCode: Optional[str] = None
+    CountryISO3166_1_Alpha2: Optional[str] = None
+    Latitude: Optional[str] = None
+    Longitude: Optional[str] = None
 
     def to_standardized_address(self, *, address_id: str) -> StandardizedAddress:
         return StandardizedAddress(

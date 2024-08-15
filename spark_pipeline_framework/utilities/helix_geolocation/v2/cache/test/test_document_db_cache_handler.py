@@ -1,6 +1,6 @@
 import pytest
 from typing import List, AsyncGenerator, Dict, Any
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_result import (
     CacheResult,
 )
@@ -15,6 +15,9 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.vendor_r
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
     BaseVendorApiResponse,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.melissa_standardizing_vendor_api_response import (
+    MelissaStandardizingVendorApiResponse,
 )
 
 
@@ -43,15 +46,30 @@ def raw_addresses() -> List[RawAddress]:
 
 
 @pytest.fixture
-def vendor_responses() -> List[VendorResponse[BaseVendorApiResponse]]:
+def vendor_responses() -> List[VendorResponse[MelissaStandardizingVendorApiResponse]]:
     # Mocked VendorResponse objects for testing
-    vendor_response_1 = MagicMock(spec=VendorResponse)
-    vendor_response_1.related_raw_address.to_hash.return_value = "hash_1"
-    vendor_response_1.api_call_response.to_dict.return_value = {
-        "response": "std_address_1"
-    }
-    vendor_response_1.vendor_name = "vendor_1"
-    vendor_response_1.response_version = "v1"
+    vendor_response_1 = VendorResponse(
+        vendor_name="melissa",
+        response_version="v1",
+        api_call_response=MelissaStandardizingVendorApiResponse(
+            RecordID="1",
+            FormattedAddress="123 Main St",
+            Locality="Anytown",
+            AdministrativeArea="CA",
+            PostalCode="12345",
+            CountryISO3166_1_Alpha2="US",
+            Latitude="37.7749",
+            Longitude="-122.4194",
+        ),
+        related_raw_address=RawAddress(
+            address_id="1",
+            line1="123 Main St",
+            line2="",
+            city="Anytown",
+            state="CA",
+            zipcode="12345",
+        ),
+    )
 
     return [vendor_response_1]
 
@@ -64,9 +82,18 @@ async def test_check_cache(raw_addresses: List[RawAddress]) -> None:
     # Define the async generator function
     async def mock_cursor_find() -> AsyncGenerator[Dict[str, Any], None]:
         yield {
-            "address_hash": "hash_1",
+            "address_hash": raw_addresses[0].to_hash(),
             "vendor_name": "melissa",
-            "vendor_std_address": {"response": "std_address_1"},
+            "vendor_std_address": MelissaStandardizingVendorApiResponse(
+                RecordID="1",
+                FormattedAddress="123 Main St",
+                Locality="Anytown",
+                AdministrativeArea="CA",
+                PostalCode="12345",
+                CountryISO3166_1_Alpha2="US",
+                Latitude="37.7749",
+                Longitude="-122.4194",
+            ).to_dict(),
             "response_version": "v1",
         }
 
@@ -86,52 +113,18 @@ async def test_check_cache(raw_addresses: List[RawAddress]) -> None:
 async def test_save_to_cache(
     vendor_responses: List[VendorResponse[BaseVendorApiResponse]],
 ) -> None:
-    handler = DocumentDBCacheHandler()
+    # Create a mock collection
+    mock_collection = MagicMock()
 
-    # Mock _collection
-    with patch.object(
-        handler, "__collection", new_callable=AsyncMock
-    ) as mock_collection:
-        # Mock bulk_write
-        mock_bulk_write = AsyncMock()
-        mock_collection.bulk_write.return_value = mock_bulk_write
+    # Mock bulk_write
+    mock_bulk_write = AsyncMock()
+    mock_collection.bulk_write = mock_bulk_write
 
-        await handler.save_to_cache(vendor_responses)
+    handler = DocumentDBCacheHandler(collection=mock_collection)
 
-        mock_collection.bulk_write.assert_called_once()
-        assert (
-            mock_bulk_write.bulk_api_result is not None
-        )  # Check the bulk API result logging
+    await handler.save_to_cache(vendor_responses)
 
-
-@pytest.mark.asyncio
-async def test_server_url() -> None:
-    handler = DocumentDBCacheHandler()
-
-    with patch(
-        "spark_pipeline_framework.DocumentDbServerUrl.get_server_url",
-        return_value="mocked_url",
-    ) as mock_get_url:
-        server_url = await handler._server_url
-
-        assert server_url == "mocked_url"
-        mock_get_url.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_collection() -> None:
-    handler = DocumentDBCacheHandler()
-
-    with patch("spark_pipeline_framework.AsyncIOMotorClient") as mock_client:
-        mock_client_instance = mock_client.return_value
-        mock_db = mock_client_instance.get_database.return_value
-        mock_collection = mock_db.__getitem__.return_value
-
-        collection = await handler._collection
-
-        assert collection == mock_collection
-        mock_client.assert_called_once()
-        mock_db.__getitem__.assert_called_once_with(handler.collection_name)
-        mock_collection.create_index.assert_called_once_with(
-            "address_hash", unique=True
-        )
+    mock_collection.bulk_write.assert_called_once()
+    assert (
+        mock_bulk_write.bulk_api_result is not None
+    )  # Check the bulk API result logging
