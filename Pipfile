@@ -15,7 +15,7 @@ pyspark = "==3.5.1"
 # https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
 pyarrow=">=17.0.0"
 # delta-spark is needed for Delta Lake
-delta-core="==3.2.0"
+delta-spark="==3.2.0"
 # sparkautomapper is needed for mapping data in Spark
 sparkautomapper = ">=2.0.8"
 # pymysql is needed for connecting to MySQL
