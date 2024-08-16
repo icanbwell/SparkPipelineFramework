@@ -145,6 +145,7 @@ async def send_fhir_delete_async(
             access_token=auth_access_token,
             url=server_url,
             responses=json.dumps([]),
+            resource_type=resource,
         )
 
 
@@ -227,4 +228,5 @@ async def update_json_bundle_to_fhir_async(
             status=400,
             url=server_url,
             responses=json.dumps([]),
+            resource_type=resource,
         )

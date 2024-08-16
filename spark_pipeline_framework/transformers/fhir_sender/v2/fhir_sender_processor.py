@@ -116,12 +116,12 @@ class FhirSenderProcessor:
                 elif isinstance(r, FhirUpdateResponse):
                     count += 1
                     yield FhirMergeResponseItem.from_update_response(
-                        update_response=r, resource_type=parameters.resource_name
+                        update_response=r
                     ).to_dict()
                 elif isinstance(r, FhirDeleteResponse):
                     count += 1  # no responses in delete
                     yield FhirMergeResponseItem.from_delete_response(
-                        delete_response=r, resource_type=parameters.resource_name
+                        delete_response=r
                     ).to_dict()
         except Exception as e:
             logger.error(

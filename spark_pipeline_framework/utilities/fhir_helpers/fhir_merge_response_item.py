@@ -120,22 +120,22 @@ class FhirMergeResponseItem:
 
     @classmethod
     def from_update_response(
-        cls, *, update_response: FhirUpdateResponse, resource_type: str
+        cls, *, update_response: FhirUpdateResponse
     ) -> "FhirMergeResponseItem":
         return FhirMergeResponseItem(
             error=update_response.error,
             status=update_response.status,
-            resource_type=resource_type,
+            resource_type=update_response.resource_type,
         )
 
     @classmethod
     def from_delete_response(
-        cls, *, delete_response: FhirDeleteResponse, resource_type: str
+        cls, *, delete_response: FhirDeleteResponse
     ) -> "FhirMergeResponseItem":
         return FhirMergeResponseItem(
             error=delete_response.error,
             status=delete_response.status,
-            resource_type=resource_type,
+            resource_type=delete_response.resource_type,
         )
 
     @classmethod
@@ -149,15 +149,7 @@ class FhirMergeResponseItem:
             if isinstance(response, FhirMergeResponse):
                 result.extend(cls.from_merge_response(merge_response=response))
             elif isinstance(response, FhirUpdateResponse):
-                result.append(
-                    cls.from_update_response(
-                        update_response=response, resource_type=response.url
-                    )
-                )
+                result.append(cls.from_update_response(update_response=response))
             elif isinstance(response, FhirDeleteResponse):
-                result.append(
-                    cls.from_delete_response(
-                        delete_response=response, resource_type=response.url
-                    )
-                )
+                result.append(cls.from_delete_response(delete_response=response))
         return result
