@@ -62,8 +62,8 @@ async def test_standardize_list() -> None:
         ]
     )
 
-    mock_cache_handler = MagicMock(spec=CacheHandler)
-    mock_cache_handler.check_cache = MagicMock(
+    mock_cache_handler = AsyncMock(spec=CacheHandler)
+    mock_cache_handler.check_cache = AsyncMock(
         return_value=CacheResult(
             found=[],
             not_found=[
@@ -78,7 +78,7 @@ async def test_standardize_list() -> None:
             ],
         )
     )
-    mock_cache_handler.save_to_cache = MagicMock()
+    mock_cache_handler.save_to_cache = AsyncMock()
 
     address_standardization_parameters = AddressStandardizationParameters(
         total_partitions=1,

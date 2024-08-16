@@ -87,6 +87,8 @@ setup(
         "usaddress>=0.5.10",
         "usaddress-scourgify>=0.6.0",
         "aiohttp>=3",
+        "pydantic>=2.8.2",
+        "motor[snappy,zstd]>=3.5.1",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
