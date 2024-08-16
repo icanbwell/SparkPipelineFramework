@@ -4,8 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-# logging is needed for logging
-logger = ">=1.4"
 # protobuf is needed for serializing data
 protobuf=">=3"
 # PySpark has to match the version of Spark we use for testing
@@ -57,7 +55,7 @@ pymongo=">=4.8.0"
 # more-itertools is needed for additional iterators
 more-itertools = ">=9.1.0"
 # pandas is needed for Pandas UDF and mapInPandas
-pandas = { extras = ['bottleneck'], version = ">=2" }
+pandas = { version = ">=2" }
 # numexpr is needed for working with numerical expressions.  pandas requires this minimum version.
 numexpr = ">=2.8.4"
 # structlog is needed for structured logging
