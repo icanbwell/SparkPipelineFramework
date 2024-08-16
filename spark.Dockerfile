@@ -22,7 +22,6 @@ RUN apt-get remove python3-entrypoints -y
 COPY Pipfile* /SparkpipelineFramework/
 WORKDIR /SparkpipelineFramework
 
-#RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary" && pipenv run pip install pyspark==3.3.0
 #COPY ./jars/* /opt/spark/jars/
 #COPY ./conf/* /opt/spark/conf/
 # run this to install any needed jars by Spark
