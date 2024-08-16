@@ -6,7 +6,7 @@ import aiohttp
 from aiohttp import ClientTimeout
 from helix_fhir_client_sdk.utilities.list_chunker import ListChunker
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.address_parser import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.utilities.address_parser import (
     AddressParser,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
