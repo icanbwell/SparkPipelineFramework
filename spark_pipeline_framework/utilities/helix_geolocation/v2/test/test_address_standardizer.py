@@ -5,6 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, cast
 
+import aiohttp
 import boto3
 import pymongo
 import pytest
@@ -479,13 +480,17 @@ async def test_none_cache() -> None:
 
 async def test_vendor_http_error_call() -> None:
     with aioresponses() as m:
-        m.post("https://api.melissa.com/v3/standardize", status=500, payload={})
+        m.post(
+            "https://address.melissadata.net/v3/WEB/GlobalAddress/doglobaladdress",
+            status=500,
+            payload={},
+        )
 
         # arrange
         raw_addrs = [raw_addr_obj]
 
         # act / assert
-        with pytest.raises(VendorResponseKeyError):
+        with pytest.raises(aiohttp.client_exceptions.ClientResponseError):
             await AddressStandardizer().standardize_async(
                 raw_addrs,
                 cache_handler_obj=MockCacheHandler(),
@@ -500,7 +505,11 @@ async def test_vendor_http_error_call() -> None:
 
 async def test_vendor_empty_response_call() -> None:
     with aioresponses() as m:
-        m.post("https://api.melissa.com/v3/standardize", status=200, payload={})
+        m.post(
+            "https://address.melissadata.net/v3/WEB/GlobalAddress/doglobaladdress",
+            status=200,
+            payload={},
+        )
 
         # arrange
         raw_addrs = [raw_addr_obj]
