@@ -26,4 +26,4 @@ repos:
         types: [ python ]
         entry: mypy
         require_serial: true
-        args: [ --strict, --python-version=3.10, --show-error-codes, --allow-untyped-decorators ]
+        args: [ --strict, --python-version=3.12, --show-error-codes, --allow-untyped-decorators ]
