@@ -12,8 +12,19 @@ from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
 from helix_fhir_client_sdk.utilities.fhir_server_helpers import FhirServerHelpers
 from helix_fhir_client_sdk.utilities.practitioner_generator import PractitionerGenerator
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StructType, StructField, ArrayType, StringType
+from spark_fhir_schemas.r4.resources.endpoint import EndpointSchema
+from spark_fhir_schemas.r4.resources.group import GroupSchema
+from spark_fhir_schemas.r4.resources.insuranceplan import InsurancePlanSchema
+from spark_fhir_schemas.r4.resources.location import LocationSchema
+from spark_fhir_schemas.r4.resources.measurereport import MeasureReportSchema
+from spark_fhir_schemas.r4.resources.organization import OrganizationSchema
+from spark_fhir_schemas.r4.resources.practitioner import PractitionerSchema
+from spark_fhir_schemas.r4.resources.practitionerrole import PractitionerRoleSchema
+from spark_fhir_schemas.r4.resources.schedule import ScheduleSchema
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.fhir_reader.v1.fhir_reader import FhirReader
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,
 )
@@ -53,8 +64,8 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
     )
     fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
 
-    count: int = 2
-    roles_per_practitioner: int = 2
+    count: int = 100
+    roles_per_practitioner: int = 10
 
     id_dict: Dict[str, List[str]] = PractitionerGenerator.get_ids(
         count=count, roles_per_practitioner=roles_per_practitioner
@@ -106,59 +117,94 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
     assert (
         len(merge_response.responses) == expected_resource_count
     ), merge_response.responses
+
     # assert merge_response.responses[0]["created"] is True, merge_response.responses
 
-    slot_practitioner_graph = {
-        "resourceType": "GraphDefinition",
-        "id": "o",
-        "name": "provider_slots",
-        "status": "active",
-        "start": resource_type,
-        "link": [
-            {
-                "target": [
-                    {
-                        "type": "PractitionerRole",
-                        "params": "practitioner={ref}",
-                        "link": [
-                            {
-                                "path": "organization",
-                                "target": [
-                                    {
-                                        "type": "Organization",
-                                        "link": [
-                                            {
-                                                "path": "endpoint[x]",
-                                                "target": [{"type": "Endpoint"}],
-                                            }
-                                        ],
-                                    }
-                                ],
-                            },
-                            {
-                                "target": [
-                                    {
-                                        "type": "Schedule",
-                                        "params": "actor={ref}",
-                                        "link": [
-                                            {
-                                                "target": [
-                                                    {
-                                                        "type": "Slot",
-                                                        "params": "schedule={ref}",
-                                                    }
-                                                ]
-                                            }
-                                        ],
-                                    }
-                                ]
-                            },
-                        ],
-                    }
-                ]
-            }
-        ],
-    }
+    def get_practitioner_graph(client_slug: str) -> Dict[str, Any]:
+        return {
+            "resourceType": "GraphDefinition",
+            "id": "o",
+            "name": "provider_everything",
+            "status": "active",
+            "start": "Practitioner",
+            "link": [
+                {
+                    "description": "Practitioner Roles for this Practitioner",
+                    "target": [
+                        {
+                            "type": "PractitionerRole",
+                            "params": f"practitioner={{ref}}&active:not=false&_security=https://www.icanbwell.com/access|{client_slug},https://www.icanbwell.com/access|connecthub",
+                            "link": [
+                                {
+                                    "path": "organization",
+                                    "target": [
+                                        {
+                                            "type": "Organization",
+                                            "link": [
+                                                {
+                                                    "path": "endpoint[x]",
+                                                    "target": [{"type": "Endpoint"}],
+                                                }
+                                            ],
+                                        }
+                                    ],
+                                },
+                                {
+                                    "path": "location[x]",
+                                    "target": [{"type": "Location"}],
+                                },
+                                {
+                                    "path": "healthcareService[x]",
+                                    "target": [{"type": "HealthcareService"}],
+                                },
+                                {
+                                    "path": "extension.extension:url=plan",
+                                    "target": [
+                                        {
+                                            "link": [
+                                                {
+                                                    "path": "valueReference",
+                                                    "target": [
+                                                        {"type": "InsurancePlan"}
+                                                    ],
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                },
+                                {
+                                    "target": [
+                                        {
+                                            "type": "Schedule",
+                                            "params": f"actor={{ref}}&_security=https://www.icanbwell.com/access|{client_slug}",
+                                        }
+                                    ]
+                                },
+                            ],
+                        }
+                    ],
+                },
+                {
+                    "description": "Group",
+                    "target": [
+                        {
+                            "type": "Group",
+                            "params": f"member={{ref}}&_security=https://www.icanbwell.com/access|{client_slug}",
+                        }
+                    ],
+                },
+                {
+                    "description": "Review score for the practitioner",
+                    "target": [
+                        {
+                            "type": "MeasureReport",
+                            "params": f"subject={{ref}}&_security=https://www.icanbwell.com/access|{client_slug}",
+                        }
+                    ],
+                },
+            ],
+        }
+
     # act
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
@@ -178,7 +224,7 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
             action="$graph",
             additional_parameters=["contained=true"],
             separate_bundle_resources=True,
-            action_payload=slot_practitioner_graph,
+            action_payload=get_practitioner_graph(client_slug="bwell"),
             file_path=patient_json_path,
             progress_logger=progress_logger,
             parameters=parameters,
@@ -189,7 +235,110 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
             auth_client_secret=auth_client_secret,
         ).transform_async(df)
 
-    # Assert
-    json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
-    json_df.show()
-    json_df.printSchema()
+        # Assert
+        json_df: DataFrame = df.sparkSession.read.text(str(patient_json_path))
+        print(" ---- Result of $graph call ------")
+        json_df.show(truncate=False)
+        print(" ---- Schema of $graph call ------")
+        json_df.printSchema()
+
+        assert json_df.count() == count
+
+        assert json_df.schema == StructType(
+            [
+                StructField("value", StringType(), True),
+            ]
+        )
+
+        # now try to read it
+        await FhirReader(
+            file_path=patient_json_path,
+            view="practitioner_graphs",
+            name="fhir_reader",
+            progress_logger=progress_logger,
+            schema=StructType(
+                [
+                    StructField(
+                        "practitioner",
+                        ArrayType(
+                            PractitionerSchema.get_schema(
+                                include_extension=True,
+                            )
+                        ),
+                    ),
+                    StructField(
+                        "practitionerrole",
+                        ArrayType(
+                            PractitionerRoleSchema.get_schema(
+                                include_extension=True,
+                                extension_fields=[
+                                    "valueCodeableConcept",
+                                    "valueRange",
+                                    "valueReference",
+                                ],
+                            )
+                        ),
+                    ),
+                    StructField(
+                        "organization",
+                        ArrayType(OrganizationSchema.get_schema()),
+                    ),
+                    StructField(
+                        "location",
+                        ArrayType(
+                            LocationSchema.get_schema(
+                                include_extension=True,
+                                extension_fields=["valueString"],
+                            )
+                        ),
+                    ),
+                    StructField(
+                        "insuranceplan",
+                        ArrayType(InsurancePlanSchema.get_schema()),
+                    ),
+                    StructField(
+                        "endpoint",
+                        ArrayType(
+                            EndpointSchema.get_schema(
+                                include_extension=False,
+                            )
+                        ),
+                    ),
+                    StructField(
+                        "schedule",
+                        ArrayType(
+                            ScheduleSchema.get_schema(
+                                include_extension=True,
+                                extension_fields=[
+                                    "valueCodeableConcept",
+                                    "valueRange",
+                                    "valueDecimal",
+                                ],
+                            )
+                        ),
+                    ),
+                    StructField("group", ArrayType(GroupSchema.get_schema())),
+                    StructField(
+                        "measurereport", ArrayType(MeasureReportSchema.get_schema())
+                    ),
+                ]
+            ),
+        ).transform_async(df)
+
+        # Assert
+        practitioner_graphs_df: DataFrame = spark_session.table("practitioner_graphs")
+        print(" ---- Result of FhirReader ------")
+        practitioner_graphs_df.show(truncate=False)
+        print(" ---- Schema of FhirReader ------")
+        practitioner_graphs_df.printSchema()
+
+        assert practitioner_graphs_df.count() == count
+
+        rows: List[Dict[str, Any]] = [
+            r.asDict(recursive=True) for r in practitioner_graphs_df.collect()
+        ]
+
+        rows = sorted(rows, key=lambda x: x["practitioner"][0]["id"])
+
+        assert rows[0]["practitioner"][0]["id"] == id_dict[resource_type][0]
+        assert rows[1]["practitioner"][0]["id"] == id_dict[resource_type][1]

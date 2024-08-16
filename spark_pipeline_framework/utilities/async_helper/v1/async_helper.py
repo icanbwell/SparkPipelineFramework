@@ -1,9 +1,12 @@
 import asyncio
+import threading
 import time
 from typing import AsyncGenerator, List, TypeVar, Optional, Coroutine, Any
 
 from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType
+from concurrent.futures import ThreadPoolExecutor
+
 
 T = TypeVar("T")
 
@@ -62,85 +65,31 @@ class AsyncHelper:
         """
 
         # iterate through the async generator and collect the data in chunks
-        collected_data = []
-        async for chunk in AsyncHelper.collect_async_data(
-            async_gen=async_gen, chunk_size=results_per_batch or 1
-        ):
-            df_chunk = df.sparkSession.createDataFrame(chunk, schema)  # type: ignore[type-var]
-            collected_data.append(df_chunk)
-            df_chunk.show(truncate=False)  # Show each chunk as it is processed
+        collected_data_frames: List[DataFrame] = []
+        if results_per_batch is not None:
+            # if batching is requested
+            async for chunk in AsyncHelper.collect_async_data(
+                async_gen=async_gen, chunk_size=results_per_batch
+            ):
+                df_chunk = df.sparkSession.createDataFrame(chunk, schema)  # type: ignore[type-var]
+                collected_data_frames.append(df_chunk)
 
-        # Combine all chunks into a single DataFrame
-        if collected_data:
-            # if data was already collected, combine it into a single DataFrame
-            final_df = collected_data[0]
-            for df in collected_data[1:]:
-                final_df = final_df.union(df)
-            return final_df
+            # Combine all chunks into a single DataFrame
+            if len(collected_data_frames) > 0:
+                # if data was already collected, combine it into a single DataFrame
+                final_df = collected_data_frames[0]
+                for df in collected_data_frames[1:]:
+                    final_df = final_df.union(df)
+                return final_df
+            else:
+                # create a DataFrame with the schema but no data
+                return df.sparkSession.createDataFrame([], schema)
         else:
-            # create a DataFrame with the schema but no data
-            return df.sparkSession.createDataFrame([], schema)
-
-    # @staticmethod
-    # async def _run_with_timeout(
-    #     async_func: Coroutine[Any, Any, T], timeout: Optional[float] = None
-    # ) -> T:
-    #     """
-    #     Runs an async function with a timeout
-    #
-    #     :param async_func: Coroutine to run
-    #     :param timeout: Optional timeout in seconds
-    #     :return: T
-    #     """
-    #     result: T = await asyncio.wait_for(async_func, timeout=timeout)
-    #     return result
-    #
-    # @staticmethod
-    # async def _run_task(
-    #     async_func: Coroutine[Any, Any, T], timeout: Optional[float]
-    # ) -> T:
-    #     """
-    #     Runs an async function with a timeout in a running event loop
-    #
-    #     :param async_func: Coroutine to run
-    #     :param timeout: Optional timeout in seconds
-    #     :return: T
-    #     """
-    #     result = await AsyncHelper._run_with_timeout(async_func, timeout)
-    #     return result
-    #
-    # @staticmethod
-    # def run(async_func: Coroutine[Any, Any, T], timeout: Optional[float] = None) -> T:
-    #     """
-    #     Runs an async function but returns the result synchronously
-    #     Similar to asyncio.run() but does not create a new event loop if one already exists
-    #
-    #     :param async_func: Coroutine to run
-    #     :param timeout: Optional timeout in seconds
-    #     :return: T
-    #     """
-    #     loop = asyncio.get_event_loop()
-    #
-    #     # Check if there's already a running event loop
-    #     if not loop.is_running():
-    #         result = asyncio.run(AsyncHelper._run_task(async_func, timeout))
-    #         return result
-    #     else:
-    #         # If the event loop is already running, ensure the coroutine is run within it
-    #         future: Task[T] = loop.create_task(
-    #             AsyncHelper._run_task(async_func, timeout)
-    #         )
-    #
-    #         async def get_result(future1: Task[T]) -> T:
-    #             result1 = await future1
-    #             return result1
-    #
-    #         # Schedule the result retrieval and run it within the current loop
-    #         result_task = loop.create_task(get_result(future))
-    #
-    #         # We need to run until the result_task is complete
-    #         loop.run_until_complete(result_task)
-    #         return result_task.result()
+            # no batching required
+            collected_data: List[T] = []
+            async for item in async_gen:
+                collected_data.append(item)
+            return df.sparkSession.createDataFrame(collected_data, schema)  # type: ignore[type-var]
 
     @staticmethod
     def run(fn: Coroutine[Any, Any, T], timeout: Optional[float] = None) -> T:
@@ -180,13 +129,73 @@ class AsyncHelper:
             # print(f"Ran loop")
         except RuntimeError as e:
             if "This event loop is already running" in str(e):
-                raise RuntimeError(
-                    f"While calling {fn.__name__} there is already an event loop running."
-                    "\nThis usually happens because you are calling this function"
-                    " from an asynchronous context so you can't just wrap it in AsyncHelper.run()."
-                    f"\nEither await this function {fn.__name__} or"
-                    " use nest_asyncio (https://github.com/erdewit/nest_asyncio)."
-                )
+                try:
+                    return AsyncHelper.run_in_thread_pool_and_wait(coro=fn)
+                except RuntimeError as e2:
+                    raise RuntimeError(
+                        f"While calling {fn.__name__} there is already an event loop running."
+                        "\nThis usually happens because you are calling this function"
+                        " from an asynchronous context so you can't just wrap it in AsyncRunner.run()."
+                        f"\nEither use `await {fn.__name__}` or"
+                        " use nest_asyncio (https://github.com/erdewit/nest_asyncio)."
+                        f"\nException: {e}"
+                    )
             else:
                 raise e
         return result
+
+    @staticmethod
+    def run_in_new_thread_and_wait(coro: Coroutine[Any, Any, T]) -> T:
+        """
+        Runs the coroutine in a new thread and waits for it to finish
+
+        :param coro: Coroutine
+        :return: T
+        """
+        result: Optional[T] = None
+        exception: Optional[Exception] = None
+
+        def target() -> None:
+            nonlocal result, exception
+            try:
+                result = asyncio.run(coro)
+            except Exception as e:
+                exception = e
+
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.join()
+
+        if exception:
+            raise exception
+
+        # Allow returning None without checking since T may be an Optional type already
+        return result  # type: ignore[return-value]
+
+    @staticmethod
+    def run_in_thread_pool_and_wait(coro: Coroutine[Any, Any, T]) -> T:
+        """
+        Runs the coroutine in a thread pool and waits for it to finish
+
+        :param coro: Coroutine
+        :return: T
+        """
+        result: Optional[T] = None
+        exception: Optional[Exception] = None
+
+        def target() -> None:
+            nonlocal result, exception
+            try:
+                result = asyncio.run(coro)
+            except Exception as e:
+                exception = e
+
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(target)
+            future.result()  # This will block until the thread completes
+
+        if exception:
+            raise exception
+
+        # Allow returning None without checking since T may be an Optional type already
+        return result  # type: ignore[return-value]

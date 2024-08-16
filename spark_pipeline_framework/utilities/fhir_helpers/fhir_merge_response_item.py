@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, cast
 
 from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
@@ -46,6 +46,11 @@ class FhirMergeResponseItem:
         self.token: Optional[str] = token
         self.resource_json: Optional[str] = resource_json
         self.status: Optional[int] = status
+
+    def get_issue(self) -> Optional[Dict[str, Any]]:
+        if not self.issue:
+            return None
+        return cast(Dict[str, Any], json.loads(self.issue))
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -115,22 +120,22 @@ class FhirMergeResponseItem:
 
     @classmethod
     def from_update_response(
-        cls, *, update_response: FhirUpdateResponse, resource_type: str
+        cls, *, update_response: FhirUpdateResponse
     ) -> "FhirMergeResponseItem":
         return FhirMergeResponseItem(
             error=update_response.error,
             status=update_response.status,
-            resource_type=resource_type,
+            resource_type=update_response.resource_type,
         )
 
     @classmethod
     def from_delete_response(
-        cls, *, delete_response: FhirDeleteResponse, resource_type: str
+        cls, *, delete_response: FhirDeleteResponse
     ) -> "FhirMergeResponseItem":
         return FhirMergeResponseItem(
             error=delete_response.error,
             status=delete_response.status,
-            resource_type=resource_type,
+            resource_type=delete_response.resource_type,
         )
 
     @classmethod
@@ -144,15 +149,7 @@ class FhirMergeResponseItem:
             if isinstance(response, FhirMergeResponse):
                 result.extend(cls.from_merge_response(merge_response=response))
             elif isinstance(response, FhirUpdateResponse):
-                result.append(
-                    cls.from_update_response(
-                        update_response=response, resource_type=response.url
-                    )
-                )
+                result.append(cls.from_update_response(update_response=response))
             elif isinstance(response, FhirDeleteResponse):
-                result.append(
-                    cls.from_delete_response(
-                        delete_response=response, resource_type=response.url
-                    )
-                )
+                result.append(cls.from_delete_response(delete_response=response))
         return result

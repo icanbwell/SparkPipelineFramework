@@ -1,8 +1,12 @@
-from typing import List, Set, Tuple, Type, Optional, Any, Dict
+from typing import List, Set, Tuple, Type, Optional, Any
 
-import pymongo
 import structlog
-from pymongo import UpdateOne, MongoClient
+from motor.motor_asyncio import (
+    AsyncIOMotorClient,
+    AsyncIOMotorCollection,
+    AsyncIOMotorCursor,
+)
+from pymongo import UpdateOne
 
 from spark_pipeline_framework.utilities.document_db_connection.v1.document_db_connection import (
     DocumentDbServerUrl,
@@ -14,16 +18,16 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_result import (
     CacheResult,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.vendor_response import (
     VendorResponse,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
@@ -39,14 +43,15 @@ class DocumentDBCacheHandler(CacheHandler):
         database_name: str = "helix_address_cache",
         collection_name: str = "helix_address_cache",
         server_url: Optional[str] = None,
+        collection: Optional[AsyncIOMotorCollection[Any]] = None,
     ):
         self.__server_url: Optional[str] = server_url
         self.database_name: str = database_name
         self.collection_name: str = collection_name
-        self.__collection: Optional[pymongo.collection.Collection[Any]] = None
+        self.__collection: Optional[AsyncIOMotorCollection[Any]] = collection
 
     @property
-    def _server_url(self) -> str:
+    async def _server_url(self) -> str:
         if self.__server_url is not None:
             return self.__server_url
         else:
@@ -54,32 +59,29 @@ class DocumentDBCacheHandler(CacheHandler):
             return self.__server_url
 
     @property
-    def _collection(self) -> pymongo.collection.Collection[Any]:
+    async def _collection(self) -> AsyncIOMotorCollection[Any]:
         if self.__collection is not None:
             return self.__collection
         else:
-            # Due to no longer needing the cert this runs the same locally
-            mongo_client: MongoClient[Dict[str, Any]] = pymongo.MongoClient(
-                self._server_url
+            mongo_client: AsyncIOMotorClient[Any] = AsyncIOMotorClient(
+                await self._server_url
             )
             self._db = mongo_client.get_database(self.database_name)
             self.__collection = self._db[self.collection_name]
-            self.__collection.create_index("address_hash", unique=True)
+            await self.__collection.create_index("address_hash", unique=True)
             return self.__collection
 
-    def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
+    async def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
         unique_address_hashes: Set[str] = set([a.to_hash() for a in raw_addresses])
-        # find cached response for all hash keys in one request
-        query = {"address_hash": {r"$in": list(unique_address_hashes)}}
-        lookup_result: pymongo.cursor.Cursor[Any] = self._collection.find(query)
+        query = {"address_hash": {"$in": list(unique_address_hashes)}}
+        collection: AsyncIOMotorCollection[Any] = await self._collection
+        cursor: AsyncIOMotorCursor[Any] = collection.find(query)
 
         found_vendor_response: List[VendorResponse[BaseVendorApiResponse]] = []
-        for r in lookup_result:
+        async for r in cursor:
             matching_raw: List[RawAddress] = [
                 raw for raw in raw_addresses if r["address_hash"] == raw.to_hash()
             ]
-            # find the matching vendor
-
             vendor_name = r["vendor_name"]
             vendor_class: Type[StandardizingVendor[BaseVendorApiResponse]] = (
                 self._get_vendor_class(vendor_name)
@@ -107,13 +109,12 @@ class DocumentDBCacheHandler(CacheHandler):
         found_std_addr: List[StandardizedAddress]
         found_ids: List[str]
         found_std_addr, found_ids = self._convert_to_std_address(found_vendor_response)
-        # filter raw_addresses to create a not_found
         not_found: List[RawAddress] = [
             a for a in raw_addresses if a.get_id() not in found_ids
         ]
         return CacheResult(found=found_std_addr, not_found=not_found)
 
-    def save_to_cache(self, vendor_responses: List[VendorResponse[Any]]) -> None:
+    async def save_to_cache(self, vendor_responses: List[VendorResponse[Any]]) -> None:
         requests = [
             UpdateOne(
                 {"address_hash": vr.related_raw_address.to_hash()},
@@ -130,7 +131,8 @@ class DocumentDBCacheHandler(CacheHandler):
             if vr.related_raw_address
         ]
         if requests:
-            write_result = self._collection.bulk_write(requests=requests)
+            collection = await self._collection
+            write_result = await collection.bulk_write(requests=requests)
             logger.info("Cache write result:", result=write_result.bulk_api_result)
         else:
             logger.warning(
@@ -148,10 +150,6 @@ class DocumentDBCacheHandler(CacheHandler):
     def _convert_to_std_address(
         vendor_responses: List[VendorResponse[BaseVendorApiResponse]],
     ) -> Tuple[List[StandardizedAddress], List[str]]:
-        """
-        get vendor responses (possibly from different vendors) turn it to StdAddress
-        for faster filtering we also combine a list found RecordIds
-        """
         std_addresses: List[StandardizedAddress] = []
         found_ids: List[str] = []
         vr: VendorResponse[BaseVendorApiResponse]

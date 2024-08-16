@@ -10,7 +10,7 @@ docsrc
 docs
 spf_tests
 tests
-*/test/*
+**/test/*
 *.yml
 *.md
 metastore_db

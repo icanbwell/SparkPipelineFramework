@@ -119,3 +119,5 @@ async def test_async_real_fhir_server_get_patients_large(
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     json_df.show()
     json_df.printSchema()
+
+    assert json_df.count() == count

@@ -9,7 +9,7 @@ class RawAddress(BaseModel):
     The address that needs to get standardized
     """
 
-    address_id: Optional[str]
+    address_id: str
     line1: Optional[str]
     line2: Optional[str] = None
     city: Optional[str]
@@ -24,11 +24,11 @@ class RawAddress(BaseModel):
     def from_dict(cls, address_dict: Dict[str, str]) -> "RawAddress":
         return cls(**address_dict)
 
-    def get_id(self) -> Optional[str]:
-        address_id: Optional[str] = self.address_id
+    def get_id(self) -> str:
+        address_id: str = self.address_id
         return address_id
 
-    def set_id(self, address_id: Optional[str]) -> None:
+    def set_id(self, address_id: str) -> None:
         self.address_id = address_id
 
     def to_str(self) -> str:

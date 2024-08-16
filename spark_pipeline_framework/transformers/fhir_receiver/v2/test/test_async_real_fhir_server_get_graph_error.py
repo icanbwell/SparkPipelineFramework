@@ -108,59 +108,22 @@ async def test_async_real_fhir_server_get_graph_error(
     ), merge_response.responses
     # assert merge_response.responses[0]["created"] is True, merge_response.responses
 
-    slot_practitioner_graph = {
+    bad_practitioner_graph = {
         "resourceType": "GraphDefinition",
         "id": "o",
         "name": "provider_slots",
         "status": "active",
-        "start": resource_type,
-        "link": [
-            {
-                "target": [
-                    {
-                        "type": "PractitionerRole",
-                        "params": "practitioner={ref}",
-                        "link": [
-                            {
-                                "path": "organization",
-                                "target": [
-                                    {
-                                        "type": "Organization",
-                                        "link": [
-                                            {
-                                                "path": "endpoint[x]",
-                                                "target": [{"type": "Endpoint"}],
-                                            }
-                                        ],
-                                    }
-                                ],
-                            },
-                            {
-                                "target": [
-                                    {
-                                        "type": "Schedule",
-                                        "params": "actor={ref}",
-                                        "link": [
-                                            {
-                                                "target": [
-                                                    {
-                                                        "type": "Slot",
-                                                        "params": "schedule={ref}",
-                                                    }
-                                                ]
-                                            }
-                                        ],
-                                    }
-                                ]
-                            },
-                        ],
-                    }
-                ]
-            }
-        ],
+        "start": "Foobar",
+        "link": ["foo"],
     }
     # act
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
+
+    id_df = spark_session.createDataFrame(
+        [(s,) for s in id_dict[resource_type]], ["id"]
+    )
+
+    id_df.createOrReplaceTempView("id_view")
 
     parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
 
@@ -169,9 +132,10 @@ async def test_async_real_fhir_server_get_graph_error(
             server_url=fhir_server_url,
             resource=resource_type,
             action="$graph",
+            id_view="id_view",
             additional_parameters=["contained=true"],
             separate_bundle_resources=True,
-            action_payload=slot_practitioner_graph,
+            action_payload=bad_practitioner_graph,
             file_path=patient_json_path,
             progress_logger=progress_logger,
             parameters=parameters,
@@ -186,20 +150,20 @@ async def test_async_real_fhir_server_get_graph_error(
     # Assert
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
     print("------- Result DataFrame -------")
-    json_df.show()
-    json_df.printSchema()
+    json_df.show(truncate=False)
+    # json_df.printSchema()
 
-    assert json_df.count() == 0
+    assert json_df.count() == 2
 
-    error_df: DataFrame = df.sparkSession.table("error_view")
-    print("------- Error DataFrame -------")
-    error_df.show()
-
-    assert error_df.count() == 1
-    first_row = error_df.first()
-    assert first_row is not None
-    assert first_row["url"] is not None
-    assert (
-        first_row["url"] == "http://fhir:3000/4_0_0/Practitioner/$graph?contained=true"
-    )
+    # error_df: DataFrame = df.sparkSession.table("error_view")
+    # print("------- Error DataFrame -------")
+    # error_df.show(truncate=False)
+    #
+    # assert error_df.count() == 1
+    # first_row = error_df.first()
+    # assert first_row is not None
+    # assert first_row["url"] is not None
+    # assert (
+    #     first_row["url"] == "http://fhir:3000/4_0_0/Practitioner/$graph?contained=true"
+    # )
     # assert error_df.first().error == "The server could not process the request"

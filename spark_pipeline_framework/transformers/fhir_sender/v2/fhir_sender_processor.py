@@ -31,7 +31,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_helpers_async import (
+from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_helpers_async import (
     update_json_bundle_to_fhir_async,
     send_fhir_delete_async,
     send_json_bundle_to_fhir_async,
@@ -116,12 +116,12 @@ class FhirSenderProcessor:
                 elif isinstance(r, FhirUpdateResponse):
                     count += 1
                     yield FhirMergeResponseItem.from_update_response(
-                        update_response=r, resource_type=parameters.resource_name
+                        update_response=r
                     ).to_dict()
                 elif isinstance(r, FhirDeleteResponse):
                     count += 1  # no responses in delete
                     yield FhirMergeResponseItem.from_delete_response(
-                        delete_response=r, resource_type=parameters.resource_name
+                        delete_response=r
                     ).to_dict()
         except Exception as e:
             logger.error(

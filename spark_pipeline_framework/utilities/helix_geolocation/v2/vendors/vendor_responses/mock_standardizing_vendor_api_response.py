@@ -2,10 +2,10 @@ from typing import Dict, Any, Optional
 
 from pydantic import BaseModel
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
@@ -17,7 +17,7 @@ class MockStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
 
-    address_id: Optional[str]
+    address_id: str
     line1: Optional[str]
     line2: Optional[str]
     city: Optional[str]
@@ -43,9 +43,7 @@ class MockStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
             longitude=None,
         )
 
-    def to_standardized_address(
-        self, *, address_id: Optional[str]
-    ) -> Optional[StandardizedAddress]:
+    def to_standardized_address(self, *, address_id: str) -> StandardizedAddress:
         return StandardizedAddress(
             address_id=address_id,
             line1=self.line1,
