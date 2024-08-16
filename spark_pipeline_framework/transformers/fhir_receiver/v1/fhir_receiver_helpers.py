@@ -972,6 +972,8 @@ class FhirReceiverHelpers:
         # if paging is requested then iterate through the pages until the response is empty
         page_number: int = 0
         server_page_number: int = 0
+        has_next_page: bool = True
+        loop_number: int = 0
         assert server_url
         result: FhirGetResponse
         if use_data_streaming:
@@ -1033,7 +1035,8 @@ class FhirReceiverHelpers:
                         request_id=result.request_id,
                     ) from e
         else:
-            while True:
+            while has_next_page:
+                loop_number += 1
                 result = asyncio.run(
                     FhirReceiverHelpers.send_fhir_request_async(
                         logger=get_logger(__name__),
@@ -1101,7 +1104,9 @@ class FhirReceiverHelpers:
                 auth_access_token = result.access_token
                 if len(result_response) > 0:
                     # get id of last resource
-                    json_resources: List[Dict[str, Any]] = json.loads(result.responses)
+                    json_resources: List[Dict[str, Any]] = [
+                        json.loads(r) for r in result_response
+                    ]
                     if isinstance(json_resources, list):  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
@@ -1141,9 +1146,12 @@ class FhirReceiverHelpers:
                         page_number += 1
                         if limit and limit > 0:
                             if not page_size or (page_number * page_size) >= limit:
-                                break
+                                has_next_page = False
                     else:
                         # Received an error
+                        if result.status == 404 and loop_number > 1:
+                            # 404 (not found) is fine since it just means we ran out of data while paging
+                            pass
                         if result.status not in ignore_status_codes:
                             raise FhirReceiverException(
                                 url=result.url,
@@ -1153,7 +1161,8 @@ class FhirReceiverHelpers:
                                 message="Error from FHIR server",
                                 request_id=result.request_id,
                             )
+                        has_next_page = False
                 else:
-                    break
+                    has_next_page = False
 
         return GetBatchResult(resources=resources, errors=errors)

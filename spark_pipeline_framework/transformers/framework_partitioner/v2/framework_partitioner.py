@@ -1,13 +1,17 @@
 from typing import Dict, Any, Optional, List
 
-from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
+
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.framework_partitioner.v2.partition_calculator import (
+    PartitionCalculator,
+)
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_partition_helper.v1.spark_partition_helper import (
     SparkPartitionHelper,
 )
@@ -35,6 +39,9 @@ class FrameworkPartitioner(FrameworkTransformer):
         input_row_count: Optional[int] = None,
         percentage_of_memory_to_use: float = 0.5,  # plan on using only half of the memory
         maximum_number_of_partitions: Optional[int] = None,
+        executor_count: Optional[int] = None,
+        executor_cores: Optional[int] = None,
+        executor_memory: Optional[str] = None,
     ):
         """
         Transformer that partitions a DataFrame if needed based on the parameters provided.
@@ -81,6 +88,12 @@ class FrameworkPartitioner(FrameworkTransformer):
         :param percentage_of_memory_to_use: The percentage of memory available to use in each executor.
         :param maximum_number_of_partitions: The maximum number of partitions to create.  If the calculated
                                             number of partitions is more than this, then this value is used.
+        :param executor_count: The number of executors to use in calculation of partitions.  If this is not provided,
+                                then it is calculated based on the spark.executor.instances config
+        :param executor_cores: The number of cores per executor to use in calculation of partitions.  If this is not
+                                provided, then it is calculated based on the spark.executor.cores config
+        :param executor_memory: The memory available to each executor to use in calculation of partitions.  If this is
+                                not provided, then it is calculated based on the spark.executor.memory config
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -140,6 +153,15 @@ class FrameworkPartitioner(FrameworkTransformer):
         )
         self._setDefault(maximum_number_of_partitions=maximum_number_of_partitions)
 
+        self.executor_count: Param[Optional[int]] = Param(self, "executor_count", "")
+        self._setDefault(executor_count=executor_count)
+
+        self.executor_cores: Param[Optional[int]] = Param(self, "executor_cores", "")
+        self._setDefault(executor_cores=executor_cores)
+
+        self.executor_memory: Param[Optional[str]] = Param(self, "executor_memory", "")
+        self._setDefault(executor_memory=executor_memory)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -165,6 +187,9 @@ class FrameworkPartitioner(FrameworkTransformer):
         maximum_number_of_partitions: Optional[int] = self.getOrDefault(
             self.maximum_number_of_partitions
         )
+        executor_count: Optional[int] = self.getOrDefault(self.executor_count)
+        executor_cores: Optional[int] = self.getOrDefault(self.executor_cores)
+        executor_memory: Optional[str] = self.getOrDefault(self.executor_memory)
 
         result_df: DataFrame = df.sparkSession.table(view)
         current_partitions: int = result_df.rdd.getNumPartitions()
@@ -177,123 +202,21 @@ class FrameworkPartitioner(FrameworkTransformer):
             result_df.createOrReplaceTempView(view)
             return result_df
 
-        # figure out whether we need to repartition the dataframe
-        def safe_str_to_int(s: Optional[str]) -> Optional[int]:
-            if not s:
-                return None
-            try:
-                return int(s)
-            except (ValueError, TypeError):
-                return None  # Or any other default value you prefer
-
-        def parse_memory_string(memory_str: Optional[str]) -> Optional[int]:
-            if not memory_str:
-                return None
-            units = {
-                "b": 1,
-                "k": 1024,
-                "m": 1024**2,
-                "g": 1024**3,
-                "t": 1024**4,
-                "p": 1024**5,
-            }
-
-            # Extract the numeric part and the unit part
-            value = memory_str[:-1]
-            unit = memory_str[-1].lower()
-
-            # Convert the value to an integer and multiply by the appropriate unit
-            if unit in units:
-                return int(value) * units[unit]
-            else:
-                return None
-
-        def convert_bytes_to_human_readable(
-            num: Optional[int], suffix: str = "B"
-        ) -> Optional[str]:
-            if num is None:
-                return None
-            for unit in ("", "K", "M", "G", "T"):
-                if abs(num) < 1024:
-                    return f"{num:3.1f}{unit}{suffix}"
-                num //= 1024
-            return f"{num:.1f}Yi{suffix}"
-
         calculated_partitions: Optional[int] = None
         if calculate_automatically:
-            # Calculate the number of executors
-            executor_instances: int | None = safe_str_to_int(
-                result_df.sparkSession.sparkContext.getConf().get(
-                    "spark.executor.instances"
-                )
+            calculated_partitions = PartitionCalculator.calculate_ideal_partitions(
+                executor_cores=executor_cores,
+                executor_count=executor_count,
+                executor_memory=executor_memory,
+                input_row_count=input_row_count,
+                input_row_size=input_row_size,
+                maximum_number_of_partitions=maximum_number_of_partitions,
+                output_row_size=output_row_size,
+                partition_size=partition_size,
+                percentage_of_memory_to_use=percentage_of_memory_to_use,
+                df=result_df,
+                logger=self.logger,
             )
-            executor_cores: int | None = safe_str_to_int(
-                result_df.sparkSession.sparkContext.getConf().get(
-                    "spark.executor.cores"
-                )
-            )
-            # memory is defined as text like "2g" etc
-            executor_memory: int | None = parse_memory_string(
-                result_df.sparkSession.sparkContext.getConf().get(
-                    "spark.executor.memory"
-                )
-            )
-            # assume we can use only half of the executor memory
-            executor_memory_available: Optional[int] = (
-                executor_memory // 2 if executor_memory else None
-            )
-            if executor_instances is not None:
-                size_available_per_executor: Optional[int] = (
-                    partition_size if partition_size else executor_memory_available
-                )
-                assert (
-                    size_available_per_executor is not None
-                ), "partition_size is not set and spark.executor.memory config is also not set"
-                # use only a percentage of the memory
-                size_available_per_executor = int(
-                    size_available_per_executor * percentage_of_memory_to_use
-                )
-                # calculate estimated row size if input row size is not provided
-                estimated_row_size: int = (
-                    len(str(df.rdd.first())) if not input_row_size else input_row_size
-                )
-                # if output row size is provided then add it to the input row size else double input row size
-                if output_row_size is not None:
-                    estimated_row_size += output_row_size
-                else:
-                    estimated_row_size += estimated_row_size  # assume output row size will be same as input size
-                # calculate number of rows if not provided
-                num_rows: int = df.count() if not input_row_count else input_row_count
-                # calculate total size of the dataframe
-                estimated_total_size: int = num_rows * estimated_row_size
-                # now calculate the partitions as maximum of number of executors and the total size of the dataframe
-                # but make sure we don't get more partitions than the number of rows
-                calculated_partitions = max(
-                    executor_instances,
-                    int(estimated_total_size // size_available_per_executor),
-                )
-                # partitions should not be more than the number of rows
-                calculated_partitions = min(num_rows, calculated_partitions)
-                # partitions should not be more than the maximum number of partitions if passed
-                if maximum_number_of_partitions is not None:
-                    calculated_partitions = min(
-                        maximum_number_of_partitions, calculated_partitions
-                    )
-
-                self.logger.info(
-                    f"Calculated Partitions: {calculated_partitions}"
-                    f" | Rows: {num_rows}"
-                    f" | Estimated row size: {convert_bytes_to_human_readable(estimated_row_size)}"
-                    f" | Executor Memory To Use: {convert_bytes_to_human_readable(size_available_per_executor)}"
-                    f" | Executors: {executor_instances}"
-                    f" | Cores: {executor_cores}"
-                    f" | Executor Memory: {convert_bytes_to_human_readable(executor_memory)}"
-                    f" | Executor Memory Available: {convert_bytes_to_human_readable(executor_memory_available)}"
-                )
-            else:
-                self.logger.warning(
-                    "Could not calculate partitions automatically as `spark.executor.instances` config is not set"
-                )
 
         desired_partitions: int = (
             SparkPartitionHelper.calculate_desired_partitions(

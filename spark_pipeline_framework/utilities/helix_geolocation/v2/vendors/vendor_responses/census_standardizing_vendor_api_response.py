@@ -2,7 +2,7 @@ from typing import Optional, List, Any, Dict
 
 from pydantic import BaseModel
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
@@ -11,60 +11,60 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 
 
 class CensusStandardizingVendorAddress(BaseModel):
-    address: Optional[str]
+    address: Optional[str] = None
 
 
 class CensusStandardizingVendorBenchmark(BaseModel):
-    isDefault: Optional[bool]
-    benchmarkDescription: Optional[str]
-    id: Optional[str]
-    benchmarkName: Optional[str]
+    isDefault: Optional[bool] = None
+    benchmarkDescription: Optional[str] = None
+    id: Optional[str] = None
+    benchmarkName: Optional[str] = None
 
 
 class CensusStandardizingVendorInput(BaseModel):
-    address: CensusStandardizingVendorAddress
-    benchmark: CensusStandardizingVendorBenchmark
+    address: CensusStandardizingVendorAddress | None = None
+    benchmark: CensusStandardizingVendorBenchmark | None = None
 
 
 class CensusStandardizingVendorTigerLine(BaseModel):
-    side: Optional[str]
-    tigerLineId: Optional[str]
+    side: Optional[str] = None
+    tigerLineId: Optional[str] = None
 
 
 class CensusStandardizingVendorCoordinates(BaseModel):
-    x: Optional[float]
-    y: Optional[float]
+    x: Optional[float] = None
+    y: Optional[float] = None
 
 
 class CensusStandardizingVendorAddressComponents(BaseModel):
-    zip: Optional[str]
-    streetName: Optional[str]
-    preType: Optional[str]
-    city: Optional[str]
-    preDirection: Optional[str]
-    suffixDirection: Optional[str]
-    fromAddress: Optional[str]
-    state: Optional[str]
-    suffixType: Optional[str]
-    toAddress: Optional[str]
-    suffixQualifier: Optional[str]
-    preQualifier: Optional[str]
+    zip: Optional[str] = None
+    streetName: Optional[str] = None
+    preType: Optional[str] = None
+    city: Optional[str] = None
+    preDirection: Optional[str] = None
+    suffixDirection: Optional[str] = None
+    fromAddress: Optional[str] = None
+    state: Optional[str] = None
+    suffixType: Optional[str] = None
+    toAddress: Optional[str] = None
+    suffixQualifier: Optional[str] = None
+    preQualifier: Optional[str] = None
 
 
 class CensusStandardizingVendorAddressMatch(BaseModel):
-    tigerLine: CensusStandardizingVendorTigerLine
-    coordinates: CensusStandardizingVendorCoordinates
-    addressComponents: CensusStandardizingVendorAddressComponents
-    matchedAddress: Optional[str]
+    tigerLine: CensusStandardizingVendorTigerLine | None = None
+    coordinates: CensusStandardizingVendorCoordinates | None = None
+    addressComponents: CensusStandardizingVendorAddressComponents | None = None
+    matchedAddress: Optional[str] = None
 
 
 class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
     class Config:
         extra = "ignore"
 
-    input: CensusStandardizingVendorInput
-    addressMatches: Optional[List[CensusStandardizingVendorAddressMatch]]
-    address_id: Optional[str] = None
+    input: CensusStandardizingVendorInput | None = None
+    addressMatches: Optional[List[CensusStandardizingVendorAddressMatch]] = None
+    address_id: str
 
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump()
@@ -122,11 +122,12 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
             ],
         )
 
-    def to_standardized_address(
-        self, *, address_id: Optional[str]
-    ) -> Optional[StandardizedAddress]:
+    def to_standardized_address(self, *, address_id: str) -> StandardizedAddress:
         if not self.addressMatches or len(self.addressMatches) == 0:
-            return None
+            return StandardizedAddress.from_address_id(
+                address_id=address_id,
+                vendor_name="census",
+            )
 
         # Get the address matches
         address_matches: List[CensusStandardizingVendorAddressMatch] | None = (
@@ -134,8 +135,10 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         )
 
         if not address_matches or len(address_matches) == 0:
-            return None
-
+            return StandardizedAddress.from_address_id(
+                address_id=address_id,
+                vendor_name="census",
+            )
         # Get the first address match
         first_address_match: CensusStandardizingVendorAddressMatch = address_matches[0]
 
@@ -153,7 +156,10 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         )
 
         if not address_components:
-            return None
+            return StandardizedAddress.from_address_id(
+                address_id=address_id,
+                vendor_name="census",
+            )
 
         # Get the street number
         # street_number: Optional[str] = address_components.get("fromAddress")

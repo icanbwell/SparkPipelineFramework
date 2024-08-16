@@ -3,21 +3,22 @@ from io import StringIO
 from typing import List, Dict, Any, Optional, cast, AsyncGenerator, Type
 
 import aiohttp
+from aiohttp import ClientTimeout
 from helix_fhir_client_sdk.utilities.list_chunker import ListChunker
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.address_parser import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.utilities.address_parser import (
     AddressParser,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.vendor_response import (
     VendorResponse,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.census_standardizing_vendor_api_response import (
@@ -40,13 +41,17 @@ class CensusStandardizingVendor(
         return CensusStandardizingVendorApiResponse
 
     def __init__(
-        self, use_bulk_api: bool = True, batch_request_max_size: Optional[int] = None
+        self,
+        use_bulk_api: bool = True,
+        batch_request_max_size: Optional[int] = None,
+        timeout: int = 5 * 60,
     ) -> None:
         super().__init__(version="1")
         self._use_bulk_api: bool = use_bulk_api
         # The Census service has a limit of 10,000 addresses per batch
         # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
         self._batch_request_max_size: Optional[int] = batch_request_max_size or 9000
+        self._timeout: int = timeout
 
     @classmethod
     def get_vendor_name(cls) -> str:
@@ -145,12 +150,12 @@ class CensusStandardizingVendor(
         form_data.add_field("benchmark", "4")
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=form_data) as response:
+            timeout = ClientTimeout(total=self._timeout)
+            async with session.post(url, data=form_data, timeout=timeout) as response:
                 response_text: str = await response.text()
                 assert (
                     response.status == 200
                 ), f"Error in the Census API call. Response code: {response.status}: {response_text}"
-                responses: List[CensusStandardizingVendorApiResponse] = []
                 # Check if the request was successful
                 if response.status == 200:
                     # Use StringIO to treat the response text as a file-like object
@@ -169,16 +174,39 @@ class CensusStandardizingVendor(
                     ]
 
                     # Use DictReader to parse the CSV response
-                    reader = csv.DictReader(f, fieldnames=fieldnames)
+                    reader: csv.DictReader[Any] = csv.DictReader(
+                        f, fieldnames=fieldnames, skipinitialspace=True, quotechar='"'
+                    )
 
                     # Convert reader to a list of dictionaries
                     # noinspection PyTypeChecker
-                    results: List[Dict[str, Any]] = [row for row in reader]
+                    results: List[Dict[str, Any]] = [
+                        row for row in reader if any(row.values())
+                    ]
                     # Now parse the results
                     responses = [
                         self._parse_csv_response(r, raw_addresses=raw_addresses)
                         for r in results
                     ]
+                    # Find any records that are missing in responses that are present in raw_addresses
+                    missing_raw_addresses = [
+                        r
+                        for r in raw_addresses
+                        if r.get_id() not in [r.address_id for r in responses]
+                    ]
+                    if missing_raw_addresses:
+                        responses.extend(
+                            [
+                                CensusStandardizingVendorApiResponse.from_standardized_address(
+                                    StandardizedAddress.from_raw_address(
+                                        raw_address=r,
+                                        vendor_name=self.get_vendor_name(),
+                                    )
+                                )
+                                for r in missing_raw_addresses
+                            ]
+                        )
+
                     assert len(responses) == len(raw_addresses), (
                         f"Number of standardized addresses {len(responses)} does not match "
                         f"number of raw addresses {len(raw_addresses)}"
@@ -430,16 +458,36 @@ class CensusStandardizingVendor(
 
     def vendor_specific_to_std(
         self,
+        *,
         vendor_specific_addresses: List[
             VendorResponse[CensusStandardizingVendorApiResponse]
         ],
+        raw_addresses: List[RawAddress],
     ) -> List[StandardizedAddress]:
         """
         Each vendor class knows how to convert its response to StdAddress
         """
+        assert all([r.get_id() for r in raw_addresses])
+        assert all(
+            [r.related_raw_address is not None for r in vendor_specific_addresses]
+        )
+        assert all([r.related_raw_address.get_id() for r in vendor_specific_addresses])
         std_addresses = [
-            StandardizedAddress.from_dict(a.api_call_response.to_dict())
+            a.api_call_response.to_standardized_address(
+                address_id=(a.related_raw_address.get_id())
+            )
             for a in vendor_specific_addresses
+        ]
+        # if no standardized address found then use raw_address
+        std_addresses = [
+            (
+                r
+                if r is not None
+                else self.get_matching_address(
+                    raw_addresses=raw_addresses, address_id=r.address_id
+                )
+            )
+            for r in std_addresses
         ]
         return std_addresses
 
@@ -451,7 +499,7 @@ class CensusStandardizingVendor(
         response_version: str,
     ) -> List[VendorResponse[CensusStandardizingVendorApiResponse]]:
         # create the map
-        id_response_map = {a.get_id(): a for a in raw_addresses}
+        id_response_map: Dict[str, RawAddress] = {a.get_id(): a for a in raw_addresses}
         # find and assign
         return [
             VendorResponse(

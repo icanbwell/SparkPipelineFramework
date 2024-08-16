@@ -8,16 +8,16 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_result import (
     CacheResult,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
     StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.vendor_response import (
     VendorResponse,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_responses.base_vendor_api_response import (
@@ -25,7 +25,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 )
 
 
-class StandardizeAddr:
+class AddressStandardizer:
     def __init__(self) -> None:
         self.logger = get_logger(__file__)
 
@@ -41,7 +41,9 @@ class StandardizeAddr:
             [r.get_id() is not None for r in raw_addresses]
         ), f"{vendor_obj.get_vendor_name()} requires all addresses to have an id. {[r.to_dict for r in raw_addresses]}"
 
-        cache_lookup_result: CacheResult = cache_handler_obj.check_cache(raw_addresses)
+        cache_lookup_result: CacheResult = await cache_handler_obj.check_cache(
+            raw_addresses
+        )
         self.logger.info(
             f"cache lookup result -- not found records: {len(cache_lookup_result.not_found)}"
             f" -- found records: {(len(cache_lookup_result.found))}"
@@ -65,10 +67,13 @@ class StandardizeAddr:
             )
 
             new_std_addresses.extend(
-                vendor_obj.vendor_specific_to_std(vendor_responses_batch)
+                vendor_obj.vendor_specific_to_std(
+                    vendor_specific_addresses=vendor_responses_batch,
+                    raw_addresses=raw_addresses,
+                )
             )
             # save new address to cache
-            cache_handler_obj.save_to_cache(vendor_responses_batch)
+            await cache_handler_obj.save_to_cache(vendor_responses_batch)
 
         # combine and return
         assert len(cache_lookup_result.found) + len(new_std_addresses) == len(

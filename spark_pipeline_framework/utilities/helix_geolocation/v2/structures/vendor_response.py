@@ -1,7 +1,7 @@
 import dataclasses
 from typing import TypeVar, Generic, Optional
 
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
     RawAddress,
 )
 
@@ -22,7 +22,7 @@ class VendorResponse(Generic[T]):
     """version of the response"""
     api_call_response: T
     """response from the vendor"""
-    related_raw_address: Optional[RawAddress] = None
+    related_raw_address: RawAddress
     """related raw address"""
     error: Optional[str] = None
     """error message if any"""

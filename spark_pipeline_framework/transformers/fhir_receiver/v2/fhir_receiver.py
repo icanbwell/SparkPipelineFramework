@@ -1,27 +1,20 @@
-import json
-import uuid
+from datetime import datetime
 from datetime import datetime
 from os import environ
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Callable, cast
+from typing import Any, Dict, List, Optional, Union, Callable
 
 # noinspection PyPep8Naming
-import pyspark.sql.functions as F
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col, from_json
-from pyspark.sql.functions import explode
 from pyspark.sql.types import (
-    StringType,
     StructType,
     DataType,
 )
-from pyspark.sql.utils import PythonException
 
-from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
@@ -32,31 +25,16 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parame
 )
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
     FhirReceiverProcessor,
-    GetBatchResult,
-    GetBatchError,
 )
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
-)
-from spark_pipeline_framework.utilities.FriendlySparkException import (
-    FriendlySparkException,
 )
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token_async,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
-    FhirGetResponseSchema,
-)
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
-    FhirReceiverException,
-)
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
-from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
-from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
-    spark_is_data_frame_empty,
-)
 
 
 class FhirReceiver(FrameworkTransformer):
@@ -201,7 +179,20 @@ class FhirReceiver(FrameworkTransformer):
 
         assert file_path
 
-        # assert not action == "$graph" or id_view, "id_view is required when action is $graph"
+        if action == "$graph":
+            assert id_view, "id_view is required when action is $graph"
+            assert action_payload, "action_payload is required when action is $graph"
+            assert not view, (
+                "view cannot be specified if action is $graph since $graph returns"
+                " many different resource types."
+                "  Use FhirReader to read the file_path and specify the schema."
+            )
+            assert (
+                additional_parameters
+            ), "additional_parameters must be specified if action is $graph"
+            assert [
+                a for a in additional_parameters if a.startswith("contained")
+            ], "additional_parameters must contain 'contained' when action is $graph"
 
         self.log_level: Param[str] = Param(self, "log_level", "")
         self._setDefault(log_level=log_level)
@@ -421,11 +412,12 @@ class FhirReceiver(FrameworkTransformer):
             self.additional_parameters_view
         )
         id_view: Optional[str] = self.getIdView()
-        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
+        file_path1: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
             self.getFilePath()
         )
-        if callable(file_path):
-            file_path = file_path(self.loop_id)
+        file_path: Union[Path, str] = (
+            file_path1(self.loop_id) if callable(file_path1) else file_path1
+        )
         name: Optional[str] = self.getName()
         action: Optional[str] = self.getAction()
         action_payload: Optional[Dict[str, Any]] = self.getActionPayload()
@@ -476,9 +468,14 @@ class FhirReceiver(FrameworkTransformer):
             self.exclude_status_codes_from_retry
         )
 
-        checkpoint_path: Optional[
+        checkpoint_path1: Optional[
             Union[Path, str, Callable[[Optional[str]], Union[Path, str]]]
         ] = self.getOrDefault(self.checkpoint_path)
+        checkpoint_path: Path | str | None = (
+            checkpoint_path1(self.loop_id)
+            if checkpoint_path1 and callable(checkpoint_path1)
+            else checkpoint_path1
+        )
 
         log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
             "LOGLEVEL"
@@ -555,529 +552,83 @@ class FhirReceiver(FrameworkTransformer):
                     # add it to the additional_parameters
                     additional_parameters += [f"{parameter_values}"]
 
-            # if we're calling for individual ids
-            # noinspection GrazieInspection
+            receiver_parameters: FhirReceiverParameters = FhirReceiverParameters(
+                total_partitions=None,  # will be calculated later
+                batch_size=batch_size,
+                has_token_col=False,  # will be calculated later
+                server_url=server_url,
+                log_level=log_level,
+                action=action,
+                action_payload=action_payload,
+                additional_parameters=additional_parameters,
+                filter_by_resource=filter_by_resource,
+                filter_parameter=filter_parameter,
+                sort_fields=sort_fields,
+                auth_server_url=auth_server_url,
+                auth_client_id=auth_client_id,
+                auth_client_secret=auth_client_secret,
+                auth_login_token=auth_login_token,
+                auth_scopes=auth_scopes,
+                auth_well_known_url=auth_well_known_url,
+                include_only_properties=include_only_properties,
+                separate_bundle_resources=separate_bundle_resources,
+                expand_fhir_bundle=expand_fhir_bundle,
+                accept_type=accept_type,
+                content_type=content_type,
+                additional_request_headers=additional_request_headers,
+                accept_encoding=accept_encoding,
+                slug_column=slug_column,
+                retry_count=retry_count,
+                exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                limit=limit,
+                auth_access_token=auth_access_token,
+                resource_type=resource_name,
+                error_view=error_view,
+                url_column=url_column,
+                use_data_streaming=use_data_streaming,
+                graph_json=graph_json,
+                ignore_status_codes=ignore_status_codes,
+                refresh_token_function=refresh_token_function,
+            )
+
             if id_view:
-                id_df: DataFrame = df.sparkSession.table(id_view)
-                if spark_is_data_frame_empty(df=id_df):
-                    # nothing to do
-                    return df
-
-                assert "id" in id_df.columns
-
-                has_token_col: bool = "token" in id_df.columns
-
-                if limit and limit > 0:
-                    id_df = id_df.limit(limit)
-
-                row_count: int = id_df.count()
-
-                self.logger.info(
-                    f"----- Total {row_count} rows to request from {server_url or ''}/{resource_name}  -----"
-                )
-                # see if we need to partition the incoming dataframe
-                total_partitions: int = id_df.rdd.getNumPartitions()
-
-                self.logger.info(
-                    f"----- Total Batches: {total_partitions} for {server_url or ''}/{resource_name}  -----"
-                )
-
-                result_with_counts_and_responses: DataFrame
-                receiver_parameters: FhirReceiverParameters = FhirReceiverParameters(
-                    total_partitions=total_partitions,
-                    batch_size=batch_size,
-                    has_token_col=has_token_col,
-                    server_url=server_url,
-                    log_level=log_level,
-                    action=action,
-                    action_payload=action_payload,
-                    additional_parameters=additional_parameters,
-                    filter_by_resource=filter_by_resource,
-                    filter_parameter=filter_parameter,
-                    sort_fields=sort_fields,
-                    auth_server_url=auth_server_url,
-                    auth_client_id=auth_client_id,
-                    auth_client_secret=auth_client_secret,
-                    auth_login_token=auth_login_token,
-                    auth_scopes=auth_scopes,
-                    auth_well_known_url=auth_well_known_url,
-                    include_only_properties=include_only_properties,
-                    separate_bundle_resources=separate_bundle_resources,
-                    expand_fhir_bundle=expand_fhir_bundle,
-                    accept_type=accept_type,
-                    content_type=content_type,
-                    additional_request_headers=additional_request_headers,
-                    accept_encoding=accept_encoding,
-                    slug_column=slug_column,
-                    retry_count=retry_count,
-                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
-                    limit=limit,
-                    auth_access_token=auth_access_token,
-                    resource_type=resource_name,
+                return await FhirReceiverProcessor.get_resources_by_id_view_async(
+                    df=df,
+                    id_view=id_view,
+                    parameters=receiver_parameters,
+                    view=view,
+                    run_synchronously=run_synchronously,
+                    checkpoint_path=checkpoint_path,
+                    progress_logger=progress_logger,
+                    delta_lake_table=delta_lake_table,
+                    cache_storage_level=cache_storage_level,
                     error_view=error_view,
-                    url_column=url_column,
-                    use_data_streaming=use_data_streaming,
-                    graph_json=graph_json,
-                    ignore_status_codes=ignore_status_codes,
-                    refresh_token_function=refresh_token_function,
+                    name=name,
+                    expand_fhir_bundle=expand_fhir_bundle,
+                    file_path=file_path,
+                    schema=schema,
+                    mode=mode,
+                    error_on_result_count=error_on_result_count,
+                    verify_counts_match=verify_counts_match,
+                    logger=self.logger,
                 )
-                if run_synchronously:
-                    id_rows: List[Dict[str, Any]] = [
-                        r.asDict(recursive=True) for r in id_df.collect()
-                    ]
-
-                    result_rows: List[Dict[str, Any]] = await AsyncHelper.collect_items(
-                        FhirReceiverProcessor.send_partition_request_to_server_async(
-                            partition_index=0,
-                            rows=id_rows,
-                            parameters=receiver_parameters,
-                        )
-                    )
-                    response_schema = FhirGetResponseSchema.get_schema()
-
-                    result_with_counts_and_responses = (
-                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            result_rows, schema=response_schema
-                        )
-                    )
-                else:
-                    # ---- Now process all the results ----
-                    if has_token_col and not server_url:
-                        assert slug_column
-                        assert url_column
-                        assert all(
-                            [
-                                c
-                                for c in [url_column, slug_column, "resourceType"]
-                                if [c in id_df.columns]
-                            ]
-                        )
-                    # use mapInPandas
-                    result_with_counts_and_responses = id_df.mapInPandas(
-                        FhirReceiverProcessor.get_process_batch_function(
-                            parameters=receiver_parameters
-                        ),
-                        schema=FhirGetResponseSchema.get_schema(),
-                    )
-
-                try:
-                    # Now write to checkpoint if requested
-                    if checkpoint_path:
-                        if callable(checkpoint_path):
-                            checkpoint_path = checkpoint_path(self.loop_id)
-                        checkpoint_file = (
-                            f"{checkpoint_path}/{resource_name}/{uuid.uuid4()}"
-                        )
-                        if progress_logger:
-                            progress_logger.write_to_log(
-                                self.getName() or self.__class__.__name__,
-                                f"Writing checkpoint to {checkpoint_file}",
-                            )
-                        checkpoint_file_format = (
-                            "delta" if delta_lake_table else "parquet"
-                        )
-                        result_with_counts_and_responses.write.format(
-                            checkpoint_file_format
-                        ).save(checkpoint_file)
-                        result_with_counts_and_responses = df.sparkSession.read.format(
-                            checkpoint_file_format
-                        ).load(checkpoint_file)
-                    else:
-                        if cache_storage_level is None:
-                            result_with_counts_and_responses = (
-                                result_with_counts_and_responses.cache()
-                            )
-                        else:
-                            result_with_counts_and_responses = (
-                                result_with_counts_and_responses.persist(
-                                    storageLevel=cache_storage_level
-                                )
-                            )
-                    # don't need the large responses column to figure out if we had errors or not
-                    result_with_counts: DataFrame = (
-                        result_with_counts_and_responses.select(
-                            FhirGetResponseSchema.partition_index,
-                            FhirGetResponseSchema.sent,
-                            FhirGetResponseSchema.received,
-                            FhirGetResponseSchema.first,
-                            FhirGetResponseSchema.last,
-                            FhirGetResponseSchema.error_text,
-                            FhirGetResponseSchema.url,
-                            FhirGetResponseSchema.status_code,
-                            FhirGetResponseSchema.request_id,
-                        )
-                    )
-                    result_with_counts = result_with_counts.cache()
-                    # find results that have a status code not in the ignore_status_codes
-                    results_with_counts_errored = result_with_counts.where(
-                        (
-                            (col(FhirGetResponseSchema.status_code).isNotNull())
-                            & (
-                                ~col(FhirGetResponseSchema.status_code).isin(
-                                    ignore_status_codes
-                                )
-                            )
-                        )
-                        | (col(FhirGetResponseSchema.error_text).isNotNull())
-                    )
-                    count_bad_requests: int = results_with_counts_errored.count()
-
-                    if count_bad_requests > 0:
-                        result_with_counts.select(
-                            FhirGetResponseSchema.partition_index,
-                            FhirGetResponseSchema.sent,
-                            FhirGetResponseSchema.received,
-                            FhirGetResponseSchema.error_text,
-                            FhirGetResponseSchema.status_code,
-                            FhirGetResponseSchema.request_id,
-                        ).show(truncate=False, n=1000000)
-                        results_with_counts_errored.select(
-                            FhirGetResponseSchema.partition_index,
-                            FhirGetResponseSchema.sent,
-                            FhirGetResponseSchema.received,
-                            FhirGetResponseSchema.error_text,
-                            FhirGetResponseSchema.url,
-                            FhirGetResponseSchema.status_code,
-                            FhirGetResponseSchema.request_id,
-                        ).show(truncate=False, n=1000000)
-                        first_error: str = (
-                            results_with_counts_errored.select(
-                                FhirGetResponseSchema.error_text
-                            )
-                            .limit(1)
-                            .collect()[0][0]
-                        )
-                        first_url: str = (
-                            results_with_counts_errored.select(
-                                FhirGetResponseSchema.url
-                            )
-                            .limit(1)
-                            .collect()[0][0]
-                        )
-                        first_error_status_code: Optional[int] = (
-                            results_with_counts_errored.select(
-                                FhirGetResponseSchema.status_code
-                            )
-                            .limit(1)
-                            .collect()[0][0]
-                        )
-                        first_request_id: Optional[str] = (
-                            results_with_counts_errored.select(
-                                FhirGetResponseSchema.request_id
-                            )
-                            .limit(1)
-                            .collect()[0][0]
-                        )
-                        if error_view:
-                            errors_df = results_with_counts_errored.select(
-                                FhirGetResponseSchema.url,
-                                FhirGetResponseSchema.error_text,
-                                FhirGetResponseSchema.status_code,
-                                FhirGetResponseSchema.request_id,
-                            )
-                            errors_df.createOrReplaceTempView(error_view)
-                            if progress_logger and not spark_is_data_frame_empty(
-                                errors_df
-                            ):
-                                progress_logger.log_event(
-                                    event_name="Errors receiving FHIR",
-                                    event_text=get_pretty_data_frame(
-                                        df=errors_df,
-                                        limit=100,
-                                        name="Errors Receiving FHIR",
-                                    ),
-                                    log_level=LogLevel.INFO,
-                                )
-                            # filter out bad records
-                            result_with_counts = result_with_counts.where(
-                                ~(
-                                    (col(FhirGetResponseSchema.status_code).isNotNull())
-                                    & (
-                                        ~col(FhirGetResponseSchema.status_code).isin(
-                                            ignore_status_codes
-                                        )
-                                    )
-                                )
-                                | (col(FhirGetResponseSchema.error_text).isNotNull())
-                            )
-                        else:
-                            raise FhirReceiverException(
-                                url=first_url,
-                                response_text=first_error,
-                                response_status_code=first_error_status_code,
-                                message="Error receiving FHIR",
-                                json_data=first_error,
-                                request_id=first_request_id,
-                            )
-                except PythonException as e:
-                    if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
-                        raise FriendlySparkException(
-                            exception=e,
-                            message="Exception converting data to Arrow format."
-                            + f" This is usually because the return data did not match the specified schema.",
-                            stage_name=name,
-                        )
-                    else:
-                        raise
-                except Exception as e:
-                    raise FriendlySparkException(exception=e, stage_name=name)
-
-                if expand_fhir_bundle:
-                    # noinspection PyUnresolvedReferences
-                    count_sent_df: DataFrame = result_with_counts.agg(
-                        F.sum(FhirGetResponseSchema.sent).alias(
-                            FhirGetResponseSchema.sent
-                        )
-                    )
-                    # count_sent_df.show()
-                    # noinspection PyUnresolvedReferences
-                    count_received_df: DataFrame = result_with_counts.agg(
-                        F.sum(FhirGetResponseSchema.received).alias(
-                            FhirGetResponseSchema.received
-                        )
-                    )
-                    # count_received_df.show()
-                    count_sent: Optional[int] = count_sent_df.collect()[0][0]
-                    count_received: Optional[int] = count_received_df.collect()[0][0]
-                    if (
-                        (count_sent is not None and count_received is not None)
-                        and (count_sent > count_received)
-                        and error_on_result_count
-                        and verify_counts_match
-                    ):
-                        result_with_counts.where(
-                            col(FhirGetResponseSchema.sent)
-                            != col(FhirGetResponseSchema.received)
-                        ).select(
-                            FhirGetResponseSchema.partition_index,
-                            FhirGetResponseSchema.sent,
-                            FhirGetResponseSchema.received,
-                            FhirGetResponseSchema.error_text,
-                            FhirGetResponseSchema.url,
-                            FhirGetResponseSchema.request_id,
-                        ).show(
-                            truncate=False, n=1000000
-                        )
-                        first_url = (
-                            result_with_counts.select(FhirGetResponseSchema.url)
-                            .limit(1)
-                            .collect()[0][0]
-                        )
-                        first_error_status_code = (
-                            result_with_counts.select(FhirGetResponseSchema.status_code)
-                            .limit(1)
-                            .collect()[0][0]
-                        )
-                        first_request_id = (
-                            result_with_counts.select(FhirGetResponseSchema.request_id)
-                            .limit(1)
-                            .collect()[0][0]
-                        )
-                        raise FhirReceiverException(
-                            url=first_url,
-                            response_text=None,
-                            response_status_code=first_error_status_code,
-                            message=f"Sent ({count_sent}) and Received ({count_received}) counts did not match",
-                            json_data="",
-                            request_id=first_request_id,
-                        )
-                    elif count_sent == count_received:
-                        self.logger.info(
-                            f"Sent ({count_sent}) and Received ({count_received}) counts matched "
-                            + f"for {server_url or ''}/{resource_name}"
-                        )
-                    else:
-                        self.logger.info(
-                            f"Sent ({count_sent}) and Received ({count_received}) for "
-                            + f"{server_url or ''}/{resource_name}"
-                        )
-
-                result_df: DataFrame = (
-                    result_with_counts_and_responses.select(
-                        explode(col(FhirGetResponseSchema.responses))
-                    )
-                    if expand_fhir_bundle
-                    else result_with_counts_and_responses.select(
-                        # col("responses")[0]["id"].alias("id"),
-                        col(FhirGetResponseSchema.responses)[0].alias("bundle")
-                    )
-                )
-
-                # result_df.printSchema()
-                # TODO: remove any OperationOutcomes.  Some FHIR servers like to return these
-
-                self.logger.info(
-                    f"Executing requests and writing FHIR {resource_name} resources to {file_path}..."
-                )
-                if delta_lake_table:
-                    if schema:
-                        result_df = result_df.select(
-                            from_json(
-                                col("col"), schema=cast(StructType, schema)
-                            ).alias("resource")
-                        )
-                        result_df = result_df.selectExpr("resource.*")
-                    result_df.write.format("delta").mode(mode).save(str(file_path))
-                    result_df = df.sparkSession.read.format("delta").load(
-                        str(file_path)
-                    )
-                else:
-                    result_df.write.format("text").mode(mode).save(str(file_path))
-                    result_df = df.sparkSession.read.format("text").load(str(file_path))
-
-                self.logger.info(
-                    f"Received {result_df.count()} FHIR {resource_name} resources."
-                )
-                self.logger.info(
-                    f"Reading from disk and counting rows for {resource_name}..."
-                )
-                file_row_count: int = result_df.count()
-                self.logger.info(
-                    f"Wrote {file_row_count} FHIR {resource_name} resources to {file_path}"
-                )
-                if progress_logger:
-                    progress_logger.log_event(
-                        event_name="Finished receiving FHIR",
-                        event_text=json.dumps(
-                            {
-                                "message": f"Wrote {file_row_count} FHIR {resource_name} resources "
-                                + f"to {file_path} (id view)",
-                                "count": file_row_count,
-                                "resourceType": resource_name,
-                                "path": str(file_path),
-                            },
-                            default=str,
-                        ),
-                    )
-                if view:
-                    result_df.createOrReplaceTempView(view)
             else:  # get all resources
-                receiver_parameters = FhirReceiverParameters(
-                    total_partitions=None,  # in this case we are just reading from Spark so don't know partitions
+                return await FhirReceiverProcessor.get_all_resources_async(
+                    df=df,
+                    parameters=receiver_parameters,
+                    delta_lake_table=delta_lake_table,
+                    last_updated_after=last_updated_after,
+                    last_updated_before=last_updated_before,
                     batch_size=batch_size,
-                    has_token_col=False,
-                    server_url=server_url,
-                    log_level=log_level,
-                    action=action,
-                    action_payload=action_payload,
-                    additional_parameters=additional_parameters,
-                    filter_by_resource=filter_by_resource,
-                    filter_parameter=filter_parameter,
-                    sort_fields=sort_fields,
-                    auth_server_url=auth_server_url,
-                    auth_client_id=auth_client_id,
-                    auth_client_secret=auth_client_secret,
-                    auth_login_token=auth_login_token,
-                    auth_scopes=auth_scopes,
-                    auth_well_known_url=auth_well_known_url,
-                    include_only_properties=include_only_properties,
-                    separate_bundle_resources=separate_bundle_resources,
-                    expand_fhir_bundle=expand_fhir_bundle,
-                    accept_type=accept_type,
-                    content_type=content_type,
-                    additional_request_headers=additional_request_headers,
-                    accept_encoding=accept_encoding,
-                    slug_column=slug_column,
-                    retry_count=retry_count,
-                    exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                    mode=mode,
+                    file_path=file_path,
+                    page_size=page_size,
                     limit=limit,
-                    auth_access_token=auth_access_token,
-                    resource_type=resource_name,
+                    progress_logger=progress_logger,
+                    view=view,
                     error_view=error_view,
-                    url_column=url_column,
-                    use_data_streaming=use_data_streaming,
-                    graph_json=graph_json,
-                    ignore_status_codes=ignore_status_codes,
+                    logger=self.logger,
                 )
-
-                file_format = "delta" if delta_lake_table else "text"
-
-                if receiver_parameters.use_data_streaming:
-                    list_df: DataFrame = (
-                        await FhirReceiverProcessor.get_batch_result_streaming_dataframe_async(
-                            df=df,
-                            server_url=server_url,
-                            parameters=receiver_parameters,
-                            last_updated_after=last_updated_after,
-                            last_updated_before=last_updated_before,
-                            schema=GetBatchResult.get_schema(),
-                            results_per_batch=batch_size,
-                        )
-                    )
-                    resource_df = list_df.select(
-                        explode(col("resources")).alias("resource")
-                    )
-                    errors_df = list_df.select(
-                        explode(col("errors")).alias("resource")
-                    ).select("resource.*")
-                    resource_df.write.format(file_format).mode(mode).save(
-                        str(file_path)
-                    )
-                else:
-                    resources: List[str] = []
-                    errors: List[GetBatchError] = []
-
-                    async for (
-                        result1
-                    ) in FhirReceiverProcessor.get_batch_results_paging_async(
-                        page_size=page_size,
-                        limit=limit,
-                        server_url=server_url,
-                        parameters=receiver_parameters,
-                        last_updated_after=last_updated_after,
-                        last_updated_before=last_updated_before,
-                    ):
-                        resources.extend(result1.resources)
-                        errors.extend(result1.errors)
-
-                    list_df = df.sparkSession.createDataFrame(
-                        resources, schema=StringType()
-                    )
-                    errors_df = (
-                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            [e.to_dict() for e in errors],
-                            schema=GetBatchError.get_schema(),
-                        )
-                        if errors
-                        else df.sparkSession.createDataFrame([], schema=StringType())
-                    )
-                    list_df.write.format(file_format).mode(mode).save(str(file_path))
-
-                list_df = df.sparkSession.read.format(file_format).load(str(file_path))
-
-                self.logger.info(f"Wrote FHIR data to {file_path}")
-
-                if progress_logger:
-                    progress_logger.log_event(
-                        event_name="Finished receiving FHIR",
-                        event_text=json.dumps(
-                            {
-                                "message": f"Wrote {list_df.count()} FHIR {resource_name} resources to "
-                                + f"{file_path} (query)",
-                                "count": list_df.count(),
-                                "resourceType": resource_name,
-                                "path": str(file_path),
-                            },
-                            default=str,
-                        ),
-                    )
-
-                if view:
-                    list_df.createOrReplaceTempView(view)
-                if error_view:
-                    errors_df.createOrReplaceTempView(error_view)
-                    if progress_logger and not spark_is_data_frame_empty(errors_df):
-                        progress_logger.log_event(
-                            event_name="Errors receiving FHIR",
-                            event_text=get_pretty_data_frame(
-                                df=errors_df,
-                                limit=100,
-                                name="Errors Receiving FHIR",
-                            ),
-                            log_level=LogLevel.INFO,
-                        )
-
-        return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getServerUrl(self) -> Optional[str]:

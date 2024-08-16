@@ -1,41 +1,35 @@
 import json
-import logging
 import os
 import random
 from copy import deepcopy
-from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
-from unittest import mock
-from unittest.mock import MagicMock
+from typing import Any, Dict, List, cast
 
+import aiohttp
 import boto3
-
+import pymongo
 import pytest
-import requests
+from aioresponses import aioresponses
 from moto import mock_aws
 from pymongo.collection import Collection
-from requests import Session
 
-import pymongo
-
+from spark_pipeline_framework.utilities.helix_geolocation.v2.address_standardizer import (
+    AddressStandardizer,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.document_db_cache_handler import (
     DocumentDBCacheHandler,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.mock_cache_handler import (
     MockCacheHandler,
 )
-from spark_pipeline_framework.utilities.helix_geolocation.v2.raw_address import (
-    RawAddress,
-)
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardize_address import (
-    StandardizeAddr,
-)
-from spark_pipeline_framework.utilities.helix_geolocation.v2.standardized_address import (
-    StandardizedAddress,
-)
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (
     StandardizingVendor,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (
+    RawAddress,
+)
+from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
+    StandardizedAddress,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.vendor_response_key_error import (
     VendorResponseKeyError,
@@ -140,7 +134,6 @@ response_data: Dict[str, Any] = {
             "AddressLine5": "",
             "AddressLine6": "",
             "AddressLine7": "",
-            "AddressLine8": "",
             "SubPremises": "Ste B1",
             "DoubleDependentLocality": "",
             "DependentLocality": "",
@@ -241,76 +234,77 @@ def read_cache_file() -> List[Dict[str, Any]]:
         return r
 
 
-@mock.patch.object(Session, "post")
-async def test_address_api_call(mocked_session: MagicMock) -> None:
+async def test_address_api_call() -> None:
     with mock_aws():
-        # arrange
-        os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-        os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-        os.environ["AWS_SECURITY_TOKEN"] = "testing"
-        os.environ["AWS_SESSION_TOKEN"] = "testing"
-        ssm = boto3.client("ssm", region_name="us-east-1")
-        ssm.put_parameter(
-            Name="/prod/helix/external/melissa/license_key_credit",
-            Value="fake license",
-            Type="SecureString",
-        )
-        raw_addr_obj_copy = deepcopy(raw_addr_obj)
-        raw_addr_obj_copy.set_id("100")
-        raw_addrs = [raw_addr_obj_copy, raw_addr_obj1, raw_addr_obj2]
-        expected_result = [std_addr_obj, std_addr_obj1, std_addr_obj2]
+        with aioresponses() as m:
+            # arrange
+            os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+            os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+            os.environ["AWS_SECURITY_TOKEN"] = "testing"
+            os.environ["AWS_SESSION_TOKEN"] = "testing"
+            ssm = boto3.client("ssm", region_name="us-east-1")
+            ssm.put_parameter(
+                Name="/prod/helix/external/melissa/license_key_credit",
+                Value="fake license",
+                Type="SecureString",
+            )
+            raw_addr_obj_copy = deepcopy(raw_addr_obj)
+            raw_addr_obj_copy.set_id("100")
+            raw_addrs = [raw_addr_obj_copy, raw_addr_obj1, raw_addr_obj2]
+            expected_result = [std_addr_obj, std_addr_obj1, std_addr_obj2]
+            arrange_mongo()
+            m.post("https://api.melissa.com/v3/standardize", payload=response_data)
+            # act
+            r: List[
+                StandardizedAddress
+            ] = await AddressStandardizer().standardize_async(
+                raw_addrs,
+                vendor_obj=cast(
+                    StandardizingVendor[BaseVendorApiResponse],
+                    MockStandardizingVendor(),
+                ),
+                cache_handler_obj=DocumentDBCacheHandler(),
+            )
+            assert 3 == len(r)
+            # assert
+            assert r[0].get_id() == "100"
+            assert r[1].get_id() == "100"
+            assert r[2].get_id() == "11"
+            assert r[0].formatted_address == expected_result[0].formatted_address
+            assert r[1].formatted_address == expected_result[1].formatted_address
+
+
+async def test_address_custom_api_call() -> None:
+    with aioresponses() as m:
+        raw_addrs = [raw_addr_obj2]
+        expected_result = [std_addr_obj2]
         arrange_mongo()
-        response = requests.Response()
-        response.status_code = requests.codes.ok
-        response.raw = BytesIO(json.dumps(response_data).encode())
-        mocked_session.return_value = response
+
+        async def my_func(raw_addresses: List[RawAddress]) -> Dict[str, Any]:
+            return response_data
+
         # act
-        r: List[StandardizedAddress] = await StandardizeAddr().standardize_async(
+        r: List[StandardizedAddress] = await AddressStandardizer().standardize_async(
             raw_addrs,
+            cache_handler_obj=MockCacheHandler(),
             vendor_obj=cast(
-                StandardizingVendor[BaseVendorApiResponse], MockStandardizingVendor()
+                StandardizingVendor[BaseVendorApiResponse],
+                MelissaStandardizingVendor(license_key="mock", custom_api_call=my_func),
             ),
-            cache_handler_obj=DocumentDBCacheHandler(),
         )
-        assert 3 == len(r)
+
         # assert
-        assert r[0].get_id() == "100"
-        assert r[1].get_id() == "100"
-        assert r[2].get_id() == "11"
+        assert r[0].get_id() == "11"
         assert r[0].formatted_address == expected_result[0].formatted_address
-        assert r[1].formatted_address == expected_result[1].formatted_address
 
 
-async def test_address_custom_api_call(mocked_post: Optional[Any] = None) -> None:
-    raw_addrs = [raw_addr_obj2]
-    expected_result = [std_addr_obj2]
-    arrange_mongo()
-
-    async def my_func(raw_addresses: List[RawAddress]) -> Dict[str, Any]:
-        return response_data
-
-    # act
-    r: List[StandardizedAddress] = await StandardizeAddr().standardize_async(
-        raw_addrs,
-        cache_handler_obj=MockCacheHandler(),
-        vendor_obj=cast(
-            StandardizingVendor[BaseVendorApiResponse],
-            MelissaStandardizingVendor(license_key="mock", custom_api_call=my_func),
-        ),
-    )
-
-    # assert
-    assert r[0].get_id() == "11"
-    assert r[0].formatted_address == expected_result[0].formatted_address
-
-
-def test_documentdb_cache() -> None:
+async def test_documentdb_cache() -> None:
     # arrange
     arrange_mongo()
     raw_addrs = [raw_addr_obj, raw_addr_obj2]
 
     # act
-    r = DocumentDBCacheHandler().check_cache(raw_addrs)
+    r = await DocumentDBCacheHandler().check_cache(raw_addrs)
     print(r.found)
     print(r.not_found)
     assert len(r.found) == 1
@@ -403,7 +397,7 @@ async def test_standardize_stress_test() -> None:
     ).get_collection(mongo_collection_name).delete_many({})
 
     # act
-    r = await StandardizeAddr().standardize_async(
+    r = await AddressStandardizer().standardize_async(
         raw_addresses=raw_addr_objs,
         vendor_obj=cast(
             StandardizingVendor[BaseVendorApiResponse],
@@ -463,7 +457,7 @@ async def test_bad_request() -> None:
     ).get_collection(mongo_collection_name).delete_many({})
 
     # act
-    r = await StandardizeAddr().standardize_async(
+    r = await AddressStandardizer().standardize_async(
         raw_addresses=[empty_raw_address],
         vendor_obj=cast(
             StandardizingVendor[BaseVendorApiResponse],
@@ -477,55 +471,55 @@ async def test_bad_request() -> None:
     assert r[0].get_id() == "1"
 
 
-def test_none_cache() -> None:
+async def test_none_cache() -> None:
     raw_addrs = [raw_addr_obj, raw_addr_obj2]
-    r = MockCacheHandler().check_cache(raw_addrs)
+    r = await MockCacheHandler().check_cache(raw_addrs)
     assert len(r.not_found) == 2
     assert r.not_found[0].get_id() == "10"
 
 
-@mock.patch.object(Session, "post")
-async def test_vendor_http_error_call(mocked_session: MagicMock) -> None:
-    response = requests.Response()
-    response.status_code = 500
-    response.raw = BytesIO(json.dumps({}).encode())
-    mocked_session.return_value = response
+async def test_vendor_http_error_call() -> None:
+    with aioresponses() as m:
+        m.post(
+            "https://address.melissadata.net/v3/WEB/GlobalAddress/doglobaladdress",
+            status=500,
+            payload={},
+        )
 
-    # arrange
-    raw_addrs = [raw_addr_obj]
+        # arrange
+        raw_addrs = [raw_addr_obj]
 
-    # act / assert
-    with pytest.raises(VendorResponseKeyError):
-        await StandardizeAddr().standardize_async(
-            raw_addrs,
-            cache_handler_obj=MockCacheHandler(),
-            vendor_obj=cast(
-                StandardizingVendor[BaseVendorApiResponse],
-                MelissaStandardizingVendor(
-                    license_key="mock", response_key_error_threshold=0
+        # act / assert
+        with pytest.raises(aiohttp.client_exceptions.ClientResponseError):
+            await AddressStandardizer().standardize_async(
+                raw_addrs,
+                cache_handler_obj=MockCacheHandler(),
+                vendor_obj=cast(
+                    StandardizingVendor[BaseVendorApiResponse],
+                    MelissaStandardizingVendor(
+                        license_key="mock", response_key_error_threshold=0
+                    ),
                 ),
-            ),
+            )
+
+
+async def test_vendor_empty_response_call() -> None:
+    with aioresponses() as m:
+        m.post(
+            "https://address.melissadata.net/v3/WEB/GlobalAddress/doglobaladdress",
+            status=200,
+            payload={},
         )
 
-
-@mock.patch.object(Session, "post")
-async def test_vendor_empty_response_call(mocked_session: MagicMock) -> None:
-    print()
-    response = requests.Response()
-    response.status_code = 200
-    response.raw = BytesIO(json.dumps({}).encode())
-    mocked_session.return_value = response
-
-    # arrange
-    raw_addrs = [raw_addr_obj]
-    vendor = MelissaStandardizingVendor(
-        license_key="mock", response_key_error_threshold=0
-    )
-    logging.basicConfig(level=logging.DEBUG)
-    # act / assert
-    with pytest.raises(VendorResponseKeyError):
-        await StandardizeAddr().standardize_async(
-            raw_addrs,
-            cache_handler_obj=MockCacheHandler(),
-            vendor_obj=cast(StandardizingVendor[BaseVendorApiResponse], vendor),
+        # arrange
+        raw_addrs = [raw_addr_obj]
+        vendor = MelissaStandardizingVendor(
+            license_key="mock", response_key_error_threshold=0
         )
+        # act / assert
+        with pytest.raises(VendorResponseKeyError):
+            await AddressStandardizer().standardize_async(
+                raw_addrs,
+                cache_handler_obj=MockCacheHandler(),
+                vendor_obj=cast(StandardizingVendor[BaseVendorApiResponse], vendor),
+            )
