@@ -1061,7 +1061,8 @@ class FhirReceiverHelpers:
                         auth_access_token=auth_access_token,
                         auth_scopes=auth_scopes,
                         separate_bundle_resources=separate_bundle_resources,
-                        expand_fhir_bundle=expand_fhir_bundle,
+                        expand_fhir_bundle=True,  # always expand bundles so we can aggregate resources properly.
+                        # we'll convert back into a bundle at the end if necessary
                         accept_type=accept_type,
                         content_type=content_type,
                         additional_request_headers=additional_request_headers,

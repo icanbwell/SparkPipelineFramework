@@ -96,6 +96,7 @@ class FhirReceiver(FrameworkTransformer):
         run_synchronously: Optional[bool] = None,
         refresh_token_function: Optional[RefreshTokenFunction] = None,
         log_level: Optional[str] = None,
+        use_id_above_for_paging: Optional[bool] = True,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -395,6 +396,11 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(refresh_token_function=refresh_token_function)
 
+        self.use_id_above_for_paging: Param[Optional[bool]] = Param(
+            self, "use_id_above_for_paging", ""
+        )
+        self._setDefault(use_id_above_for_paging=use_id_above_for_paging)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -498,6 +504,9 @@ class FhirReceiver(FrameworkTransformer):
         refresh_token_function: Optional[RefreshTokenFunction] = self.getOrDefault(
             self.refresh_token_function
         )
+        use_id_above_for_paging: Optional[bool] = self.getOrDefault(
+            self.use_id_above_for_paging
+        )
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -589,6 +598,7 @@ class FhirReceiver(FrameworkTransformer):
                 graph_json=graph_json,
                 ignore_status_codes=ignore_status_codes,
                 refresh_token_function=refresh_token_function,
+                use_id_above_for_paging=use_id_above_for_paging,
             )
 
             if id_view:

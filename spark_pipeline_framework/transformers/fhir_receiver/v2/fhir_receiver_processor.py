@@ -730,9 +730,12 @@ class FhirReceiverProcessor:
                 page_size=page_size,
                 last_updated_after=last_updated_after,
                 last_updated_before=last_updated_before,
-                parameters=parameters.clone().set_additional_parameters(
-                    additional_parameters
-                ),
+                parameters=parameters.clone()
+                .set_additional_parameters(additional_parameters)
+                .set_expand_fhir_bundle(
+                    True
+                ),  # always expand bundles so we can aggregate resources properly.
+                # we'll convert back into a bundle at the end if necessary
             ):
                 resources: List[str] = []
                 errors: List[GetBatchError] = []
@@ -788,7 +791,10 @@ class FhirReceiverProcessor:
                                         additional_parameters,
                                     )
                                 )
-                            elif "id" in last_json_resource:
+                            elif (
+                                "id" in last_json_resource
+                                and parameters.use_id_above_for_paging
+                            ):
                                 # use id:above to optimize the next query
                                 id_of_last_resource = last_json_resource["id"]
                                 if not additional_parameters:
@@ -810,6 +816,9 @@ class FhirReceiverProcessor:
                         if limit and limit > 0:
                             if not page_size or (page_number * page_size) >= limit:
                                 has_next_page = False
+                elif result.status == 200:
+                    # no resources returned but status is 200 so we're done
+                    has_next_page = False
                 else:
                     if result.status == 404 and loop_number > 1:
                         # 404 (not found) is fine since it just means we ran out of data while paging
@@ -828,6 +837,17 @@ class FhirReceiverProcessor:
                             request_id=result.request_id,
                         )
                     has_next_page = False
+
+                # This is the right thing to do but because of backward-compatibility we can't do it
+                # we fix all the pipelines that rely on this returning resources instead of bundle
+                # if parameters.expand_fhir_bundle is False:
+                #     # convert the resources back into a bundle
+                #     bundle: Dict[str, Any] = {
+                #         "resourceType": "Bundle",
+                #         "type": "searchset",
+                #         "entry": [{"resource": json.loads(r)} for r in resources],
+                #     }
+                #     resources = [json.dumps(bundle)]
 
                 # Now return the data back to the caller
                 yield GetBatchResult(resources=resources, errors=errors)

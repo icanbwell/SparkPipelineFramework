@@ -1,4 +1,3 @@
-.DS_Store
 .github
 .idea
 .mypy_cache
@@ -15,7 +14,6 @@ tests
 *.md
 metastore_db
 
-.git
 .svn
 .cvs
 .hg
@@ -23,3 +21,15 @@ metastore_db
 
 .env
 spark-events
+
+**/.git
+**/.gitignore
+**/.vscode
+**/coverage
+**/.env
+**/.aws
+**/.ssh
+Dockerfile
+**/.DS_Store
+**/venv
+**/env
