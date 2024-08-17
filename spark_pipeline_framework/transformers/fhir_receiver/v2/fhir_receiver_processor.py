@@ -706,6 +706,9 @@ class FhirReceiverProcessor:
         server_url: Optional[str],
     ) -> AsyncGenerator[GetBatchResult, None]:
         assert server_url
+        assert (
+            not parameters.use_data_streaming
+        ), f"Data streaming is not supported with paging.  Use get_all_resources_async() instead."
         additional_parameters: Optional[List[str]] = parameters.additional_parameters
         if not page_size:
             page_size = limit
