@@ -18,6 +18,7 @@ COPY ./test.py ./
 RUN /opt/spark/bin/spark-submit --master local[*] test.py
 
 ARG TARGETPLATFORM
+ENV PIP_ROOT_USER_ACTION=ignore
 RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 
 COPY . /SparkpipelineFramework

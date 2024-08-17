@@ -133,6 +133,23 @@ pandas-stubs=">=2.2.2"
 types-pytz=">=2024.1.0"
 # aioresponses is needed for mocking HTTP requests
 aioresponses=">=0.7.6"
+types-xmltodict="*"
+types-tabulate="*"
+types-six="*"
+types-simplejson="*"
+types-setuptools="*"
+types-PyYAML="*"
+types-psutil="*"
+types-protobuf="*"
+types-openpyxl="*"
+types-docutils="*"
+types-Deprecated="*"
+types-colorama="*"
+types-aws-xray-sdk="*"
+types-Pygments="*"
+types-jsonschema="*"
+types-cffi="*"
+types-pyOpenSSL="*"
 
 # These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
 # only when running pipenv-setup
