@@ -19,6 +19,13 @@ def test_get_batch_results_paging(spark_session: SparkSession) -> None:
         )
         m.get(
             "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=1",
+            payload={
+                "resourceType": "Bundle",
+                "entry": [{"resource": {"id": "2", "resourceType": "Patient"}}],
+            },
+        )
+        m.get(
+            "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=2",
             status=404,
         )
 
@@ -58,8 +65,9 @@ def test_get_batch_results_paging(spark_session: SparkSession) -> None:
             resource_name="Patient",
         )
         assert isinstance(result, GetBatchResult)
-        assert len(result.resources) > 0
+        assert len(result.resources) == 2
         assert result.resources[0] == '{"id": "1", "resourceType": "Patient"}'
+        assert result.resources[1] == '{"id": "2", "resourceType": "Patient"}'
 
 
 def test_get_batch_results_empty_bundle(spark_session: SparkSession) -> None:
@@ -74,6 +82,13 @@ def test_get_batch_results_empty_bundle(spark_session: SparkSession) -> None:
         )
         m.get(
             "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=1",
+            payload={
+                "resourceType": "Bundle",
+                "entry": [{"resource": {"id": "2", "resourceType": "Patient"}}],
+            },
+        )
+        m.get(
+            "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=2",
             payload={
                 "resourceType": "Bundle",
                 "type": "searchset",
@@ -119,5 +134,6 @@ def test_get_batch_results_empty_bundle(spark_session: SparkSession) -> None:
             resource_name="Patient",
         )
         assert isinstance(result, GetBatchResult)
-        assert len(result.resources) > 0
+        assert len(result.resources) == 2
         assert result.resources[0] == '{"id": "1", "resourceType": "Patient"}'
+        assert result.resources[1] == '{"id": "2", "resourceType": "Patient"}'

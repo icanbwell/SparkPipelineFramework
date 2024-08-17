@@ -66,6 +66,13 @@ async def test_get_batch_results_paging_async(spark_session: SparkSession) -> No
         )
         m.get(
             "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=1",
+            payload={
+                "resourceType": "Bundle",
+                "entry": [{"resource": {"id": "2", "resourceType": "Patient"}}],
+            },
+        )
+        m.get(
+            "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=2",
             status=404,
         )
 
@@ -81,8 +88,11 @@ async def test_get_batch_results_paging_async(spark_session: SparkSession) -> No
             loop_number += 1
             assert isinstance(result, GetBatchResult)
             if loop_number == 1:
-                assert len(result.resources) > 0
+                assert len(result.resources) == 1
                 assert result.resources[0] == '{"id": "1", "resourceType": "Patient"}'
+            elif loop_number == 2:
+                assert len(result.resources) == 1
+                assert result.resources[0] == '{"id": "2", "resourceType": "Patient"}'
             else:
                 assert len(result.resources) == 0
 
@@ -144,6 +154,13 @@ async def test_get_batch_results_paging_empty_bundle_async(
             "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=1",
             payload={
                 "resourceType": "Bundle",
+                "entry": [{"resource": {"id": "2", "resourceType": "Patient"}}],
+            },
+        )
+        m.get(
+            "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=2",
+            payload={
+                "resourceType": "Bundle",
                 "type": "searchset",
                 "timestamp": "2022-08-08T07:50:38.3838Z",
                 "total": 0,
@@ -163,8 +180,11 @@ async def test_get_batch_results_paging_empty_bundle_async(
             loop_number += 1
             assert isinstance(result, GetBatchResult)
             if loop_number == 1:
-                assert len(result.resources) > 0
+                assert len(result.resources) == 1
                 assert result.resources[0] == '{"id": "1", "resourceType": "Patient"}'
+            elif loop_number == 2:
+                assert len(result.resources) == 1
+                assert result.resources[0] == '{"id": "2", "resourceType": "Patient"}'
             else:
                 assert len(result.resources) == 0
 
