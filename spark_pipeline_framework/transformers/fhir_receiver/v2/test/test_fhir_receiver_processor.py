@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import AsyncMock
 
 import pytest
 from typing import List, Dict, Any, Optional
@@ -448,5 +449,30 @@ async def test_get_batch_result_streaming_async_with_error_with_retry_success() 
             server_url="http://fhir-server",
             parameters=parameters,
         ):
+            assert isinstance(result, FhirGetResponse)
+            assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
+
+
+async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -> None:
+    parameters = get_fhir_receiver_parameters()
+    with aioresponses() as m:
+        m.get("http://fhir-server/Patient", status=401)
+        m.get(
+            "http://fhir-server/Patient/1",
+            payload={"resourceType": "Patient", "id": "1"},
+        )
+
+        mock_refresh_token_function = AsyncMock(return_value="new_token")
+
+        parameters.refresh_token_function = mock_refresh_token_function
+
+        result: FhirGetResponse
+        async for result in FhirReceiverProcessor.send_fhir_request_async(
+            logger=logging.getLogger(__name__),
+            resource_id="1",
+            server_url="http://fhir-server",
+            parameters=parameters,
+        ):
+            mock_refresh_token_function.assert_called_once()
             assert isinstance(result, FhirGetResponse)
             assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
