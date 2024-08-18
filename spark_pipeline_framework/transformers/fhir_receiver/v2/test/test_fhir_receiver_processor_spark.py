@@ -141,9 +141,8 @@ async def test_get_all_resources_async(
         assert result_data[1]["resource_id"] == "2"
 
 
-@pytest.mark.parametrize("use_data_streaming", [True, False])
-async def test_get_all_resources_not_found_async(
-    spark_session: SparkSession, use_data_streaming: bool
+async def test_get_all_resources_not_found_non_streaming_async(
+    spark_session: SparkSession,
 ) -> None:
 
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -158,36 +157,24 @@ async def test_get_all_resources_not_found_async(
 
     # Define parameters
     parameters = get_fhir_receiver_parameters()
-    parameters.use_data_streaming = use_data_streaming
 
     with aioresponses() as m:
         # Mock the FHIR server responses
-        if use_data_streaming:
-            m.get(
-                "http://fhir-server/Patient",
-                status=404,
-            )
-        else:
-            m.get("http://fhir-server/Patient?_count=5&_getpagesoffset=0", status=404)
+        m.get("http://fhir-server/Patient?_count=5&_getpagesoffset=0", status=404)
 
         with pytest.raises(FhirReceiverException):
             # Call the method
             result: DataFrame = (
-                await FhirReceiverProcessorSpark.get_all_resources_async(
+                await FhirReceiverProcessorSpark.get_all_resources_non_streaming_async(
                     df=df,
                     parameters=parameters,
-                    delta_lake_table=None,
                     last_updated_after=None,
                     last_updated_before=None,
-                    batch_size=10,
                     mode="overwrite",
                     file_path=temp_folder,
                     page_size=5,
                     limit=None,
-                    progress_logger=None,
-                    view=None,
-                    error_view=None,
-                    logger=logging.getLogger(__name__),
+                    file_format="json",
                 )
             )
 
@@ -201,6 +188,56 @@ async def test_get_all_resources_not_found_async(
             assert result_data[0]["resource_id"] == "1"
             # assert result_data[1]["resourceType"] == "Patient"
             assert result_data[1]["resource_id"] == "2"
+
+
+async def test_get_all_resources_not_found_streaming_async(
+    spark_session: SparkSession,
+) -> None:
+
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    temp_folder = data_dir.joinpath("./temp")
+    if path.isdir(temp_folder):
+        rmtree(temp_folder)
+    makedirs(temp_folder)
+
+    # Create a sample DataFrame
+    data = [("1", "abc"), ("2", "def")]
+    df: DataFrame = spark_session.createDataFrame(data, ["resource_id", "access_token"])
+
+    # Define parameters
+    parameters = get_fhir_receiver_parameters()
+
+    with aioresponses() as m:
+        # Mock the FHIR server responses
+        m.get(
+            "http://fhir-server/Patient",
+            status=404,
+        )
+
+        # Call the method
+        result: DataFrame = (
+            await FhirReceiverProcessorSpark.get_all_resources_streaming_async(
+                df=df,
+                parameters=parameters,
+                last_updated_after=None,
+                last_updated_before=None,
+                mode="overwrite",
+                file_path=temp_folder,
+                file_format="json",
+                batch_size=10,
+            )
+        )
+
+        result.show(truncate=False)
+        # Collect the result
+        result_data: List[Row] = result.collect()
+
+        # Assert the results
+        assert len(result_data) == 2
+        # assert result_data[0]["resourceType"] == "Patient"
+        assert result_data[0]["resource_id"] == "1"
+        # assert result_data[1]["resourceType"] == "Patient"
+        assert result_data[1]["resource_id"] == "2"
 
 
 @pytest.mark.parametrize("use_data_streaming", [True, False])
