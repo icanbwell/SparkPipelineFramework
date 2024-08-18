@@ -1,9 +1,13 @@
+import logging
 from os import environ
 from typing import Optional, List, Dict, Any, Type, Union
 
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.utilities.fhir_server_helpers import FhirServerHelpers
 
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
+    fhir_get_access_token_async,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper
 
 
@@ -117,3 +121,18 @@ class FhirServerTestContext:
         )
         fhir_client = fhir_client.auth_wellknown_url(self.auth_well_known_url)
         return fhir_client
+
+    async def get_access_token_async(self) -> Optional[str]:
+        """
+        Get the access token.
+
+        :return: The access token.
+        """
+        return await fhir_get_access_token_async(
+            logger=logging.getLogger(__name__),
+            server_url=self.fhir_server_url,
+            log_level="DEBUG",
+            auth_client_id=self.auth_client_id,
+            auth_client_secret=self.auth_client_secret,
+            auth_well_known_url=self.auth_well_known_url,
+        )

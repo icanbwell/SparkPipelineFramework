@@ -13,9 +13,6 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
-    fhir_get_access_token_async,
-)
 from spark_pipeline_framework.utilities.fhir_server_test_context.v1.fhir_server_test_context import (
     FhirServerTestContext,
 )
@@ -81,14 +78,7 @@ async def test_async_real_fhir_server_get_patients_large_with_limit(
 
         logger = get_logger(__name__)
 
-        access_token = await fhir_get_access_token_async(
-            logger=logger,
-            server_url=fhir_server_url,
-            log_level="DEBUG",
-            auth_client_id=auth_client_id,
-            auth_client_secret=auth_client_secret,
-            auth_well_known_url=auth_well_known_url,
-        )
+        access_token = await fhir_server_test_context.get_access_token_async()
         print(f"Found access token in test: {access_token}")
         assert access_token is not None
         assert isinstance(access_token, str)
