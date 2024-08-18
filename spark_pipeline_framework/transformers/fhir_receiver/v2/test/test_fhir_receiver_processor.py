@@ -1,4 +1,5 @@
 import logging
+import traceback
 from unittest.mock import AsyncMock
 
 import pytest
@@ -464,9 +465,15 @@ async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -
             payload={"resourceType": "Patient", "id": "1"},
         )
 
-        mock_refresh_token_function = AsyncMock(return_value="new_token")
+        def show_call_stack() -> str:
+            print("Call stack:")
+            traceback.print_stack()
+            return "new_token"
+
+        mock_refresh_token_function = AsyncMock(side_effect=show_call_stack)
 
         parameters.refresh_token_function = mock_refresh_token_function
+        parameters.auth_access_token = "old_token"
 
         result: Dict[str, Any]
         async for result in FhirReceiverProcessor.get_batch_result_streaming_async(
