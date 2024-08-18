@@ -213,9 +213,6 @@ async def test_get_batch_result_streaming_async_no_results() -> None:
         "entry": [],
     }
 
-    # Expected result
-    expected_results: List[GetBatchResult] = []
-
     # Mock the HTTP request
     with aioresponses() as m:
         m.get(f"{server_url}/Patient", payload=mock_response_data)
