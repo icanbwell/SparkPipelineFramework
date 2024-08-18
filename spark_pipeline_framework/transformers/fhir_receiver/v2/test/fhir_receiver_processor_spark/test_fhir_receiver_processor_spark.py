@@ -69,7 +69,7 @@ async def test_get_all_resources_async(
 ) -> None:
 
     data_dir: Path = Path(__file__).parent.joinpath("./")
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -146,7 +146,7 @@ async def test_get_all_resources_not_found_non_streaming_async(
 ) -> None:
 
     data_dir: Path = Path(__file__).parent.joinpath("./")
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -195,7 +195,7 @@ async def test_get_all_resources_not_found_streaming_async(
 ) -> None:
 
     data_dir: Path = Path(__file__).parent.joinpath("./")
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -246,7 +246,7 @@ async def test_get_all_resources_empty_bundle__async(
 ) -> None:
 
     data_dir: Path = Path(__file__).parent.joinpath("./")
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)

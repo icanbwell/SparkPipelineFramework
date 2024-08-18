@@ -30,7 +30,7 @@ async def test_async_real_fhir_server_get_graph_error(
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)

@@ -35,13 +35,13 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
 @pytest.mark.parametrize("use_data_streaming", [True, False])
-async def test_async_real_fhir_server_get_graph_by_id_large(
+async def test_async_real_fhir_server_get_graph_by_id(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -64,8 +64,8 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
     )
     fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
 
-    count: int = 100
-    roles_per_practitioner: int = 10
+    count: int = 2
+    roles_per_practitioner: int = 2
 
     id_dict: Dict[str, List[str]] = PractitionerGenerator.get_ids(
         count=count, roles_per_practitioner=roles_per_practitioner

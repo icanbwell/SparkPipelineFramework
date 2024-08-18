@@ -5,6 +5,8 @@ from shutil import rmtree
 import pytest
 from mockserver_client.mock_requests_loader import load_mock_fhir_requests_from_folder
 from pyspark.sql import SparkSession, DataFrame
+from spark_fhir_schemas.r4.resources.patient import PatientSchema
+
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,
@@ -18,14 +20,14 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
 @pytest.mark.parametrize("use_data_streaming", [True, False])
-def test_fhir_receiver(
+def test_fhir_receiver_on_delta(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -54,8 +56,6 @@ def test_fhir_receiver(
         url_prefix=f"{test_name}",
     )
 
-    parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
-
     # Act
     with ProgressLogger() as progress_logger:
         FhirReceiver(
@@ -64,13 +64,19 @@ def test_fhir_receiver(
             id_view="fhir_ids",
             file_path=patient_json_path,
             progress_logger=progress_logger,
-            parameters=parameters,
+            delta_lake_table="table",
+            schema=PatientSchema.get_schema(),
             run_synchronously=run_synchronously,
             use_data_streaming=use_data_streaming,
         ).transform(df)
 
     # Assert
-    json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
+    json_df: DataFrame = df.sparkSession.read.format("delta").load(
+        str(patient_json_path)
+    )
+    # schema: StructType = cast(StructType, PatientSchema.get_schema())
+    # json_df = json_df.select(from_json(col("col"), schema=schema).alias("resource"))
+    # json_df = json_df.selectExpr("resource.*")
     json_df.show()
     json_df.printSchema()
 
