@@ -88,7 +88,8 @@ class FhirServerTestContext:
             client_secret=self.auth_client_secret,
             token_url=token_url,
             # scope=f"access/{self.owner_tag}.* user/*.*",
-            scope=f"access/*.* user/*.*",
+            # scope=f"access/*.* user/*.*",
+            scope=None,
         )
 
     def get_auth_server_url_from_well_known_url(self) -> Optional[str]:
