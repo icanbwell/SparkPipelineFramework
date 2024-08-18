@@ -1,11 +1,14 @@
 import logging
+from os import path, makedirs
+from pathlib import Path
+from shutil import rmtree
 
 import pytest
 from typing import List, Dict, Any, Optional
 
 from aioresponses import aioresponses
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
-
+from pyspark.sql.types import Row
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
@@ -13,7 +16,7 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_proces
     FhirReceiverProcessor,
     GetBatchResult,
 )
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, DataFrame
 
 
 def get_fhir_receiver_parameters() -> FhirReceiverParameters:
@@ -380,3 +383,81 @@ async def test_send_fhir_request_async(spark_session: SparkSession) -> None:
         ):
             assert isinstance(result, FhirGetResponse)
             assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
+
+
+@pytest.mark.parametrize("use_data_streaming", [True, False])
+async def test_get_all_resources_async(
+    spark_session: SparkSession, use_data_streaming: bool
+) -> None:
+
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    temp_folder = data_dir.joinpath("./temp")
+    if path.isdir(temp_folder):
+        rmtree(temp_folder)
+    makedirs(temp_folder)
+
+    # Create a sample DataFrame
+    data = [("1", "abc"), ("2", "def")]
+    df: DataFrame = spark_session.createDataFrame(data, ["resource_id", "access_token"])
+
+    # Define parameters
+    parameters = get_fhir_receiver_parameters()
+    parameters.use_data_streaming = use_data_streaming
+
+    with aioresponses() as m:
+        # Mock the FHIR server responses
+        if use_data_streaming:
+            m.get(
+                "http://fhir-server/Patient",
+                body="""{"resource_type": "Patient", "id": "1"}\n{"resource_type": "Patient", "id": "2"}""",
+            )
+        else:
+            m.get(
+                "http://fhir-server/Patient?_count=5&_getpagesoffset=0",
+                payload={
+                    "resourceType": "Bundle",
+                    "entry": [
+                        {"resource": {"id": "1", "resourceType": "Patient"}},
+                    ],
+                },
+            )
+            m.get(
+                "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=1",
+                payload={
+                    "resourceType": "Bundle",
+                    "entry": [{"resource": {"id": "2", "resourceType": "Patient"}}],
+                },
+            )
+            m.get(
+                "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=2",
+                status=404,
+            )
+
+        # Call the method
+        result: DataFrame = await FhirReceiverProcessor.get_all_resources_async(
+            df=df,
+            parameters=parameters,
+            delta_lake_table=None,
+            last_updated_after=None,
+            last_updated_before=None,
+            batch_size=10,
+            mode="overwrite",
+            file_path=temp_folder,
+            page_size=5,
+            limit=None,
+            progress_logger=None,
+            view=None,
+            error_view=None,
+            logger=logging.getLogger(__name__),
+        )
+
+        result.show(truncate=False)
+        # Collect the result
+        result_data: List[Row] = result.collect()
+
+        # Assert the results
+        assert len(result_data) == 2
+        # assert result_data[0]["resourceType"] == "Patient"
+        assert result_data[0]["resource_id"] == "1"
+        # assert result_data[1]["resourceType"] == "Patient"
+        assert result_data[1]["resource_id"] == "2"
