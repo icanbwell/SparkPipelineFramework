@@ -1,7 +1,6 @@
 import dataclasses
-from typing import List
+from typing import List, Dict, Any
 
-# noinspection PyPep8Naming
 from pyspark.sql.types import (
     StringType,
     StructType,
@@ -26,3 +25,6 @@ class GetBatchResult:
                 StructField("errors", ArrayType(GetBatchError.get_schema()), True),
             ]
         )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
