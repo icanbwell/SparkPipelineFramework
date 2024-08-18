@@ -21,6 +21,9 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 def test_fhir_receiver(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
+    """
+    Test FhirReceiver
+    """
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
