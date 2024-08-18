@@ -1,4 +1,3 @@
-from os import environ
 from typing import Optional, cast, Any, Dict
 
 import requests
@@ -45,23 +44,6 @@ class TokenHelper:
         )
         assert access_token
         return {"Authorization": f"Bearer {access_token}"}
-
-    @staticmethod
-    def get_authorization_header_from_environment() -> Dict[str, Any]:
-        auth_client_id = environ["FHIR_CLIENT_ID"]
-        auth_client_secret = environ["FHIR_CLIENT_SECRET"]
-        auth_well_known_url = environ["AUTH_CONFIGURATION_URI"]
-
-        token_url: Optional[str] = TokenHelper.get_auth_server_url_from_well_known_url(
-            well_known_url=auth_well_known_url
-        )
-        assert token_url
-        return TokenHelper.get_authorization_header(
-            client_id=auth_client_id,
-            client_secret=auth_client_secret,
-            token_url=token_url,
-            scope=None,
-        )
 
     @staticmethod
     def get_auth_server_url_from_well_known_url(
