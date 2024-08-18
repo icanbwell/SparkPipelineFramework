@@ -110,19 +110,16 @@ async def test_fhir_sender_merge_for_custom_parameters(
         assert token_url
         authorization_header = fhir_server_test_context.get_authorization_header()
 
-        fhir_client: FhirClient = FhirClient().url(fhir_server_url)
-        fhir_client.set_access_token(
-            authorization_header["Authorization"].split(" ")[1]
+        fhir_client: FhirClient = (
+            await fhir_server_test_context.create_fhir_client_async()
         )
-        fhir_client.resource("ExplanationOfBenefit")
-        fhir_client.id_("H111-12345")
-        fhir_client.delete()
+        fhir_client = fhir_client.url(fhir_server_url).resource("ExplanationOfBenefit")
 
-        fhir_client.id_("H222-12345")
-        fhir_client.delete()
+        await fhir_client.id_("H111-12345").delete_async()
 
-        fhir_client.id_("H333-12345")
-        fhir_client.delete()
+        await fhir_client.id_("H222-12345").delete_async()
+
+        await fhir_client.id_("H333-12345").delete_async()
 
         environ["LOGLEVEL"] = "DEBUG"
         # Act

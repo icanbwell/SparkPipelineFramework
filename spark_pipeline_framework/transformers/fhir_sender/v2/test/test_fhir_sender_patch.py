@@ -46,7 +46,7 @@ async def test_fhir_sender_patch(
         df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
         # first delete any existing resources
-        fhir_client = fhir_server_test_context.create_fhir_client()
+        fhir_client = await fhir_server_test_context.create_fhir_client_async()
 
         fhir_client = fhir_client.url(
             fhir_server_test_context.fhir_server_url

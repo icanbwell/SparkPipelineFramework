@@ -53,7 +53,7 @@ async def test_async_real_fhir_server_get_patients_by_id_large(
 
         count = 10
 
-        fhir_client = fhir_server_test_context.create_fhir_client()
+        fhir_client = await fhir_server_test_context.create_fhir_client_async()
         fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
 
         resource = await FhirHelper.create_test_patients(count)

@@ -60,7 +60,7 @@ async def test_async_real_fhir_server_get_graph_by_id(
         auth_client_secret = fhir_server_test_context.auth_client_secret
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
 
-        fhir_client = fhir_server_test_context.create_fhir_client()
+        fhir_client = await fhir_server_test_context.create_fhir_client_async()
         fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
 
         count: int = 2
@@ -94,7 +94,7 @@ async def test_async_real_fhir_server_get_graph_by_id(
         )
         print("Finished deleting resources")
 
-        fhir_client = fhir_server_test_context.create_fhir_client()
+        fhir_client = await fhir_server_test_context.create_fhir_client_async()
         fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
 
         bundle: Dict[str, Any] = PractitionerGenerator.generate_resources_bundle(

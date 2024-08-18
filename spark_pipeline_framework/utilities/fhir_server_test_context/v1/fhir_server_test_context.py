@@ -108,7 +108,7 @@ class FhirServerTestContext:
         """
         return self.get_auth_server_url_from_well_known_url()
 
-    def create_fhir_client(self) -> FhirClient:
+    async def create_fhir_client_async(self) -> FhirClient:
         """
         Create the FHIR client.
 
@@ -120,6 +120,7 @@ class FhirServerTestContext:
             client_id=self.auth_client_id, client_secret=self.auth_client_secret
         )
         fhir_client = fhir_client.auth_wellknown_url(self.auth_well_known_url)
+        fhir_client = fhir_client.set_access_token(await self.get_access_token_async())
         return fhir_client
 
     async def get_access_token_async(self) -> Optional[str]:

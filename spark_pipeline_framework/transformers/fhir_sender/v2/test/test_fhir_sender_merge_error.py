@@ -47,7 +47,7 @@ async def test_fhir_sender_merge_error(
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
 
         # first delete any existing resources
-        fhir_client = fhir_server_test_context.create_fhir_client()
+        fhir_client = await fhir_server_test_context.create_fhir_client_async()
         fhir_client = fhir_client.url(fhir_server_url).resource("Patient")
         delete_response: FhirDeleteResponse = await fhir_client.id_(
             "00100000001"
