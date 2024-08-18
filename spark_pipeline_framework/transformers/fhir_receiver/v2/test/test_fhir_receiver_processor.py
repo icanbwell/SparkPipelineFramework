@@ -438,27 +438,29 @@ async def test_get_batch_result_streaming_async_with_error_with_retry_success() 
             },
         )
         m.get(
-            "http://fhir-server/Patient/1",
+            "http://fhir-server/Patient",
             payload={"resourceType": "Patient", "id": "1"},
         )
 
-        result: FhirGetResponse
-        async for result in FhirReceiverProcessor.send_fhir_request_async(
-            logger=logging.getLogger(__name__),
-            resource_id="1",
-            server_url="http://fhir-server",
+        result: Dict[str, Any]
+        async for result in FhirReceiverProcessor.get_batch_result_streaming_async(
+            last_updated_after=None,
+            last_updated_before=None,
             parameters=parameters,
+            server_url="http://fhir-server/",
         ):
-            assert isinstance(result, FhirGetResponse)
-            assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
+            assert isinstance(result, dict)
+            assert result["resources"] == ['{"resourceType": "Patient", "id": "1"}']
 
 
 async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -> None:
+    print()
+
     parameters = get_fhir_receiver_parameters()
     with aioresponses() as m:
         m.get("http://fhir-server/Patient", status=401)
         m.get(
-            "http://fhir-server/Patient/1",
+            "http://fhir-server/Patient",
             payload={"resourceType": "Patient", "id": "1"},
         )
 
@@ -466,13 +468,29 @@ async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -
 
         parameters.refresh_token_function = mock_refresh_token_function
 
-        result: FhirGetResponse
-        async for result in FhirReceiverProcessor.send_fhir_request_async(
-            logger=logging.getLogger(__name__),
-            resource_id="1",
-            server_url="http://fhir-server",
+        result: Dict[str, Any]
+        async for result in FhirReceiverProcessor.get_batch_result_streaming_async(
+            last_updated_after=None,
+            last_updated_before=None,
             parameters=parameters,
+            server_url="http://fhir-server/",
         ):
             mock_refresh_token_function.assert_called_once()
-            assert isinstance(result, FhirGetResponse)
-            assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
+            assert isinstance(result, dict)
+            assert result["resources"] == ['{"resourceType": "Patient", "id": "1"}']
+
+
+async def test_get_batch_result_streaming_async_not_found() -> None:
+    parameters = get_fhir_receiver_parameters()
+    with aioresponses() as m:
+        m.get("http://fhir-server/Patient", status=404)
+
+        result: Dict[str, Any]
+        async for result in FhirReceiverProcessor.get_batch_result_streaming_async(
+            last_updated_after=None,
+            last_updated_before=None,
+            parameters=parameters,
+            server_url="http://fhir-server/",
+        ):
+            assert isinstance(result, dict)
+            assert result["resources"] == []
