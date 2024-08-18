@@ -645,9 +645,8 @@ class FhirReceiverProcessor:
                                 server_page_number += 1
                             resources = resources + result_response
                         page_number += 1
-                        if limit and limit > 0:
-                            if not page_size or (page_number * page_size) >= limit:
-                                has_next_page = False
+                        if limit and 0 < limit <= len(resources):
+                            has_next_page = False
                 elif result.status == 200:
                     # no resources returned but status is 200 so we're done
                     has_next_page = False

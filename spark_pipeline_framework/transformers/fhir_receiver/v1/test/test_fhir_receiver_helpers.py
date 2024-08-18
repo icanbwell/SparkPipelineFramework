@@ -74,21 +74,21 @@ def test_get_batch_results_empty_bundle(spark_session: SparkSession) -> None:
     with aioresponses() as m:
         # Mock the FHIR server response
         m.get(
-            "http://fhir-server/Patient?_count=5&_getpagesoffset=0",
+            "http://fhir-server/Patient?_elements=id%2Csubject%2CrelatesTo&_count=5&_getpagesoffset=0",
             payload={
                 "resourceType": "Bundle",
                 "entry": [{"resource": {"id": "1", "resourceType": "Patient"}}],
             },
         )
         m.get(
-            "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=1",
+            "http://fhir-server/Patient?_count=5&_elements=id%252Csubject%252CrelatesTo&_getpagesoffset=0&id%253Aabove=1",
             payload={
                 "resourceType": "Bundle",
                 "entry": [{"resource": {"id": "2", "resourceType": "Patient"}}],
             },
         )
         m.get(
-            "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=2",
+            "http://fhir-server/Patient?_count=5&_elements=id%252Csubject%252CrelatesTo&_getpagesoffset=0&id%253Aabove=2",
             payload={
                 "resourceType": "Bundle",
                 "type": "searchset",
@@ -101,7 +101,7 @@ def test_get_batch_results_empty_bundle(spark_session: SparkSession) -> None:
         result = FhirReceiverHelpers.get_batch_result(
             last_updated_after=None,
             last_updated_before=None,
-            limit=10,
+            limit=5,
             page_size=None,
             server_url="http://fhir-server",
             log_level="DEBUG",

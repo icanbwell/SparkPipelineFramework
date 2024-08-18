@@ -1146,9 +1146,8 @@ class FhirReceiverHelpers:
                                 server_page_number += 1
                             resources = resources + result_response
                         page_number += 1
-                        if limit and limit > 0:
-                            if not page_size or (page_number * page_size) >= limit:
-                                has_next_page = False
+                        if limit and 0 < limit <= len(resources):
+                            has_next_page = False
                     else:
                         # Received an error
                         if result.status == 404 and loop_number > 1:
