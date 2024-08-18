@@ -2,6 +2,7 @@ import json
 from os import environ, path, makedirs
 from pathlib import Path
 from shutil import rmtree
+from typing import Optional
 
 import pytest
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
@@ -65,11 +66,12 @@ async def test_async_real_fhir_server_get_patients_large(
 
         resource = await FhirHelper.create_test_patients(count)
         print(f"Merging {count} patients")
-        merge_response: FhirMergeResponse = (
+        merge_response: Optional[FhirMergeResponse] = (
             await FhirMergeResponse.from_async_generator(
                 fhir_client.merge_async(json_data_list=[json.dumps(resource)])
             )
         )
+        assert merge_response is not None
         print(f"Merged {count} patients")
         print(merge_response.responses)
         assert merge_response.status == 200, merge_response.responses

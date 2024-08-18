@@ -2,7 +2,7 @@ import json
 from os import environ, path, makedirs
 from pathlib import Path
 from shutil import rmtree
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 
 import pytest
 
@@ -105,11 +105,12 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
         print("expected_resource_count", expected_resource_count)
 
         print(f"Merging bundle with {expected_resource_count} resources")
-        merge_response: FhirMergeResponse = (
+        merge_response: Optional[FhirMergeResponse] = (
             await FhirMergeResponse.from_async_generator(
                 fhir_client.merge_async(json_data_list=[json.dumps(bundle)])
             )
         )
+        assert merge_response is not None
         print(f"Merged {expected_resource_count} resources")
         print(json.dumps(merge_response.responses))
         assert merge_response.status == 200, merge_response.responses
