@@ -1,6 +1,7 @@
 from os import environ
 from typing import Optional, List, Dict, Any, Type, Union
 
+from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.utilities.fhir_server_helpers import FhirServerHelpers
 
 from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper
@@ -12,10 +13,7 @@ class FhirServerTestContext:
     """
 
     def __init__(
-        self,
-        *,
-        resource_type: str | List[str],
-        owner_tag: str | List[str] | None = None
+        self, *, resource_type: str | List[str], owner_tag: str = "bwell"
     ) -> None:
         """
         This class cleans the FHIR server before/after running the tests.
@@ -26,7 +24,7 @@ class FhirServerTestContext:
         assert resource_type is not None
         assert isinstance(resource_type, str) or isinstance(resource_type, list)
         self.resource_type: str | List[str] = resource_type
-        self.owner_tag: str | List[str] | None = owner_tag
+        self.owner_tag: str = owner_tag
         self.fhir_server_url: str = environ["FHIR_SERVER_URL"]
         self.auth_client_id = environ["FHIR_CLIENT_ID"]
         self.auth_client_secret = environ["FHIR_CLIENT_SECRET"]
@@ -40,11 +38,11 @@ class FhirServerTestContext:
         if isinstance(self.resource_type, list):
             for resource_type in self.resource_type:
                 await FhirServerHelpers.clean_fhir_server_async(
-                    resource_type=resource_type
+                    resource_type=resource_type, owner_tag=self.owner_tag
                 )
         else:
             await FhirServerHelpers.clean_fhir_server_async(
-                resource_type=self.resource_type
+                resource_type=self.resource_type, owner_tag=self.owner_tag
             )
         return self
 
@@ -64,11 +62,11 @@ class FhirServerTestContext:
         if isinstance(self.resource_type, list):
             for resource_type in self.resource_type:
                 await FhirServerHelpers.clean_fhir_server_async(
-                    resource_type=resource_type
+                    resource_type=resource_type, owner_tag=self.owner_tag
                 )
         else:
             await FhirServerHelpers.clean_fhir_server_async(
-                resource_type=self.resource_type
+                resource_type=self.resource_type, owner_tag=self.owner_tag
             )
 
     def get_authorization_header(self) -> Dict[str, Any]:
@@ -85,7 +83,7 @@ class FhirServerTestContext:
             client_id=self.auth_client_id,
             client_secret=self.auth_client_secret,
             token_url=token_url,
-            scope=None,
+            scope=f"access/{self.owner_tag}.* user/*.*",
         )
 
     def get_auth_server_url_from_well_known_url(self) -> Optional[str]:
@@ -105,3 +103,17 @@ class FhirServerTestContext:
         :return: The token URL.
         """
         return self.get_auth_server_url_from_well_known_url()
+
+    def create_fhir_client(self) -> FhirClient:
+        """
+        Create the FHIR client.
+
+        :return: The FHIR client.
+        """
+        fhir_client = FhirClient()
+        fhir_client = fhir_client.url(self.fhir_server_url)
+        fhir_client = fhir_client.client_credentials(
+            client_id=self.auth_client_id, client_secret=self.auth_client_secret
+        )
+        fhir_client = fhir_client.auth_wellknown_url(self.auth_well_known_url)
+        return fhir_client

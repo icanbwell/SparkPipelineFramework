@@ -40,7 +40,7 @@ async def test_fhir_sender_merge(spark_session: SparkSession) -> None:
     ) as fhir_server_test_context:
         fhir_server_url: str = fhir_server_test_context.fhir_server_url
         auth_client_id = fhir_server_test_context.auth_client_id
-        auth_client_secret = fhir_server_test_context.auth_client_id
+        auth_client_secret = fhir_server_test_context.auth_client_secret
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
         token_url = fhir_server_test_context.get_token_url()
         assert token_url
@@ -104,7 +104,7 @@ async def test_fhir_sender_merge_for_custom_parameters(
     ) as fhir_server_test_context:
         fhir_server_url: str = fhir_server_test_context.fhir_server_url
         auth_client_id = fhir_server_test_context.auth_client_id
-        auth_client_secret = fhir_server_test_context.auth_client_id
+        auth_client_secret = fhir_server_test_context.auth_client_secret
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
         token_url = fhir_server_test_context.get_auth_server_url_from_well_known_url()
         assert token_url

@@ -6,7 +6,6 @@ from typing import Any, List, Dict
 
 import pytest
 
-from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
 from helix_fhir_client_sdk.utilities.practitioner_generator import PractitionerGenerator
@@ -58,15 +57,11 @@ async def test_async_real_fhir_server_get_graph_by_id(
 
         fhir_server_url: str = fhir_server_test_context.fhir_server_url
         auth_client_id = fhir_server_test_context.auth_client_id
-        auth_client_secret = fhir_server_test_context.auth_client_id
+        auth_client_secret = fhir_server_test_context.auth_client_secret
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
 
-        fhir_client = FhirClient()
+        fhir_client = fhir_server_test_context.create_fhir_client()
         fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
-        fhir_client = fhir_client.client_credentials(
-            client_id=auth_client_id, client_secret=auth_client_secret
-        )
-        fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
 
         count: int = 2
         roles_per_practitioner: int = 2
@@ -99,12 +94,8 @@ async def test_async_real_fhir_server_get_graph_by_id(
         )
         print("Finished deleting resources")
 
-        fhir_client = FhirClient()
+        fhir_client = fhir_server_test_context.create_fhir_client()
         fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
-        fhir_client = fhir_client.client_credentials(
-            client_id=auth_client_id, client_secret=auth_client_secret
-        )
-        fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
 
         bundle: Dict[str, Any] = PractitionerGenerator.generate_resources_bundle(
             count=count, roles_per_practitioner=roles_per_practitioner

@@ -5,7 +5,6 @@ from shutil import rmtree
 from urllib.parse import urljoin
 
 import pytest
-from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from pyspark.sql import SparkSession, DataFrame
 
@@ -47,14 +46,8 @@ async def test_fhir_sender_patch(
         df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
         # first delete any existing resources
-        fhir_client = FhirClient()
-        fhir_client = fhir_client.client_credentials(
-            client_id=fhir_server_test_context.auth_client_id,
-            client_secret=fhir_server_test_context.auth_client_secret,
-        )
-        fhir_client = fhir_client.auth_wellknown_url(
-            fhir_server_test_context.auth_well_known_url
-        )
+        fhir_client = fhir_server_test_context.create_fhir_client()
+
         fhir_client = fhir_client.url(
             fhir_server_test_context.fhir_server_url
         ).resource("Patient")

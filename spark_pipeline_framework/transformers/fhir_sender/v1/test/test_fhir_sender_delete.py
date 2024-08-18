@@ -39,7 +39,7 @@ async def test_send_delete(spark_session: SparkSession) -> None:
         parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
         fhir_server_url: str = fhir_server_test_context.fhir_server_url
         auth_client_id = fhir_server_test_context.auth_client_id
-        auth_client_secret = fhir_server_test_context.auth_client_id
+        auth_client_secret = fhir_server_test_context.auth_client_secret
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
 
         token_url = fhir_server_test_context.get_token_url()

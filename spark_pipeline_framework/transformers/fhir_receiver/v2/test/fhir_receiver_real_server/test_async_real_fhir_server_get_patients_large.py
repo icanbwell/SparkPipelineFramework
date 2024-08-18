@@ -4,7 +4,6 @@ from pathlib import Path
 from shutil import rmtree
 
 import pytest
-from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
 from pyspark.sql import DataFrame, SparkSession
@@ -49,16 +48,11 @@ async def test_async_real_fhir_server_get_patients_large(
 
         fhir_server_url: str = fhir_server_test_context.fhir_server_url
         auth_client_id = fhir_server_test_context.auth_client_id
-        auth_client_secret = fhir_server_test_context.auth_client_id
+        auth_client_secret = fhir_server_test_context.auth_client_secret
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
 
-        fhir_client = FhirClient()
+        fhir_client = fhir_server_test_context.create_fhir_client()
         fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
-        fhir_client = fhir_client.client_credentials(
-            client_id=auth_client_id, client_secret=auth_client_secret
-        )
-        fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
-        fhir_client = fhir_client.resource(resource_type)
 
         count = 10
 
@@ -69,12 +63,8 @@ async def test_async_real_fhir_server_get_patients_large(
         )
         print(f"Deleted {count} patients")
 
-        fhir_client = FhirClient()
+        fhir_client = fhir_server_test_context.create_fhir_client()
         fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
-        fhir_client = fhir_client.client_credentials(
-            client_id=auth_client_id, client_secret=auth_client_secret
-        )
-        fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
 
         resource = await FhirHelper.create_test_patients(count)
         print(f"Merging {count} patients")

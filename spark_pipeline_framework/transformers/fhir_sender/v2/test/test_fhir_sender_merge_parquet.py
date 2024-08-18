@@ -5,7 +5,6 @@ from shutil import rmtree
 from urllib.parse import urljoin
 
 import pytest
-from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
@@ -50,15 +49,12 @@ async def test_fhir_sender_merge_parquet(
 
         fhir_server_url: str = fhir_server_test_context.fhir_server_url
         auth_client_id = fhir_server_test_context.auth_client_id
-        auth_client_secret = fhir_server_test_context.auth_client_id
+        auth_client_secret = fhir_server_test_context.auth_client_secret
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
 
         # first delete any existing resources
-        fhir_client = FhirClient()
-        fhir_client = fhir_client.client_credentials(
-            client_id=auth_client_id, client_secret=auth_client_secret
-        )
-        fhir_client = fhir_client.auth_wellknown_url(auth_well_known_url)
+        fhir_client = fhir_server_test_context.create_fhir_client()
+
         fhir_client = fhir_client.url(fhir_server_url).resource("Patient")
         delete_response: FhirDeleteResponse = await fhir_client.id_(
             "00100000000"
