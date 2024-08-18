@@ -23,8 +23,8 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
-from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
-    FhirReceiverProcessor,
+from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor_spark import (
+    FhirReceiverProcessorSpark,
 )
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
@@ -602,7 +602,7 @@ class FhirReceiver(FrameworkTransformer):
             )
 
             if id_view:
-                return await FhirReceiverProcessor.get_resources_by_id_view_async(
+                return await FhirReceiverProcessorSpark.get_resources_by_id_view_async(
                     df=df,
                     id_view=id_view,
                     parameters=receiver_parameters,
@@ -623,7 +623,7 @@ class FhirReceiver(FrameworkTransformer):
                     logger=self.logger,
                 )
             else:  # get all resources
-                return await FhirReceiverProcessor.get_all_resources_async(
+                return await FhirReceiverProcessorSpark.get_all_resources_async(
                     df=df,
                     parameters=receiver_parameters,
                     delta_lake_table=delta_lake_table,

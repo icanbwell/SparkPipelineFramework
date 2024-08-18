@@ -1,22 +1,19 @@
 import logging
-from os import path, makedirs
-from pathlib import Path
-from shutil import rmtree
 
 import pytest
 from typing import List, Dict, Any, Optional
 
 from aioresponses import aioresponses
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
-from pyspark.sql.types import Row
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
     FhirReceiverProcessor,
+)
+from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch_result import (
     GetBatchResult,
 )
-from pyspark.sql import SparkSession, DataFrame
 
 
 def get_fhir_receiver_parameters() -> FhirReceiverParameters:
@@ -61,7 +58,7 @@ def get_fhir_receiver_parameters() -> FhirReceiverParameters:
     )
 
 
-async def test_get_batch_results_paging_async(spark_session: SparkSession) -> None:
+async def test_get_batch_results_paging_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     with aioresponses() as m:
@@ -106,9 +103,7 @@ async def test_get_batch_results_paging_async(spark_session: SparkSession) -> No
                 assert len(result.resources) == 0
 
 
-async def test_get_batch_results_paging_empty_bundle_async(
-    spark_session: SparkSession,
-) -> None:
+async def test_get_batch_results_paging_empty_bundle_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     with aioresponses() as m:
@@ -159,68 +154,8 @@ async def test_get_batch_results_paging_empty_bundle_async(
                 assert len(result.resources) == 0
 
 
-async def test_process_partition_single_row(spark_session: SparkSession) -> None:
-    parameters = get_fhir_receiver_parameters()
-
-    input_values: List[Dict[str, Any]] = [{"id": "1", "token": "abc"}]
-
-    with aioresponses() as m:
-        # Mock the FHIR server response
-        m.get(
-            "http://fhir-server/Patient/1",
-            payload={"resourceType": "Patient", "id": "1"},
-        )
-
-        async for result in FhirReceiverProcessor.process_partition(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=range(1),
-            input_values=input_values,
-            parameters=parameters,
-        ):
-            assert isinstance(result, dict)
-            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
-
-
-async def test_process_partition_multiple_rows_bundle(
-    spark_session: SparkSession,
-) -> None:
-    parameters = get_fhir_receiver_parameters()
-
-    input_values: List[Dict[str, Any]] = [{"id": "1", "token": "abc"}]
-
-    with aioresponses() as m:
-        # Mock the FHIR server response
-        m.get(
-            "http://fhir-server/Patient/1",
-            payload={
-                "resourceType": "Bundle",
-                "type": "searchset",
-                "entry": [
-                    {"resource": {"resourceType": "Patient", "id": "1"}},
-                    {"resource": {"resourceType": "Patient", "id": "2"}},
-                ],
-            },
-        )
-
-        async for result in FhirReceiverProcessor.process_partition(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=range(1),
-            input_values=input_values,
-            parameters=parameters,
-        ):
-            assert isinstance(result, dict)
-            assert result["responses"] == [
-                '{"resourceType": "Patient", "id": "1"}',
-                '{"resourceType": "Patient", "id": "2"}',
-            ]
-
-
 @pytest.mark.asyncio
-async def test_send_partition_request_to_server_async(
-    spark_session: SparkSession,
-) -> None:
+async def test_send_partition_request_to_server_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     rows: List[Dict[str, Any]] = [{"id": "1", "token": "abc"}]
@@ -242,7 +177,7 @@ async def test_send_partition_request_to_server_async(
 
 
 @pytest.mark.asyncio
-async def test_process_with_token_async(spark_session: SparkSession) -> None:
+async def test_process_with_token_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
@@ -266,7 +201,7 @@ async def test_process_with_token_async(spark_session: SparkSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_process_one_by_one_async(spark_session: SparkSession) -> None:
+async def test_process_one_by_one_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
@@ -292,7 +227,7 @@ async def test_process_one_by_one_async(spark_session: SparkSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_process_single_row_async(spark_session: SparkSession) -> None:
+async def test_process_single_row_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     resource1: Dict[str, Optional[str]] = {"resource_id": "1", "access_token": "abc"}
@@ -316,7 +251,7 @@ async def test_process_single_row_async(spark_session: SparkSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_process_batch_async(spark_session: SparkSession) -> None:
+async def test_process_batch_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
@@ -342,7 +277,7 @@ async def test_process_batch_async(spark_session: SparkSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_send_simple_fhir_request_async(spark_session: SparkSession) -> None:
+async def test_send_simple_fhir_request_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     with aioresponses() as m:
@@ -364,7 +299,7 @@ async def test_send_simple_fhir_request_async(spark_session: SparkSession) -> No
 
 
 @pytest.mark.asyncio
-async def test_send_fhir_request_async(spark_session: SparkSession) -> None:
+async def test_send_fhir_request_async() -> None:
     parameters = get_fhir_receiver_parameters()
 
     with aioresponses() as m:
@@ -385,79 +320,89 @@ async def test_send_fhir_request_async(spark_session: SparkSession) -> None:
             assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
 
 
-@pytest.mark.parametrize("use_data_streaming", [True, False])
-async def test_get_all_resources_async(
-    spark_session: SparkSession, use_data_streaming: bool
-) -> None:
-
-    data_dir: Path = Path(__file__).parent.joinpath("./")
-    temp_folder = data_dir.joinpath("./temp")
-    if path.isdir(temp_folder):
-        rmtree(temp_folder)
-    makedirs(temp_folder)
-
-    # Create a sample DataFrame
-    data = [("1", "abc"), ("2", "def")]
-    df: DataFrame = spark_session.createDataFrame(data, ["resource_id", "access_token"])
-
-    # Define parameters
+async def test_get_batch_result_streaming_async_no_resources() -> None:
     parameters = get_fhir_receiver_parameters()
-    parameters.use_data_streaming = use_data_streaming
-
     with aioresponses() as m:
-        # Mock the FHIR server responses
-        if use_data_streaming:
-            m.get(
-                "http://fhir-server/Patient",
-                body="""{"resource_type": "Patient", "id": "1"}\n{"resource_type": "Patient", "id": "2"}""",
-            )
-        else:
-            m.get(
-                "http://fhir-server/Patient?_count=5&_getpagesoffset=0",
-                payload={
-                    "resourceType": "Bundle",
-                    "entry": [
-                        {"resource": {"id": "1", "resourceType": "Patient"}},
-                    ],
-                },
-            )
-            m.get(
-                "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=1",
-                payload={
-                    "resourceType": "Bundle",
-                    "entry": [{"resource": {"id": "2", "resourceType": "Patient"}}],
-                },
-            )
-            m.get(
-                "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=2",
-                status=404,
-            )
-
-        # Call the method
-        result: DataFrame = await FhirReceiverProcessor.get_all_resources_async(
-            df=df,
-            parameters=parameters,
-            delta_lake_table=None,
-            last_updated_after=None,
-            last_updated_before=None,
-            batch_size=10,
-            mode="overwrite",
-            file_path=temp_folder,
-            page_size=5,
-            limit=None,
-            progress_logger=None,
-            view=None,
-            error_view=None,
-            logger=logging.getLogger(__name__),
+        m.get(
+            "http://fhir-server/Patient",
+            payload={
+                "resourceType": "Bundle",
+                "type": "searchset",
+                "total": 0,
+                "entry": [],
+            },
         )
 
-        result.show(truncate=False)
-        # Collect the result
-        result_data: List[Row] = result.collect()
+        async_gen = FhirReceiverProcessor.get_batch_result_streaming_async(
+            last_updated_after=None,
+            last_updated_before=None,
+            parameters=parameters,
+            server_url="http://fhir-server/Patient",
+        )
 
-        # Assert the results
-        assert len(result_data) == 2
-        # assert result_data[0]["resourceType"] == "Patient"
-        assert result_data[0]["resource_id"] == "1"
-        # assert result_data[1]["resourceType"] == "Patient"
-        assert result_data[1]["resource_id"] == "2"
+        results = [result async for result in async_gen]
+        assert len(results) == 1
+        assert results[0]["resources"] == []
+        assert results[0]["errors"] == []
+
+
+@pytest.mark.asyncio
+async def test_get_batch_result_streaming_async_with_resources() -> None:
+    parameters = get_fhir_receiver_parameters()
+    with aioresponses() as m:
+        m.get(
+            "http://fhir-server/Patient",
+            payload={
+                "resourceType": "Bundle",
+                "type": "searchset",
+                "total": 1,
+                "entry": [{"resource": {"resourceType": "Patient", "id": "1"}}],
+            },
+        )
+
+        async_gen = FhirReceiverProcessor.get_batch_result_streaming_async(
+            last_updated_after=None,
+            last_updated_before=None,
+            parameters=parameters,
+            server_url="http://fhir-server/Patient",
+        )
+
+        results = [result async for result in async_gen]
+        assert len(results) == 1
+        assert len(results[0]["resources"]) == 1
+        assert results[0]["resources"][0] == '{"resourceType": "Patient", "id": "1"}'
+        assert results[0]["errors"] == []
+
+
+@pytest.mark.asyncio
+async def test_get_batch_result_streaming_async_with_error() -> None:
+    parameters = get_fhir_receiver_parameters()
+    with aioresponses() as m:
+        m.get(
+            "http://fhir-server/Patient",
+            status=500,
+            payload={
+                "resourceType": "OperationOutcome",
+                "issue": [
+                    {
+                        "severity": "error",
+                        "code": "exception",
+                        "diagnostics": "Internal Server Error",
+                    }
+                ],
+            },
+        )
+
+        async_gen = FhirReceiverProcessor.get_batch_result_streaming_async(
+            last_updated_after=None,
+            last_updated_before=None,
+            parameters=parameters,
+            server_url="http://fhir-server/Patient",
+        )
+
+        results = [result async for result in async_gen]
+        assert len(results) == 1
+        assert results[0]["resources"] == []
+        assert len(results[0]["errors"]) == 1
+        assert results[0]["errors"][0]["status_code"] == 500
+        assert "Internal Server Error" in results[0]["errors"][0]["error_text"]
