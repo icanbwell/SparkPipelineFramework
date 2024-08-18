@@ -16,6 +16,9 @@ from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor_spark import (
     FhirReceiverProcessorSpark,
 )
+from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+    FhirReceiverException,
+)
 
 
 def get_fhir_receiver_parameters() -> FhirReceiverParameters:
@@ -167,34 +170,37 @@ async def test_get_all_resources_not_found_async(
         else:
             m.get("http://fhir-server/Patient?_count=5&_getpagesoffset=0", status=404)
 
-        # Call the method
-        result: DataFrame = await FhirReceiverProcessorSpark.get_all_resources_async(
-            df=df,
-            parameters=parameters,
-            delta_lake_table=None,
-            last_updated_after=None,
-            last_updated_before=None,
-            batch_size=10,
-            mode="overwrite",
-            file_path=temp_folder,
-            page_size=5,
-            limit=None,
-            progress_logger=None,
-            view=None,
-            error_view=None,
-            logger=logging.getLogger(__name__),
-        )
+        with pytest.raises(FhirReceiverException):
+            # Call the method
+            result: DataFrame = (
+                await FhirReceiverProcessorSpark.get_all_resources_async(
+                    df=df,
+                    parameters=parameters,
+                    delta_lake_table=None,
+                    last_updated_after=None,
+                    last_updated_before=None,
+                    batch_size=10,
+                    mode="overwrite",
+                    file_path=temp_folder,
+                    page_size=5,
+                    limit=None,
+                    progress_logger=None,
+                    view=None,
+                    error_view=None,
+                    logger=logging.getLogger(__name__),
+                )
+            )
 
-        result.show(truncate=False)
-        # Collect the result
-        result_data: List[Row] = result.collect()
+            result.show(truncate=False)
+            # Collect the result
+            result_data: List[Row] = result.collect()
 
-        # Assert the results
-        assert len(result_data) == 2
-        # assert result_data[0]["resourceType"] == "Patient"
-        assert result_data[0]["resource_id"] == "1"
-        # assert result_data[1]["resourceType"] == "Patient"
-        assert result_data[1]["resource_id"] == "2"
+            # Assert the results
+            assert len(result_data) == 2
+            # assert result_data[0]["resourceType"] == "Patient"
+            assert result_data[0]["resource_id"] == "1"
+            # assert result_data[1]["resourceType"] == "Patient"
+            assert result_data[1]["resource_id"] == "2"
 
 
 @pytest.mark.parametrize("use_data_streaming", [True, False])

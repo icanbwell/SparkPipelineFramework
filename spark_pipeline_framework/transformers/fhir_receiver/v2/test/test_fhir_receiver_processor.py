@@ -4,6 +4,7 @@ import pytest
 from typing import List, Dict, Any, Optional
 
 from aioresponses import aioresponses
+from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
@@ -337,7 +338,7 @@ async def test_get_batch_result_streaming_async_no_resources() -> None:
             last_updated_after=None,
             last_updated_before=None,
             parameters=parameters,
-            server_url="http://fhir-server/Patient",
+            server_url="http://fhir-server/",
         )
 
         results = [result async for result in async_gen]
@@ -364,7 +365,7 @@ async def test_get_batch_result_streaming_async_with_resources() -> None:
             last_updated_after=None,
             last_updated_before=None,
             parameters=parameters,
-            server_url="http://fhir-server/Patient",
+            server_url="http://fhir-server/",
         )
 
         results = [result async for result in async_gen]
@@ -374,7 +375,6 @@ async def test_get_batch_result_streaming_async_with_resources() -> None:
         assert results[0]["errors"] == []
 
 
-@pytest.mark.asyncio
 async def test_get_batch_result_streaming_async_with_error() -> None:
     parameters = get_fhir_receiver_parameters()
     with aioresponses() as m:
@@ -392,17 +392,61 @@ async def test_get_batch_result_streaming_async_with_error() -> None:
                 ],
             },
         )
-
-        async_gen = FhirReceiverProcessor.get_batch_result_streaming_async(
-            last_updated_after=None,
-            last_updated_before=None,
-            parameters=parameters,
-            server_url="http://fhir-server/Patient",
+        m.get(
+            "http://fhir-server/Patient",
+            status=500,
+            payload={
+                "resourceType": "OperationOutcome",
+                "issue": [
+                    {
+                        "severity": "error",
+                        "code": "exception",
+                        "diagnostics": "Internal Server Error",
+                    }
+                ],
+            },
         )
 
-        results = [result async for result in async_gen]
-        assert len(results) == 1
-        assert results[0]["resources"] == []
-        assert len(results[0]["errors"]) == 1
-        assert results[0]["errors"][0]["status_code"] == 500
-        assert "Internal Server Error" in results[0]["errors"][0]["error_text"]
+        parameters.retry_count = 1
+
+        with pytest.raises(FhirSenderException):
+            async_gen = FhirReceiverProcessor.get_batch_result_streaming_async(
+                last_updated_after=None,
+                last_updated_before=None,
+                parameters=parameters,
+                server_url="http://fhir-server/",
+            )
+            assert [result async for result in async_gen] == []
+
+
+async def test_get_batch_result_streaming_async_with_error_with_retry_success() -> None:
+    parameters = get_fhir_receiver_parameters()
+    with aioresponses() as m:
+        m.get(
+            "http://fhir-server/Patient",
+            status=500,
+            payload={
+                "resourceType": "OperationOutcome",
+                "issue": [
+                    {
+                        "severity": "error",
+                        "code": "exception",
+                        "diagnostics": "Internal Server Error",
+                    }
+                ],
+            },
+        )
+        m.get(
+            "http://fhir-server/Patient/1",
+            payload={"resourceType": "Patient", "id": "1"},
+        )
+
+        result: FhirGetResponse
+        async for result in FhirReceiverProcessor.send_fhir_request_async(
+            logger=logging.getLogger(__name__),
+            resource_id="1",
+            server_url="http://fhir-server",
+            parameters=parameters,
+        ):
+            assert isinstance(result, FhirGetResponse)
+            assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
