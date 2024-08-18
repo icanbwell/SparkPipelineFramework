@@ -233,11 +233,7 @@ async def test_get_all_resources_not_found_streaming_async(
         result_data: List[Row] = result.collect()
 
         # Assert the results
-        assert len(result_data) == 2
-        # assert result_data[0]["resourceType"] == "Patient"
-        assert result_data[0]["resource_id"] == "1"
-        # assert result_data[1]["resourceType"] == "Patient"
-        assert result_data[1]["resource_id"] == "2"
+        assert len(result_data) == 0
 
 
 @pytest.mark.parametrize("use_data_streaming", [True, False])

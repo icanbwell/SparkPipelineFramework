@@ -42,6 +42,12 @@ from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
 
 
 class FhirReceiverProcessor:
+    """
+    This class processes the fhir receiver requests.  It has no dependencies on spark and can be used in any async
+    environment.
+
+    """
+
     @staticmethod
     # function that is called for each partition
     async def send_partition_request_to_server_async(

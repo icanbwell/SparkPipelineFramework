@@ -69,6 +69,9 @@ from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_par
 
 
 class FhirReceiverProcessorSpark:
+    """
+    This class contains the methods to process the FHIR receiver in Spark
+    """
 
     @staticmethod
     async def process_partition(
