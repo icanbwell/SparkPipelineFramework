@@ -53,7 +53,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/imranq2/SparkPipelineFramework",
-    packages=find_packages(),
+    packages=find_packages(exclude=["**/test", "**/test/**"]),
     install_requires=[
         "logger>=1.4",
         "protobuf>=3",
