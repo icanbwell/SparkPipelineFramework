@@ -42,12 +42,19 @@ class FhirReceiverParameters:
     use_data_streaming: Optional[bool]
     graph_json: Optional[Dict[str, Any]]
     ignore_status_codes: List[int]
+    use_id_above_for_paging: Optional[bool]
     refresh_token_function: Optional[RefreshTokenFunction] = None
 
     def set_additional_parameters(
         self, additional_parameters: List[str] | None
     ) -> "FhirReceiverParameters":
         self.additional_parameters = additional_parameters
+        return self
+
+    def set_expand_fhir_bundle(
+        self, expand_fhir_bundle: bool
+    ) -> "FhirReceiverParameters":
+        self.expand_fhir_bundle = expand_fhir_bundle
         return self
 
     def clone(self) -> "FhirReceiverParameters":
@@ -88,4 +95,5 @@ class FhirReceiverParameters:
             graph_json=self.graph_json,
             ignore_status_codes=self.ignore_status_codes,
             refresh_token_function=self.refresh_token_function,
+            use_id_above_for_paging=self.use_id_above_for_paging,
         )

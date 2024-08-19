@@ -58,7 +58,7 @@ slot_practitioner_graph = {
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
 @pytest.mark.parametrize("use_data_streaming", [True, False])
-def test_fhir_receiver_graph_synthetic_run_in_parallel(
+def test_fhir_receiver_graph_synthetic_run_synchronously(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     # Arrange
@@ -67,7 +67,7 @@ def test_fhir_receiver_graph_synthetic_run_in_parallel(
     environ["LOGLEVEL"] = "DEBUG"
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)

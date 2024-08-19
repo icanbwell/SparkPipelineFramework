@@ -23,8 +23,8 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
-from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
-    FhirReceiverProcessor,
+from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor_spark import (
+    FhirReceiverProcessorSpark,
 )
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
@@ -96,6 +96,7 @@ class FhirReceiver(FrameworkTransformer):
         run_synchronously: Optional[bool] = None,
         refresh_token_function: Optional[RefreshTokenFunction] = None,
         log_level: Optional[str] = None,
+        use_id_above_for_paging: Optional[bool] = True,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -395,6 +396,11 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(refresh_token_function=refresh_token_function)
 
+        self.use_id_above_for_paging: Param[Optional[bool]] = Param(
+            self, "use_id_above_for_paging", ""
+        )
+        self._setDefault(use_id_above_for_paging=use_id_above_for_paging)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -498,6 +504,9 @@ class FhirReceiver(FrameworkTransformer):
         refresh_token_function: Optional[RefreshTokenFunction] = self.getOrDefault(
             self.refresh_token_function
         )
+        use_id_above_for_paging: Optional[bool] = self.getOrDefault(
+            self.use_id_above_for_paging
+        )
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -589,10 +598,11 @@ class FhirReceiver(FrameworkTransformer):
                 graph_json=graph_json,
                 ignore_status_codes=ignore_status_codes,
                 refresh_token_function=refresh_token_function,
+                use_id_above_for_paging=use_id_above_for_paging,
             )
 
             if id_view:
-                return await FhirReceiverProcessor.get_resources_by_id_view_async(
+                return await FhirReceiverProcessorSpark.get_resources_by_id_view_async(
                     df=df,
                     id_view=id_view,
                     parameters=receiver_parameters,
@@ -613,7 +623,7 @@ class FhirReceiver(FrameworkTransformer):
                     logger=self.logger,
                 )
             else:  # get all resources
-                return await FhirReceiverProcessor.get_all_resources_async(
+                return await FhirReceiverProcessorSpark.get_all_resources_async(
                     df=df,
                     parameters=receiver_parameters,
                     delta_lake_table=delta_lake_table,

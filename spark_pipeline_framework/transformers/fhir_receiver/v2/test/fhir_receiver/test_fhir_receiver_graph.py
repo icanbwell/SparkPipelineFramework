@@ -1,12 +1,9 @@
-from os import path, makedirs, environ
+from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
 
 import pytest
-from mockserver_client.mock_requests_loader import (
-    load_mock_fhir_requests_from_folder,
-    load_mock_source_api_json_responses,
-)
+from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
@@ -58,16 +55,14 @@ slot_practitioner_graph = {
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
 @pytest.mark.parametrize("use_data_streaming", [True, False])
-def test_fhir_receiver_graph_synthetic_run_synchronously(
+def test_fhir_receiver_graph(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     # Arrange
     print()
-
-    environ["LOGLEVEL"] = "DEBUG"
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -89,23 +84,10 @@ def test_fhir_receiver_graph_synthetic_run_synchronously(
     client = MockServerFriendlyClient("http://mock-server:1080")
     client.clear(test_name)
 
-    load_mock_fhir_requests_from_folder(
-        folder=data_dir.joinpath("fhir_graph_calls_synthetic/practitioner"),
-        mock_client=client,
-        method="GET",
-        url_prefix=f"{test_name}",
-    )
-
     load_mock_source_api_json_responses(
-        folder=data_dir.joinpath("fhir_graph_calls_synthetic/practitionerRole"),
+        folder=data_dir.joinpath("fhir_graph_calls_practitioner"),
         mock_client=client,
-        url_prefix=f"{test_name}/4_0_0/PractitionerRole",
-    )
-
-    load_mock_source_api_json_responses(
-        folder=data_dir.joinpath("fhir_graph_calls_synthetic/schedule"),
-        mock_client=client,
-        url_prefix=f"{test_name}/4_0_0/Schedule",
+        url_prefix=f"{test_name}/4_0_0/Practitioner/$graph",
     )
 
     # Act
@@ -116,34 +98,27 @@ def test_fhir_receiver_graph_synthetic_run_synchronously(
             id_view="fhir_ids",
             file_path=patient_json_path,
             progress_logger=progress_logger,
-            # action="$graph",
+            action="$graph",
             page_size=2,
             limit=2,
             batch_size=2,
-            # additional_parameters=["contained=true"],
-            # expand_fhir_bundle=True,
-            graph_json=slot_practitioner_graph,
-            separate_bundle_resources=True,
+            additional_parameters=["contained=true"],
+            action_payload=slot_practitioner_graph,
+            expand_fhir_bundle=True,
             run_synchronously=run_synchronously,
             use_data_streaming=use_data_streaming,
         ).transform(df)
 
     # Assert
     json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
-    json_df.show(truncate=False)
+    json_df.show()
     json_df.printSchema()
 
-    practitioners = json_df.select("Practitioner").collect()[0][0]
-    assert len(practitioners) == 1
-    assert practitioners[0].asDict() == {
-        "id": "01-practitioner",
-        "resourceType": "Practitioner",
-    }
+    assert json_df.select("resourceType").collect()[0][0] == "Practitioner"
+    assert json_df.select("resourceType").collect()[1][0] == "Practitioner"
 
-    practitioner_roles = json_df.select("PractitionerRole").collect()[0][0]
-    assert len(practitioner_roles) == 1
-    assert practitioner_roles[0]["id"] == "4657-3437"
+    text_df: DataFrame = df.sparkSession.read.text(str(patient_json_path))
+    text_df = text_df.withColumnRenamed("value", "bundle")
+    text_df.printSchema()
 
-    schedules = json_df.select("Schedule").collect()[0][0]
-    assert len(schedules) == 1
-    assert schedules[0]["id"] == "1720233406-SCH-MPCS"
+    text_df.show(truncate=False)

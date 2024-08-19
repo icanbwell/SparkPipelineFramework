@@ -1,6 +1,7 @@
-import asyncio
 import json
 from typing import Dict, Any, Optional, Union, List, Callable
+
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
@@ -90,7 +91,7 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             )
             if stages and len(stages) > 0:
                 if self.max_parallel_tasks > 1:
-                    asyncio.run(
+                    AsyncHelper.run(
                         self._process_async(df, stages, progress_logger=progress_logger)
                     )
                 else:
