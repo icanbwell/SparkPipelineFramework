@@ -1,7 +1,7 @@
 from typing import Callable
 
 from pyspark.sql import DataFrame
-from pyspark.sql.utils import AnalysisException
+from pyspark.errors import AnalysisException
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )

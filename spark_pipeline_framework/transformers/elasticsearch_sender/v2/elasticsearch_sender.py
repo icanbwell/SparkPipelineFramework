@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Union, List
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import to_json, struct, col
-from pyspark.sql.utils import AnalysisException, PythonException
+from pyspark.errors import AnalysisException, PythonException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (

@@ -3,12 +3,13 @@ from logging import Logger
 from pathlib import Path
 from typing import Union, List, Optional, Dict, Any, Callable
 
+from pyspark.sql.streaming.readwriter import DataStreamReader
+
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import input_file_name
 from pyspark.sql.readwriter import DataFrameReader
-from pyspark.sql.streaming import DataStreamReader
 from pyspark.sql.types import StructType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger

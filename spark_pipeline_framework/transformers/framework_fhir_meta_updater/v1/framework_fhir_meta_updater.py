@@ -90,7 +90,7 @@ class FrameworkFhirMetaUpdater(FrameworkTransformer):
             "id",
             substring(
                 regexp_replace(
-                    str=concat(col(slug_column), lit("_"), col("id")),
+                    string=concat(col(slug_column), lit("_"), col("id")),
                     pattern=r"[^A-Za-z0-9\-\.]",
                     replacement="-",
                 ),

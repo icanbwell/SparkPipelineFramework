@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Union, Callable
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.utils import AnalysisException
+from pyspark.errors import AnalysisException
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (
     ProgressLogMetric,
