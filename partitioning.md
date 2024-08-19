@@ -48,4 +48,6 @@ These can be expensive operations depending on your processing so you can specif
 
 Currently the FrameworkPartitioner does not specifically address skew (where some partitions are much bigger than others), however the process of re-partitioning can help balance the partitions in many cases.
 
+Partitioning itself is an expensive process because Spark has to move data around the cluster.  So use the FrameworkPartitioner when you have a lot of data and when you're noticing performance or memory issues.  
 
+Partitioning cannot fix sub-optimal code.  So follow other strategies to make sure your code is as optimized as possible such as using asynchronous processing (https://github.com/icanbwell/SparkPipelineFramework/blob/master/asynchronous.md).
