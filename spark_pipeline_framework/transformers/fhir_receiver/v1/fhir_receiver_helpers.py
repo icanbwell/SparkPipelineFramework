@@ -27,6 +27,7 @@ from pyspark.sql.types import (
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_writer import (
     FhirGetResponseWriter,
 )
@@ -419,7 +420,7 @@ class FhirReceiverHelpers:
             # noinspection PyTypeChecker
             return await asyncio.gather(*[asyncio.create_task(c) for c in coroutines])
 
-        result: List[List[Row]] = asyncio.run(get_functions())
+        result: List[List[Row]] = AsyncHelper.run(get_functions())
         return flatten(result)
 
     @staticmethod
@@ -588,7 +589,7 @@ class FhirReceiverHelpers:
         graph_json: Optional[Dict[str, Any]],
         refresh_token_function: Optional[RefreshTokenFunction],
     ) -> List[Row]:
-        result1 = asyncio.run(
+        result1 = AsyncHelper.run(
             FhirReceiverHelpers.send_simple_fhir_request_async(
                 id_=[cast(str, r["resource_id"]) for r in resource_id_with_token_list],
                 token_=auth_access_token,
@@ -977,7 +978,7 @@ class FhirReceiverHelpers:
         assert server_url
         result: FhirGetResponse
         if use_data_streaming:
-            result = asyncio.run(
+            result = AsyncHelper.run(
                 FhirReceiverHelpers.send_fhir_request_async(
                     logger=get_logger(__name__),
                     action=action,
@@ -1037,7 +1038,7 @@ class FhirReceiverHelpers:
         else:
             while has_next_page:
                 loop_number += 1
-                result = asyncio.run(
+                result = AsyncHelper.run(
                     FhirReceiverHelpers.send_fhir_request_async(
                         logger=get_logger(__name__),
                         action=action,
@@ -1061,7 +1062,8 @@ class FhirReceiverHelpers:
                         auth_access_token=auth_access_token,
                         auth_scopes=auth_scopes,
                         separate_bundle_resources=separate_bundle_resources,
-                        expand_fhir_bundle=expand_fhir_bundle,
+                        expand_fhir_bundle=True,  # always expand bundles so we can aggregate resources properly.
+                        # we'll convert back into a bundle at the end if necessary
                         accept_type=accept_type,
                         content_type=content_type,
                         additional_request_headers=additional_request_headers,
@@ -1144,9 +1146,8 @@ class FhirReceiverHelpers:
                                 server_page_number += 1
                             resources = resources + result_response
                         page_number += 1
-                        if limit and limit > 0:
-                            if not page_size or (page_number * page_size) >= limit:
-                                has_next_page = False
+                        if limit and 0 < limit <= len(resources):
+                            has_next_page = False
                     else:
                         # Received an error
                         if result.status == 404 and loop_number > 1:

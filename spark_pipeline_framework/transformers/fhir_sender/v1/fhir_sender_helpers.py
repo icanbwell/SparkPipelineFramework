@@ -68,7 +68,7 @@ def send_json_bundle_to_fhir(
         logger.debug("----------- Sending data to FHIR -------")
         logger.debug(json_data_list)
         logger.debug("----------- End sending data to FHIR -------")
-        response: FhirMergeResponse = AsyncHelper.run(
+        response: Optional[FhirMergeResponse] = AsyncHelper.run(
             FhirMergeResponse.from_async_generator(
                 fhir_client.merge_async(id_=id_, json_data_list=json_data_list)
             )

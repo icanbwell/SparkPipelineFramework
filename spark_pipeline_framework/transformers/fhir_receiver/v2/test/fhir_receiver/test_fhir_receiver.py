@@ -4,7 +4,6 @@ from shutil import rmtree
 
 import pytest
 from mockserver_client.mock_requests_loader import load_mock_fhir_requests_from_folder
-from pyspark import StorageLevel
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
@@ -19,14 +18,17 @@ from mockserver_client.mockserver_client import MockServerFriendlyClient
 
 @pytest.mark.parametrize("run_synchronously", [True, False])
 @pytest.mark.parametrize("use_data_streaming", [True, False])
-def test_fhir_receiver_disk_cache(
+def test_fhir_receiver(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
+    """
+    Test FhirReceiver
+    """
     # Arrange
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
-    temp_folder = data_dir.joinpath("./temp")
+    temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
         rmtree(temp_folder)
     makedirs(temp_folder)
@@ -55,6 +57,8 @@ def test_fhir_receiver_disk_cache(
         url_prefix=f"{test_name}",
     )
 
+    parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
+
     # Act
     with ProgressLogger() as progress_logger:
         FhirReceiver(
@@ -63,7 +67,7 @@ def test_fhir_receiver_disk_cache(
             id_view="fhir_ids",
             file_path=patient_json_path,
             progress_logger=progress_logger,
-            cache_storage_level=StorageLevel.DISK_ONLY,
+            parameters=parameters,
             run_synchronously=run_synchronously,
             use_data_streaming=use_data_streaming,
         ).transform(df)
