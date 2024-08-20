@@ -69,15 +69,15 @@ def test_http_data_sender(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    result_ = json.loads(result_df.collect()[0]["result"])
-    assert result_ == {
-        "token_type": "bearer",
-        "access_token": "fake access_token",
-        "expires_in": 54000,
-    }
-    result_ = json.loads(result_df.collect()[1]["result"])
-    assert result_ == {
+    result_ = result_df.collect()[0]["result"]
+    assert json.loads(result_) == {
         "token_type": "bearer",
         "access_token": "fake access_token2",
-        "expires_in": 54000,
+        "expires_in": "54000",
+    }
+    result_ = result_df.collect()[0]["result"]
+    assert json.loads(result_) == {
+        "token_type": "bearer",
+        "access_token": "fake access_token",
+        "expires_in": "54000",
     }

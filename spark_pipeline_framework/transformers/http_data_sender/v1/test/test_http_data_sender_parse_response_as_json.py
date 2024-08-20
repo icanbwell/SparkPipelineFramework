@@ -5,6 +5,7 @@ from shutil import rmtree
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
+
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_sender.v1.http_data_sender import (
     HttpDataSender,
@@ -74,7 +75,7 @@ def test_http_data_sender_parse_response_as_json(spark_session: SparkSession) ->
         "access_token": "fake access_token",
         "expires_in": "54000",
     }
-    result_ = result_df.collect()[1]["result"]
+    result_ = result_df.collect()[0]["result"]
     assert result_ == {
         "token_type": "bearer",
         "access_token": "fake access_token2",

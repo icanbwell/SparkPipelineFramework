@@ -527,6 +527,9 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     output_dir: Path = temp_dir.joinpath("output")
     event_log_path = output_dir.joinpath("event_log")
 
+    if os.path.exists(data_dir.joinpath("mlruns")) is False:
+        os.makedirs(data_dir.joinpath("mlruns"))
+
     class FileEventLogger(EventLogger):
         def __init__(self, log_path: Path):
             self.log_path = log_path
