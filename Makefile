@@ -90,3 +90,14 @@ endif
 show_dependency_graph:
 	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install --skip-lock -d && pipenv graph --reverse"
 	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install -d && pipenv graph"
+
+.PHONY:build
+build: ## Builds the docker for dev
+	docker compose build --progress=plain --parallel
+
+.PHONY:clean
+clean: down
+	find . -type d -name "__pycache__" | xargs rm -r
+	find . -type d -name "metastore_db" | xargs rm -r
+	find . -type f -name "derby.log" | xargs rm -r
+	find . -type d -name "temp" | xargs rm -r

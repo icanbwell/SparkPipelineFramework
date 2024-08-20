@@ -274,6 +274,7 @@ def test_progress_logger_with_mlflow(
 
     spark_session.createDataFrame(spark_session.sparkContext.emptyRDD(), schema)
 
+    # noinspection SqlNoDataSourceInspection
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     spark_session.createDataFrame(
@@ -388,7 +389,10 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
 
     spark_session.createDataFrame(spark_session.sparkContext.emptyRDD(), schema)
 
-    spark_session.sql("DROP TABLE IF EXISTS default.flights")
+    if spark_session.catalog.databaseExists("default"):
+        if spark_session.catalog.tableExists("default.flights"):
+            # noinspection SqlNoDataSourceInspection
+            spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     spark_session.createDataFrame(
         [

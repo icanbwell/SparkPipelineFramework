@@ -25,7 +25,8 @@ def clean_spark_dir() -> None:
         os.remove("./derby.log")
         shutil.rmtree("./metastore_db")
         shutil.rmtree("./spark-warehouse")
-    except OSError:
+    except OSError as e:
+        print(f"Error cleaning spark directories: {e.strerror}")
         pass
 
 
@@ -38,13 +39,20 @@ def clean_spark_session(session: SparkSession) -> None:
     tables = session.catalog.listTables("default")
 
     for table in tables:
+        table_name = table.name
         print(f"clear_tables() is dropping table/view: {table.name}")
-        # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-        session.sql(f"DROP TABLE IF EXISTS default.{table.name}")
-        # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-        session.sql(f"DROP VIEW IF EXISTS default.{table.name}")
-        # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-        session.sql(f"DROP VIEW IF EXISTS {table.name}")
+        # Drop the table if it exists
+        if session.catalog.tableExists(f"default.{table_name}"):
+            # noinspection SqlNoDataSourceInspection
+            session.sql(f"DROP TABLE default.{table_name}")
+
+        # Drop the view if it exists in the default database
+        if session.catalog.tableExists(f"default.{table_name}"):
+            session.catalog.dropTempView(f"default.{table_name}")
+
+        # Drop the view if it exists in the global context
+        if session.catalog.tableExists(f"{table_name}"):
+            session.catalog.dropTempView(f"{table_name}")
 
     session.catalog.clearCache()
 
