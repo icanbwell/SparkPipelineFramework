@@ -15,6 +15,9 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    spark_list_catalog_table_names,
+)
 
 
 # move this class to SPF
@@ -76,7 +79,7 @@ class FrameworkKafkaReader(FrameworkTransformer):
         ):
             try:
                 if previous_checkpoint_view in [
-                    t.name for t in df.sparkSession.catalog.listTables()
+                    t for t in spark_list_catalog_table_names(df.sparkSession)
                 ]:
                     last_offset = (
                         df.sparkSession.table(previous_checkpoint_view)

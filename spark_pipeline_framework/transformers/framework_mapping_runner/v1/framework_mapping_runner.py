@@ -95,7 +95,8 @@ class FrameworkMappingLoader(FrameworkTransformer):
                 f"---- Running AutoMapper {i} of {count} [{automapper}] ----"
             )
             table_names: List[str] = [
-                t.name for t in df.sparkSession.catalog.listTables()
+                row.tableName
+                for row in df.sparkSession.sql("SHOW TABLES IN default").collect()
             ]
 
             # if view exists then drop it
