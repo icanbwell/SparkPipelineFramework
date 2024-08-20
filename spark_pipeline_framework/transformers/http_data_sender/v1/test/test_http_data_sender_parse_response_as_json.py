@@ -1,3 +1,4 @@
+import json
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
@@ -69,15 +70,55 @@ def test_http_data_sender_parse_response_as_json(spark_session: SparkSession) ->
     result_df.printSchema()
     result_df.show(truncate=False)
 
-    result_ = result_df.collect()[0]["result"]
-    assert result_ == {
-        "token_type": "bearer",
-        "access_token": "fake access_token",
-        "expires_in": "54000",
-    }
-    result_ = result_df.collect()[0]["result"]
-    assert result_ == {
-        "token_type": "bearer",
-        "access_token": "fake access_token2",
-        "expires_in": "54000",
-    }
+    # Collect the DataFrame and convert each Row to a dictionary
+    result_dicts = [row.asDict() for row in result_df.collect()]
+
+    # convert result, headers and payload to json
+    for result_dict in result_dicts:
+        result_dict["headers"] = json.loads(result_dict["headers"])
+        result_dict["payload"] = json.loads(result_dict["payload"])
+
+    assert [
+        r
+        for r in result_dicts
+        if r["payload"]["member_id"] == "e3a3f665-eae5-4046-a241-efdfe5c43919"
+    ] == [
+        {
+            "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+            "payload": {
+                "member_id": "e3a3f665-eae5-4046-a241-efdfe5c43919",
+                "service_slug": "epic_local",
+                "status": "Data Retrieved",
+            },
+            "request_type": "RequestType.POST",
+            "result": {
+                "access_token": "fake access_token",
+                "expires_in": "54000",
+                "token_type": "bearer",
+            },
+            "status": 200,
+            "url": "http://mock-server:1080/test_http_data_sender",
+        }
+    ]
+    assert [
+        r
+        for r in result_dicts
+        if r["payload"]["member_id"] == "e3a3f665-eae5-4046-a241-efdfe5c43910"
+    ] == [
+        {
+            "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+            "payload": {
+                "member_id": "e3a3f665-eae5-4046-a241-efdfe5c43910",
+                "service_slug": "epic_local",
+                "status": "Data Retrieved",
+            },
+            "request_type": "RequestType.POST",
+            "result": {
+                "access_token": "fake access_token2",
+                "expires_in": "54000",
+                "token_type": "bearer",
+            },
+            "status": 200,
+            "url": "http://mock-server:1080/test_http_data_sender",
+        }
+    ]
