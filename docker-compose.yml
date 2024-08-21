@@ -5,6 +5,7 @@ services:
       - fhir
       - warehouse
       - elasticsearch
+    user: root
     build:
       dockerfile: spark.Dockerfile
       context: .
