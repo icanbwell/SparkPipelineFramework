@@ -64,7 +64,7 @@
                     "coding": [
                       {
                         "id": "1",
-                        "system": "https://raw.githubusercontent.com/imranq2/SparkAutoMapper.FHIR/main/ValueSet/search_characteristic",
+                        "system": "https://raw.githubusercontent.com/icanbwell/SparkAutoMapper.FHIR/main/ValueSet/search_characteristic",
                         "code": "hide-from-search"
                       }
                     ],
@@ -79,17 +79,17 @@
                     "coding": [
                       {
                         "id": "1",
-                        "system": "https://raw.githubusercontent.com/imranq2/SparkAutoMapper.FHIR/main/ValueSet/search_characteristic",
+                        "system": "https://raw.githubusercontent.com/icanbwell/SparkAutoMapper.FHIR/main/ValueSet/search_characteristic",
                         "code": "bookable"
                       },
                       {
                         "id": "medstar-bookable-phone-value-coding",
-                        "system": "https://raw.githubusercontent.com/imranq2/SparkAutoMapper.FHIR/main/ValueSet/search_characteristic",
+                        "system": "https://raw.githubusercontent.com/icanbwell/SparkAutoMapper.FHIR/main/ValueSet/search_characteristic",
                         "code": "bookable-phone"
                       },
                       {
                         "id": "medstar-bookable-online-value-coding",
-                        "system": "https://raw.githubusercontent.com/imranq2/SparkAutoMapper.FHIR/main/ValueSet/search_characteristic",
+                        "system": "https://raw.githubusercontent.com/icanbwell/SparkAutoMapper.FHIR/main/ValueSet/search_characteristic",
                         "code": "bookable-online"
                       }
                     ],
@@ -97,7 +97,7 @@
                   }
                 }
               ],
-              "url": "https://raw.githubusercontent.com/imranq2/SparkAutoMapper.FHIR/main/StructureDefinition/provider_search"
+              "url": "https://raw.githubusercontent.com/icanbwell/SparkAutoMapper.FHIR/main/StructureDefinition/provider_search"
             },
             {
               "id": "IDHP",
@@ -112,7 +112,7 @@
                   "valueDecimal": 1
                 }
               ],
-              "url": "https://raw.githubusercontent.com/imranq2/SparkAutoMapper.FHIR/main/StructureDefinition/provider_search"
+              "url": "https://raw.githubusercontent.com/icanbwell/SparkAutoMapper.FHIR/main/StructureDefinition/provider_search"
             }
           ],
           "active": true,

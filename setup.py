@@ -29,7 +29,7 @@ setup(
     description="Framework for simpler Spark Pipelines",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/imranq2/SparkPipelineFramework",
+    url="https://github.com/icanbwell/SparkPipelineFramework",
     packages=find_packages(exclude=["**/test", "**/test/**"]),
     install_requires=[
         "protobuf>=3",
