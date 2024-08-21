@@ -30,18 +30,19 @@ setup(
     url="https://github.com/icanbwell/SparkPipelineFramework",
     packages=find_packages(
         exclude=[
-            "**/test",
-            "**/test/**",
-            "library/**",
+            "*/test",
+            "*/test/*",
+            "tests/*",
+            "library/*",
             "library",
             "docs",
-            "docs/**",
+            "docs/*",
             "docsrc",
-            "docsrc/**",
+            "docsrc/*",
             "keycloak-config",
-            "keycloak-config/**",
+            "keycloak-config/*",
             ".gihub",
-            ".github/**",
+            ".github/*",
         ]
     ),
     install_requires=[
