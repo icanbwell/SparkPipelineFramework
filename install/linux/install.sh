@@ -1,4 +1,4 @@
-# curl -s "https://raw.githubusercontent.com/imranq2/SparkPipelineFramework/master/install/linux/install.sh" | bash
+# curl -s "https://raw.githubusercontent.com/icanbwell/SparkPipelineFramework/master/install/linux/install.sh" | bash
 sudo yum update -y
 
 sudo yum -y install zlib-devel bzip2 bzip2-devel readline-devel sqlite \

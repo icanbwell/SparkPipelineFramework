@@ -15,6 +15,7 @@ import pandas as pd
 # noinspection PyPep8Naming
 import pyspark.sql.functions as F
 from pyspark import StorageLevel
+from pyspark.errors import PythonException
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.functions import explode
@@ -23,7 +24,6 @@ from pyspark.sql.types import (
     StructType,
     DataType,
 )
-from pyspark.sql.utils import PythonException
 
 from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger

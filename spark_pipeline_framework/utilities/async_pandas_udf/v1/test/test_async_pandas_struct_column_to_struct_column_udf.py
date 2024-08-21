@@ -114,7 +114,9 @@ def test_async_pandas_struct_column_to_struct_column_udf(
             parameters=MyParameters(),
             batch_size=2,
         ).get_pandas_udf(
-            return_type=StructType([StructField("name", StringType())]),
+            return_type=StructType(
+                [StructField("id", StringType()), StructField("name", StringType())]
+            ),
         )(
             df["name_struct"]
         ),

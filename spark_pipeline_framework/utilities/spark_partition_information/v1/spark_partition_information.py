@@ -37,7 +37,7 @@ class SparkPartitionInformation:
         :param chunk_index: The index of the chunk within the partition.
         :return: A SparkPartitionInformation
         """
-        # https://spark.apache.org/docs/3.3.0/api/python/reference/api/pyspark.TaskContext.html
+        # https://spark.apache.org/docs/3.5.1/api/python/reference/api/pyspark.TaskContext.html
         return cls.from_task_context(
             task_context=TaskContext.get(), chunk_index=chunk_index
         )
@@ -53,7 +53,7 @@ class SparkPartitionInformation:
         :param chunk_index: The index of the chunk within the partition.
         :return: A SparkPartitionInformation
         """
-        # https://spark.apache.org/docs/3.3.0/api/python/reference/api/pyspark.TaskContext.html
+        # https://spark.apache.org/docs/3.5.1/api/python/reference/api/pyspark.TaskContext.html
         return cls(
             partition_index=(
                 task_context.partitionId() if task_context is not None else None

@@ -5,7 +5,6 @@ import requests
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
-from pyspark.shell import sc
 from pyspark.sql.dataframe import DataFrame
 from requests import Response
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -73,7 +72,9 @@ class HttpDataReceiver(FrameworkTransformer):
 
                 text = response.text
                 self.logger.info(text)
-                df2 = df.sparkSession.read.json(sc.parallelize([text]))
+                df2 = df.sparkSession.read.json(
+                    df.sparkSession.sparkContext.parallelize([text])
+                )
 
                 df2.createOrReplaceTempView(view)
             else:

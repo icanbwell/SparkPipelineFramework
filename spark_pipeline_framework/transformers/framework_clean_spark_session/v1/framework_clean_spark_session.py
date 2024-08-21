@@ -10,6 +10,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
+    spark_list_catalog_table_names,
 )
 
 
@@ -53,15 +54,15 @@ class FrameworkCleanSparkSession(FrameworkTransformer):
         :param session:
         :return:
         """
-        tables = session.catalog.listTables("default")
+        table_names = spark_list_catalog_table_names(session)
 
-        for table in tables:
-            print(f"Dropping table: {table.name}")
+        for table_name in table_names:
+            print(f"Dropping table: {table_name}")
             # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-            session.sql(f"DROP TABLE IF EXISTS default.{table.name}")
+            session.sql(f"DROP TABLE IF EXISTS default.{table_name}")
             # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-            session.sql(f"DROP VIEW IF EXISTS default.{table.name}")
+            session.sql(f"DROP VIEW IF EXISTS default.{table_name}")
             # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-            session.sql(f"DROP VIEW IF EXISTS {table.name}")
+            session.sql(f"DROP VIEW IF EXISTS {table_name}")
 
         session.catalog.clearCache()

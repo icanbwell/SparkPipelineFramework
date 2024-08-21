@@ -1,8 +1,8 @@
-![Build and Test](https://github.com/imranq2/SparkPipelineFramework/workflows/Build%20and%20Test/badge.svg)
+![Build and Test](https://github.com/icanbwell/SparkPipelineFramework/workflows/Build%20and%20Test/badge.svg)
 
-![Upload Python Package](https://github.com/imranq2/SparkPipelineFramework/workflows/Upload%20Python%20Package/badge.svg)
+![Upload Python Package](https://github.com/icanbwell/SparkPipelineFramework/workflows/Upload%20Python%20Package/badge.svg)
 
-[![Known Vulnerabilities](https://snyk.io/test/github/imranq2/SparkPipelineFramework/badge.svg?targetFile=requirements.txt)](https://snyk.io/test/github/imranq2/SparkPipelineFramework?targetFile=requirements.txt)
+[![Known Vulnerabilities](https://snyk.io/test/github/icanbwell/SparkPipelineFramework/badge.svg?targetFile=requirements.txt)](https://snyk.io/test/github/icanbwell/SparkPipelineFramework?targetFile=requirements.txt)
 
 # SparkPipelineFramework
 SparkPipelineFramework implements a few design patterns to make it easier to create Spark applications that:
@@ -21,7 +21,7 @@ This code is available as a package to import into your project.
 https://pypi.org/project/sparkpipelineframework/
 
 # Using it in your project
-(For an example project that uses SparkPipelineFramework, see https://github.com/imranq2/TestSparkPipelineFramework)
+(For an example project that uses SparkPipelineFramework, see https://github.com/icanbwell/TestSparkPipelineFramework)
 1. Add sparkpipelineframework package to your project requirements.txt/Pipefile
 2. make init. (this will setup Spark, Docker (to run Spark) )
 3. Create a folder called library in your project

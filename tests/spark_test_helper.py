@@ -1,5 +1,9 @@
 from pyspark.sql.session import SparkSession
 
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    spark_list_catalog_table_names,
+)
+
 
 class SparkTestHelper:
     @staticmethod
@@ -10,12 +14,12 @@ class SparkTestHelper:
 
         # spark_session.sql("SET -v").show(n=200, truncate=False)
 
-        tables = spark_session.catalog.listTables("default")
+        table_names = spark_list_catalog_table_names(spark_session)
 
-        for table in tables:
-            print(f"clear_tables() dropping table/view: {table.name}")
-            spark_session.sql(f"DROP TABLE IF EXISTS default.{table.name}")
-            spark_session.sql(f"DROP VIEW IF EXISTS default.{table.name}")
-            spark_session.sql(f"DROP VIEW IF EXISTS {table.name}")
+        for table_name in table_names:
+            print(f"clear_tables() dropping table/view: {table_name}")
+            spark_session.sql(f"DROP TABLE IF EXISTS default.{table_name}")
+            spark_session.sql(f"DROP VIEW IF EXISTS default.{table_name}")
+            spark_session.sql(f"DROP VIEW IF EXISTS {table_name}")
 
         spark_session.catalog.clearCache()

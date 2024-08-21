@@ -3,8 +3,8 @@ from typing import Any, Dict, Optional, Union
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrameWriter
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.streaming import DataStreamWriter
-from pyspark.sql.utils import AnalysisException
+from pyspark.errors import AnalysisException
+from pyspark.sql.streaming.readwriter import DataStreamWriter
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (

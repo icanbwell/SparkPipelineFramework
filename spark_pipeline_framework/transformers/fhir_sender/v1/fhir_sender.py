@@ -11,7 +11,7 @@ from pyspark.rdd import RDD
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, get_json_object
 from pyspark.sql.types import Row
-from pyspark.sql.utils import AnalysisException
+from pyspark.errors import AnalysisException
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_log_metric import (

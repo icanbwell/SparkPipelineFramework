@@ -5,6 +5,10 @@ from typing import Any
 
 from pyspark.sql.session import SparkSession
 
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    spark_list_catalog_table_names,
+)
+
 # make sure env variables are set correctly
 if "SPARK_HOME" not in os.environ:
     os.environ["SPARK_HOME"] = "/usr/local/opt/spark"
@@ -22,11 +26,14 @@ def clean_spark_dir() -> None:
     :return:
     """
     try:
-        os.remove("./derby.log")
-        shutil.rmtree("./metastore_db")
-        shutil.rmtree("./spark-warehouse")
-    except OSError:
-        pass
+        if os.path.exists("./derby.log"):
+            os.remove("./derby.log")
+        if os.path.exists("./metastore_db"):
+            shutil.rmtree("./metastore_db")
+        if os.path.exists("./spark-warehouse"):
+            shutil.rmtree("./spark-warehouse")
+    except OSError as e:
+        print(f"Error cleaning spark directories: {e.strerror}")
 
 
 def clean_spark_session(session: SparkSession) -> None:
@@ -35,16 +42,22 @@ def clean_spark_session(session: SparkSession) -> None:
     :param session:
     :return:
     """
-    tables = session.catalog.listTables("default")
+    table_names = spark_list_catalog_table_names(session)
 
-    for table in tables:
-        print(f"clear_tables() is dropping table/view: {table.name}")
-        # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-        session.sql(f"DROP TABLE IF EXISTS default.{table.name}")
-        # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-        session.sql(f"DROP VIEW IF EXISTS default.{table.name}")
-        # noinspection SqlDialectInspection,SqlNoDataSourceInspection
-        session.sql(f"DROP VIEW IF EXISTS {table.name}")
+    for table_name in table_names:
+        print(f"clear_tables() is dropping table/view: {table_name}")
+        # Drop the table if it exists
+        if session.catalog.tableExists(f"default.{table_name}"):
+            # noinspection SqlNoDataSourceInspection
+            session.sql(f"DROP TABLE default.{table_name}")
+
+        # Drop the view if it exists in the default database
+        if session.catalog.tableExists(f"default.{table_name}"):
+            session.catalog.dropTempView(f"default.{table_name}")
+
+        # Drop the view if it exists in the global context
+        if session.catalog.tableExists(f"{table_name}"):
+            session.catalog.dropTempView(f"{table_name}")
 
     session.catalog.clearCache()
 
@@ -76,14 +89,14 @@ def create_spark_session(request: Any) -> SparkSession:
     clean_spark_dir()
     master = "local[2]"
     jars = [
-        "mysql:mysql-connector-java:8.0.24",
-        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0",
-        "io.delta:delta-core_2.12:2.3.0",
-        "io.delta:delta-storage:2.3.0",
-        "com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2",
-        "org.apache.spark:spark-hadoop-cloud_2.12:3.3.1",
-        "com.amazonaws:aws-java-sdk-bundle:1.12.339",
-        "com.databricks:spark-xml_2.12:0.15.0",
+        "mysql:mysql-connector-java:8.0.33",
+        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1",
+        "io.delta:delta-spark_2.12:3.2.0",
+        "io.delta:delta-storage:3.2.0",
+        "com.johnsnowlabs.nlp:spark-nlp_2.12:5.3.3",
+        "org.apache.spark:spark-hadoop-cloud_2.12:3.5.1",
+        "com.amazonaws:aws-java-sdk-bundle:1.12.262",
+        "com.databricks:spark-xml_2.12:0.18.0",
     ]
     session = (
         SparkSession.builder.appName("pytest-pyspark-local-testing")

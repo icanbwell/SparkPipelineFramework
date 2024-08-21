@@ -4,7 +4,7 @@ import traceback
 from typing import Any, Optional, List
 
 from py4j.protocol import Py4JJavaError
-from pyspark.sql.utils import AnalysisException
+from pyspark.errors import AnalysisException
 
 from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner_exception import (
     FrameworkMappingRunnerException,

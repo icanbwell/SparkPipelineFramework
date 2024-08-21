@@ -26,6 +26,9 @@ from spark_pipeline_framework.transformers.framework_validation_transformer.v1.f
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    spark_list_catalog_table_names,
+)
 
 
 class FrameworkPipeline(Transformer):
@@ -311,9 +314,9 @@ class FrameworkPipeline(Transformer):
 
     def _check_validation(self, df: DataFrame) -> None:
         tables = [
-            t.name
-            for t in df.sparkSession.catalog.listTables()
-            if t.name == pipeline_validation_df_name
+            t
+            for t in spark_list_catalog_table_names(df.sparkSession)
+            if t == pipeline_validation_df_name
         ]
         if len(tables) == 1 and self.validation_output_path:
             FrameworkCsvExporter(

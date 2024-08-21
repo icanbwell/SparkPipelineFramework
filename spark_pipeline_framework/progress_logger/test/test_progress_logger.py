@@ -274,6 +274,7 @@ def test_progress_logger_with_mlflow(
 
     spark_session.createDataFrame(spark_session.sparkContext.emptyRDD(), schema)
 
+    # noinspection SqlNoDataSourceInspection
     spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     spark_session.createDataFrame(
@@ -388,7 +389,10 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
 
     spark_session.createDataFrame(spark_session.sparkContext.emptyRDD(), schema)
 
-    spark_session.sql("DROP TABLE IF EXISTS default.flights")
+    if spark_session.catalog.databaseExists("default"):
+        if spark_session.catalog.tableExists("default.flights"):
+            # noinspection SqlNoDataSourceInspection
+            spark_session.sql("DROP TABLE IF EXISTS default.flights")
 
     spark_session.createDataFrame(
         [
@@ -522,6 +526,9 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     temp_dir: Path = data_dir.joinpath("temp")
     output_dir: Path = temp_dir.joinpath("output")
     event_log_path = output_dir.joinpath("event_log")
+
+    if os.path.exists(data_dir.joinpath("mlruns")) is False:
+        os.makedirs(data_dir.joinpath("mlruns"))
 
     class FileEventLogger(EventLogger):
         def __init__(self, log_path: Path):

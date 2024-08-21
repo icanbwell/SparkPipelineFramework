@@ -15,6 +15,9 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from spark_pipeline_framework.utilities.file_helpers import isfile, listdir
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    spark_list_catalog_table_names,
+)
 
 pipeline_validation_df_name = "pipeline_validation"
 
@@ -122,7 +125,7 @@ class FrameworkValidationTransformer(FrameworkTransformer):
     # noinspection PyMethodMayBeStatic
     def get_validation_df(self, df: DataFrame) -> Optional[DataFrame]:
         validation_df: Optional[DataFrame] = None
-        tables: List[str] = [t.name for t in df.sparkSession.catalog.listTables()]
+        tables: List[str] = spark_list_catalog_table_names(df.sparkSession)
         tables = [t for t in tables if t == pipeline_validation_df_name]
         if len(tables) == 1:
             validation_df = df.sparkSession.table(pipeline_validation_df_name)

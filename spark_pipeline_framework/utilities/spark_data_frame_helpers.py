@@ -91,7 +91,7 @@ def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
 
 
 def spark_table_exists(session: SparkSession, view: str) -> bool:
-    return view in [t.name for t in session.catalog.listTables()]
+    return view in spark_list_catalog_table_names(session)
 
 
 def sc(df: DataFrame) -> SparkContext:
@@ -117,3 +117,22 @@ def to_dicts(df: DataFrame, limit: int) -> List[Dict[str, Any]]:
     row: Row
     rows = [row.asDict(recursive=True) for row in df.limit(limit).collect()]
     return rows
+
+
+def spark_list_catalog_table_names(
+    spark_session: SparkSession, database: str = "default"
+) -> List[str]:
+    """
+    Unfortunately the spark.catalog.listTables() function has a bug in Spark 3.4+
+    https://issues.apache.org/jira/browse/SPARK-45854
+    https://github.com/apache/spark/pull/47753
+    So we have to write our own
+
+    :param spark_session: spark session
+    :param database: name of the database to list tables from (optional)
+    :return: list of table names
+    """
+    return [
+        row.tableName
+        for row in spark_session.sql(f"SHOW TABLES IN {database}").collect()
+    ]

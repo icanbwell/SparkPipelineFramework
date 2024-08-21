@@ -4,18 +4,18 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-# logging is needed for logging
-logger = ">=1.4"
 # protobuf is needed for serializing data
 protobuf=">=3"
 # PySpark has to match the version of Spark we use for testing
-pyspark = "==3.3.0"
+pyspark = "==3.5.1"
 # pyarrow is needed for Pandas UDF and mapInPandas
-pyarrow=">=17.0.0" # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#recommended-pandas-and-pyarrow-versions
+# https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#recommended-pandas-and-pyarrow-versions
+# https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
+pyarrow=">=17.0.0"
 # delta-spark is needed for Delta Lake
-delta-spark="==2.3.0"
+delta-spark="==3.2.0"
 # sparkautomapper is needed for mapping data in Spark
-sparkautomapper = ">=2.0.7"
+sparkautomapper = ">=2.0.8"
 # pymysql is needed for connecting to MySQL
 pymysql=">=1.0.3"
 # furl is needed for parsing URLs
@@ -34,8 +34,6 @@ smart_open = { extras = ['s3'], version = ">=6.3.0" }
 mlflow-skinny = ">=2.15.0"
 # sqlalchemy is needed for interacting with databases
 SQLAlchemy = ">=1.4.37"
-# alembic is needed for database migrations
-alembic = ">=1.10.0"
 # sqlparse is needed for parsing SQL
 sqlparse = ">=0.4.4"
 # bounded-pool-executor is needed for creating a bounded thread pool to run in parallel
@@ -43,7 +41,7 @@ bounded-pool-executor = ">=0.0.3"
 # fastjsonschema is needed for validating JSON
 fastjsonschema= ">=2.18.0"
 # helix.fhir.client.sdk is needed for interacting with FHIR servers
-"helix.fhir.client.sdk" = ">=2.0.30"
+"helix.fhir.client.sdk" = ">=3.0.2"
 # opensearch-py is needed for interacting with OpenSearch
 opensearch-py= { extras = ['async'], version = ">=2.6.0" }
 # pyathena is needed for interacting with Athena in AWS
@@ -52,14 +50,8 @@ pyathena = ">2.14.0"
 spark-nlp = ">=4.2.3"
 # pymongo is needed for interacting with MongoDB
 pymongo=">=4.8.0"
-# more-itertools is needed for additional iterators
-more-itertools = ">=9.1.0"
 # pandas is needed for Pandas UDF and mapInPandas
-pandas = ">=2.2.2"
-# numexpr is needed for working with numerical expressions.  pandas requires this minimum version.
-numexpr = ">=2.8.4"
-# bottleneck is needed for working with numerical data. pandas requires this minimum version.
-bottleneck = ">=1.3.6"
+pandas = { version = ">=2" }
 # structlog is needed for structured logging
 structlog = ">=23.1.0"
 # usaddress is needed for parsing street addresses
@@ -76,7 +68,7 @@ motor={ extras = ['snappy', 'zstd'], version = ">=3.5.1" }
 
 [dev-packages]
 # setuptools is needed for building the package
-setuptools=">=72.0.0"
+setuptools=">=72.1.0"
 # wheel is needed for building the package
 wheel = ">=0.43.0"
 # twine is needed for uploading the package to PyPI
@@ -92,7 +84,7 @@ pytest = ">=8.3.2"
 # black is needed for formatting code
 black = ">=24.8.0"
 # pygments is needed for syntax highlighting
-pygments=">=2.8.1" # not directly required, pinned by Snyk to avoid a vulnerability
+pygments=">=2.18.0" # not directly required, pinned by Snyk to avoid a vulnerability
 # Sphinx is needed for generating documentation
 Sphinx="==7.4.7"
 # sphinx-autoapi is needed for generating API documentation
@@ -104,23 +96,25 @@ myst-parser="==3.0.1"
 # recodoc is needed for generating documentation
 recommonmark="==0.7.1"
 # py4j is needed for connecting to the JVM from Spark
-py4j = "==0.10.9.5" # https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
+py4j = "==0.10.9.7" # https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
 # pyspark is needed for running Spark jobs
-pyspark="==3.3.0"  # should match the version of spark we use for testing
+pyspark="==3.5.1"  # should match the version of spark we use for testing
 # Deprecated is needed for marking deprecated functions
 Deprecated = ">=1.2.13"
 # sparkdataframecomparer is needed for comparing Spark DataFrames
-sparkdataframecomparer = ">=2.0.2"
+sparkdataframecomparer = ">=2.0.4"
 # pytest-ayncio is needed for running async tests
 pytest-asyncio = ">=0.23.8"
 # helix-mockserver-client is needed for mocking servers
-helix-mockserver-client=">=1.3.0"
+helix-mockserver-client=">=2.0.0"
 # sparkfhirschemas is needed for FHIR schemas
-sparkfhirschemas = ">=1.0.17"
+sparkfhirschemas = ">=2.0.0"
 # types-boto3 is needed for type hints for boto3
 types-boto3 = ">=1.0.2"
 # moto is needed for mocking AWS services
 moto = { extras = ['all'], version = ">=5.0.12" }
+# binary wheels for Python 3.12.  We need to pin the version so it matches the version in Dockerfile
+python-crfsuite="==0.9.10"
 # types-requests is needed for type hints for requests
 types-requests=">=2.31.0"
 # types-PyMySQL is needed for type hints for PyMySQL
@@ -135,6 +129,23 @@ pandas-stubs=">=2.2.2"
 types-pytz=">=2024.1.0"
 # aioresponses is needed for mocking HTTP requests
 aioresponses=">=0.7.6"
+types-xmltodict="*"
+types-tabulate="*"
+types-six="*"
+types-simplejson="*"
+types-setuptools="*"
+types-PyYAML="*"
+types-psutil="*"
+types-protobuf="*"
+types-openpyxl="*"
+types-docutils="*"
+types-Deprecated="*"
+types-colorama="*"
+types-aws-xray-sdk="*"
+types-Pygments="*"
+types-jsonschema="*"
+types-cffi="*"
+types-pyOpenSSL="*"
 
 # These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
 # only when running pipenv-setup
@@ -147,7 +158,7 @@ plette = "<1.0.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
 pipenv-setup = ">=3.2.0"
 
 [requires]
-python_version = "3.10"
+python_version = "3.12"
 
 [pipenv]
 allow_prereleases = false
