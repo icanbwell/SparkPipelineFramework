@@ -1,4 +1,4 @@
-FROM imranq2/helix.spark:3.5.1.1-precommit-slim
+FROM imranq2/helix.spark:3.5.1.3-precommit-slim
 
 RUN apt-get update && \
     apt-get install -y git && \
@@ -7,9 +7,7 @@ RUN apt-get update && \
 COPY Pipfile* ./
 
 ARG TARGETPLATFORM
-
-RUN pipenv lock --dev && \
-    pipenv sync --dev --system --verbose
+RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 
 WORKDIR /sourcecode
 RUN git config --global --add safe.directory /sourcecode
