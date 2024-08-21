@@ -64,7 +64,6 @@ setup(
         "aiohttp>=3",
         "pydantic>=2.8.2",
         "motor[snappy,zstd]>=3.5.1",
-        "python-crfsuite==0.9.10",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

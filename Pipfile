@@ -70,9 +70,6 @@ aiohttp = ">=3"
 pydantic=">=2.8.2"
 # motor is needed for interacting with MongoDB asynchronously
 motor={ extras = ['snappy', 'zstd'], version = ">=3.5.1" }
-# python-crfsuite is needed for loading packages that use .toml file but python-crfsuite does not provide
-# binary wheels for Python 3.12.  We need to pin the version so it matches the version in Dockerfile
-python-crfsuite="==0.9.10"
 
 
 [dev-packages]
@@ -122,6 +119,8 @@ sparkfhirschemas = ">=2.0.0"
 types-boto3 = ">=1.0.2"
 # moto is needed for mocking AWS services
 moto = { extras = ['all'], version = ">=5.0.12" }
+# binary wheels for Python 3.12.  We need to pin the version so it matches the version in Dockerfile
+python-crfsuite="==0.9.10"
 # types-requests is needed for type hints for requests
 types-requests=">=2.31.0"
 # types-PyMySQL is needed for type hints for PyMySQL
