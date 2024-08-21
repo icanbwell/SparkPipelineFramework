@@ -32,9 +32,9 @@ setup(
         exclude=[
             "*/test",
             "*/test/*",
-            "tests/*",
-            "library/*",
-            "library",
+            "*tests/*",
+            "*library/*",
+            "*library",
             "docs",
             "docs/*",
             "docsrc",
