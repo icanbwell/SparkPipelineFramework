@@ -34,8 +34,6 @@ smart_open = { extras = ['s3'], version = ">=6.3.0" }
 mlflow-skinny = ">=2.15.0"
 # sqlalchemy is needed for interacting with databases
 SQLAlchemy = ">=1.4.37"
-# alembic is needed for database migrations
-alembic = ">=1.10.0"
 # sqlparse is needed for parsing SQL
 sqlparse = ">=0.4.4"
 # bounded-pool-executor is needed for creating a bounded thread pool to run in parallel
@@ -52,12 +50,8 @@ pyathena = ">2.14.0"
 spark-nlp = ">=4.2.3"
 # pymongo is needed for interacting with MongoDB
 pymongo=">=4.8.0"
-# more-itertools is needed for additional iterators
-more-itertools = ">=9.1.0"
 # pandas is needed for Pandas UDF and mapInPandas
 pandas = { version = ">=2" }
-# numexpr is needed for working with numerical expressions.  pandas requires this minimum version.
-numexpr = ">=2.8.4"
 # structlog is needed for structured logging
 structlog = ">=23.1.0"
 # usaddress is needed for parsing street addresses
