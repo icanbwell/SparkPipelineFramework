@@ -28,7 +28,23 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/icanbwell/SparkPipelineFramework",
-    packages=find_packages(exclude=["**/test", "**/test/**"]),
+    packages=find_packages(
+        exclude=[
+            "*/test",
+            "*/test/*",
+            "*tests/*",
+            "*library/*",
+            "*library",
+            "docs",
+            "docs/*",
+            "docsrc",
+            "docsrc/*",
+            "keycloak-config",
+            "keycloak-config/*",
+            ".gihub",
+            ".github/*",
+        ]
+    ),
     install_requires=[
         "protobuf>=3",
         "pyspark==3.5.1",
