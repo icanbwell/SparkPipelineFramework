@@ -46,9 +46,6 @@ class MelissaStandardizingVendor(StandardizingVendor):
         :param api_calls_limit: Maximum number of calls to Melissa API allowed
         """
         super().__init__(version)
-        assert (
-            license_key or custom_api_call
-        ), "Either license_key or custom_api_call must be provided"
         self._license_key: str = license_key
         self._custom_api_call: Optional[Callable[[Any], Dict[str, Any]]] = (
             custom_api_call
