@@ -34,5 +34,3 @@ RUN mkdir -p /.local/share/virtualenvs && chmod 777 /.local/share/virtualenvs
 # https://spark.apache.org/docs/latest/running-on-kubernetes.html#user-identity
 USER 185
 
-# RUN spark-submit --packages com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.2
-# RUN spark-shell --jar spark-nlp-assembly-4.2.2
