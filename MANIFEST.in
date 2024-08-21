@@ -1,9 +1,3 @@
 include README.md
-include requirements.txt
-include requirements-test.txt
 include VERSION
-include Makefile
-include spark_pipeline_framework/Makefile.spark
-include spark_pipeline_framework/Makefile.docker
-include spark_pipeline_framework/docker-compose.yml
 include spark_pipeline_framework/py.typed
