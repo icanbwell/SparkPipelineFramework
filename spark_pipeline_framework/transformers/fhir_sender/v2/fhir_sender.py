@@ -561,7 +561,7 @@ class FhirSender(FrameworkTransformer):
 
                         if FhirMergeResponseItemSchema.issue in result_df.columns:
                             # if there are any errors then raise exception
-                            first_error_response: Optional[Row] = result_df.filter(
+                            first_error_response: Optional[Row] = result_df.where(
                                 col(FhirMergeResponseItemSchema.issue).isNotNull()
                             ).first()
                             if first_error_response is not None:
@@ -578,7 +578,7 @@ class FhirSender(FrameworkTransformer):
                                     self.logger.info(
                                         f"------- Failed validations for {resource_name} ---------"
                                     )
-                                    failed_df = result_df.filter(
+                                    failed_df = result_df.where(
                                         col(
                                             FhirMergeResponseItemSchema.issue
                                         ).isNotNull()

@@ -309,7 +309,7 @@ class HttpDataReceiver(FrameworkTransformer):
                 result_df: DataFrame = rdd.toDF(schema=row_schema)
 
                 # Create success view
-                df_success = result_df.filter(result_df["is_error"] == False)
+                df_success = result_df.where(result_df["is_error"] == False)
                 json_schema = success_schema or self.infer_schema_json_string_column(
                     df_success, "success_data"
                 )
@@ -318,7 +318,7 @@ class HttpDataReceiver(FrameworkTransformer):
                 )
 
                 # Create error view
-                df_errors = result_df.filter(result_df["is_error"] == True)
+                df_errors = result_df.where(result_df["is_error"] == True)
                 json_schema = error_schema or self.infer_schema_json_string_column(
                     df_errors, "error_data"
                 )

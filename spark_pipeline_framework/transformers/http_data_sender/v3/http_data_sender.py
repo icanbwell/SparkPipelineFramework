@@ -286,7 +286,9 @@ class HttpDataSender(FrameworkTransformer):
 
             # Create success view
             if success_view:
-                df_success = result_df.filter(result_df["is_error"] == False)
+                df_success = result_df.where(result_df["is_error"] == False).where(
+                    result_df["success_data"] != ""
+                )
                 success_schema = success_schema or self.infer_schema_json_string_column(
                     df_success, "success_data"
                 )
@@ -296,7 +298,9 @@ class HttpDataSender(FrameworkTransformer):
 
             # Create error view
             if error_view:
-                df_errors = result_df.filter(result_df["is_error"] == True)
+                df_errors = result_df.where(result_df["is_error"] == True).where(
+                    result_df["error_data"] != ""
+                )
                 error_schema = error_schema or self.infer_schema_json_string_column(
                     df_errors, "error_data"
                 )
@@ -306,7 +310,8 @@ class HttpDataSender(FrameworkTransformer):
 
             return result_df
 
-    def infer_schema_json_string_column(self, df: DataFrame, col_: str) -> str:
+    @staticmethod
+    def infer_schema_json_string_column(df: DataFrame, col_: str) -> str:
         """
         Infer json schema from `col_` column
 
@@ -327,8 +332,8 @@ class HttpDataSender(FrameworkTransformer):
         # ).schema
         return schema
 
+    @staticmethod
     def copy_and_drop_column(
-        self,
         df: DataFrame,
         col_: str,
         dest_col: str,
