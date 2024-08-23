@@ -16,7 +16,7 @@ def get_fhir_receiver_parameters() -> FhirReceiverParameters:
         filter_by_resource=None,
         filter_parameter=None,
         sort_fields=None,
-        auth_server_url=None,
+        auth_server_url="http://fhir-server/token",
         auth_client_id=None,
         auth_client_secret=None,
         auth_login_token=None,
