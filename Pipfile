@@ -15,7 +15,7 @@ pyarrow=">=17.0.0"
 # delta-spark is needed for Delta Lake
 delta-spark="==3.2.0"
 # sparkautomapper is needed for mapping data in Spark
-sparkautomapper = ">=2.0.8"
+sparkautomapper = ">=3.0.1"
 # pymysql is needed for connecting to MySQL
 pymysql=">=1.0.3"
 # furl is needed for parsing URLs
@@ -41,7 +41,7 @@ bounded-pool-executor = ">=0.0.3"
 # fastjsonschema is needed for validating JSON
 fastjsonschema= ">=2.18.0"
 # helix.fhir.client.sdk is needed for interacting with FHIR servers
-"helix.fhir.client.sdk" = ">=3.0.2"
+"helix.fhir.client.sdk" = ">=3.0.4"
 # opensearch-py is needed for interacting with OpenSearch
 opensearch-py= { extras = ['async'], version = ">=2.6.0" }
 # pyathena is needed for interacting with Athena in AWS
@@ -102,13 +102,13 @@ pyspark="==3.5.1"  # should match the version of spark we use for testing
 # Deprecated is needed for marking deprecated functions
 Deprecated = ">=1.2.13"
 # sparkdataframecomparer is needed for comparing Spark DataFrames
-sparkdataframecomparer = ">=2.0.4"
+sparkdataframecomparer = ">=2.0.6"
 # pytest-ayncio is needed for running async tests
 pytest-asyncio = ">=0.23.8"
 # helix-mockserver-client is needed for mocking servers
-helix-mockserver-client=">=2.0.0"
+helix-mockserver-client=">=2.0.1"
 # sparkfhirschemas is needed for FHIR schemas
-sparkfhirschemas = ">=2.0.0"
+sparkfhirschemas = ">=2.0.2"
 # types-boto3 is needed for type hints for boto3
 types-boto3 = ">=1.0.2"
 # moto is needed for mocking AWS services
