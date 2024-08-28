@@ -34,6 +34,7 @@ async def send_json_bundle_to_fhir_async(
     retry_count: Optional[int] = None,
     exclude_status_codes_from_retry: Optional[List[int]] = None,
     additional_request_headers: Optional[Dict[str, str]] = None,
+    batch_size: Optional[int] = None,
 ) -> AsyncGenerator[FhirMergeResponse, None]:
     """
     Send a JSON bundle to FHIR server
@@ -76,7 +77,7 @@ async def send_json_bundle_to_fhir_async(
         logger.debug("----------- End sending data to FHIR -------")
         response: FhirMergeResponse
         async for response in fhir_client.merge_async(
-            id_=id_, json_data_list=json_data_list
+            id_=id_, json_data_list=json_data_list, batch_size=batch_size
         ):
             yield response
     except AssertionError as e:
