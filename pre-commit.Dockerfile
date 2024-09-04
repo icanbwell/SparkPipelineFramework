@@ -1,4 +1,4 @@
-FROM imranq2/helix.spark:3.5.1.5-precommit-slim
+FROM imranq2/helix.spark:3.5.1.6-precommit-slim
 
 RUN apt-get update && \
     apt-get install -y git && \
