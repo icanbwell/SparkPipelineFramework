@@ -55,7 +55,15 @@ async def test_split_address_with_parser(
     result = AddressParser.split_address_with_parser(
         address=sample_address, address_id=sample_address_id
     )
-    assert result == parsed_address
+    assert result
+
+    result_dict = result.to_dict()
+    parsed_address_dict = parsed_address.to_dict()
+
+    del result_dict["internal_id"]
+    del parsed_address_dict["internal_id"]
+
+    assert result_dict == parsed_address_dict
 
 
 @pytest.mark.asyncio
@@ -66,7 +74,15 @@ async def test_split_address_with_regex(
     result = AddressParser.split_address_with_regex(
         address=sample_address, address_id=sample_address_id
     )
-    assert result == parsed_address
+    assert result
+
+    result_dict = result.to_dict()
+    parsed_address_dict = parsed_address.to_dict()
+
+    del result_dict["internal_id"]
+    del parsed_address_dict["internal_id"]
+
+    assert result_dict == parsed_address_dict
 
 
 @pytest.mark.asyncio
@@ -77,4 +93,12 @@ async def test_split_address(
     result = AddressParser.split_address(
         address=sample_address, address_id=sample_address_id
     )
-    assert result == parsed_address
+    assert result
+
+    result_dict = result.to_dict()
+    parsed_address_dict = parsed_address.to_dict()
+
+    del result_dict["internal_id"]
+    del parsed_address_dict["internal_id"]
+
+    assert result_dict == parsed_address_dict

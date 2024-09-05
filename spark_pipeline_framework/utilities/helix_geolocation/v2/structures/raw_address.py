@@ -1,7 +1,9 @@
 import hashlib
+import json
+import uuid
 from typing import Dict, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RawAddress(BaseModel):
@@ -17,6 +19,10 @@ class RawAddress(BaseModel):
     zipcode: Optional[str]
     country: Optional[str] = "US"
 
+    internal_id: str = Field(
+        default_factory=lambda: str(uuid.uuid4())
+    )  # Generate a random internal id
+
     def to_dict(self) -> Dict[str, str]:
         return self.model_dump()
 
@@ -28,6 +34,10 @@ class RawAddress(BaseModel):
         address_id: str = self.address_id
         return address_id
 
+    def get_internal_id(self) -> str:
+        """Get the internal id of the address"""
+        return str(self.internal_id)
+
     def set_id(self, address_id: str) -> None:
         self.address_id = address_id
 
@@ -35,7 +45,7 @@ class RawAddress(BaseModel):
         # todo: make sure the online format is legit
         line2 = " " + self.line2 if self.line2 else ""
         addr: str = (
-            f"{self.line1}{line2}, {self.city} {self.state} {self.zipcode} {self.country}"
+            f"{self.line1 or ''}{line2}, {self.city or ''} {self.state or ''} {self.zipcode or ''} {self.country or ''}"
         )
         return addr.replace("  ", " ").strip(" ,")
 
@@ -54,3 +64,12 @@ class RawAddress(BaseModel):
     def _check_id_unique(self) -> bool:
         # todo check if address_id is unique
         return False
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict())
+
+    def is_valid_for_geolocation(self) -> bool:
+        """
+        Check if the address is valid for geolocation
+        """
+        return all([self.line1, self.city, self.state, self.zipcode, self.country])

@@ -39,8 +39,8 @@ class MockStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
             state=raw_address.state,
             zipcode=raw_address.zipcode,
             country=raw_address.country,
-            latitude=None,
-            longitude=None,
+            latitude=39.406216,
+            longitude=-76.45052,
         )
 
     def to_standardized_address(self, *, address_id: str) -> StandardizedAddress:
