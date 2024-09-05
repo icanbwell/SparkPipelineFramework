@@ -24,6 +24,7 @@ from spark_pipeline_framework.utilities.helix_geolocation.v2.vendors.vendor_resp
 async def test_standardize_async_bulk() -> None:
     raw_addresses = [
         RawAddress(
+            internal_id="1",
             address_id="1",
             line1="123 Test St",
             city="Test City",
@@ -32,6 +33,7 @@ async def test_standardize_async_bulk() -> None:
             country="US",
         ),
         RawAddress(
+            internal_id="2",
             address_id="2",
             line1="456 Another St",
             city="Another City",
@@ -40,6 +42,7 @@ async def test_standardize_async_bulk() -> None:
             country="US",
         ),
         RawAddress(
+            internal_id="3",
             address_id="3",
             line1="457 Another St",
             city="Another City",
@@ -141,6 +144,7 @@ async def test_standardize_async_bulk() -> None:
 async def test_standardize_async_single() -> None:
     raw_addresses = [
         RawAddress(
+            internal_id="1",
             address_id="1",
             line1="123 Test St",
             city="Test City",
@@ -197,6 +201,7 @@ async def test_standardize_async_single() -> None:
 async def test_bulk_api_call_async() -> None:
     raw_addresses = [
         RawAddress(
+            internal_id="1",
             address_id="1",
             line1="123 Test St",
             city="Test City",
@@ -227,6 +232,7 @@ async def test_bulk_api_call_async() -> None:
 @pytest.mark.asyncio
 async def test_single_api_call_async() -> None:
     raw_address = RawAddress(
+        internal_id="1",
         address_id="1",
         line1="123 Test St",
         city="Test City",
@@ -279,6 +285,7 @@ async def test_single_api_call_async() -> None:
 def test_parse_csv_response() -> None:
     raw_addresses = [
         RawAddress(
+            internal_id="1",
             address_id="1",
             line1="123 Test St",
             city="Test City",
@@ -382,12 +389,33 @@ async def test_real_census_standardizing_vendor(use_bulk_api: bool) -> None:
         line2=None,
     )
 
-    vendor_responses: List[VendorResponse[CensusStandardizingVendorApiResponse]] = (
-        await CensusStandardizingVendor(use_bulk_api=use_bulk_api).standardize_async(
-            [raw_addr_obj, raw_addr_obj2, raw_addr_obj3]
-        )
+    # try an address with duplicate address_id
+    raw_addr_obj4 = RawAddress(
+        address_id="100",
+        line1="7420 Market St",
+        city="Wilmington",
+        state="NC",
+        zipcode="285466333",
+        country="US",
+        line2=None,
     )
-    assert len(vendor_responses) == 3
+
+    raw_addr_obj5 = RawAddress(
+        address_id="10000",
+        line1="",
+        city="",
+        state="",
+        zipcode="",
+        country="",
+        line2="",
+    )
+
+    vendor_responses: List[
+        VendorResponse[CensusStandardizingVendorApiResponse]
+    ] = await CensusStandardizingVendor(use_bulk_api=use_bulk_api).standardize_async(
+        [raw_addr_obj, raw_addr_obj2, raw_addr_obj3, raw_addr_obj4, raw_addr_obj5]
+    )
+    assert len(vendor_responses) == 5
 
     # test first address
     assert vendor_responses[0].vendor_name == "census"
@@ -429,3 +457,36 @@ async def test_real_census_standardizing_vendor(use_bulk_api: bool) -> None:
     ].api_call_response.to_standardized_address(address_id="1000")
     assert third_response is not None
     assert vendor_responses[2].api_call_response.input is not None
+
+    # test fourth address
+    fourth_response: StandardizedAddress | None = vendor_responses[
+        3
+    ].api_call_response.to_standardized_address(address_id="100")
+    assert fourth_response is not None
+    assert fourth_response.address_id == "100"
+    assert fourth_response.line1 == "7420 MARKET ST"
+    assert fourth_response.city == "WILMINGTON"
+    assert fourth_response.state == "NC"
+    assert fourth_response.zipcode == "28411"
+    assert fourth_response.country == "US"
+    assert fourth_response.latitude is not None
+    assert fourth_response.latitude.startswith("34.2")
+    assert fourth_response.longitude is not None
+    assert fourth_response.longitude.startswith("-77.8")
+
+    # test fifth address
+    fifth_response: StandardizedAddress | None = vendor_responses[
+        4
+    ].api_call_response.to_standardized_address(address_id="10000")
+    assert fifth_response is not None
+    assert fifth_response.address_id == "10000"
+    assert fifth_response.line1 == ""
+    assert fifth_response.city == ""
+    assert fifth_response.state == ""
+    assert fifth_response.zipcode == ""
+    assert fifth_response.country == "US"
+    assert fifth_response.latitude is None
+    assert fifth_response.longitude is None
+    assert fifth_response.formatted_address == ""
+    assert fifth_response.standardize_vendor == "census"
+    assert fifth_response.county is None

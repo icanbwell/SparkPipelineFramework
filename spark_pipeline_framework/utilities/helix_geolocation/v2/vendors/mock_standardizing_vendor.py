@@ -65,8 +65,16 @@ class MockStandardizingVendor(StandardizingVendor[MockStandardizingVendorApiResp
                 state=a.api_call_response.state,
                 county=None,
                 country=a.api_call_response.country,
-                latitude=str(a.api_call_response.latitude),
-                longitude=str(a.api_call_response.longitude),
+                latitude=(
+                    str(a.api_call_response.latitude)
+                    if a.api_call_response.latitude
+                    else None
+                ),
+                longitude=(
+                    str(a.api_call_response.longitude)
+                    if a.api_call_response.longitude
+                    else None
+                ),
                 formatted_address=None,
                 standardize_vendor=self.get_vendor_name(),
             )

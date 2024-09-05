@@ -135,11 +135,13 @@ class CensusStandardizingVendor(
         :param raw_addresses: List of addresses
         :return: List of responses
         """
+
         # Create a CSV file with the addresses
         file_contents = ""  # '"Unique ID", "Street address", "City", "State", "ZIP"'
-        for address in raw_addresses:
+        valid_raw_addresses = [r for r in raw_addresses if r.is_valid_for_geolocation()]
+        for address in valid_raw_addresses:
             file_contents += (
-                f'"{address.get_id()}", "{address.line1}", "{address.city}",'
+                f'"{address.get_internal_id()}", "{address.line1}", "{address.city}",'
                 f' "{address.state}", "{address.zipcode}"\n'
             )
 
@@ -192,7 +194,7 @@ class CensusStandardizingVendor(
                     missing_raw_addresses = [
                         r
                         for r in raw_addresses
-                        if r.get_id() not in [r.address_id for r in responses]
+                        if r.get_internal_id() not in [r.address_id for r in responses]
                     ]
                     if missing_raw_addresses:
                         responses.extend(
@@ -208,9 +210,11 @@ class CensusStandardizingVendor(
                         )
 
                     assert len(responses) == len(raw_addresses), (
-                        f"Number of standardized addresses {len(responses)} does not match "
-                        f"number of raw addresses {len(raw_addresses)}"
-                        f"in the batch: {response_text}"
+                        f"Number of standardized addresses {len(responses)} does not match"
+                        f" number of raw addresses {len(raw_addresses)}"
+                        f" in the response: {response_text}"
+                        f"\nAll raw addresses:\n"
+                        + "\n".join([r.to_json() for r in raw_addresses])
                     )
                 else:
                     responses = [
@@ -224,7 +228,9 @@ class CensusStandardizingVendor(
                 # sort the list, so it is in the same order as the raw_addresses.
                 # Census API does not return list in same order
                 matching_responses: List[CensusStandardizingVendorApiResponse] = [
-                    [r for r in responses if r.address_id == raw_address.get_id()][0]
+                    self.find_matching_response_for_raw_address(
+                        raw_address=raw_address, responses=responses
+                    )
                     for raw_address in raw_addresses
                 ]
                 assert len(matching_responses) == len(raw_addresses), (
@@ -232,6 +238,22 @@ class CensusStandardizingVendor(
                     f"raw addresses {len(raw_addresses)} in the batch: {response_text}"
                 )
                 yield matching_responses
+
+    @staticmethod
+    def find_matching_response_for_raw_address(
+        *,
+        raw_address: RawAddress,
+        responses: List[CensusStandardizingVendorApiResponse],
+    ) -> CensusStandardizingVendorApiResponse:
+        matching_responses = [
+            r for r in responses if r.address_id == raw_address.get_internal_id()
+        ]
+        assert len(matching_responses) > 0, (
+            f"Could not find matching response for raw address id:\n{raw_address.get_internal_id()}"
+            f"\n{raw_address.to_json()}"
+            f"\nAll responses:\n" + "\n".join([r.address_id for r in responses])
+        )
+        return matching_responses[0]
 
     # noinspection PyMethodMayBeStatic
     def _parse_csv_response(
@@ -321,6 +343,15 @@ class CensusStandardizingVendor(
         :param one_line_address: One line address
         :return: Response as a dictionary
         """
+
+        if not raw_address.is_valid_for_geolocation():
+            yield CensusStandardizingVendorApiResponse.from_standardized_address(
+                StandardizedAddress.from_raw_address(
+                    raw_address, vendor_name=self.get_vendor_name()
+                )
+            )
+            return
+
         params = {
             "address": one_line_address,
             "benchmark": "Public_AR_Current",
@@ -361,7 +392,8 @@ class CensusStandardizingVendor(
                     geolocation_response: (
                         CensusStandardizingVendorApiResponse | None
                     ) = self._parse_geolocation_response(
-                        response_json=response_json, record_id=raw_address.get_id()
+                        response_json=response_json,
+                        record_id=raw_address.get_internal_id(),
                     )
                     assert geolocation_response is None or isinstance(
                         geolocation_response, CensusStandardizingVendorApiResponse
@@ -442,20 +474,6 @@ class CensusStandardizingVendor(
         result["address_id"] = record_id
         return CensusStandardizingVendorApiResponse.from_dict(result)
 
-    # noinspection PyMethodMayBeStatic
-    def _get_matching_raw_address(
-        self, address_id: str, raw_addresses: List[RawAddress]
-    ) -> StandardizedAddress:
-        return next(
-            (
-                StandardizedAddress.from_raw_address(
-                    x, vendor_name=self.get_vendor_name()
-                )
-                for x in raw_addresses
-                if x.get_id() == address_id
-            )
-        )
-
     def vendor_specific_to_std(
         self,
         *,
@@ -499,7 +517,17 @@ class CensusStandardizingVendor(
         response_version: str,
     ) -> List[VendorResponse[CensusStandardizingVendorApiResponse]]:
         # create the map
-        id_response_map: Dict[str, RawAddress] = {a.get_id(): a for a in raw_addresses}
+        id_response_map: Dict[str, RawAddress] = {
+            a.get_internal_id(): a for a in raw_addresses
+        }
+        ids_not_found = [
+            r.address_id
+            for r in vendor_response
+            if r.address_id not in id_response_map.keys()
+        ]
+        assert (
+            not ids_not_found
+        ), f"Could not find raw addresses for ids: {ids_not_found}\n{vendor_response}"
         # find and assign
         return [
             VendorResponse(

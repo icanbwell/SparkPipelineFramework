@@ -1,5 +1,7 @@
+import json
 from typing import Optional, List, Any, Dict
 
+import usaddress
 from pydantic import BaseModel
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.standardized_address import (
@@ -74,7 +76,7 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         cls, standardized_address: StandardizedAddress
     ) -> "CensusStandardizingVendorApiResponse":
         return CensusStandardizingVendorApiResponse(
-            address_id=standardized_address.address_id,
+            address_id=standardized_address.get_internal_id(),
             input=CensusStandardizingVendorInput(
                 address=CensusStandardizingVendorAddress(
                     address=standardized_address.to_str()
@@ -175,24 +177,38 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         state: Optional[str] = address_components.state
         postal_code: Optional[str] = address_components.zip
 
-        # Helper function to clean and concatenate address parts
-        def clean_and_concat(*parts: str | Any) -> str:
-            return " ".join(filter(None, parts))
-
-        # Construct the address line using all components
-        address_line: str = clean_and_concat(
-            address_components.fromAddress,
-            address_components.preQualifier,
-            address_components.preDirection,
-            address_components.preType,
-            address_components.streetName,
-            address_components.suffixType,
-            address_components.suffixDirection,
-            address_components.suffixQualifier,
-        )
-
         # Get matched address
         matched_address: Optional[str] = first_address_match.matchedAddress
+
+        # Construct the address line using all components
+        address_line: str = ""
+        if matched_address:
+            try:
+                # Parse the address into tagged components
+                tagged_address, address_type = usaddress.tag(matched_address)
+            except usaddress.RepeatedLabelError as e:
+                print(f"Error parsing address: {e}")
+                tagged_address = {}
+
+            # Define the components to include in the address line
+            components_to_include = [
+                "AddressNumber",
+                "StreetNamePreDirectional",
+                "StreetNamePreType",
+                "StreetName",
+                "StreetNamePostType",
+                "StreetNamePostDirectional",
+            ]
+
+            # Extract the components if they exist
+            address_line_components = [
+                tagged_address[component]
+                for component in components_to_include
+                if component in tagged_address
+            ]
+
+            # Join the components to form the address line
+            address_line = " ".join(address_line_components)
 
         # Create a new address object
         standardized_address: StandardizedAddress = StandardizedAddress(
@@ -202,8 +218,8 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
             city=city,
             state=state,
             zipcode=postal_code,
-            longitude=str(longitude),
-            latitude=str(latitude),
+            longitude=str(longitude) if longitude else None,
+            latitude=str(latitude) if latitude else None,
             formatted_address=matched_address,
             standardize_vendor="census",
             country="US",
@@ -211,3 +227,6 @@ class CensusStandardizingVendorApiResponse(BaseModel, BaseVendorApiResponse):
         )
 
         return standardized_address
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict())
