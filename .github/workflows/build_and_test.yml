@@ -27,4 +27,12 @@ jobs:
       - name: up
         run: make up
       - name: tests
-        run: make tests
+        run: docker compose run --rm --name spf_tests  -v /home/runner/work/${{ github.repository }}/reports:/reports dev pytest tests spark_pipeline_framework --junitxml=/reports/test-results.xml
+
+      - name: Upload pytest test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: /reports/**/*.xml
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ always() }}
