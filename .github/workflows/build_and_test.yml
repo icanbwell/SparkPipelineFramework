@@ -28,16 +28,18 @@ jobs:
         run: make up
 
       - name: Create reports output folder
-        run: mkdir -p /home/runner/work/${{ github.repository }}/reports
+        run: |
+          mkdir -p ${{ github.workspace }}/reports
+          chmod -R 777 ${{ github.workspace }}/reports
 
       - name: tests
-        run: docker compose run --rm --name spf_tests -v /home/runner/work/${{ github.repository }}/reports:/reports dev pytest . --junitxml=/reports/test-results.xml
+        run: docker compose run --rm --name spf_tests -v ${{ github.workspace }}/reports:/reports dev pytest . --junitxml=/reports/test-results.xml
 
       - name: Upload pytest test results
         uses: actions/upload-artifact@v4
         with:
           name: pytest-results
-          path: /home/runner/work/${{ github.repository }}/reports/**/*.xml
+          path: ${{ github.workspace }}/reports/**/*.xml
         # Use always() to always run this step to publish test results when there are test failures
         if: ${{ always() }}
 
