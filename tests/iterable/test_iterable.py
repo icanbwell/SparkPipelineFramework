@@ -11,7 +11,6 @@ from tests.iterable.tables_lister import get_list_of_tables
 
 
 def test_iterable(spark_session: SparkSession) -> None:
-
     clean_spark_session(spark_session)
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -22,49 +21,59 @@ def test_iterable(spark_session: SparkSession) -> None:
 
     assert len(tables) == 0
 
-    with open(
-        data_dir.joinpath("sql").joinpath("user_profile_schema.sql"), "r"
-    ) as file:
-        sql_text = file.read()
-        df.sparkSession.sql(sql_text)
+    sql_path = data_dir.joinpath("sql")
 
-    # Act
-    with open(data_dir.joinpath("sql").joinpath("user_profile.sql"), "r") as file:
-        sql_text = file.read()
-        df.sparkSession.sql(sql_text)
+    sql_files: List[str] = [
+        "user_profile_schema.sql",
+        "user_profile.sql",
+        "user_profile_fields.sql",
+        "activity_definition.sql",
+        "tasks.sql",
+        "task_fields.sql",
+        "business_events.sql",
+        "business_event_fields.sql",
+    ]
 
-    with open(
-        data_dir.joinpath("sql").joinpath("user_profile_fields.sql"), "r"
-    ) as file:
-        sql_text = file.read()
-        df.sparkSession.sql(sql_text)
-
-    with open(
-        data_dir.joinpath("sql").joinpath("activity_definition.sql"), "r"
-    ) as file:
-        sql_text = file.read()
-        df.sparkSession.sql(sql_text)
-
-    with open(data_dir.joinpath("sql").joinpath("tasks.sql"), "r") as file:
-        sql_text = file.read()
-        df.sparkSession.sql(sql_text)
-
-    with open(data_dir.joinpath("sql").joinpath("task_fields.sql"), "r") as file:
-        sql_text = file.read()
-        df.sparkSession.sql(sql_text)
-
-    with open(data_dir.joinpath("sql").joinpath("business_events.sql"), "r") as file:
-        sql_text = file.read()
-        df.sparkSession.sql(sql_text)
-
-    with open(
-        data_dir.joinpath("sql").joinpath("business_event_fields.sql"), "r"
-    ) as file:
-        sql_text = file.read()
-        df.sparkSession.sql(sql_text)
+    for sql_file in sql_files:
+        with open(sql_path.joinpath(sql_file), "r") as file:
+            sql_text = file.read()
+            df.sparkSession.sql(sql_text)
 
     tables = get_list_of_tables(spark_session)
 
     print(tables)
 
     assert len(tables) == 7
+
+    # Add sample data
+    test_files_path: Path = data_dir.joinpath("test_files")
+
+    test_files: List[str] = [
+        "user_profile.csv",
+        "user_profile_fields.csv",
+        "activity_definition.csv",
+        "tasks.csv",
+        "task_fields.csv",
+        "business_events.csv",
+        "business_event_fields.csv",
+    ]
+
+    def snake_to_capitalized_camel(snake_str: str) -> str:
+        # Split the string into words using '_' as the delimiter
+        components = snake_str.split("_")
+        # Capitalize the first letter of each component
+        return "".join(x.title() for x in components)
+
+    for test_file in test_files:
+        df = spark_session.read.csv(
+            str(test_files_path.joinpath(test_file)),
+            header=True,
+            inferSchema=True,
+        )
+        table_name = snake_to_capitalized_camel(test_file.replace(".csv", ""))
+        df.createOrReplaceTempView(table_name)
+
+    tables = get_list_of_tables(spark_session)
+    for table in tables:
+        print(table)
+        spark_session.table(table["table_name"]).show()

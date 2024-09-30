@@ -2,6 +2,10 @@ from typing import Any, Dict, List
 
 from pyspark.sql import SparkSession
 
+from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
+    spark_list_catalog_table_names,
+)
+
 
 def get_list_of_tables(spark: SparkSession) -> List[Dict[str, Any]]:
 
@@ -14,9 +18,8 @@ def get_list_of_tables(spark: SparkSession) -> List[Dict[str, Any]]:
     # Loop through all databases
     for database in databases:
         # Get a list of tables in the current database
-        tables = spark.catalog.listTables(database)
-        for table_row in tables:
-            table_name = table_row.name
+        table_names = spark_list_catalog_table_names(spark, database)
+        for table_name in table_names:
             full_table_name = f"{database}.{table_name}"
 
             # Get details about the table to check its format
