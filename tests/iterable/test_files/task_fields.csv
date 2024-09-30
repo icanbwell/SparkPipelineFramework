@@ -1,0 +1,6 @@
+master_person_id,client_person_id,organization_id,client_slug,created_date,last_updated_date,activity_definition_id,task_name,task_id,field_name,field_value
+MP001,CP001,ORG001,client_a,2024-09-01 10:30:00,2024-09-10 12:00:00,ACT001,Onboarding,T001,status,completed
+MP002,CP002,ORG002,client_b,2024-09-02 11:45:00,2024-09-11 13:30:00,ACT002,Follow-up Call,T002,assigned_to,John Doe
+MP003,CP003,ORG001,client_a,2024-09-03 09:15:00,2024-09-12 10:00:00,ACT003,Data Verification,T003,due_date,2024-09-15
+MP004,CP004,ORG003,client_c,2024-09-04 14:00:00,2024-09-13 15:45:00,ACT004,Appointment Reminder,T004,priority,high
+MP005,CP005,ORG002,client_b,2024-09-05 16:20:00,2024-09-14 17:10:00,ACT005,Survey,T005,location,Clinic A
