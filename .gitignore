@@ -163,3 +163,6 @@ tests/**/temp*/
 /spark_pipeline_framework/transformers/fhir_sender/v1/test/test_files/patients_parquet
 /spark_pipeline_framework/**/mlruns
 /spark_pipeline_framework/transformers/fhir_sender/v2/test/test_files/patients_parquet
+
+
+docker.env

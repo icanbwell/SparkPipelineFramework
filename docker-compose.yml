@@ -9,6 +9,8 @@ services:
     build:
       dockerfile: spark.Dockerfile
       context: .
+    env_file:
+      - docker.env
     environment:
         # These environment variables put the python interpreter into debug mode
 #        PYTHONDEVMODE: 1
