@@ -16,9 +16,9 @@ class IterableHelper:
         def call_api_for_each_row(
             batch_iter: Iterable[pd.DataFrame],
         ) -> Iterable[pd.DataFrame]:
-            api_url = (
-                "https://example.com/api/endpoint"  # Replace with your actual API URL
-            )
+            # https://support.iterable.com/hc/en-us/articles/204780579-API-Overview-and-Sample-Payloads#post-api-users-update
+            api_url = "https://api.iterable.com/api/users/update"  # Replace with your actual API URL
+            iterable_api_key = "79b444d11d8e4e97bc04c7d0c60ab27d"
 
             batch: pd.DataFrame
             for batch in batch_iter:
@@ -26,6 +26,8 @@ class IterableHelper:
 
                 pdf_json: str = batch.to_json(orient="records")
                 input_rows: List[Dict[str, Any]] = json.loads(pdf_json)
+
+                result: List[Dict[str, Any]] = []
 
                 for row in input_rows:
                     master_person_id = row["master_person_id"]
@@ -38,27 +40,21 @@ class IterableHelper:
                     # print(f"all_fields:{all_fields}, type: {type(all_fields)}")
 
                     try:
-                        iterable_api_key = "79b444d11d8e4e97bc04c7d0c60ab27d"
                         headers = {
                             "Api-key": iterable_api_key,
                             "Content-Type": "application/json",
                         }
 
-                        # Define the payload
-                        # data_fields = {
-                        #     "data_source": "John Muir Health",
-                        #     "date_received": "2018-06-01",
-                        # }
                         data_fields: Dict[str, Any] = {
                             field["field_name"]: field["field_value"]
                             for field in all_fields
                         }
                         data = {
-                            "email": "imran.qureshi@icanbwell.com",
+                            "email": f"imran.qureshi+{master_person_id}@icanbwell.com",
                             "userId": f"{master_person_id}",
                             "dataFields": data_fields,
                             "preferUserId": True,
-                            "mergeNestedObjects": True,
+                            # "mergeNestedObjects": True,
                             "createNewFields": True,
                         }
                         print(f"data: {data}")
