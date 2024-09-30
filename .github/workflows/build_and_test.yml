@@ -31,7 +31,7 @@ jobs:
         run: mkdir -p /home/runner/work/${{ github.repository }}/reports
 
       - name: tests
-        run: docker compose run --rm --name spf_tests -v /home/runner/work/${{ github.repository }}/reports:/reports dev pytest tests spark_pipeline_framework --junitxml=/reports/test-results.xml
+        run: docker compose run --rm --name spf_tests -v /home/runner/work/${{ github.repository }}/reports:/reports dev pytest . --junitxml=/reports/test-results.xml
 
       - name: Upload pytest test results
         uses: actions/upload-artifact@v4
@@ -40,3 +40,42 @@ jobs:
           path: /home/runner/work/${{ github.repository }}/reports/**/*.xml
         # Use always() to always run this step to publish test results when there are test failures
         if: ${{ always() }}
+
+      - name: Verify reports are generated
+        if: ${{ always() }}
+        run: ls -halt ${{ github.workspace }}/reports/
+
+      # Publish all test results in the GitHub UI
+      - name: Surface failing tests
+        if: always()
+        uses: pmeier/pytest-results-action@main # https://github.com/pmeier/pytest-results-action
+        with:
+          # A list of JUnit XML files, directories containing the former, and wildcard
+          # patterns to process.
+          # See @actions/glob for supported patterns.
+          path: ${{ github.workspace }}/reports/*.xml
+
+          # (Optional) Add a summary of the results at the top of the report
+          summary: true
+
+          # (Optional) Select which results should be included in the report.
+          # Follows the same syntax as `pytest -r`
+          display-options: fEX
+
+          # (Optional) Fail the workflow if no JUnit XML was found.
+          fail-on-empty: true
+
+          # (Optional) Title of the test results section in the workflow summary
+          title: Test results
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v --remove-orphans
+
+      - name: 'Cleanup build folder'
+        if: always()
+        run: |
+          ls -la ./
+          sudo rm -rf ${{ github.workspace }}/*
+          ls -la ./

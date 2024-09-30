@@ -2,8 +2,9 @@ LANG=en_US.utf-8
 
 export LANG
 
-Pipfile.lock: Pipfile
-	docker compose run --rm --name spark_pipeline_framework dev sh -c "rm -f Pipfile.lock && pipenv lock --dev"
+.PHONY: Pipfile.lock
+Pipfile.lock: build
+	docker compose run --rm --name spspark_pipeline_frameworkftest dev /bin/bash -c "rm -f Pipfile.lock && pipenv lock --dev"
 
 .PHONY: install_types
 install_types: Pipfile
@@ -21,7 +22,7 @@ shell:devdocker ## Brings up the bash shell in dev docker
 init: devdocker up setup-pre-commit  ## Initializes the local developer environment
 
 .PHONY: up
-up: Pipfile.lock
+up:
 	docker compose up --build -d --remove-orphans && \
 	echo "\nwaiting for Mongo server to become healthy" && \
 	while [ "`docker inspect --format {{.State.Health.Status}} sparkpipelineframework-mongo-1`" != "healthy" ] && [ "`docker inspect --format {{.State.Health.Status}} sparkpipelineframework-mongo-1`" != "unhealthy" ] && [ "`docker inspect --format {{.State.Status}} sparkpipelineframework-mongo-1`" != "restarting" ]; do printf "." && sleep 2; done && \
