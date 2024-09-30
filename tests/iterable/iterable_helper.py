@@ -1,7 +1,8 @@
-from typing import Iterable
+import json
+from typing import Iterable, Any, Dict, List
 
-import requests
 import pandas as pd
+import requests
 from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, TimestampType
 
@@ -19,17 +20,22 @@ class IterableHelper:
                 "https://example.com/api/endpoint"  # Replace with your actual API URL
             )
 
-            for pdf in batch_iter:
+            batch: pd.DataFrame
+            for batch in batch_iter:
                 responses = []
 
-                for index, row in pdf.iterrows():
+                pdf_json: str = batch.to_json(orient="records")
+                input_rows: List[Dict[str, Any]] = json.loads(pdf_json)
+
+                for row in input_rows:
                     master_person_id = row["master_person_id"]
                     client_person_id = row["client_person_id"]
                     organization_id = row["organization_id"]
                     client_slug = row["client_slug"]
                     created_date = row["created_date"]
                     last_updated_date = row["last_updated_date"]
-                    all_fields = row["all_fields"]
+                    all_fields: List[Dict[str, Any]] = row["all_fields"]
+                    # print(f"all_fields:{all_fields}, type: {type(all_fields)}")
 
                     try:
                         iterable_api_key = "79b444d11d8e4e97bc04c7d0c60ab27d"
@@ -39,9 +45,13 @@ class IterableHelper:
                         }
 
                         # Define the payload
-                        data_fields = {
-                            "data_source": "John Muir Health",
-                            "date_received": "2018-06-01",
+                        # data_fields = {
+                        #     "data_source": "John Muir Health",
+                        #     "date_received": "2018-06-01",
+                        # }
+                        data_fields: Dict[str, Any] = {
+                            field["field_name"]: field["field_value"]
+                            for field in all_fields
                         }
                         data = {
                             "email": "imran.qureshi@icanbwell.com",
@@ -51,7 +61,7 @@ class IterableHelper:
                             "mergeNestedObjects": True,
                             "createNewFields": True,
                         }
-
+                        print(f"data: {data}")
                         # Make the POST request
                         response = requests.post(api_url, headers=headers, json=data)
                         # Get the response text (or extract relevant info as needed)
@@ -61,7 +71,7 @@ class IterableHelper:
                         responses.append(f"Error: {str(e)}")
 
                 # Add the responses to the DataFrame
-                pdf["api_response"] = responses
+                batch["api_response"] = responses
 
             return batch_iter
 
