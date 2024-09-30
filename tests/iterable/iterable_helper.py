@@ -138,16 +138,16 @@ class IterableHelper:
                             for field in all_fields
                         }
                         data_fields["task_id"] = task_id
-                        data_fields["task_name"] = f"Task_{task_name}"
+                        data_fields["task_name"] = task_name
                         data_fields["activity_definition_id"] = activity_definition_id
                         data_fields["completed_date"] = completed_date
 
                         data = {
                             "userId": f"{master_person_id}",
                             "eventName": (
-                                task_name
+                                f"Task_{task_id}"
                                 if not completed_date
-                                else f"{task_name}_Completed"
+                                else f"Task_{task_id}_Completed"
                             ),
                             "id": task_id,
                             "createdAt": created_date,
