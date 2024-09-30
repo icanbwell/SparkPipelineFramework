@@ -43,6 +43,6 @@ def test_load_user_profile_into_iterable(spark_session: SparkSession) -> None:
     # Execute the query and create a DataFrame
     user_profile_with_fields_df = spark_session.sql(query)
 
-    IterableHelper.send_user_profile_to_iterable(
+    IterableHelper.send_user_profiles_to_iterable(
         user_profile_df=user_profile_with_fields_df
     )

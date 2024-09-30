@@ -6,7 +6,7 @@ from tests.iterable.common import setup_schema, load_test_files, show_tables
 from tests.iterable.iterable_helper import IterableHelper
 
 
-def test_load_tasks_into_iterable(spark_session: SparkSession) -> None:
+def test_load_events_into_iterable(spark_session: SparkSession) -> None:
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
     setup_schema(spark_session)
@@ -24,18 +24,16 @@ def test_load_tasks_into_iterable(spark_session: SparkSession) -> None:
             t.client_slug,
             t.created_date,
             t.last_updated_date,
-            t.activity_definition_id,
-            t.task_name,
-            t.task_id,
-            t.completed_date,
+            t.event_name,
+            t.event_id,
             collect_list(struct(tf.field_name, tf.field_value)) AS all_fields
-        FROM business_events.Tasks t
-        LEFT JOIN business_events.TaskFields tf
+        FROM business_events.BusinessEvents t
+        LEFT JOIN business_events.BusinessEventFields tf
         ON t.master_person_id = tf.master_person_id
         AND t.client_person_id = tf.client_person_id
         AND t.organization_id = tf.organization_id
         AND t.client_slug = tf.client_slug
-        AND t.task_id = tf.task_id
+        AND t.event_id = tf.event_id
         GROUP BY
             t.master_person_id,
             t.client_person_id,
@@ -43,12 +41,10 @@ def test_load_tasks_into_iterable(spark_session: SparkSession) -> None:
             t.client_slug,
             t.created_date,
             t.last_updated_date,
-            t.activity_definition_id,
-            t.task_name,
-            t.task_id,
-            t.completed_date
+            t.event_name,
+            t.event_id
     """
 
-    tasks_with_fields_df = spark_session.sql(query)
+    events_with_fields = spark_session.sql(query)
 
-    IterableHelper.send_tasks_to_iterable(task_df=tasks_with_fields_df)
+    IterableHelper.send_events_to_iterable(task_df=events_with_fields)
