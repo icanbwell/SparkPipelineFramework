@@ -34,8 +34,8 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI }}
       run: |
         docker compose run --rm -e TWINE_USERNAME=${TWINE_USERNAME} -e TWINE_PASSWORD=${TWINE_PASSWORD} dev sh -c "
-          pip install twine wheel &&
-          python setup.py sdist bdist_wheel &&
+          pip install twine wheel build &&
+          python -m build &&
           twine upload dist/*
         "
 
