@@ -45,37 +45,37 @@ setup(
             ".github/*",
         ]
     ),
-    install_requires=[
-        "protobuf>=3",
-        "pyspark==3.5.1",
-        "pyarrow>=17.0.0",
-        "delta-spark==3.2.0",
-        "sparkautomapper>=3.0.1",
-        "pymysql>=1.0.3",
-        "furl>=2.1.3",
-        "requests>=2.31.0",
-        "boto3>=1.34.140",
-        "chardet",
-        "slack-sdk>=3.22.0",
-        "smart-open[s3]>=6.3.0",
-        "mlflow-skinny>=2.15.0",
-        "sqlalchemy>=1.4.37",
-        "sqlparse>=0.4.4",
-        "bounded-pool-executor>=0.0.3",
-        "fastjsonschema>=2.18.0",
-        "helix.fhir.client.sdk>=3.0.4",
-        "opensearch-py[async]>=2.6.0",
-        "pyathena>2.14.0",
-        "spark-nlp>=4.2.3",
-        "pymongo>=4.8.0",
-        "pandas>=2",
-        "structlog>=23.1.0",
-        "usaddress>=0.5.10",
-        "usaddress-scourgify>=0.6.0",
-        "aiohttp>=3",
-        "pydantic>=2.8.2",
-        "motor[snappy,zstd]>=3.5.1",
-    ],
+    install_requires=['protobuf>=3', 'pyspark==3.5.1', 'pyarrow>=17.0.0', 'delta-spark==3.2.0', 'sparkautomapper>=3.0.1', 'pymysql>=1.0.3', 'furl>=2.1.3', 'requests>=2.31.0', 'boto3>=1.34.140', 'chardet', 'slack-sdk>=3.22.0', 'smart-open[s3]>=6.3.0', 'mlflow-skinny>=2.15.0', 'sqlalchemy>=1.4.37', 'sqlparse>=0.4.4', 'bounded-pool-executor>=0.0.3', 'fastjsonschema>=2.18.0', 'helix.fhir.client.sdk>=3.0.4', 'opensearch-py[async]>=2.6.0', 'pyathena>2.14.0', 'spark-nlp>=4.2.3', 'pymongo>=4.8.0', 'pandas>=2', 'structlog>=23.1.0', 'usaddress>=0.5.10', 'usaddress-scourgify>=0.6.0', 'aiohttp>=3', 'pydantic>=2.8.2', 'motor[snappy,zstd]>=3.5.1'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",
