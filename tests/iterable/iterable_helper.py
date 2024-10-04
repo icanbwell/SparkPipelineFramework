@@ -11,6 +11,7 @@ from pyspark.sql.types import StructType, StructField, StringType, TimestampType
 
 
 class IterableHelper:
+    test_email_start = "sean.hegarty"
     @staticmethod
     def send_user_profiles_to_iterable(user_profile_df: DataFrame) -> None:
         print(f"UserProfile count:{user_profile_df.count()}")
@@ -53,7 +54,7 @@ class IterableHelper:
                             for field in all_fields
                         }
                         data = {
-                            "email": f"imran.qureshi+{master_person_id}@icanbwell.com",
+                            "email": f"{IterableHelper.test_email_start}+{master_person_id}@icanbwell.com",
                             "userId": f"{master_person_id}",
                             "dataFields": data_fields,
                             "preferUserId": True,
@@ -149,7 +150,7 @@ class IterableHelper:
                         data_fields["completed_date"] = completed_date
 
                         data = {
-                            "email": f"imran.qureshi+{master_person_id}@icanbwell.com",
+                            "email": f"{IterableHelper.test_email_start}+{master_person_id}@icanbwell.com",
                             "userId": f"{master_person_id}",
                             "eventName": (
                                 f"Task_{task_id}"
@@ -250,7 +251,7 @@ class IterableHelper:
                         data_fields["event_name"] = event_name
 
                         data = {
-                            "email": f"imran.qureshi+{master_person_id}@icanbwell.com",
+                            "email": f"{IterableHelper.test_email_start}+{master_person_id}@icanbwell.com",
                             "userId": f"{master_person_id}",
                             "eventName": event_id,
                             # "id": event_id,
