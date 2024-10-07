@@ -66,6 +66,7 @@ class IterableHelper:
                         response = requests.post(api_url, headers=headers, json=data)
                         # Get the response text (or extract relevant info as needed)
                         responses.append(response.text)
+                        assert response.json()['code'] == "Success", f"response: {response.text}"
                         print(f"response: {response.text}")
                     except requests.exceptions.RequestException as e:
                         # Handle errors, you could log or return an error message
@@ -171,6 +172,7 @@ class IterableHelper:
                         response = requests.post(api_url, headers=headers, json=data)
                         # Get the response text (or extract relevant info as needed)
                         responses.append(response.text)
+                        assert response.json()['code'] == "Success", f"response: {response.text}"
                         print(f"response: {response.text}")
                     except requests.exceptions.RequestException as e:
                         # Handle errors, you could log or return an error message
