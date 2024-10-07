@@ -126,7 +126,7 @@ class IterableHelper:
                     client_slug = row["client_slug"]
                     created_date = row["created_date"]
                     # for testing give it the current datetime
-                    created_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    created_date = int(datetime.now().timestamp())#.strftime("%Y-%m-%d %H:%M:%S")
                     last_updated_date = row["last_updated_date"]
                     activity_definition_id = row["activity_definition_id"]
                     task_name = row["task_name"]
@@ -231,7 +231,7 @@ class IterableHelper:
                     client_slug = row["client_slug"]
                     created_date = row["created_date"]
                     # for testing give it the current datetime
-                    created_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    created_date = int(datetime.now().timestamp())#.strftime("%Y-%m-%d %H:%M:%S")
                     last_updated_date = row["last_updated_date"]
                     event_name = row["event_name"]
                     event_id = row["event_id"]
@@ -268,6 +268,7 @@ class IterableHelper:
                         response = requests.post(api_url, headers=headers, json=data)
                         # Get the response text (or extract relevant info as needed)
                         responses.append(response.text)
+                        assert response.json()['code'] == "Success", f"response: {response.text}"
                         print(f"response: {response.text}")
                     except requests.exceptions.RequestException as e:
                         # Handle errors, you could log or return an error message
