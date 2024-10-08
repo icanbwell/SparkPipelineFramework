@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pyspark.sql import SparkSession
 
-from tests.iterable.common import setup_schema, load_test_files, show_tables
+from tests.iterable.common_dbricks import setup_schema, load_test_files, show_tables
 from tests.iterable.iterable_helper import IterableHelper
 
 

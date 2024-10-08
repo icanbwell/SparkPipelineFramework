@@ -9,9 +9,8 @@ import requests
 from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, TimestampType
 
-
 class IterableHelper:
-    test_email_start = "sean.hegarty"
+    test_email_start = "kenan.spruill"
     @staticmethod
     def send_user_profiles_to_iterable(user_profile_df: DataFrame) -> None:
         print(f"UserProfile count:{user_profile_df.count()}")
