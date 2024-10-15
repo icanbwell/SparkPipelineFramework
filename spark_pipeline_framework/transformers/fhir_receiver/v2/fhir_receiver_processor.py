@@ -771,7 +771,9 @@ class FhirReceiverProcessor:
                     # no resources returned but status is 200, so we're done
                     has_next_page = False
                 else:
-                    if result.status not in parameters.ignore_status_codes:
+                    if result.status == 404:
+                        yield GetBatchResult(resources=[], errors=[])
+                    elif result.status not in parameters.ignore_status_codes:
                         raise FhirReceiverException(
                             url=result.url,
                             json_data=result.responses,
