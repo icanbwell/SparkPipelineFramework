@@ -11,6 +11,7 @@ from pyspark.sql.types import StructType, StructField, StringType, TimestampType
 
 
 class IterableHelper:
+    test_email_start = "sean.hegarty"
     @staticmethod
     def send_user_profiles_to_iterable(user_profile_df: DataFrame) -> None:
         print(f"UserProfile count:{user_profile_df.count()}")
@@ -53,7 +54,7 @@ class IterableHelper:
                             for field in all_fields
                         }
                         data = {
-                            "email": f"imran.qureshi+{master_person_id}@icanbwell.com",
+                            "email": f"{IterableHelper.test_email_start}+{master_person_id}@icanbwell.com",
                             "userId": f"{master_person_id}",
                             "dataFields": data_fields,
                             "preferUserId": True,
@@ -65,6 +66,7 @@ class IterableHelper:
                         response = requests.post(api_url, headers=headers, json=data)
                         # Get the response text (or extract relevant info as needed)
                         responses.append(response.text)
+                        assert response.json()['code'] == "Success", f"response: {response.text}"
                         print(f"response: {response.text}")
                     except requests.exceptions.RequestException as e:
                         # Handle errors, you could log or return an error message
@@ -125,7 +127,7 @@ class IterableHelper:
                     client_slug = row["client_slug"]
                     created_date = row["created_date"]
                     # for testing give it the current datetime
-                    created_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    created_date = int(datetime.now().timestamp())#.strftime("%Y-%m-%d %H:%M:%S")
                     last_updated_date = row["last_updated_date"]
                     activity_definition_id = row["activity_definition_id"]
                     task_name = row["task_name"]
@@ -149,7 +151,7 @@ class IterableHelper:
                         data_fields["completed_date"] = completed_date
 
                         data = {
-                            "email": f"imran.qureshi+{master_person_id}@icanbwell.com",
+                            "email": f"{IterableHelper.test_email_start}+{master_person_id}@icanbwell.com",
                             "userId": f"{master_person_id}",
                             "eventName": (
                                 f"Task_{task_id}"
@@ -170,6 +172,7 @@ class IterableHelper:
                         response = requests.post(api_url, headers=headers, json=data)
                         # Get the response text (or extract relevant info as needed)
                         responses.append(response.text)
+                        assert response.json()['code'] == "Success", f"response: {response.text}"
                         print(f"response: {response.text}")
                     except requests.exceptions.RequestException as e:
                         # Handle errors, you could log or return an error message
@@ -230,7 +233,7 @@ class IterableHelper:
                     client_slug = row["client_slug"]
                     created_date = row["created_date"]
                     # for testing give it the current datetime
-                    created_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    created_date = int(datetime.now().timestamp())#.strftime("%Y-%m-%d %H:%M:%S")
                     last_updated_date = row["last_updated_date"]
                     event_name = row["event_name"]
                     event_id = row["event_id"]
@@ -250,7 +253,7 @@ class IterableHelper:
                         data_fields["event_name"] = event_name
 
                         data = {
-                            "email": f"imran.qureshi+{master_person_id}@icanbwell.com",
+                            "email": f"{IterableHelper.test_email_start}+{master_person_id}@icanbwell.com",
                             "userId": f"{master_person_id}",
                             "eventName": event_id,
                             # "id": event_id,
@@ -267,6 +270,7 @@ class IterableHelper:
                         response = requests.post(api_url, headers=headers, json=data)
                         # Get the response text (or extract relevant info as needed)
                         responses.append(response.text)
+                        assert response.json()['code'] == "Success", f"response: {response.text}"
                         print(f"response: {response.text}")
                     except requests.exceptions.RequestException as e:
                         # Handle errors, you could log or return an error message
