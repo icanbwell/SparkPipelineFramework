@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional, Union
 
 # noinspection PyProtectedMember,PyPackageRequirements
-from mlflow.entities import RunStatus  # type: ignore
+from mlflow.entities import RunStatus
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
