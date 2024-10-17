@@ -62,7 +62,7 @@ async def test_get_batch_result_streaming_async() -> None:
 
         # Assert the results
         assert len(results) == 2
-        assert results[0] == expected_result
+        assert results[0] == expected_result.to_dict()
 
 
 async def test_get_batch_result_streaming_async_single_result() -> None:
@@ -112,7 +112,7 @@ async def test_get_batch_result_streaming_async_single_result() -> None:
 
         # Assert the results
         assert len(results) == 2
-        assert results[0] == expected_result
+        assert results[0] == expected_result.to_dict()
 
 
 @pytest.mark.asyncio
@@ -175,7 +175,7 @@ async def test_get_batch_result_streaming_async_multiple_results() -> None:
 
         # Assert the results
         assert len(results) == 2
-        assert results[0] == expected_results[0]
+        assert results[0] == expected_results[0].to_dict()
 
 
 @pytest.mark.asyncio
@@ -204,5 +204,5 @@ async def test_get_batch_result_streaming_async_no_results() -> None:
 
         # Assert the results
         assert len(results) == 1
-        assert results[0].resources == []
-        assert results[0].errors == []
+        assert results[0]["resources"] == []
+        assert results[0]["errors"] == []

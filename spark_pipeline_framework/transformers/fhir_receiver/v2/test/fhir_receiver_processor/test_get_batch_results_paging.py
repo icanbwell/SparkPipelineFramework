@@ -130,8 +130,8 @@ async def test_get_batch_result_streaming_async_no_resources() -> None:
 
         results = [result async for result in async_gen]
         assert len(results) == 1
-        assert results[0].resources == []
-        assert results[0].errors == []
+        assert results[0]["resources"] == []
+        assert results[0]["errors"] == []
 
 
 async def test_get_batch_result_streaming_async_with_resources() -> None:
@@ -155,8 +155,8 @@ async def test_get_batch_result_streaming_async_with_resources() -> None:
 
         results = [result async for result in async_gen]
         assert len(results) == 2
-        assert results[0].resources[0] == '{"resourceType": "Patient", "id": "1"}'
-        assert results[0].errors == []
+        assert results[0]["resources"][0] == '{"resourceType": "Patient", "id": "1"}'
+        assert results[0]["errors"] == []
 
 
 async def test_get_batch_result_streaming_async_with_error() -> None:
@@ -239,8 +239,8 @@ async def test_get_batch_result_streaming_async_with_error_with_retry_success() 
 
         results = [result async for result in async_gen]
         assert len(results) == 2
-        assert results[0].resources[0] == '{"resourceType": "Patient", "id": "1"}'
-        assert results[0].errors == []
+        assert results[0]["resources"][0] == '{"resourceType": "Patient", "id": "1"}'
+        assert results[0]["errors"] == []
 
 
 async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -> None:
@@ -278,8 +278,8 @@ async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -
 
         results = [result async for result in async_gen]
         assert len(results) == 2
-        assert results[0].resources[0] == '{"resourceType": "Patient", "id": "1"}'
-        assert results[0].errors == []
+        assert results[0]["resources"][0] == '{"resourceType": "Patient", "id": "1"}'
+        assert results[0]["errors"] == []
 
 
 async def test_get_batch_result_streaming_async_not_found() -> None:
@@ -294,5 +294,5 @@ async def test_get_batch_result_streaming_async_not_found() -> None:
             parameters=parameters,
             server_url="http://fhir-server/",
         ):
-            assert isinstance(result, GetBatchResult)
-            assert result.resources == []
+            assert isinstance(result, dict)
+            assert result["resources"] == []

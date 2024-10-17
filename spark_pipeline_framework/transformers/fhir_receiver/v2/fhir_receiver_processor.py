@@ -1,3 +1,4 @@
+import dataclasses
 import json
 from datetime import datetime
 from json import JSONDecodeError
@@ -772,7 +773,7 @@ class FhirReceiverProcessor:
                     has_next_page = False
                 else:
                     if result.status == 404:
-                        yield GetBatchResult(resources=[], errors=[])
+                        yield dataclasses.asdict(GetBatchResult(resources=[], errors=[]))
                     elif result.status not in parameters.ignore_status_codes:
                         raise FhirReceiverException(
                             url=result.url,
@@ -788,7 +789,7 @@ class FhirReceiverProcessor:
                         )
                     has_next_page = False
 
-                yield GetBatchResult(resources=resources, errors=errors)
+                yield dataclasses.asdict(GetBatchResult(resources=resources, errors=errors))
 
     @staticmethod
     def read_resources_and_errors_from_response(
