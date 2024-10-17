@@ -6,10 +6,10 @@ from types import TracebackType
 from typing import Optional, List, Dict, Any
 
 # noinspection PyPackageRequirements
-import mlflow  # type: ignore
+import mlflow
 
 # noinspection PyPackageRequirements
-from mlflow.entities import Experiment, RunStatus  # type: ignore
+from mlflow.entities import Experiment, RunStatus
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.log_level import LogLevel

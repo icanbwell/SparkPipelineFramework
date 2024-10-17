@@ -185,12 +185,10 @@ async def test_get_batch_result_streaming_async_no_results() -> None:
 
     # Mock parameters
     parameters = get_fhir_receiver_parameters()
-    # Mock response data
-    mock_response_data = []
 
     # Mock the HTTP request
     with aioresponses() as m:
-        m.get(f"{server_url}/Patient", payload=mock_response_data)
+        m.get(f"{server_url}/Patient", payload=[])
 
         # Call the function
         results: List[Dict[str, Any]] = []

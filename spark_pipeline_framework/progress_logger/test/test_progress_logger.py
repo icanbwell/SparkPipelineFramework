@@ -5,14 +5,14 @@ import random
 from shutil import rmtree
 from typing import Dict, Any, Callable, Union, List, cast
 
-import mlflow  # type: ignore
+import mlflow
 import pytest
 from mlflow.store.tracking.file_store import FileStore
 
 from library.features.carriers_fhir.v1.features_carriers_fhir_v1 import (
     FeaturesCarriersFhirV1,
 )
-from mlflow.entities import Run, RunStatus  # type: ignore
+from mlflow.entities import Run, RunStatus
 from pyspark.ml import Transformer
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
