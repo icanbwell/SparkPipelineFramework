@@ -35,13 +35,25 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
         client_connection.drop()
 
     client_connection.insert_one(
-        {"displayLabel": "Should Return", "lastUpdatedOnDate": datetime.now()}
+        {
+            "displayLabel": "Should Return",
+            "lastUpdatedOnDate": datetime.now(),
+            "isRestricted": False,
+        }
+    )
+    client_connection.insert_one(
+        {
+            "displayLabel": "Should not Return Restricted",
+            "lastUpdatedOnDate": datetime.now(),
+            "isRestricted": True,
+        }
     )
 
     client_connection.insert_one(
         {
             "displayLabel": "Should NOT Return",
             "lastUpdatedOnDate": datetime.strptime("1900-01-01", "%Y-%m-%d"),
+            "isRestricted": False,
         }
     )
 
@@ -56,6 +68,7 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
             page_size=page_size,
             conn_string=conn_string,
             last_run_date=last_run_date,
+            query_parameters={"isRestricted": False},
         ).transform(df)
 
     # Assert
@@ -69,3 +82,4 @@ def test_connecthub_data_receiver(spark_session: SparkSession) -> None:
     )
     assert len(result) == 1
     assert result[0].get("displayLabel") is not "Should NOT Return"
+    assert result[0].get("displayLabel") is not "Should not Return Restricted"
