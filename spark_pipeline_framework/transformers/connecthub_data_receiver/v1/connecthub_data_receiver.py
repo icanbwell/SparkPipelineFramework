@@ -33,6 +33,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         page_size: Optional[
             int
         ] = 0,  # setting to 0 ignores limit and will return all results
+        query_parameters=Optional[Dict[str, Any]],
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -74,6 +75,11 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         self.last_run_date: Param[datetime] = Param(self, "last_run_date", "")
         self._setDefault(last_run_date=last_run_date)
 
+        self.query_parameters: Param[Dict[str, Any]] = Param(
+            self, "query_parameters", ""
+        )
+        self._setDefault(query_parameters=query_parameters)
+
         self.db_name: Param[str] = Param(self, "db_name", "")
         self._setDefault(db_name=db_name)
 
@@ -81,7 +87,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         view_name = self.get_view_name()
         conn_string = self.get_conn_string()
         db_name = self.get_db_name()
-
+        query_parameters = self.get_query_parameters()
         client = pymongo.MongoClient(conn_string)  # type: ignore
 
         try:
@@ -98,7 +104,9 @@ class ConnectHubDataReceiver(FrameworkTransformer):
             converted_data: List[Any] = []
             last_seen = None
             while True:
-                data, last_seen = self.pagination(client_connection, last_seen)
+                data, last_seen = self.pagination(
+                    client_connection, query_parameters, last_seen
+                )
                 if not data:
                     break
                 converted_data.extend(data)
@@ -118,7 +126,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         return df
 
     def pagination(
-        self, client: Any, last_seen  # type: ignore
+        self, client: Any, query_parameters: Dict[str, Any], last_seen  # type: ignore
     ) -> Tuple[Union[List[Any], None], Union[datetime, None]]:
         """
         Helper function to paginate results from ConnectHub. The built-in cursor.skip and cursor.limit methods
@@ -138,28 +146,19 @@ class ConnectHubDataReceiver(FrameworkTransformer):
 
         LAST_UPDATED_ON_DATE = "lastUpdatedOnDate"
 
-        if last_seen is None:
-            # When it is first page
-            cursor = (
-                client.find(
-                    {
-                        LAST_UPDATED_ON_DATE: {"$gte": last_run_date},
-                    }
-                )
-                .sort(LAST_UPDATED_ON_DATE, pymongo.ASCENDING)
-                .limit(page_size)
+        # When it is first page
+        cursor = (
+            client.find(
+                {
+                    LAST_UPDATED_ON_DATE: (
+                        {"$gt": last_seen} if last_seen else {"$gte": last_run_date}
+                    ),
+                    **(query_parameters if query_parameters else {}),
+                },
             )
-        else:
-            cursor = (
-                client.find(
-                    {
-                        LAST_UPDATED_ON_DATE: {"$gt": last_seen},
-                    }
-                )
-                .sort(LAST_UPDATED_ON_DATE, pymongo.ASCENDING)
-                .limit(page_size)
-            )
-
+            .sort(LAST_UPDATED_ON_DATE, pymongo.ASCENDING)
+            .limit(page_size)
+        )
         # Get the data
         list_cur = list(cursor)
 
@@ -196,3 +195,6 @@ class ConnectHubDataReceiver(FrameworkTransformer):
 
     def get_db_name(self) -> str:
         return self.getOrDefault(self.db_name)
+
+    def get_query_parameters(self) -> str:
+        return self.getOrDefault(self.query_parameters)
