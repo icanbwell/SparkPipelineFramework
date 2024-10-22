@@ -133,7 +133,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
                     progress_logger.log_exception(
                         event_name=str(automapper), event_text=error_msg, ex=e
                     )
-                    progress_logger.end_mlflow_run(status=RunStatus.FAILED)
+                    progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
                 raise FrameworkMappingRunnerException(msg=error_msg, exception=e) from e
 
         return df

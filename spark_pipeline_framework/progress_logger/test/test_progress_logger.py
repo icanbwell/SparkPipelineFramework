@@ -1,4 +1,5 @@
 import os
+import pandas
 import string
 from pathlib import Path
 import random
@@ -329,20 +330,20 @@ def test_progress_logger_with_mlflow(
     experiment = mlflow.get_experiment_by_name(name=experiment_name)
     assert experiment is not None, "the mlflow experiment was not created"
     # assert the experiment has one parent run and 7 nested runs
-    runs = mlflow.search_runs(
+    runs: Union[List[Run], "pandas.DataFrame"] = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
     assert len(runs) == 13, "there should be 13 runs total, 1 parent and 12 nested"
     parent_runs = [
-        run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is None  # type: ignore
     ]
     assert len(parent_runs) == 1
     nested_runs = [
-        run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None  # type: ignore
     ]
     assert len(nested_runs) == 12
     # assert that the parent run has the params
-    parent_run: Run = parent_runs[0]
+    parent_run = parent_runs[0]
     assert (
         parent_run.data.params.get("flights_path") == flights_path
     ), "parent run should have the flights_path parameter set"
@@ -351,27 +352,27 @@ def test_progress_logger_with_mlflow(
     csv_loader_run = [
         run
         for run in nested_runs
-        if "FrameworkCsvLoader" in run.data.tags.get("mlflow.runName")
+        if "FrameworkCsvLoader" in run.data.tags.get("mlflow.runName")  # type: ignore
     ]
     assert len(csv_loader_run) == 1, ",".join(
-        [run.data.tags.get("mlflow.runName") for run in nested_runs]
+        [run.data.tags.get("mlflow.runName") for run in nested_runs]  # type: ignore
     )
     assert (
-        csv_loader_run[0].data.params.get("data_path") == flights_path
+        csv_loader_run[0].data.params.get("data_path") == flights_path  # type: ignore
     ), "csv loader run should have 'data_path` param set"
     json_export_run = [
         run
         for run in nested_runs
-        if "FrameworkJsonExporter" in run.data.tags.get("mlflow.runName")
+        if "FrameworkJsonExporter" in run.data.tags.get("mlflow.runName")  # type: ignore
     ]
     assert len(json_export_run) == 1
     assert (
-        json_export_run[0].data.params.get("data_export_path") == export_path
+        json_export_run[0].data.params.get("data_export_path") == export_path  # type: ignore
     ), "export run should have 'data_export_path` param set"
     drop_views_transformer_run = [
         run
         for run in nested_runs
-        if "FrameworkDropViewsTransformer" in run.data.tags.get("mlflow.runName")
+        if "FrameworkDropViewsTransformer" in run.data.tags.get("mlflow.runName")  # type: ignore
     ]
     assert len(drop_views_transformer_run) == 1
 
@@ -455,11 +456,11 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
     )
     assert len(runs) == 20, "there should be 20 runs total, 1 parent and 19 nested"
     parent_runs = [
-        run for run in runs if run.data.tags.get("mlflow.parentRunId") is None
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is None  # type: ignore
     ]
     assert len(parent_runs) == 1
     nested_runs = [
-        run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None
+        run for run in runs if run.data.tags.get("mlflow.parentRunId") is not None  # type: ignore
     ]
     assert len(nested_runs) == 19
 
@@ -577,16 +578,17 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     experiment = mlflow.get_experiment_by_name(name=experiment_name)
     assert experiment is not None, "the mlflow experiment was not created"
 
-    runs: List[Run] = mlflow.search_runs(
+    runs: Union[List[Run], "pandas.DataFrame"] = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
     assert len(runs) >= 1
-    run: Run = runs[0]
-    assert run.info.status == RunStatus.to_string(RunStatus.FINISHED)
+    if isinstance(runs, list):
+        run: mlflow.entities.Run = runs[0]  # Run object
+        assert run.info.status == RunStatus.to_string(RunStatus.FINISHED)  # type: ignore
 
-    # assert that the 'log' param was set properly
-    log_param_value = run.data.params.get("log")
-    assert log_param_value == "this"
+        # assert that the 'log' param was set properly
+        log_param_value = run.data.params.get("log")
+        assert log_param_value == "this"
 
     # assert that an event notification was sent out
     event_log_files = os.listdir(event_log_path)
