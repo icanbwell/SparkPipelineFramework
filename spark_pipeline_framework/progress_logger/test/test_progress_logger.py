@@ -345,7 +345,7 @@ def test_progress_logger_with_mlflow(
     # assert that the parent run has the params
     parent_run = parent_runs[0]
     assert (
-        parent_run.data.params.get("flights_path") == flights_path
+        parent_run.data.params.get("flights_path") == flights_path  # type: ignore
     ), "parent run should have the flights_path parameter set"
 
     # assert that load and export runs have the data param set
