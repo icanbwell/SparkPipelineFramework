@@ -3,7 +3,7 @@ import os
 from typing import Any, Dict, List, Optional, Union
 
 # noinspection PyPackageRequirements
-from mlflow.entities import RunStatus  # type: ignore
+from mlflow.entities import RunStatus
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
@@ -187,7 +187,7 @@ class FrameworkPipeline(Transformer):
                         event_text=str(e),
                         ex=e,
                     )
-                    self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)
+                    self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
 
                     raise e
 
@@ -299,7 +299,7 @@ class FrameworkPipeline(Transformer):
                         event_text=str(e),
                         ex=e,
                     )
-                    self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)
+                    self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
 
                     raise e
 
