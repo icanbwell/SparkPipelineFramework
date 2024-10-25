@@ -352,10 +352,10 @@ def test_progress_logger_with_mlflow(
     csv_loader_run = [
         run
         for run in nested_runs
-        if "FrameworkCsvLoader" in run.data.tags.get("mlflow.runName")
+        if "FrameworkCsvLoader" in run.data.tags.get("mlflow.runName")  # type: ignore
     ]
     assert len(csv_loader_run) == 1, ",".join(
-        [run.data.tags.get("mlflow.runName") for run in nested_runs]
+        [run.data.tags.get("mlflow.runName") for run in nested_runs]  # type: ignore
     )
     assert (
         csv_loader_run[0].data.params.get("data_path") == flights_path  # type: ignore
@@ -585,7 +585,7 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
         run: mlflow.entities.Run = runs[0]  # Run object
         assert run.info.status == RunStatus.to_string(RunStatus.FINISHED)  # type: ignore
 
-    # assert that the 'log' param was set properly
+        # assert that the 'log' param was set properly
         log_param_value = run.data.params.get("log")
         assert log_param_value == "this"
 
