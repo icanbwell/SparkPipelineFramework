@@ -28,7 +28,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 async def test_async_real_fhir_server_get_graph_error(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
-    print()
+    print("Running test_async_real_fhir_server_get_graph_error")
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
     temp_folder = data_dir.joinpath("../temp")
@@ -127,6 +127,7 @@ async def test_async_real_fhir_server_get_graph_error(
 
         parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
 
+        print("Calling fhir receiver")
         with ProgressLogger() as progress_logger:
             await FhirReceiver(
                 server_url=fhir_server_url,
@@ -147,6 +148,7 @@ async def test_async_real_fhir_server_get_graph_error(
                 error_view="error_view",
             ).transform_async(df)
 
+        print("Asserting resultant dataframe.")
         # Assert
         json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
         print("------- Result DataFrame -------")
