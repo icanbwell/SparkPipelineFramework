@@ -215,7 +215,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         operation: Union[FhirSenderOperation, str] = self.getOrDefault(self.operation)
 
-        assert parameters
+        assert parameters is not None
         progress_logger = self.getProgressLogger()
 
         auth_server_url: Optional[str] = self.getAuthServerUrl()

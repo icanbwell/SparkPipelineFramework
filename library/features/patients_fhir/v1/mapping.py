@@ -14,8 +14,8 @@ def mapping(parameters: Dict[str, Any]) -> List[AutoMapperBase]:
         view=parameters["view"],
         source_view=parameters["source_view"],
         keys=["member_id"],
-    ).columns(
-        patient=AutoMapperDataTypeComplexBase(
+    ).complex(
+        AutoMapperDataTypeComplexBase(
             resourceType=A.text("Patient"),
             id=A.column("member_id"),
             name=[
