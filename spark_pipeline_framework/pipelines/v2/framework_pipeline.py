@@ -252,7 +252,7 @@ class FrameworkPipeline(Transformer):
                         )
                         if hasattr(transformer, "_transform_async"):
                             # noinspection PyProtectedMember
-                            df = await transformer._transform_async(dataset=df)
+                            df = await transformer._transform_async(df)
                         else:
                             df = transformer.transform(dataset=df)
                         if self.log_level and self.log_level == "DEBUG":

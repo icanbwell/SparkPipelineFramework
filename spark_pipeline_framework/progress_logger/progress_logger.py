@@ -90,7 +90,7 @@ class ProgressLogger:
         self.logger.info("ENDING PARENT RUN")
         if exc_value:
             # there was an exception so mark the parent run as failed
-            self.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
+            self.end_mlflow_run(status=RunStatus.FAILED)  # type:ignore[arg-type]
         # safe to call without checking if we have a tracking url set for mlflow
         mlflow.end_run()
 
@@ -114,8 +114,12 @@ class ProgressLogger:
         mlflow.start_run(run_name=run_name, nested=is_nested)
 
     # noinspection PyMethodMayBeStatic
-    def end_mlflow_run(self, status: RunStatus = RunStatus.FINISHED) -> None:  # type: ignore
-        mlflow.end_run(status=RunStatus.to_string(status))  # type: ignore
+    def end_mlflow_run(
+        self, status: RunStatus = RunStatus.FINISHED  # type:ignore[assignment]
+    ) -> None:
+        mlflow.end_run(
+            status=RunStatus.to_string(status)  # type:ignore[no-untyped-call]
+        )
 
     def log_metric(
         self,

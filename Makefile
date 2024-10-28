@@ -7,7 +7,7 @@ Pipfile.lock: build
 	docker compose run --rm --name spspark_pipeline_frameworkftest dev /bin/bash -c "rm -f Pipfile.lock && pipenv lock --dev"
 
 .PHONY: install_types
-install_types: Pipfile
+install_types:
 	docker compose run --rm --name spark_pipeline_framework dev pipenv run mypy --install-types --non-interactive
 
 .PHONY:devdocker
@@ -46,7 +46,7 @@ clean-pre-commit: ## removes pre-commit hook
 	rm -f .git/hooks/pre-commit
 
 .PHONY:setup-pre-commit
-setup-pre-commit: Pipfile.lock
+setup-pre-commit:
 	cp ./pre-commit-hook ./.git/hooks/pre-commit
 
 .PHONY:run-pre-commit
