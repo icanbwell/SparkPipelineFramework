@@ -514,8 +514,7 @@ def test_progress_logger_without_mlflow(
     # semi hack -- reset the tracking url s
     mlflow.set_tracking_uri(uri="")
     experiments = mlflow.search_experiments()
-    assert len(experiments) == 1
-    assert experiments[0].name == "Default"
+    assert len(experiments) == 0
 
     mlflow_default_dir: Path = data_dir.joinpath("mlruns")
     if os.path.isdir(mlflow_default_dir):
