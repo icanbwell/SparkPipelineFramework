@@ -41,12 +41,12 @@ services:
       test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
 
   mlflow:
-    image: imranq2/mlflow_server:0.2.0
+    image: imranq2/mlflow_server:0.1.18
     ports:
       - '5050:5000'
+    command: sh -c "mlflow server --host 0.0.0.0 --port 5000 --default-artifact-root /tmp/mlflow_srv --backend-store-uri /tmp/mlflow_srv"
     volumes:
-      - ./mlflow_artifacts/:/opt/project/mlflow_artifacts/
-    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri mysql+pymysql://root:root_password@warehouse:3306/fhir_rpt --default-artifact-root ./opt/project/mlflow_artifacts
+      - /tmp/mlflow_srv:/tmp/mlflow_srv
 
   mock-server:
     image: mockserver/mockserver:mockserver-5.15.0

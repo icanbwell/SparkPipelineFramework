@@ -31,7 +31,7 @@ slack_sdk = ">=3.22.0"
 # smart_open is needed for reading and writing files
 smart_open = { extras = ['s3'], version = ">=6.3.0" }
 # mlflow is needed for tracking experiments in MLFlow
-mlflow-skinny = ">=2.15.0"
+mlflow-skinny = ">=2.17.1"
 # sqlalchemy is needed for interacting with databases
 SQLAlchemy = ">=1.4.37"
 # sqlparse is needed for parsing SQL
