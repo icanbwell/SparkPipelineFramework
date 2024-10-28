@@ -3,14 +3,13 @@ from os import environ
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, cast
 
 # noinspection PyPackageRequirements
 import mlflow
-from mlflow import MlflowClient
 
 # noinspection PyPackageRequirements
-from mlflow.entities import Experiment, RunStatus
+from mlflow.entities import Experiment, RunStatus, Run
 from mlflow.store.tracking.file_store import FileStore
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
@@ -119,6 +118,8 @@ class ProgressLogger:
     def end_mlflow_run(
         self, status: RunStatus = RunStatus.FINISHED  # type:ignore[assignment]
     ) -> None:
+        if self.mlflow_config is None:
+            return
         mlflow.end_run(
             status=RunStatus.to_string(status)  # type:ignore[no-untyped-call]
         )
@@ -282,24 +283,49 @@ class ProgressLogger:
                     event_logger.log_event(event_name=event_name, event_text=event_text)
 
     @staticmethod
-    def clean_experiments() -> None:
-        client = MlflowClient()
+    def clean_experiments(*, tracking_uri: Optional[str]) -> None:
+        if tracking_uri is None:
+            return
+        mlflow.set_tracking_uri(tracking_uri)
         # List all experiments
-        experiments = client.search_experiments()
+        experiments = ProgressLogger.get_experiments()
         # Delete each experiment
         for exp in experiments:
             if exp.experiment_id == FileStore.DEFAULT_EXPERIMENT_ID:
                 continue
 
+            assert isinstance(
+                exp, Experiment
+            ), f"Expected Experiment, got {type(exp)}: {exp}"
+            assert isinstance(
+                exp.experiment_id, str
+            ), f"Expected str, got {type(exp.experiment_id)}: {exp.experiment_id}"
             # Get all runs in the experiment
-            runs = client.search_runs(experiment_ids=exp.experiment_id)
+            runs: List[Run] = cast(
+                List[Run],
+                mlflow.search_runs(
+                    experiment_ids=[exp.experiment_id], output_format="list"
+                ),
+            )
 
             # Delete each run
+            run: Run
             for run in runs:
-                client.delete_run(run.info.run_id)
+                assert isinstance(run, Run), f"Expected Run, got {type(run)}: {run}"
+                mlflow.delete_run(run.info.run_id)
                 print(f"Run with ID {run.info.run_id} has been deleted")
 
-            client.delete_experiment(exp.experiment_id)
+            mlflow.delete_experiment(exp.experiment_id)
             print(
                 f"Experiment with ID {exp.experiment_id} and Name {exp.name} has been deleted"
             )
+        experiments = ProgressLogger.get_experiments()
+        assert len(experiments) == 0
+
+    @staticmethod
+    def get_experiments() -> List[Experiment]:
+        return [
+            e
+            for e in mlflow.search_experiments()
+            if e.experiment_id != FileStore.DEFAULT_EXPERIMENT_ID
+        ]

@@ -9,7 +9,6 @@ import mlflow
 import pandas
 import pytest
 from mlflow.entities import Run, RunStatus
-from mlflow.store.tracking.file_store import FileStore
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
 
@@ -27,6 +26,7 @@ from spark_pipeline_framework.progress_logger.test.simple_pipeline import Simple
 
 
 WAREHOUSE_CONNECTION_STRING = "jdbc:mysql://root:root_password@warehouse:3306/fhir_rpt/schema?rewriteBatchedStatements=true"
+MLFLOW_TRACKING_URI = "http://mlflow:5000"
 
 
 @pytest.fixture(scope="function")
@@ -37,7 +37,7 @@ def test_setup() -> None:
     if os.path.isdir(output_dir):
         rmtree(output_dir)
 
-    ProgressLogger.clean_experiments()
+    ProgressLogger.clean_experiments(tracking_uri=MLFLOW_TRACKING_URI)
 
 
 async def test_progress_logger_with_mlflow_async(
@@ -81,8 +81,6 @@ async def test_progress_logger_with_mlflow_async(
 
     flow_run_name = "fluffy-fox"
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow")
-    # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
@@ -93,7 +91,7 @@ async def test_progress_logger_with_mlflow_async(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name=flow_run_name,
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
 
@@ -200,8 +198,6 @@ async def test_progress_logger_with_mlflow_and_looping_pipeline_async(
 
     flow_run_name = "fluffy-fox"
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow_loop")
-    # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
@@ -212,7 +208,7 @@ async def test_progress_logger_with_mlflow_and_looping_pipeline_async(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name=flow_run_name,
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
 
@@ -288,9 +284,8 @@ async def test_progress_logger_without_mlflow_async(
         )
         transformer = pipeline.fit(df)
         await transformer._transform_async(df)
-    # semi hack -- reset the tracking url s
-    mlflow.set_tracking_uri(uri="")
-    experiments = mlflow.search_experiments()
+
+    experiments = ProgressLogger.get_experiments()
     assert len(experiments) == 0
 
     mlflow_default_dir: Path = data_dir.joinpath("mlruns")
@@ -323,17 +318,14 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
 
     parameters = {"foo": "bar", "view2": "my_view_2"}
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow_error")
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     experiment_name: str = "error_tests"
-
-    clean_experiments(experiment_name=experiment_name)
 
     mlflow_config = MlFlowConfig(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name="run",
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
     with ProgressLogger(
@@ -368,29 +360,6 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     # assert that an event notification was sent out
     event_log_files = os.listdir(event_log_path)
     assert len(event_log_files) >= 1
-
-
-def clean_experiments(experiment_name: str) -> None:
-    client = mlflow.tracking.MlflowClient()
-    # List all experiments
-    experiments = client.search_experiments()
-    # Delete each experiment
-    for exp in experiments:
-        if exp.experiment_id == FileStore.DEFAULT_EXPERIMENT_ID:
-            continue
-
-        # Get all runs in the experiment
-        runs = client.search_runs(experiment_ids=exp.experiment_id)
-
-        # Delete each run
-        for run in runs:
-            client.delete_run(run.info.run_id)
-            print(f"Run with ID {run.info.run_id} has been deleted")
-
-        client.delete_experiment(exp.experiment_id)
-        print(
-            f"Experiment with ID {exp.experiment_id} and Name {exp.name} has been deleted"
-        )
 
 
 async def test_progress_logger_mlflow_error_handling_when_tracking_server_is_inaccessible_async(

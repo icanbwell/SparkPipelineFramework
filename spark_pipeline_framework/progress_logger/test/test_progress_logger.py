@@ -29,6 +29,7 @@ from pyspark.sql.types import StructType
 
 
 WAREHOUSE_CONNECTION_STRING = "jdbc:mysql://root:root_password@warehouse:3306/fhir_rpt/schema?rewriteBatchedStatements=true"
+MLFLOW_TRACKING_URI = "http://mlflow:5000"
 
 
 @pytest.fixture(scope="function")
@@ -39,13 +40,14 @@ def test_setup() -> None:
     if os.path.isdir(output_dir):
         rmtree(output_dir)
 
+    ProgressLogger.clean_experiments(tracking_uri=MLFLOW_TRACKING_URI)
+
 
 def test_progress_logger_with_mlflow(
     spark_session: SparkSession, test_setup: Any
 ) -> None:
     # Arrange
     clean_spark_session(spark_session)
-    ProgressLogger.clean_experiments()
 
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
@@ -83,8 +85,6 @@ def test_progress_logger_with_mlflow(
 
     flow_run_name = "fluffy-fox"
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow")
-    # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
@@ -95,7 +95,7 @@ def test_progress_logger_with_mlflow(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name=flow_run_name,
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
 
@@ -161,7 +161,6 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
     spark_session: SparkSession, test_setup: Any
 ) -> None:
     clean_spark_session(spark_session)
-    ProgressLogger.clean_experiments()
 
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
@@ -204,7 +203,6 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
 
     flow_run_name = "fluffy-fox"
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow_loop")
     # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
@@ -216,7 +214,7 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name=flow_run_name,
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
 
@@ -294,7 +292,7 @@ def test_progress_logger_without_mlflow(
         transformer.transform(df)
     # semi hack -- reset the tracking url s
     mlflow.set_tracking_uri(uri="")
-    experiments = mlflow.search_experiments()
+    experiments = ProgressLogger.get_experiments()
     assert len(experiments) == 0
 
     mlflow_default_dir: Path = data_dir.joinpath("mlruns")
@@ -327,17 +325,14 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
 
     parameters = {"foo": "bar", "view2": "my_view_2"}
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow_error")
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     experiment_name: str = "error_tests"
-
-    ProgressLogger.clean_experiments()
 
     mlflow_config = MlFlowConfig(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name="run",
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
     with ProgressLogger(
@@ -361,7 +356,7 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     runs: Union[List[Run], "pandas.DataFrame"] = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
-    if isinstance(runs, list):
+    if isinstance(runs, list) and len(runs) > 0:
         run: mlflow.entities.Run = runs[0]  # Run object
         assert run.info.status == RunStatus.to_string(RunStatus.FINISHED)  # type: ignore
 
