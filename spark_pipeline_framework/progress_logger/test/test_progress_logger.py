@@ -581,6 +581,7 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     runs: Union[List[Run], "pandas.DataFrame"] = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
+    assert len(runs) >= 1
     if isinstance(runs, list):
         run: mlflow.entities.Run = runs[0]  # Run object
         assert run.info.status == RunStatus.to_string(RunStatus.FINISHED)  # type: ignore
