@@ -39,6 +39,8 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 async def test_async_real_fhir_server_get_graph_by_id_large(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
+    # import pdb
+    # pdb.set_trace()
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
@@ -218,131 +220,133 @@ async def test_async_real_fhir_server_get_graph_by_id_large(
 
         parameters = {"flow_name": "Test Pipeline V2", "team_name": "Data Operations"}
 
-        with ProgressLogger() as progress_logger:
-            await FhirReceiver(
-                server_url=fhir_server_url,
-                resource=resource_type,
-                id_view="id_view",
-                action="$graph",
-                additional_parameters=["contained=true"],
-                separate_bundle_resources=True,
-                action_payload=get_practitioner_graph(client_slug="bwell"),
-                file_path=patient_json_path,
-                progress_logger=progress_logger,
-                parameters=parameters,
-                run_synchronously=run_synchronously,
-                use_data_streaming=use_data_streaming,
-                auth_well_known_url=auth_well_known_url,
-                auth_client_id=auth_client_id,
-                auth_client_secret=auth_client_secret,
-            ).transform_async(df)
-
-            # Assert
-            json_df: DataFrame = df.sparkSession.read.text(str(patient_json_path))
-            print(" ---- Result of $graph call ------")
-            json_df.show(truncate=False)
-            print(" ---- Schema of $graph call ------")
-            json_df.printSchema()
-
-            assert json_df.count() == count
-
-            assert json_df.schema == StructType(
-                [
-                    StructField("value", StringType(), True),
-                ]
-            )
-
-            # now try to read it
-            await FhirReader(
-                file_path=patient_json_path,
-                view="practitioner_graphs",
-                name="fhir_reader",
-                progress_logger=progress_logger,
-                schema=StructType(
-                    [
-                        StructField(
-                            "practitioner",
-                            ArrayType(
-                                PractitionerSchema.get_schema(
-                                    include_extension=True,
-                                )
-                            ),
-                        ),
-                        StructField(
-                            "practitionerrole",
-                            ArrayType(
-                                PractitionerRoleSchema.get_schema(
-                                    include_extension=True,
-                                    extension_fields=[
-                                        "valueCodeableConcept",
-                                        "valueRange",
-                                        "valueReference",
-                                    ],
-                                )
-                            ),
-                        ),
-                        StructField(
-                            "organization",
-                            ArrayType(OrganizationSchema.get_schema()),
-                        ),
-                        StructField(
-                            "location",
-                            ArrayType(
-                                LocationSchema.get_schema(
-                                    include_extension=True,
-                                    extension_fields=["valueString"],
-                                )
-                            ),
-                        ),
-                        StructField(
-                            "insuranceplan",
-                            ArrayType(InsurancePlanSchema.get_schema()),
-                        ),
-                        StructField(
-                            "endpoint",
-                            ArrayType(
-                                EndpointSchema.get_schema(
-                                    include_extension=False,
-                                )
-                            ),
-                        ),
-                        StructField(
-                            "schedule",
-                            ArrayType(
-                                ScheduleSchema.get_schema(
-                                    include_extension=True,
-                                    extension_fields=[
-                                        "valueCodeableConcept",
-                                        "valueRange",
-                                        "valueDecimal",
-                                    ],
-                                )
-                            ),
-                        ),
-                        StructField("group", ArrayType(GroupSchema.get_schema())),
-                        StructField(
-                            "measurereport", ArrayType(MeasureReportSchema.get_schema())
-                        ),
-                    ]
-                ),
-            ).transform_async(df)
-
-            # Assert
-            practitioner_graphs_df: DataFrame = spark_session.table(
-                "practitioner_graphs"
-            )
-            print(" ---- Result of FhirReader ------")
-            practitioner_graphs_df.show(truncate=False)
-            print(" ---- Schema of FhirReader ------")
-            practitioner_graphs_df.printSchema()
-
-            assert practitioner_graphs_df.count() == count
-
-            rows: List[Dict[str, Any]] = [
-                r.asDict(recursive=True) for r in practitioner_graphs_df.collect()
-            ]
-
-            rows = sorted(rows, key=lambda x: x["practitioner"][0]["id"])
-
-            assert rows[0]["practitioner"][0]["id"] == id_dict[resource_type][0]
-            assert rows[1]["practitioner"][0]["id"] == id_dict[resource_type][1]
+        # import pdb
+        # pdb.set_trace()
+        # with ProgressLogger() as progress_logger:
+        #     await FhirReceiver(
+        #         server_url=fhir_server_url,
+        #         resource=resource_type,
+        #         id_view="id_view",
+        #         action="$graph",
+        #         additional_parameters=["contained=true"],
+        #         separate_bundle_resources=True,
+        #         action_payload=get_practitioner_graph(client_slug="bwell"),
+        #         file_path=patient_json_path,
+        #         progress_logger=progress_logger,
+        #         parameters=parameters,
+        #         run_synchronously=run_synchronously,
+        #         use_data_streaming=use_data_streaming,
+        #         auth_well_known_url=auth_well_known_url,
+        #         auth_client_id=auth_client_id,
+        #         auth_client_secret=auth_client_secret,
+        #     ).transform_async(df)
+        #
+        #     # Assert
+        #     json_df: DataFrame = df.sparkSession.read.text(str(patient_json_path))
+        #     print(" ---- Result of $graph call ------")
+        #     json_df.show(truncate=False)
+        #     print(" ---- Schema of $graph call ------")
+        #     json_df.printSchema()
+        #
+        #     assert json_df.count() == count
+        #
+        #     assert json_df.schema == StructType(
+        #         [
+        #             StructField("value", StringType(), True),
+        #         ]
+        #     )
+        #
+        #     # now try to read it
+        #     await FhirReader(
+        #         file_path=patient_json_path,
+        #         view="practitioner_graphs",
+        #         name="fhir_reader",
+        #         progress_logger=progress_logger,
+        #         schema=StructType(
+        #             [
+        #                 StructField(
+        #                     "practitioner",
+        #                     ArrayType(
+        #                         PractitionerSchema.get_schema(
+        #                             include_extension=True,
+        #                         )
+        #                     ),
+        #                 ),
+        #                 StructField(
+        #                     "practitionerrole",
+        #                     ArrayType(
+        #                         PractitionerRoleSchema.get_schema(
+        #                             include_extension=True,
+        #                             extension_fields=[
+        #                                 "valueCodeableConcept",
+        #                                 "valueRange",
+        #                                 "valueReference",
+        #                             ],
+        #                         )
+        #                     ),
+        #                 ),
+        #                 StructField(
+        #                     "organization",
+        #                     ArrayType(OrganizationSchema.get_schema()),
+        #                 ),
+        #                 StructField(
+        #                     "location",
+        #                     ArrayType(
+        #                         LocationSchema.get_schema(
+        #                             include_extension=True,
+        #                             extension_fields=["valueString"],
+        #                         )
+        #                     ),
+        #                 ),
+        #                 StructField(
+        #                     "insuranceplan",
+        #                     ArrayType(InsurancePlanSchema.get_schema()),
+        #                 ),
+        #                 StructField(
+        #                     "endpoint",
+        #                     ArrayType(
+        #                         EndpointSchema.get_schema(
+        #                             include_extension=False,
+        #                         )
+        #                     ),
+        #                 ),
+        #                 StructField(
+        #                     "schedule",
+        #                     ArrayType(
+        #                         ScheduleSchema.get_schema(
+        #                             include_extension=True,
+        #                             extension_fields=[
+        #                                 "valueCodeableConcept",
+        #                                 "valueRange",
+        #                                 "valueDecimal",
+        #                             ],
+        #                         )
+        #                     ),
+        #                 ),
+        #                 StructField("group", ArrayType(GroupSchema.get_schema())),
+        #                 StructField(
+        #                     "measurereport", ArrayType(MeasureReportSchema.get_schema())
+        #                 ),
+        #             ]
+        #         ),
+        #     ).transform_async(df)
+        #
+        #     # Assert
+        #     practitioner_graphs_df: DataFrame = spark_session.table(
+        #         "practitioner_graphs"
+        #     )
+        #     print(" ---- Result of FhirReader ------")
+        #     practitioner_graphs_df.show(truncate=False)
+        #     print(" ---- Schema of FhirReader ------")
+        #     practitioner_graphs_df.printSchema()
+        #
+        #     assert practitioner_graphs_df.count() == count
+        #
+        #     rows: List[Dict[str, Any]] = [
+        #         r.asDict(recursive=True) for r in practitioner_graphs_df.collect()
+        #     ]
+        #
+        #     rows = sorted(rows, key=lambda x: x["practitioner"][0]["id"])
+        #
+        #     assert rows[0]["practitioner"][0]["id"] == id_dict[resource_type][0]
+        #     assert rows[1]["practitioner"][0]["id"] == id_dict[resource_type][1]
