@@ -249,7 +249,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                     progress_logger.start_mlflow_run(
                         run_name=stage_name, is_nested=True
                     )
-                t.transform(df)  # run the automapper
+                await t.transform_async(df)  # run the automapper
                 views: List[str] = t.getViews()
                 view: str
                 for view in views:
@@ -281,28 +281,28 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
 
                     # export as FHIR to local fhir_resource_path
                     if file_format == "parquet":
-                        FrameworkParquetExporter(
+                        await FrameworkParquetExporter(
                             name=f"{name}_parquet_exporter",
                             parameters=parameters,
                             progress_logger=progress_logger,
                             view=view,
                             mode=mode,
                             file_path=fhir_resource_path,
-                        ).transform(df)
+                        ).transform_async(df)
                     else:
-                        FhirExporter(
+                        await FhirExporter(
                             view=view,
                             file_path=fhir_resource_path,
                             parameters=parameters,
                             progress_logger=progress_logger,
                             name=f"{name}_fhir_exporter",
                             mode=mode,
-                        ).transform(df)
+                        ).transform_async(df)
 
                     if fhir_resource_path.startswith("s3") and athena_schema:
                         # create table in Athena
                         s3_temp_folder: str = str(parameters.get("s3_temp_folder"))
-                        AthenaTableCreator(
+                        await AthenaTableCreator(
                             view=view,
                             schema_name=athena_schema,
                             table_name=f"{source_entity_name}_{resourceType}",
@@ -311,7 +311,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             s3_temp_folder=s3_temp_folder,
                             parameters=parameters,
                             progress_logger=progress_logger,
-                        ).transform(df)
+                        ).transform_async(df)
                     # send to FHIR server
                     if send_to_fhir:
                         await FhirSender(

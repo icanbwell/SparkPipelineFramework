@@ -7,9 +7,11 @@ from typing import Optional, List, Dict, Any
 
 # noinspection PyPackageRequirements
 import mlflow
+from mlflow import MlflowClient
 
 # noinspection PyPackageRequirements
 from mlflow.entities import Experiment, RunStatus
+from mlflow.store.tracking.file_store import FileStore
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.log_level import LogLevel
@@ -278,3 +280,26 @@ class ProgressLogger:
             if self.event_loggers:
                 for event_logger in self.event_loggers:
                     event_logger.log_event(event_name=event_name, event_text=event_text)
+
+    @staticmethod
+    def clean_experiments() -> None:
+        client = MlflowClient()
+        # List all experiments
+        experiments = client.search_experiments()
+        # Delete each experiment
+        for exp in experiments:
+            if exp.experiment_id == FileStore.DEFAULT_EXPERIMENT_ID:
+                continue
+
+            # Get all runs in the experiment
+            runs = client.search_runs(experiment_ids=exp.experiment_id)
+
+            # Delete each run
+            for run in runs:
+                client.delete_run(run.info.run_id)
+                print(f"Run with ID {run.info.run_id} has been deleted")
+
+            client.delete_experiment(exp.experiment_id)
+            print(
+                f"Experiment with ID {exp.experiment_id} and Name {exp.name} has been deleted"
+            )

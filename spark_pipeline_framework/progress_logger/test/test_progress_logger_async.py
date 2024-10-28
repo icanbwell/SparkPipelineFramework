@@ -1,255 +1,32 @@
 import os
-import pandas
+import random
 import string
 from pathlib import Path
-import random
 from shutil import rmtree
-from typing import Dict, Any, Callable, Union, List, cast
+from typing import Any, Union, List
 
 import mlflow
+import pandas
 import pytest
-from mlflow.store.tracking.file_store import FileStore
-
-from library.features.carriers_fhir.v1.features_carriers_fhir_v1 import (
-    FeaturesCarriersFhirV1,
-)
 from mlflow.entities import Run, RunStatus
-from pyspark.ml import Transformer
-from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
+from mlflow.store.tracking.file_store import FileStore
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StructType
 
 from create_spark_session import clean_spark_session
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.log_level import LogLevel
-from spark_pipeline_framework.transformers.framework_drop_views_transformer.v1.framework_drop_views_transformer import (
-    FrameworkDropViewsTransformer,
-)
-
-from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
-    FrameworkJsonExporter,
-)
-from spark_pipeline_framework.transformers.framework_loop_transformer.v1.framework_loop_transformer import (
-    FrameworkLoopTransformer,
-)
-
-from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
-    FrameworkMappingLoader,
-)
-
-from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
-    get_python_function_from_location,
-)
-
-from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.framework_if_else_transformer import (
-    FrameworkIfElseTransformer,
-)
-
 from spark_pipeline_framework.progress_logger.progress_logger import (
     ProgressLogger,
     MlFlowConfig,
 )
-
-from library.features.carriers_python.v1.features_carriers_python_v1 import (
-    FeaturesCarriersPythonV1,
+from spark_pipeline_framework.progress_logger.test.looping_pipeline import (
+    LoopingPipeline,
 )
-
-from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.types import StructType
-from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
-    FrameworkCsvLoader,
-)
-
-from spark_pipeline_framework.pipelines.v2.framework_pipeline import FrameworkPipeline
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
-    FrameworkTransformer,
-)
-from spark_pipeline_framework.transformers.send_automapper_to_fhir.v1.automapper_to_fhir_transformer import (
-    AutoMapperToFhirTransformer,
-)
+from spark_pipeline_framework.progress_logger.test.simple_pipeline import SimplePipeline
 
 
-class LoopingPipeline(FrameworkPipeline):
-    def __init__(
-        self,
-        parameters: Dict[str, Any],
-        progress_logger: ProgressLogger,
-        max_number_of_runs: int = 1,
-    ):
-        super(LoopingPipeline, self).__init__(
-            parameters=parameters,
-            progress_logger=progress_logger,
-            run_id="87654321",
-            client_name="client_foo",
-            vendor_name="vendor_foo",
-        )
-
-        mapping_function: Callable[
-            [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
-        ] = get_python_function_from_location(
-            location=str(parameters["feature_path"]),
-            import_module_name=".mapping",
-            function_name="mapping",
-        )
-
-        self.steps = [
-            FrameworkLoopTransformer(
-                name="FrameworkLoopTransformer",
-                parameters=parameters,
-                progress_logger=progress_logger,
-                sleep_interval_in_seconds=2,
-                max_number_of_runs=max_number_of_runs,
-                stages=[
-                    FrameworkDropViewsTransformer(
-                        name="",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                        views=["foo"],
-                    ),
-                    FrameworkCsvLoader(
-                        name="FrameworkCsvLoader",
-                        view="flights",
-                        file_path=parameters["flights_path"],
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                    FeaturesCarriersV1(
-                        parameters=parameters, progress_logger=progress_logger
-                    ),
-                    FrameworkIfElseTransformer(
-                        enable=True,
-                        progress_logger=progress_logger,
-                        stages=[
-                            FeaturesCarriersPythonV1(
-                                parameters=parameters, progress_logger=progress_logger
-                            ),
-                        ],
-                    ),
-                    FrameworkMappingLoader(
-                        view="members",
-                        mapping_function=mapping_function,
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                    FrameworkJsonExporter(
-                        file_path=parameters["export_path"],
-                        view="flights",
-                        name="FrameworkJsonExporter",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                ],
-            )
-        ]
-
-
-class SimplePipeline(FrameworkPipeline):
-    def get_fhir_path(self, view: str, resource_name: str) -> str:
-        return str(
-            self.data_dir.joinpath("temp")
-            .joinpath("output")
-            .joinpath(f"{resource_name}-{view}")
-        )
-
-    def get_fhir_response_path(self, view: str, resource_name: str) -> str:
-        return str(
-            self.data_dir.joinpath("temp")
-            .joinpath("output")
-            .joinpath(f"{resource_name}-{view}-response")
-        )
-
-    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
-        super(SimplePipeline, self).__init__(
-            parameters=parameters,
-            progress_logger=progress_logger,
-            run_id="12345678",
-            client_name="client_foo",
-            vendor_name="vendor_foo",
-        )
-        self.data_dir: Path = Path(__file__).parent.joinpath("./")
-
-        self.transformers = self.create_steps(
-            cast(
-                List[Transformer],
-                [
-                    FrameworkDropViewsTransformer(
-                        name="",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                        views=["foo"],
-                    ),
-                    FrameworkCsvLoader(
-                        name="FrameworkCsvLoader",
-                        view="flights",
-                        file_path=parameters["flights_path"],
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                    FeaturesCarriersV1(
-                        parameters=parameters, progress_logger=progress_logger
-                    ),
-                    FrameworkIfElseTransformer(
-                        enable=True,
-                        progress_logger=progress_logger,
-                        stages=[
-                            FeaturesCarriersPythonV1(
-                                parameters=parameters, progress_logger=progress_logger
-                            ),
-                        ],
-                    ),
-                    AutoMapperToFhirTransformer(
-                        name="AutoMapperToFhirTransformer",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                        transformer=FeaturesCarriersFhirV1(
-                            parameters=parameters, progress_logger=progress_logger
-                        ),
-                        func_get_path=self.get_fhir_path,
-                        func_get_response_path=self.get_fhir_response_path,
-                        fhir_server_url="http://mock-server:1080",
-                        source_entity_name="members",
-                    ),
-                    FrameworkJsonExporter(
-                        file_path=parameters["export_path"],
-                        view="flights",
-                        name="FrameworkJsonExporter",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                ],
-            )
-        )
-
-
-class MappingPipeline(FrameworkPipeline):
-    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
-        super(MappingPipeline, self).__init__(
-            parameters=parameters,
-            progress_logger=progress_logger,
-            run_id="987654321",
-            client_name="client_bar",
-            vendor_name="vendor_bar",
-        )
-        mapping_function: Callable[
-            [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
-        ] = get_python_function_from_location(
-            location=str(parameters["feature_path"]),
-            import_module_name=".mapping",
-            function_name="mapping",
-        )
-
-        self.transformers = self.create_steps(
-            cast(
-                List[FrameworkTransformer],
-                [
-                    FrameworkMappingLoader(
-                        view="members",
-                        mapping_function=mapping_function,
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    )
-                ],
-            )
-        )
+WAREHOUSE_CONNECTION_STRING = "jdbc:mysql://root:root_password@warehouse:3306/fhir_rpt/schema?rewriteBatchedStatements=true"
 
 
 @pytest.fixture(scope="function")
@@ -259,6 +36,8 @@ def test_setup() -> None:
     output_dir = temp_dir.joinpath("output")
     if os.path.isdir(output_dir):
         rmtree(output_dir)
+
+    ProgressLogger.clean_experiments()
 
 
 async def test_progress_logger_with_mlflow_async(
@@ -297,8 +76,7 @@ async def test_progress_logger_with_mlflow_async(
         "view": "my_view_1",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
-        + "schema?rewriteBatchedStatements=true",
+        "conn_str": WAREHOUSE_CONNECTION_STRING,
     }
 
     flow_run_name = "fluffy-fox"
@@ -417,8 +195,7 @@ async def test_progress_logger_with_mlflow_and_looping_pipeline_async(
         "view": "my_view_1",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
-        + "schema?rewriteBatchedStatements=true",
+        "conn_str": WAREHOUSE_CONNECTION_STRING,
     }
 
     flow_run_name = "fluffy-fox"
@@ -654,8 +431,7 @@ async def test_progress_logger_mlflow_error_handling_when_tracking_server_is_ina
         "foo": "bar",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
-        + "schema?rewriteBatchedStatements=true",
+        "conn_str": WAREHOUSE_CONNECTION_STRING,
     }
 
     flow_run_name = "fluffy-fox"
