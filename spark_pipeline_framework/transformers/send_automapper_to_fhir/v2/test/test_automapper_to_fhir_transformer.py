@@ -130,3 +130,7 @@ async def test_automapper_to_fhir_transformer_async(
         result_df.show()
 
         assert result_df.count() == 0
+
+        mock_client.verify_expectations(
+            test_name=test_name,
+        )
