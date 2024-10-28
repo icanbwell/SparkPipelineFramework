@@ -1,4 +1,5 @@
 import json
+from os import environ
 from typing import Any, Callable, Dict, List, Optional, Union
 
 
@@ -73,6 +74,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         operation: Union[
             FhirSenderOperation, str
         ] = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
+        log_level: Optional[str] = None,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -190,6 +192,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(operation=operation)
 
+        self.log_level: Param[str] = Param(self, "log_level", "")
+        self._setDefault(log_level=log_level)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -227,6 +232,10 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
 
         mode: str = self.getOrDefault(self.mode)
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
+
+        log_level: Optional[str] = self.getOrDefault(self.log_level) or environ.get(
+            "LOGLEVEL"
+        )
 
         self.logger.info(f"Calling {fhir_server_url} with client_id={auth_client_id}")
 
@@ -347,6 +356,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                                 else None
                             ),
                             operation=operation,
+                            log_level=log_level,
                         ).transform_async(df)
                     if progress_logger is not None:
                         progress_logger.end_mlflow_run()

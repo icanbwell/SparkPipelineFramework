@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 from logging import Logger
 from typing import (
@@ -206,14 +207,26 @@ class FhirSenderProcessor:
 
             if len(json_data_list) == 0:
                 assert len(json_data_list) > 0, "json_data_list should not be empty"
-            logger.info(
-                f"Sending batch "
-                f" | Partition: {partition_index}/{parameters.total_partitions}"
-                f" | Chunk: {chunk_index}"
-                f" | Rows: {len(json_data_list)}"
-                f" | Operation: {parameters.operation}"
-                f" | Url: {parameters.server_url}/{parameters.resource_name}"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Sending batch (DEBUG) "
+                    f" | Partition: {partition_index}/{parameters.total_partitions}"
+                    f" | Chunk: {chunk_index}"
+                    f" | Rows: {len(json_data_list)}"
+                    f" | Operation: {parameters.operation}"
+                    f" | Url: {parameters.server_url}/{parameters.resource_name}"
+                    f" | data= {json_data_list}"
+                )
+            else:
+                logger.info(
+                    f"Sending batch "
+                    f" | Partition: {partition_index}/{parameters.total_partitions}"
+                    f" | Chunk: {chunk_index}"
+                    f" | Rows: {len(json_data_list)}"
+                    f" | Operation: {parameters.operation}"
+                    f" | Url: {parameters.server_url}/{parameters.resource_name}"
+                )
+
             request_id_list: List[str] = []
             responses: List[Dict[str, Any]] = []
             if FhirSenderOperation.operation_equals(

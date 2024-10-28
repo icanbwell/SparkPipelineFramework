@@ -1,4 +1,7 @@
+import os
+from os import environ
 from pathlib import Path
+from shutil import rmtree
 from typing import Any, Dict
 
 from pyspark.sql import SparkSession, DataFrame
@@ -20,20 +23,20 @@ async def test_automapper_to_fhir_transformer_async(
 ) -> None:
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
 
+    environ["LOGLEVEL"] = "DEBUG"
+
     data_dir: Path = Path(__file__).parent.joinpath("./")
+    temp_dir = data_dir.joinpath("temp")
+    if os.path.isdir(temp_dir):
+        rmtree(temp_dir)
+    os.makedirs(temp_dir)
 
     def get_fhir_path(view: str, resource_name: str) -> str:
-        return str(
-            data_dir.joinpath("temp")
-            .joinpath("output")
-            .joinpath(f"{resource_name}-{view}")
-        )
+        return str(temp_dir.joinpath("output").joinpath(f"{resource_name}-{view}"))
 
     def get_fhir_response_path(view: str, resource_name: str) -> str:
         return str(
-            data_dir.joinpath("temp")
-            .joinpath("output")
-            .joinpath(f"{resource_name}-{view}-response")
+            temp_dir.joinpath("output").joinpath(f"{resource_name}-{view}-response")
         )
 
     # create the input dataframe
