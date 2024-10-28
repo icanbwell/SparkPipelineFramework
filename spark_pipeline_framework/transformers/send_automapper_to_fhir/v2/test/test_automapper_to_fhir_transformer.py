@@ -83,13 +83,26 @@ async def test_automapper_to_fhir_transformer_async(
         },
     ]
 
+    merge_response = [
+        {
+            "resourceType": "Patient",
+            "id": "1",
+            "created": True,
+        },
+        {
+            "resourceType": "Patient",
+            "id": "2",
+            "created": True,
+        },
+    ]
+
     mock_client.expect(
         request=mock_request(
             path=f"/{test_name}/Patient/1/$merge",
             body=json.dumps(expected_json),
             method="POST",
         ),
-        response=mock_response(code=200),
+        response=mock_response(code=200, body=json.dumps(merge_response)),
         timing=times(1),
         file_path="1",
     )
