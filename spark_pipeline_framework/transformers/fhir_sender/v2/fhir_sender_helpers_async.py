@@ -1,4 +1,5 @@
 import json
+import logging
 from logging import Logger
 from typing import List, Optional, Dict, AsyncGenerator
 
@@ -72,13 +73,18 @@ async def send_json_bundle_to_fhir_async(
         )
 
     try:
-        logger.debug("----------- Sending data to FHIR -------")
-        logger.debug(json_data_list)
-        logger.debug("----------- End sending data to FHIR -------")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("----------- Sending data to FHIR -------")
+            logger.debug(json_data_list)
+            logger.debug("----------- End sending data to FHIR -------")
         response: FhirMergeResponse
         async for response in fhir_client.merge_async(
             id_=id_, json_data_list=json_data_list, batch_size=batch_size
         ):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("----------- Response from FHIR -------")
+                logger.debug(f"{json.dumps(response.__dict__)}")
+                logger.debug("----------- End response from FHIR -------")
             yield response
     except AssertionError as e:
         logger.exception(
