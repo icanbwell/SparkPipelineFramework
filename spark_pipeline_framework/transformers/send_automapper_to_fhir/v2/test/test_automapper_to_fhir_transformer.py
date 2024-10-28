@@ -1,9 +1,16 @@
+import json
 import os
 from os import environ
 from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict
 
+from mockserver_client.mockserver_client import (
+    MockServerFriendlyClient,
+    mock_request,
+    mock_response,
+    times,
+)
 from pyspark.sql import SparkSession, DataFrame
 
 from library.features.patients_fhir.v1.features_patients_fhir_v1 import (
@@ -22,6 +29,8 @@ async def test_automapper_to_fhir_transformer_async(
     spark_session: SparkSession,
 ) -> None:
     df: DataFrame = create_empty_dataframe(spark_session=spark_session)
+
+    test_name = "automapper_to_fhir_transformer_test"
 
     environ["LOGLEVEL"] = "DEBUG"
 
@@ -56,6 +65,35 @@ async def test_automapper_to_fhir_transformer_async(
     )
     patients_df.createOrReplaceTempView("patients")
 
+    server_url = f"http://mock-server:1080/{test_name}"
+    mock_client = MockServerFriendlyClient("http://mock-server:1080")
+    mock_client.clear(test_name)
+    mock_client.reset()
+
+    expected_json = [
+        {
+            "resourceType": "Patient",
+            "id": "1",
+            "name": [{"use": "usual", "family": "Doe", "given": ["John"]}],
+        },
+        {
+            "resourceType": "Patient",
+            "id": "2",
+            "name": [{"use": "usual", "family": "Smith", "given": ["Jane"]}],
+        },
+    ]
+
+    mock_client.expect(
+        request=mock_request(
+            path=f"/{test_name}/Patient/1/$merge",
+            body=json.dumps(expected_json),
+            method="POST",
+        ),
+        response=mock_response(code=200),
+        timing=times(1),
+        file_path="1",
+    )
+
     parameters: Dict[str, Any] = {}
     with ProgressLogger() as progress_logger:
         transformer = AutoMapperToFhirTransformer(
@@ -71,7 +109,7 @@ async def test_automapper_to_fhir_transformer_async(
             ),
             func_get_path=get_fhir_path,
             func_get_response_path=get_fhir_response_path,
-            fhir_server_url="http://mock-server:1080",
+            fhir_server_url=server_url,
             source_entity_name="Patient",
         )
         result_df = await transformer.transform_async(df)
