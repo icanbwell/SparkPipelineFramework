@@ -85,120 +85,13 @@ class FrameworkPipeline(Transformer):
         return self
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        try:
-            # if steps are defined but not transformers then convert steps to transformers first
-            if len(self.steps) > 0 and len(self.transformers) == 0:
-                self.transformers = self.create_steps(self.steps)
-            # get the logger to use
-            logger = get_logger(__name__)
-            count_of_transformers: int = len(self.transformers)
-            i: int = 0
-            pipeline_name: str = self.__class__.__name__
+        """
+        Override this method to implement transformation
 
-            self.progress_logger.log_event(
-                event_name=pipeline_name,
-                event_text=(
-                    f"Starting Pipeline {pipeline_name}" + f"_{self._run_id}"
-                    if self._run_id
-                    else ""
-                ),
-                log_level=LogLevel.INFO,
-            )
-            self.progress_logger.log_params(params=self.__parameters)
-
-            for transformer in self.transformers:
-                assert isinstance(transformer, Transformer), type(transformer)
-                if hasattr(transformer, "getName"):
-                    # noinspection Mypy
-                    stage_name = transformer.getName()
-                    # check that there is a value in case it is set to empty string
-                    if not stage_name:
-                        stage_name = transformer.__class__.__name__
-                else:
-                    stage_name = transformer.__class__.__name__
-                try:
-                    i += 1
-                    logger.info(
-                        f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
-                        f"({i} of {count_of_transformers}) ----"
-                    )
-                    self.progress_logger.start_mlflow_run(
-                        run_name=stage_name, is_nested=True
-                    )
-
-                    with ProgressLogMetric(
-                        progress_logger=self.progress_logger,
-                        name=str(stage_name) or "unknown",
-                    ):
-                        self.progress_logger.log_event(
-                            pipeline_name,
-                            event_text=f"Running pipeline step {stage_name}",
-                        )
-                        if hasattr(transformer, "_transform_async") and not hasattr(
-                            transformer, "_transform"
-                        ):
-                            # noinspection PyProtectedMember
-                            df = AsyncHelper.run(
-                                fn=transformer._transform_async(dataset=df)
-                            )
-                        else:
-                            df = transformer.transform(dataset=df)
-                        if self.log_level and self.log_level == "DEBUG":
-                            print(
-                                f"------------  Start Execution Plan for stage {stage_name} -----------"
-                            )
-                            df.explain(extended="cost")
-                            print(
-                                f"------------  End Execution Plan for stage {stage_name} -----------"
-                            )
-                        self.progress_logger.log_event(
-                            pipeline_name,
-                            event_text=f"Finished pipeline step {stage_name}",
-                        )
-                    self.progress_logger.end_mlflow_run()
-                except Exception as e:
-                    logger.error(
-                        f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer "
-                        + f"[{stage_name}] threw exception !!!!!!!!!!!!!"
-                    )
-                    # use exception chaining to add stage name but keep original exception
-                    # friendly_spark_exception: FriendlySparkException = (
-                    #     FriendlySparkException(exception=e, stage_name=stage_name)
-                    # )
-                    # error_messages: List[str] = (
-                    #     friendly_spark_exception.message.split("\n")
-                    #     if friendly_spark_exception.message
-                    #     else []
-                    # )
-                    # for error_message in error_messages:
-                    #     logger.error(msg=error_message)
-
-                    if hasattr(transformer, "getSql"):
-                        # noinspection Mypy
-                        logger.error(transformer.getSql())
-                    logger.error(
-                        "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                    )
-                    if len(e.args) >= 1:
-                        # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
-                        e.args = (f"In Stage ({stage_name})", *e.args)
-                    self.progress_logger.log_exception(
-                        event_name=pipeline_name,
-                        event_text=str(e),
-                        ex=e,
-                    )
-                    self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
-
-                    raise e
-
-            self.progress_logger.log_event(
-                event_name=pipeline_name,
-                event_text=f"Finished Pipeline {pipeline_name}",
-                log_level=LogLevel.INFO,
-            )
-            return df
-        finally:
-            self._check_validation(df)
+        :param df: input dataframe
+        :return: transformed dataframe
+        """
+        return AsyncHelper.run(self._transform_async(df))
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         try:

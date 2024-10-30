@@ -90,42 +90,6 @@ class FrameworkCheckpoint(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    def _transform(self, df: DataFrame) -> DataFrame:
-        view: str = self.getView()
-        mode: str = self.getMode()
-        file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
-            self.getFilePath()
-        )
-        if callable(file_path):
-            file_path = file_path(self.loop_id)
-        stream: bool = self.getStream()
-
-        delta_lake_table: Optional[str] = self.getOrDefault(self.delta_lake_table)
-
-        save_transformer = FrameworkParquetExporter(
-            view=view,
-            name=f"{self.getName()}-save",
-            mode=mode,
-            file_path=file_path,
-            parameters=self.getParameters(),
-            progress_logger=self.getProgressLogger(),
-            stream=stream,
-            delta_lake_table=delta_lake_table,
-        )
-        df = save_transformer.transform(df)
-
-        load_transformer = FrameworkParquetLoader(
-            view=view,
-            file_path=file_path,
-            name=f"{self.getName()}-load",
-            parameters=self.getParameters(),
-            progress_logger=self.getProgressLogger(),
-            stream=stream,
-            delta_lake_table=delta_lake_table,
-        )
-        df = load_transformer.transform(df)
-        return df
-
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
         mode: str = self.getMode()

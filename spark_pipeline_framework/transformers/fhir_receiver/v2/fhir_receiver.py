@@ -29,7 +29,6 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_proces
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token_async,
@@ -403,9 +402,6 @@ class FhirReceiver(FrameworkTransformer):
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    def _transform(self, df: DataFrame) -> DataFrame:
-        return AsyncHelper.run(self.transform_async(df))
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         server_url: Optional[str] = self.getServerUrl()

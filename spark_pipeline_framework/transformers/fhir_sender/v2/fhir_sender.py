@@ -283,9 +283,6 @@ class FhirSender(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    def _transform(self, df: DataFrame) -> DataFrame:
-        return AsyncHelper.run(self._transform_async(df))
-
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         file_path: Path | str | Callable[[str | None], Path | str] | None = (
             self.getOrDefault(self.file_path)
