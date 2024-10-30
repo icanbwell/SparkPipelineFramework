@@ -100,15 +100,6 @@ class FrameworkPipeline(Transformer):
                     else:
                         df = transformer.transform(dataset=df)
 
-                    if self.log_level and self.log_level == "DEBUG":
-                        print(
-                            f"------------  Start Execution Plan for stage {stage_name} -----------"
-                        )
-                        df.explain(extended="cost")
-                        print(
-                            f"------------  End Execution Plan for stage {stage_name} -----------"
-                        )
-
             except Exception as e:
                 logger.error(
                     f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
@@ -195,15 +186,6 @@ class FrameworkPipeline(Transformer):
                         df = await transformer._transform_async(df=df)
                     else:
                         df = transformer.transform(dataset=df)
-
-                    if self.log_level and self.log_level == "DEBUG":
-                        print(
-                            f"------------  Start Execution Plan for stage {stage_name} -----------"
-                        )
-                        df.explain(extended="cost")
-                        print(
-                            f"------------  End Execution Plan for stage {stage_name} -----------"
-                        )
 
             except Exception as e:
                 logger.error(

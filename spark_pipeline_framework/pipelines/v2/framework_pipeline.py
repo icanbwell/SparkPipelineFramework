@@ -148,14 +148,6 @@ class FrameworkPipeline(Transformer):
                             df = await transformer._transform_async(df)
                         else:
                             df = transformer.transform(dataset=df)
-                        if self.log_level and self.log_level == "DEBUG":
-                            print(
-                                f"------------  Start Execution Plan for stage {stage_name} -----------"
-                            )
-                            df.explain(extended="cost")
-                            print(
-                                f"------------  End Execution Plan for stage {stage_name} -----------"
-                            )
                         self.progress_logger.log_event(
                             pipeline_name,
                             event_text=f"Finished pipeline step {stage_name}",
