@@ -756,7 +756,10 @@ class FhirReceiverProcessor:
                             if "id" in last_json_resource:
                                 # use id:above to optimize the next query
                                 id_of_last_resource = last_json_resource["id"]
-                                if last_id is not None and last_id == id_of_last_resource:
+                                if (
+                                    last_id is not None
+                                    and last_id == id_of_last_resource
+                                ):
                                     logger.error("Duplicate id present")
                                     has_next_page = False
                                     break
