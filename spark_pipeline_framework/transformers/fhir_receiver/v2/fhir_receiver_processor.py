@@ -704,6 +704,7 @@ class FhirReceiverProcessor:
         # with id greater than previous page last record id.
         has_next_page: bool = True
         additional_parameters = parameters.additional_parameters or []
+        last_id: Optional[str] = None
         while has_next_page:
             async for result in FhirReceiverProcessor.send_fhir_request_async(
                 logger=logger,
@@ -755,6 +756,11 @@ class FhirReceiverProcessor:
                             if "id" in last_json_resource:
                                 # use id:above to optimize the next query
                                 id_of_last_resource = last_json_resource["id"]
+                                if last_id is not None and last_id == id_of_last_resource:
+                                    logger.error("Duplicate id present")
+                                    has_next_page = False
+                                    break
+                                last_id = id_of_last_resource
                                 # remove any entry for id:above
                                 additional_parameters = list(
                                     filter(
