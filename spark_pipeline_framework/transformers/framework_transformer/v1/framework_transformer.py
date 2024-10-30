@@ -150,14 +150,14 @@ class FrameworkTransformer(
         """
         self.loop_id = loop_id
 
-    async def transform_async(self, dataset: DataFrame) -> DataFrame:
+    async def transform_async(self, df: DataFrame) -> DataFrame:
         """
         Transform the dataset asynchronously
 
-        :param dataset: input dataset
+        :param df: input dataset
         :return: transformed dataset
         """
-        return await self._transform_async(df=dataset)
+        return await self._transform_async(df)
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         """

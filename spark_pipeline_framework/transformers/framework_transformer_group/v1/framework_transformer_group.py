@@ -82,7 +82,7 @@ class FrameworkTransformerGroup(FrameworkTransformer):
                     stage.set_loop_id(self.loop_id)
                 try:
                     if hasattr(stage, "transform_async"):
-                        await stage.transform_async(df=df)
+                        await stage.transform_async(df)
                     else:
                         df = stage.transform(df)
                 except Exception as e:

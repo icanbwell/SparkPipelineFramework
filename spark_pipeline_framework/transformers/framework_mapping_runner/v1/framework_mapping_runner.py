@@ -120,7 +120,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
                 try:
                     if hasattr(automapper, "transform_async"):
-                        await automapper.transform_async(df=df)
+                        await automapper.transform_async(df)
                     else:
                         automapper.transform(df=df)
                 except Exception as e:

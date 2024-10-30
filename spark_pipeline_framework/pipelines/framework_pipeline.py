@@ -96,9 +96,7 @@ class FrameworkPipeline(Transformer):
                         transformer, "_transform"
                     ):
                         # noinspection PyProtectedMember
-                        df = AsyncHelper.run(
-                            fn=transformer._transform_async(dataset=df)
-                        )
+                        df = AsyncHelper.run(fn=transformer._transform_async(df=df))
                     else:
                         df = transformer.transform(dataset=df)
 
@@ -194,7 +192,7 @@ class FrameworkPipeline(Transformer):
                     )
                     if hasattr(transformer, "_transform_async"):
                         # noinspection PyProtectedMember
-                        df = await transformer._transform_async(dataset=df)
+                        df = await transformer._transform_async(df=df)
                     else:
                         df = transformer.transform(dataset=df)
 
