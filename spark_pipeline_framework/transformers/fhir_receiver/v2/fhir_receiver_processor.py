@@ -777,14 +777,16 @@ class FhirReceiverProcessor:
                                 resources = resources + result_response
                             else:
                                 has_next_page = False
+                        else:
+                            has_next_page = False
+                    else:
+                        has_next_page = False
                 elif result.status == 200:
                     # no resources returned but status is 200, so we're done
                     has_next_page = False
                 else:
                     if result.status == 404:
-                        yield dataclasses.asdict(
-                            GetBatchResult(resources=[], errors=[])
-                        )
+                        pass
                     elif result.status not in parameters.ignore_status_codes:
                         raise FhirReceiverException(
                             url=result.url,
