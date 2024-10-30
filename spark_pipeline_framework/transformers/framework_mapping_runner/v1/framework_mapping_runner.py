@@ -138,6 +138,83 @@ class FrameworkMappingLoader(FrameworkTransformer):
 
         return df
 
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
+        view: str = self.getView()
+        mapping_function: AutoMapperFunction = self.getMappingFunction()
+
+        # run the mapping function to get an AutoMapper
+        incoming_parameters: Optional[Dict[str, Any]] = self.getParameters()
+        parameters: Dict[str, Any] = (
+            incoming_parameters.copy() if incoming_parameters else {}
+        )
+        parameters["view"] = view
+
+        auto_mappers: List[AutoMapperBase] = []
+        auto_mapper = mapping_function(parameters)
+        if isinstance(auto_mapper, list):
+            auto_mappers = auto_mappers + auto_mapper
+        else:
+            auto_mappers.append(auto_mapper)
+
+        assert isinstance(auto_mappers, list)
+
+        i: int = 0
+        count: int = len(auto_mappers)
+        for automapper in auto_mappers:
+            i += 1
+            assert isinstance(automapper, AutoMapper)
+            if automapper.view:
+                self.views.append(automapper.view)
+            self.logger.info(
+                f"---- Running AutoMapper {i} of {count} [{automapper}] ----"
+            )
+            table_names: List[str] = [
+                row.tableName
+                for row in df.sparkSession.sql("SHOW TABLES IN default").collect()
+            ]
+
+            # if view exists then drop it
+            if (
+                automapper.view
+                and automapper.use_single_select
+                and not automapper.reuse_existing_view
+                and automapper.view in table_names
+            ):
+                self.logger.info(f"Dropping view {automapper.view}")
+                df.sparkSession.catalog.dropTempView(viewName=automapper.view)
+
+            progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+            try:
+                stage_name = automapper.__class__.__name__
+
+                run_name = f"{stage_name} map view - {automapper.view}"
+
+                if progress_logger is not None:
+                    progress_logger.start_mlflow_run(run_name=run_name, is_nested=True)
+
+                try:
+                    if hasattr(automapper, "transform_async"):
+                        await automapper.transform_async(df=df)
+                    else:
+                        automapper.transform(df=df)
+                except Exception as e:
+                    if len(e.args) >= 1:
+                        e.args = (f"In AutoMapper ({stage_name})", *e.args)
+                    raise e
+
+                if progress_logger is not None:
+                    progress_logger.end_mlflow_run()
+            except Exception as e:
+                error_msg = f"Error running automapper {automapper.view}"
+                if progress_logger is not None:
+                    progress_logger.log_exception(
+                        event_name=str(automapper), event_text=error_msg, ex=e
+                    )
+                    progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
+                raise FrameworkMappingRunnerException(msg=error_msg, exception=e) from e
+
+        return df
+
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getView(self) -> str:
         return self.getOrDefault(self.view)

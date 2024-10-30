@@ -129,6 +129,73 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
                 progress_logger.end_mlflow_run()
         return df
 
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
+        progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
+        enable = self.enable(df) if callable(self.enable) else self.enable
+        view_enable_if_view_not_empty = (
+            self.enable_if_view_not_empty(self.loop_id)
+            if callable(self.enable_if_view_not_empty)
+            else self.enable_if_view_not_empty
+        )
+        enable_if_view_not_empty = (
+            (
+                df.sparkSession.catalog.tableExists(view_enable_if_view_not_empty)
+                and not df.sparkSession.table(view_enable_if_view_not_empty).isEmpty()
+            )
+            if view_enable_if_view_not_empty
+            else True
+        )
+        enable_sql = (
+            self.enable_sql(self.loop_id)
+            if callable(self.enable_sql)
+            else self.enable_sql
+        )
+        enable_if_sql = df.sparkSession.sql(enable_sql) if enable_sql else True
+        if (enable or enable is None) and enable_if_view_not_empty and enable_if_sql:
+            stages: List[Transformer] = (
+                self.stages if isinstance(self.stages, list) else self.stages()
+            )
+        else:
+            if progress_logger is not None:
+                progress_logger.write_to_log(
+                    self.getName() or "FrameworkIfElseTransformer",
+                    f"Skipping stages because enable {self.enable} or "
+                    + f"enable_if_view_not_empty {self.enable_if_view_not_empty} or enable_sql {self.enable_sql} did not evaluate to True",
+                )
+            stages = (
+                []
+                if self.else_stages is None
+                else (
+                    self.else_stages
+                    if isinstance(self.else_stages, list)
+                    else self.else_stages()
+                )
+            )
+        for stage in stages:
+            if hasattr(stage, "getName"):
+                # noinspection Mypy
+                stage_name = stage.getName()
+            else:
+                stage_name = stage.__class__.__name__
+            if progress_logger is not None:
+                progress_logger.start_mlflow_run(run_name=stage_name, is_nested=True)
+            if hasattr(stage, "set_loop_id"):
+                stage.set_loop_id(self.loop_id)
+            try:
+                if hasattr(stage, "transform_async"):
+                    df = await stage.transform_async(df)
+                else:
+                    df = stage.transform(df)
+            except Exception as e:
+                if len(e.args) >= 1:
+                    # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                    e.args = (f"In Stage ({stage_name})", *e.args)
+                raise e
+
+            if progress_logger is not None:
+                progress_logger.end_mlflow_run()
+        return df
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **(super().as_dict()),

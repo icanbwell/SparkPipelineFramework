@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
@@ -167,4 +168,8 @@ class FrameworkTransformer(
         :param df: input dataframe
         :return: transformed dataframe
         """
-        return self.transform(df)
+
+        def transform_wrapper() -> DataFrame:
+            return self._transform(df)
+
+        return await asyncio.to_thread(transform_wrapper)
