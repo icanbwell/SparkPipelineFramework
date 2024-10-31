@@ -38,9 +38,12 @@ async def test_get_results() -> None:
 
     mock_response = AsyncMock(ClientResponse)
     mock_response.status = 200
-    mock_response.json = AsyncMock(return_value=[{"key": "value"}])
+    mock_response.json.return_value = [{"key": "value"}]
 
-    with patch.object(ClientSession, "get", return_value=mock_response):
+    # Create an AsyncMock for the get method that returns the mock_response
+    mock_get = AsyncMock(return_value=mock_response)
+
+    with patch.object(ClientSession, "get", mock_get):
         result: ListJsonResult = await request.get_results()
         assert result.status == 200
         assert result.result == [{"key": "value"}]
@@ -53,12 +56,15 @@ async def test_get_text() -> None:
 
     mock_response = AsyncMock(ClientResponse)
     mock_response.status = 200
-    mock_response.text = AsyncMock(return_value="response text")
+    mock_response.text.return_value = "response_text"
 
-    with patch.object(ClientSession, "get", return_value=mock_response):
+    # Create an AsyncMock for the get method that returns the mock_response
+    mock_get = AsyncMock(return_value=mock_response)
+
+    with patch.object(ClientSession, "get", mock_get):
         result: SingleTextResult = await request.get_text()
         assert result.status == 200
-        assert result.result == "response text"
+        assert result.result == "response_text"
 
 
 @pytest.mark.asyncio
@@ -68,8 +74,12 @@ async def test_get_response() -> None:
 
     mock_response = AsyncMock(ClientResponse)
     mock_response.status = 200
+    mock_response.text.return_value = "response_text"
 
-    with patch.object(ClientSession, "get", return_value=mock_response):
+    # Create an AsyncMock for the get method that returns the mock_response
+    mock_get = AsyncMock(return_value=mock_response)
+
+    with patch.object(ClientSession, "get", mock_get):
         response: ClientResponse = await request.get_response()
         assert response.status == 200
 
