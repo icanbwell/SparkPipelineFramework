@@ -83,8 +83,8 @@ class HelixHttpRequest:
     def set_raise_error(self, flag: bool) -> None:
         self.raise_error = flag
 
-    async def get_result(self) -> SingleJsonResult:
-        response = await self.get_response()
+    async def get_result_async(self) -> SingleJsonResult:
+        response = await self.get_response_async()
         try:
             result: Dict[str, Any] = await response.json()
             return SingleJsonResult(url=self.url, status=response.status, result=result)
@@ -93,8 +93,8 @@ class HelixHttpRequest:
                 f"Response: {await response.text()} with status {response.status} is not in json format from {self.request_type} {self.url}: {e}"
             ) from e
 
-    async def get_results(self) -> ListJsonResult:
-        response = await self.get_response()
+    async def get_results_async(self) -> ListJsonResult:
+        response = await self.get_response_async()
         try:
             result: List[Dict[str, Any]] = await response.json()
             return ListJsonResult(url=self.url, status=response.status, result=result)
@@ -103,13 +103,13 @@ class HelixHttpRequest:
                 f"Response: {await response.text()} with status {response.status} is not in json format from {self.request_type} {self.url}: {e}"
             ) from e
 
-    async def get_text(self) -> SingleTextResult:
-        response = await self.get_response()
+    async def get_text_async(self) -> SingleTextResult:
+        response = await self.get_response_async()
         return SingleTextResult(
             url=self.url, status=response.status, result=await response.text()
         )
 
-    async def get_response(self) -> ClientResponse:
+    async def get_response_async(self) -> ClientResponse:
         session: ClientSession
         async with self._get_session() as session:
             arguments = {"headers": self.headers}
@@ -129,7 +129,7 @@ class HelixHttpRequest:
 
             arguments = {k: v for k, v in arguments.items() if v is not None}
 
-            response = await self._send_request(request_function, arguments)  # type: ignore[arg-type]
+            response = await self._send_request_async(request_function, arguments)  # type: ignore[arg-type]
             if self.raise_error:
                 if response.status >= 400:
                     error_text = f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {response.status}: {await response.text()}."
@@ -143,7 +143,7 @@ class HelixHttpRequest:
         url_parts: Union[SplitResult, SplitResultBytes] = parse.urlsplit(self.url)
         return parse.parse_qs(url_parts.query)  # type: ignore
 
-    async def _send_request(
+    async def _send_request_async(
         self,
         request_function: Callable[[str, Any], Awaitable[ClientResponse]],
         arguments: Dict[str, Any],

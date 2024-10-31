@@ -26,7 +26,7 @@ async def test_get_result() -> None:
     mock_get = AsyncMock(return_value=mock_response)
 
     with patch.object(ClientSession, "get", mock_get):
-        result: SingleJsonResult = await request.get_result()
+        result: SingleJsonResult = await request.get_result_async()
         assert result.status == 200
         assert result.result == {"key": "value"}
 
@@ -44,7 +44,7 @@ async def test_get_results() -> None:
     mock_get = AsyncMock(return_value=mock_response)
 
     with patch.object(ClientSession, "get", mock_get):
-        result: ListJsonResult = await request.get_results()
+        result: ListJsonResult = await request.get_results_async()
         assert result.status == 200
         assert result.result == [{"key": "value"}]
 
@@ -62,7 +62,7 @@ async def test_get_text() -> None:
     mock_get = AsyncMock(return_value=mock_response)
 
     with patch.object(ClientSession, "get", mock_get):
-        result: SingleTextResult = await request.get_text()
+        result: SingleTextResult = await request.get_text_async()
         assert result.status == 200
         assert result.result == "response_text"
 
@@ -80,7 +80,7 @@ async def test_get_response() -> None:
     mock_get = AsyncMock(return_value=mock_response)
 
     with patch.object(ClientSession, "get", mock_get):
-        response: ClientResponse = await request.get_response()
+        response: ClientResponse = await request.get_response_async()
         assert response.status == 200
 
 
