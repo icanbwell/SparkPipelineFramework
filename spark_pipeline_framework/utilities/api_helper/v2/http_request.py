@@ -61,6 +61,23 @@ class HelixHttpRequest:
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
     ) -> None:
+        """
+        Implementation of a simple http request class that can be used to make http requests.  v2 provides async support.
+
+
+        :param url: URL to make the request to
+        :param request_type: Type of request to make
+        :param headers: Headers to send with the request
+        :param payload: Payload to send with the request
+        :param retry_count: Number of times to retry the request
+        :param backoff_factor: Factor to backoff between retries
+        :param retry_on_status: List of status codes to retry on
+        :param logger: Logger to use
+        :param post_as_json_formatted_string: Whether to post the payload as a json formatted string
+        :param raise_error: Whether to raise an error if the response status is greater than 400
+        :param cert: Certificate to use
+        :param verify: Whether to verify the request
+        """
         if headers is None:
             headers = {"User-Agent": "Mozilla/5.0"}
         if retry_on_status is None:
@@ -86,7 +103,9 @@ class HelixHttpRequest:
     async def get_result_async(self) -> SingleJsonResult:
         response = await self.get_response_async()
         try:
-            result: Dict[str, Any] = await response.json()
+            result: Dict[str, Any] = await response.json(
+                content_type=None
+            )  # disable content type check since the source may not set it correctly
             return SingleJsonResult(url=self.url, status=response.status, result=result)
         except ClientError as e:
             raise Exception(
@@ -96,7 +115,9 @@ class HelixHttpRequest:
     async def get_results_async(self) -> ListJsonResult:
         response = await self.get_response_async()
         try:
-            result: List[Dict[str, Any]] = await response.json()
+            result: List[Dict[str, Any]] = await response.json(
+                content_type=None
+            )  # disable content type check since the source may not set it correctly
             return ListJsonResult(url=self.url, status=response.status, result=result)
         except ClientError as e:
             raise Exception(

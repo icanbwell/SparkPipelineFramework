@@ -74,15 +74,15 @@ wheel = ">=0.43.0"
 # twine is needed for uploading the package to PyPI
 twine=">=5.1.1"
 # pre-commit is needed for running code quality checks
-pre-commit=">=3.7.1"
+pre-commit=">=4.0.1"
 # autoflake is needed for removing unused imports
 autoflake=">=2.3.1"
 # mypy is needed for type checking
-mypy = ">=1.11.1"
+mypy = ">=1.13.0"
 # pytest is needed for running tests
-pytest = ">=8.3.2"
+pytest = ">=8.3.3"
 # black is needed for formatting code
-black = ">=24.8.0"
+black = ">=24.10.0"
 # pygments is needed for syntax highlighting
 pygments=">=2.18.0" # not directly required, pinned by Snyk to avoid a vulnerability
 # Sphinx is needed for generating documentation
@@ -102,7 +102,7 @@ pyspark="==3.5.1"  # should match the version of spark we use for testing
 # Deprecated is needed for marking deprecated functions
 Deprecated = ">=1.2.13"
 # sparkdataframecomparer is needed for comparing Spark DataFrames
-sparkdataframecomparer = ">=2.0.6"
+sparkdataframecomparer = ">=2.0.13"
 # pytest-ayncio is needed for running async tests
 pytest-asyncio = ">=0.23.8"
 # helix-mockserver-client is needed for mocking servers
