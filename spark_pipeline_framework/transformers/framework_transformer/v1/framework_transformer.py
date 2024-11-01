@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
@@ -12,6 +13,7 @@ from typing_extensions import final
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 
 
@@ -64,9 +66,6 @@ class FrameworkTransformer(
         # ignore any parameters
         kwargs = {key: value for key, value in kwargs.items() if self.hasParam(key)}
         return self._set(**kwargs)
-
-    def _transform(self, df: DataFrame) -> DataFrame:
-        return df
 
     @property
     def transformers(self) -> List[Transformer]:
@@ -151,14 +150,14 @@ class FrameworkTransformer(
         """
         self.loop_id = loop_id
 
-    async def transform_async(self, dataset: DataFrame) -> DataFrame:
+    async def transform_async(self, df: DataFrame) -> DataFrame:
         """
         Transform the dataset asynchronously
 
-        :param dataset: input dataset
+        :param df: input dataset
         :return: transformed dataset
         """
-        return await self._transform_async(df=dataset)
+        return await self._transform_async(df)
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         """
@@ -167,4 +166,17 @@ class FrameworkTransformer(
         :param df: input dataframe
         :return: transformed dataframe
         """
-        return self.transform(df)
+
+        def transform_wrapper() -> DataFrame:
+            return self._transform(df)
+
+        return await asyncio.to_thread(transform_wrapper)
+
+    def _transform(self, df: DataFrame) -> DataFrame:
+        """
+        Override this method to implement transformation
+
+        :param df: input dataframe
+        :return: transformed dataframe
+        """
+        return AsyncHelper.run(self.transform_async(df))

@@ -117,9 +117,6 @@ class ElasticSearchSender(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    def _transform(self, df: DataFrame) -> DataFrame:
-        return AsyncHelper.run(self.transform_async(df))
-
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
         path: Optional[Union[Path, str]] = self.getFilePath()

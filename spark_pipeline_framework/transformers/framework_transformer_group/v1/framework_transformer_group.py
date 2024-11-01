@@ -48,7 +48,7 @@ class FrameworkTransformerGroup(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    def _transform(self, df: DataFrame) -> DataFrame:
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         enable = self.enable(df) if callable(self.enable) else self.enable
         view_enable_if_view_not_empty = (
@@ -81,7 +81,10 @@ class FrameworkTransformerGroup(FrameworkTransformer):
                 if hasattr(stage, "set_loop_id"):
                     stage.set_loop_id(self.loop_id)
                 try:
-                    df = stage.transform(df)
+                    if hasattr(stage, "transform_async"):
+                        await stage.transform_async(df)
+                    else:
+                        df = stage.transform(df)
                 except Exception as e:
                     if len(e.args) >= 1:
                         # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]

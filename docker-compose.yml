@@ -30,7 +30,7 @@ services:
     working_dir: /SparkpipelineFramework
 
   warehouse:
-    image: mysql:8.0.39
+    image: mariadb:10.11.9
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: fhir_rpt
@@ -42,6 +42,8 @@ services:
 
   mlflow:
     image: imranq2/mlflow_server:0.2.0
+    depends_on:
+      - warehouse
     ports:
       - '5050:5000'
     volumes:
