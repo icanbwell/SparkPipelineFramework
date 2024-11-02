@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from abc import abstractmethod
+from datetime import datetime
 from typing import (
     Iterator,
     AsyncIterator,
@@ -19,6 +20,9 @@ from typing import (
 import pandas as pd
 from pyspark import TaskContext
 
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchFunction,
 )
@@ -146,6 +150,7 @@ class AsyncBasePandasUDF(
         """
         task_context: Optional[TaskContext] = TaskContext.get()
         partition_index: int = task_context.partitionId() if task_context else 0
+        partition_start_time: datetime = datetime.now()
         chunk_index: int = 0
 
         chunk_input_values_index: int = 0
@@ -166,9 +171,12 @@ class AsyncBasePandasUDF(
                 async for output_value in cast(
                     AsyncGenerator[TOutputColumnDataType, None],
                     self.async_func(
-                        partition_index=partition_index,
-                        chunk_index=chunk_index,
-                        chunk_input_range=chunk_input_range,
+                        run_context=AsyncPandasBatchFunctionRunContext(
+                            partition_index=partition_index,
+                            chunk_index=chunk_index,
+                            chunk_input_range=chunk_input_range,
+                            partition_start_time=partition_start_time,
+                        ),
                         input_values=chunk_input_values,
                         parameters=self.parameters,
                     ),
