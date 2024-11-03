@@ -199,7 +199,8 @@ class AsyncBasePandasUDF[
 
         if async_parallel_processor is None:
             async_parallel_processor = AsyncParallelProcessor(
-                max_concurrent_tasks=self.pandas_udf_parameters.maximum_concurrent_tasks
+                name="process_partition_async",
+                max_concurrent_tasks=self.pandas_udf_parameters.maximum_concurrent_tasks,
             )
         task_context: Optional[TaskContext] = TaskContext.get()
         partition_index: int = task_context.partitionId() if task_context else 0
@@ -367,12 +368,27 @@ class AsyncBasePandasUDF[
             row: ChunkContainer[TInputColumnDataType],
             parameters: Optional[TParameters],
             log_level: Optional[str],
+            task_index: int,
             **kwargs: Any,
         ) -> TOutputDataSource:
             """This functions wraps the process_chunk_container function which is an instance method"""
-            return await self.process_chunk_container(
+
+            self.logger.debug(
+                f"Starting process_chunk_container_fn | partition: {partition_context.partition_index}"
+                f" | Chunk: {row.chunk_index}"
+                f" | range: {row.begin_chunk_input_values_index}-{row.end_chunk_input_values_index}"
+                f" | task_index: {task_index}"
+            )
+            result: TOutputDataSource = await self.process_chunk_container(
                 chunk_container=row, partition_context=partition_context, **kwargs
             )
+            self.logger.debug(
+                f"Finished process_chunk_container_fn | partition: {partition_context.partition_index}"
+                f" | Chunk: {row.chunk_index}"
+                f" | range: {row.begin_chunk_input_values_index}-{row.end_chunk_input_values_index}"
+                f" | task_index: {task_index}"
+            )
+            return result
 
         # now run all the tasks in parallel yielding the results as they get ready
         result: TOutputDataSource

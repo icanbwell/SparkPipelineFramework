@@ -4,7 +4,7 @@ export LANG
 
 .PHONY: Pipfile.lock
 Pipfile.lock: build
-	docker compose run --rm --name spspark_pipeline_frameworkftest dev /bin/bash -c "rm -f Pipfile.lock && pipenv lock --dev"
+	docker compose run --rm --name spftest dev /bin/bash -c "rm -f Pipfile.lock && pipenv lock --dev"
 
 .PHONY: install_types
 install_types:

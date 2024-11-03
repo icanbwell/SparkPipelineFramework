@@ -7,21 +7,38 @@ class ParallelFunction[TInput, TOutput, TParameters](Protocol):
     async def __call__(
         self,
         *,
+        name: str,
         row: TInput,
         parameters: Optional[TParameters],
         log_level: Optional[str],
+        task_index: int,
+        total_task_count: int,
         **kwargs: Any,
     ) -> TOutput:
         """
         Handle a batch of data
 
-        :return: True if successful
+        :param name: name of the processor
+        :param row: row to process
+        :param parameters: parameters to pass to the process_row_fn
+        :param log_level: log level
+        :param task_index: index of the task
+        :param total_task_count: total number of tasks
+        :param kwargs: additional parameters
+        :return: result of processing
         """
         ...
 
 
 class AsyncParallelProcessor:
-    def __init__(self, *, max_concurrent_tasks: int) -> None:
+    def __init__(self, *, name: str, max_concurrent_tasks: int) -> None:
+        """
+        This class is used to process rows in parallel
+
+        :param name: name of the processor
+        :param max_concurrent_tasks: maximum number of concurrent tasks
+        """
+        self.name: str = name
         self.max_concurrent_tasks: int = max_concurrent_tasks
         self.semaphore: asyncio.Semaphore = asyncio.Semaphore(max_concurrent_tasks)
 
@@ -46,15 +63,34 @@ class AsyncParallelProcessor:
         :return: results of processing
         """
 
-        async def process_with_semaphore(*, row1: TInput) -> TOutput:
+        # noinspection PyShadowingNames
+        async def process_with_semaphore(
+            *, name: str, row1: TInput, task_index: int, total_task_count: int
+        ) -> TOutput:
             async with self.semaphore:
                 return await process_row_fn(
-                    row=row1, parameters=parameters, log_level=log_level, **kwargs
+                    name=name,
+                    row=row1,
+                    parameters=parameters,
+                    log_level=log_level,
+                    task_index=task_index,
+                    total_task_count=total_task_count,
+                    **kwargs,
                 )
 
-        # Create all tasks at once
+        total_task_count: int = len(rows)
+        # Create all tasks at once with their indices
         pending: Set[Task[TOutput]] = {
-            asyncio.create_task(process_with_semaphore(row1=row)) for row in rows
+            asyncio.create_task(
+                process_with_semaphore(
+                    name=self.name,
+                    row1=row,
+                    task_index=i,
+                    total_task_count=total_task_count,
+                ),
+                name=f"task_{i}",  # Optionally set task name for easier debugging
+            )
+            for i, row in enumerate(rows)
         }
 
         try:
