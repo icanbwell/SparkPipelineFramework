@@ -18,10 +18,16 @@ from pyspark import TaskContext
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.chunk_container import (
+    ChunkContainer,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchFunction,
     AcceptedParametersType,
     AcceptedColumnDataType,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.partition_context import (
+    PartitionContext,
 )
 
 AcceptedDataSourceType = pd.DataFrame | pd.Series  # type:ignore[type-arg]
@@ -121,7 +127,33 @@ class AsyncBasePandasUDF[
         """
         ...
 
-    async def async_apply_process_batch_udf(
+    @staticmethod
+    async def get_chunk_containers(
+        chunks: AsyncGenerator[List[TInputColumnDataType], None]
+    ) -> AsyncGenerator[ChunkContainer[TInputColumnDataType], None]:
+        """
+        create a list of chunk containers where each container contains the chunk and metadata
+        like chunk index and chunk input values index
+
+
+        :param chunks: async generator of chunks
+        :return: async generator of chunk containers
+        """
+        chunk_index: int = 0
+        chunk_input_values_index: int = 0
+        async for chunk_input_values in chunks:
+            chunk_index += 1
+            begin_chunk_input_values_index: int = chunk_input_values_index + 1
+            chunk_input_values_index += len(chunk_input_values)
+            chunk_container: ChunkContainer[TInputColumnDataType] = ChunkContainer(
+                chunk_input_values=chunk_input_values,
+                chunk_index=chunk_index,
+                begin_chunk_input_values_index=begin_chunk_input_values_index,
+                end_chunk_input_values_index=chunk_input_values_index,
+            )
+            yield chunk_container
+
+    async def process_partition_async(
         self, batch_iter: Iterator[TInputDataSource]
     ) -> AsyncIterator[TOutputDataSource]:
         """
@@ -134,33 +166,59 @@ class AsyncBasePandasUDF[
         task_context: Optional[TaskContext] = TaskContext.get()
         partition_index: int = task_context.partitionId() if task_context else 0
         partition_start_time: datetime = datetime.now()
-        chunk_index: int = 0
 
-        chunk_input_values_index: int = 0
         chunk_input_values: List[TInputColumnDataType]
-        async for chunk_input_values in self.get_batches_of_size(
-            batch_size=self.batch_size, batch_iter=self.to_async_iter(batch_iter)
+        chunks: AsyncGenerator[List[TInputColumnDataType], None] = (
+            self.get_batches_of_size(
+                batch_size=self.batch_size, batch_iter=self.to_async_iter(batch_iter)
+            )
+        )
+
+        async for result in self.process_chunks_async(
+            partition_context=PartitionContext(
+                partition_index=partition_index,
+                partition_start_time=partition_start_time,
+            ),
+            chunk_containers=AsyncBasePandasUDF.get_chunk_containers(chunks),
         ):
-            chunk_index += 1
-            begin_chunk_input_values_index: int = chunk_input_values_index
-            chunk_input_values_index += len(chunk_input_values)
-            if len(chunk_input_values) == 0:
+            yield result
+
+    async def process_chunks_async(
+        self,
+        *,
+        partition_context: PartitionContext,
+        chunk_containers: AsyncGenerator[ChunkContainer[TInputColumnDataType], None],
+    ) -> AsyncGenerator[TOutputDataSource, None]:
+        """
+        This function processes the chunks of input data asynchronously.  You can override this function
+        to add additional processing logic.
+
+
+        :param partition_context: the context for the partition
+        :param chunk_containers: the async generator of chunk containers
+        :return: an async generator of output data
+        """
+
+        chunk_container: ChunkContainer[TInputColumnDataType]
+        async for chunk_container in chunk_containers:
+            if len(chunk_container.chunk_input_values) == 0:
                 yield await self.create_output_from_dict([])
             else:
                 output_values: List[TOutputColumnDataType] = []
                 chunk_input_range: range = range(
-                    begin_chunk_input_values_index + 1, chunk_input_values_index
+                    chunk_container.begin_chunk_input_values_index,
+                    chunk_container.end_chunk_input_values_index,
                 )
                 async for output_value in cast(
                     AsyncGenerator[TOutputColumnDataType, None],
                     self.async_func(
                         run_context=AsyncPandasBatchFunctionRunContext(
-                            partition_index=partition_index,
-                            chunk_index=chunk_index,
+                            partition_index=partition_context.partition_index,
+                            chunk_index=chunk_container.chunk_index,
                             chunk_input_range=chunk_input_range,
-                            partition_start_time=partition_start_time,
+                            partition_start_time=partition_context.partition_start_time,
                         ),
-                        input_values=chunk_input_values,
+                        input_values=chunk_container.chunk_input_values,
                         parameters=self.parameters,
                     ),
                 ):
@@ -202,8 +260,8 @@ class AsyncBasePandasUDF[
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        async_iter: AsyncIterator[TOutputDataSource] = (
-            self.async_apply_process_batch_udf(batch_iter)
+        async_iter: AsyncIterator[TOutputDataSource] = self.process_partition_async(
+            batch_iter
         )
         async_gen = loop.run_until_complete(self.collect_async_iterator(async_iter))
         return iter(async_gen)
