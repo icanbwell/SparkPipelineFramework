@@ -99,7 +99,7 @@ class FhirSender(FrameworkTransformer):
         source_view: Optional[str] = None,
         log_level: Optional[str] = None,
         max_chunk_size: int = 100,
-        process_chunks_in_parallel: Optional[bool] = None,
+        process_chunks_in_parallel: Optional[bool] = True,
         maximum_concurrent_tasks: int = 100,
     ):
         """
