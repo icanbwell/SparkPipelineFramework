@@ -1,18 +1,34 @@
 import asyncio
 from asyncio import Task
+from dataclasses import dataclass
 from typing import AsyncGenerator, Protocol, List, Optional, Set, Dict, Any
+
+
+@dataclass
+class ParallelFunctionContext:
+    """
+    This class contains the parameters for a parallel function
+    """
+
+    """ name of the processor """
+    name: str
+
+    """ log level """
+    log_level: Optional[str]
+
+    """ index of the task """
+    task_index: int
+
+    total_task_count: int
 
 
 class ParallelFunction[TInput, TOutput, TParameters](Protocol):
     async def __call__(
         self,
         *,
-        name: str,
+        context: ParallelFunctionContext,
         row: TInput,
         parameters: Optional[TParameters],
-        log_level: Optional[str],
-        task_index: int,
-        total_task_count: int,
         **kwargs: Any,
     ) -> TOutput:
         """

@@ -40,6 +40,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.partition_context im
 )
 from spark_pipeline_framework.utilities.async_parallel_processor.v1.async_parallel_processor import (
     AsyncParallelProcessor,
+    ParallelFunctionContext,
 )
 
 AcceptedDataSourceType = pd.DataFrame | pd.Series  # type:ignore[type-arg]
@@ -365,10 +366,9 @@ class AsyncBasePandasUDF[
 
         # noinspection PyShadowingNames,PyUnusedLocal
         async def process_chunk_container_fn(
+            context: ParallelFunctionContext,
             row: ChunkContainer[TInputColumnDataType],
             parameters: Optional[TParameters],
-            log_level: Optional[str],
-            task_index: int,
             **kwargs: Any,
         ) -> TOutputDataSource:
             """This functions wraps the process_chunk_container function which is an instance method"""
@@ -377,7 +377,9 @@ class AsyncBasePandasUDF[
                 f"Starting process_chunk_container_fn | partition: {partition_context.partition_index}"
                 f" | Chunk: {row.chunk_index}"
                 f" | range: {row.begin_chunk_input_values_index}-{row.end_chunk_input_values_index}"
-                f" | task_index: {task_index}"
+                f" | task_index: {context.task_index}"
+                f" | total_task_count: {context.total_task_count}"
+                f" | parallel_processor: {context.name}"
             )
             result: TOutputDataSource = await self.process_chunk_container(
                 chunk_container=row, partition_context=partition_context, **kwargs
@@ -386,7 +388,9 @@ class AsyncBasePandasUDF[
                 f"Finished process_chunk_container_fn | partition: {partition_context.partition_index}"
                 f" | Chunk: {row.chunk_index}"
                 f" | range: {row.begin_chunk_input_values_index}-{row.end_chunk_input_values_index}"
-                f" | task_index: {task_index}"
+                f" | task_index: {context.task_index}"
+                f" | total_task_count: {context.total_task_count}"
+                f" | parallel_processor: {context.name}"
             )
             return result
 
@@ -395,7 +399,6 @@ class AsyncBasePandasUDF[
         parameters: TParameters | None = self.parameters
 
         assert async_parallel_processor is not None
-        # noinspection PyTypeChecker
         async for result in async_parallel_processor.process_rows_in_parallel(
             rows=chunk_containers_list,
             process_row_fn=process_chunk_container_fn,
