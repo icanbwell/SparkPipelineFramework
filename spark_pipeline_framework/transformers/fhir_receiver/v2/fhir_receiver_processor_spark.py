@@ -176,7 +176,7 @@ class FhirReceiverProcessorSpark:
                 FhirReceiverProcessorSpark.process_chunk,
             ),
             parameters=parameters,
-            batch_size=parameters.batch_size or 100,
+            max_chunk_size=parameters.batch_size or 100,
         ).get_pandas_udf()
 
     @staticmethod

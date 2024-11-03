@@ -34,15 +34,15 @@ class AsyncPandasDataFrameUDF[TParameters: AcceptedParametersType](
         *,
         async_func: HandlePandasDataFrameBatchFunction[TParameters],
         parameters: Optional[TParameters],
-        batch_size: int,
+        max_chunk_size: int,
     ) -> None:
         super().__init__(
             async_func=async_func,
             parameters=parameters,
-            batch_size=batch_size,
+            max_chunk_size=max_chunk_size,
         )
 
-    async def get_input_values_from_batch(
+    async def get_input_values_from_chunk(
         self, batch: pd.DataFrame
     ) -> List[Dict[str, Any]]:
         pdf_json: str = batch.to_json(orient="records")
@@ -64,5 +64,5 @@ class AsyncPandasDataFrameUDF[TParameters: AcceptedParametersType](
         """
         return cast(
             Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]],
-            self.apply_process_batch_udf,
+            self.apply_process_partition_udf,
         )

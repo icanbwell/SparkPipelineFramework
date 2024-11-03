@@ -109,7 +109,7 @@ def test_async_pandas_struct_column_to_struct_column_udf(
                 test_async,
             ),
             parameters=MyParameters(),
-            batch_size=2,
+            max_chunk_size=2,
         ).get_pandas_udf(return_type=StringType())(df["name_struct"]),
     )
 

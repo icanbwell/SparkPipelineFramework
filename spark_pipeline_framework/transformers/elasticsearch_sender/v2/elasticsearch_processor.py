@@ -163,7 +163,7 @@ class ElasticSearchProcessor:
                 ElasticSearchProcessor.process_chunk,
             ),
             parameters=parameters,
-            batch_size=batch_size,
+            max_chunk_size=batch_size,
         ).get_pandas_udf()
 
     @staticmethod

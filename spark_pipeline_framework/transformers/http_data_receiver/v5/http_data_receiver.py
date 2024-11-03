@@ -322,7 +322,7 @@ class HttpDataReceiver(FrameworkTransformer):
                             ],
                             HttpDataReceiverProcessor.send_chunk_request,
                         ),
-                        batch_size=batch_size,
+                        max_chunk_size=batch_size,
                     ).get_pandas_udf(),
                     schema=row_schema,
                 )

@@ -184,7 +184,7 @@ class AddressStandardization(FrameworkTransformer):
                             cache_handler=cache_handler,
                             geolocation_column_prefix=geolocation_column_prefix,
                         ),
-                        batch_size=batch_size,
+                        max_chunk_size=batch_size,
                     ).get_pandas_udf(
                         return_type=self.get_standardization_df_schema(
                             address_column_mapping=address_column_mapping,

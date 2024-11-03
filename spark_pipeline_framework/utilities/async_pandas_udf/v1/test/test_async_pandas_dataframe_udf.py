@@ -103,7 +103,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
             async_func=cast(
                 HandlePandasDataFrameBatchFunction[MyParameters], test_async
             ),
-            batch_size=1,
+            max_chunk_size=1,
         ).get_pandas_udf(),
         schema=df.schema,
     )

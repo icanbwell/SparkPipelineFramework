@@ -141,7 +141,7 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
             async_func=cast(
                 HandlePandasDataFrameBatchFunction[MyParameters], test_async
             ),
-            batch_size=2,
+            max_chunk_size=2,
         ).get_pandas_udf(),
         schema=output_schema,
     )

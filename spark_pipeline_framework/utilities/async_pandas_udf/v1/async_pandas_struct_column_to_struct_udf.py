@@ -39,7 +39,7 @@ class AsyncPandasStructColumnToStructColumnUDF[TParameters: AcceptedParametersTy
         *,
         async_func: HandlePandasStructToStructBatchFunction[TParameters],
         parameters: Optional[TParameters],
-        batch_size: int,
+        max_chunk_size: int,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  This class is used
@@ -48,15 +48,15 @@ class AsyncPandasStructColumnToStructColumnUDF[TParameters: AcceptedParametersTy
 
         :param async_func: the async function to run
         :param parameters: the parameters to pass to the async function
-        :param batch_size: the size of the batches to process
+        :param max_chunk_size: the size of the batches to process
         """
         super().__init__(
             async_func=async_func,
             parameters=parameters,
-            batch_size=batch_size,
+            max_chunk_size=max_chunk_size,
         )
 
-    async def get_input_values_from_batch(
+    async def get_input_values_from_chunk(
         self, batch: pd.Series  # type:ignore[type-arg]
     ) -> List[Dict[str, Any]]:
         input_values: List[Dict[str, Any]] = batch.apply(json.loads).tolist()
@@ -71,7 +71,7 @@ class AsyncPandasStructColumnToStructColumnUDF[TParameters: AcceptedParametersTy
         self, batch_iter: Iterator[pd.Series]  # type:ignore[type-arg]
     ) -> Iterator[pd.DataFrame]:
         # Need this so pandas_udf can use type hints on batch_iter
-        return super().apply_process_batch_udf(batch_iter)
+        return super().apply_process_partition_udf(batch_iter)
 
     def get_pandas_udf(self, return_type: StructType) -> Callable[[Column], Column]:
         """

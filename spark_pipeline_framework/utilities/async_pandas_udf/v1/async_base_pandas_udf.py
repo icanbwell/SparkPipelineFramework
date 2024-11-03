@@ -12,7 +12,10 @@ from typing import (
     AsyncGenerator,
 )
 
+# noinspection PyPackageRequirements
 import pandas as pd
+
+# noinspection PyPackageRequirements
 from pyspark import TaskContext
 
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
@@ -62,7 +65,7 @@ class AsyncBasePandasUDF[
             TParameters, TInputColumnDataType, TOutputColumnDataType
         ],
         parameters: Optional[TParameters],
-        batch_size: int,
+        max_chunk_size: int,
         process_chunks_in_parallel: Optional[bool] = None,
         maximum_concurrent_tasks: int = 100 * 1000,
     ) -> None:
@@ -73,7 +76,7 @@ class AsyncBasePandasUDF[
         :param async_func: an async function that takes a list of dictionaries as input and
                             returns a list of dictionaries
         :param parameters: parameters to pass to the async function
-        :param batch_size: the size of the batches
+        :param max_chunk_size: the size of the chunks
         :param process_chunks_in_parallel: whether to run all the chunks in a partition in parallel (default is sequential)
         :param maximum_concurrent_tasks: maximum number of tasks to run concurrently (default is 100,000)
         """
@@ -81,7 +84,7 @@ class AsyncBasePandasUDF[
             TParameters, TInputColumnDataType, TOutputColumnDataType
         ] = async_func
         self.parameters: Optional[TParameters] = parameters
-        self.batch_size: int = batch_size
+        self.max_chunk_size: int = max_chunk_size
         self.process_chunks_in_parallel: Optional[bool] = process_chunks_in_parallel
         self.maximum_concurrent_tasks: int = maximum_concurrent_tasks
 
@@ -93,45 +96,48 @@ class AsyncBasePandasUDF[
         for item in sync_iter:
             yield item
 
-    async def get_batches_of_size(
-        self, *, batch_size: int, batch_iter: AsyncIterator[TInputDataSource]
+    async def get_chunks_of_size(
+        self, *, chunk_size: int, chunk_iterator: AsyncIterator[TInputDataSource]
     ) -> AsyncGenerator[List[TInputColumnDataType], None]:
         """
-        Given an async iterator of dataframes, this function will yield batches of the content of the dataframes.
+        Given an async iterator of dataframes, this function will yield chunks of the content of the dataframes.
 
-        :param batch_size: the size of the batches
-        :param batch_iter: the async iterator of dataframes
-        :return: an async generator of batches of dictionaries
+        :param chunk_size: the size of the chunks
+        :param chunk_iterator: the async iterator of chunks
+        :return: an async generator of chunks of dictionaries
         """
-        batch: TInputDataSource
-        batch_number: int = 0
-        batch_input_values: List[TInputColumnDataType] = []
-        async for batch in batch_iter:
-            batch_number += 1
+        chunk_number: int = 0
+        chunk_input_values: List[TInputColumnDataType] = []
+
+        chunk: TInputDataSource
+        async for chunk in chunk_iterator:
+            chunk_number += 1
             # Convert JSON strings to dictionaries
             # convert the dataframe to a list of dictionaries
-            input_values = await self.get_input_values_from_batch(batch)
-            batch_input_values.extend(input_values)
-            if len(batch_input_values) >= batch_size:
-                # print(f"yielding batch_input_values at batch {batch_number}: {len(batch_input_values)}"
-                #       f", batch_size: {batch_size}")
-                chunk: List[TInputColumnDataType] = batch_input_values[:batch_size]
-                # remove chunk from batch_input_values
-                batch_input_values = batch_input_values[batch_size:]
-                yield chunk
-        if len(batch_input_values) > 0:
-            # print(f"yielding batch_input_values at the end at batch {batch_number}: {len(batch_input_values)}"
-            #       f", batch_size: {batch_size}")
-            yield batch_input_values
+            input_values = await self.get_input_values_from_chunk(chunk)
+            chunk_input_values.extend(input_values)
+            if len(chunk_input_values) >= chunk_size:
+                # print(f"yielding chunk_input_values at chunk {chunk_number}: {len(chunk_input_values)}"
+                #       f", chunk_size: {chunk_size}")
+                current_chunk_values: List[TInputColumnDataType] = chunk_input_values[
+                    :chunk_size
+                ]
+                # remove chunk from chunk_input_values
+                chunk_input_values = chunk_input_values[chunk_size:]
+                yield current_chunk_values
+        if len(chunk_input_values) > 0:
+            # print(f"yielding chunk_input_values at the end at chunk {chunk_number}: {len(chunk_input_values)}"
+            #       f", chunk_size: {chunk_size}")
+            yield chunk_input_values
 
     @abstractmethod
-    async def get_input_values_from_batch(
-        self, batch: TInputDataSource
+    async def get_input_values_from_chunk(
+        self, chunk: TInputDataSource
     ) -> List[TInputColumnDataType]:
         """
         This abstract method is called to convert the input data to a list of dictionaries.
 
-        :param batch: the input data
+        :param chunk: the input data
         :return: a list of dictionaries
         """
         ...
@@ -163,14 +169,14 @@ class AsyncBasePandasUDF[
             yield chunk_container
 
     async def process_partition_async(
-        self, batch_iter: Iterator[TInputDataSource]
+        self, chunk_iterator: Iterator[TInputDataSource]
     ) -> AsyncIterator[TOutputDataSource]:
         """
-        Apply the custom function `self.async_func` to the input batch iterator asynchronously.
-        This is an async function that processes the input data in batches.
+        Apply the custom function `self.async_func` to the input chunk iterator asynchronously.
+        This is an async function that processes the input data in chunks.
 
-        :param batch_iter: iterator of batches of input data
-        :return: async iterator of batches of output data
+        :param chunk_iterator: iterator of chunks of input data
+        :return: async iterator of chunks of output data
         """
         task_context: Optional[TaskContext] = TaskContext.get()
         partition_index: int = task_context.partitionId() if task_context else 0
@@ -178,8 +184,9 @@ class AsyncBasePandasUDF[
 
         chunk_input_values: List[TInputColumnDataType]
         chunks: AsyncGenerator[List[TInputColumnDataType], None] = (
-            self.get_batches_of_size(
-                batch_size=self.batch_size, batch_iter=self.to_async_iter(batch_iter)
+            self.get_chunks_of_size(
+                chunk_size=self.max_chunk_size,
+                chunk_iterator=self.to_async_iter(chunk_iterator),
             )
         )
 
@@ -344,15 +351,15 @@ class AsyncBasePandasUDF[
         """
         return [item async for item in async_iter]
 
-    def apply_process_batch_udf(
-        self, batch_iter: Iterator[TInputDataSource]
+    def apply_process_partition_udf(
+        self, chunk_iter: Iterator[TInputDataSource]
     ) -> Iterator[TOutputDataSource]:
         """
         This function will be called for each partition in Spark.  It will run on worker nodes in parallel.
-        Within each partition, the input data will be processed in batches using Pandas.  The size of the batches
+        Within each partition, the input data will be processed in chunks using Pandas.  The size of the chunks
         is controlled by the `spark.sql.execution.arrow.maxRecordsPerBatch` configuration.
 
-        :param batch_iter: Iterable[pd.DataFrame | pd.Series]
+        :param chunk_iter: Iterable[pd.DataFrame | pd.Series]
         :return: Iterable[pd.DataFrame | pd.Series]
         """
         try:
@@ -362,7 +369,7 @@ class AsyncBasePandasUDF[
             asyncio.set_event_loop(loop)
 
         async_iter: AsyncIterator[TOutputDataSource] = self.process_partition_async(
-            batch_iter
+            chunk_iter
         )
         async_gen = loop.run_until_complete(self.collect_async_iterator(async_iter))
         return iter(async_gen)
