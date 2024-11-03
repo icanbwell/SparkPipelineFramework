@@ -29,6 +29,9 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.partition_context import (
     PartitionContext,
 )
+from spark_pipeline_framework.utilities.async_parallel_processor.v1.async_parallel_processor import (
+    AsyncParallelProcessor,
+)
 
 AcceptedDataSourceType = pd.DataFrame | pd.Series  # type:ignore[type-arg]
 
@@ -60,6 +63,7 @@ class AsyncBasePandasUDF[
         ],
         parameters: Optional[TParameters],
         batch_size: int,
+        run_in_parallel: Optional[bool] = None,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  The subclass must
@@ -69,12 +73,14 @@ class AsyncBasePandasUDF[
                             returns a list of dictionaries
         :param parameters: parameters to pass to the async function
         :param batch_size: the size of the batches
+        :param run_in_parallel: whether to run all the chunks in a partition in parallel (default is sequential)
         """
         self.async_func: HandlePandasBatchFunction[
             TParameters, TInputColumnDataType, TOutputColumnDataType
         ] = async_func
         self.parameters: Optional[TParameters] = parameters
         self.batch_size: int = batch_size
+        self.run_in_parallel: Optional[bool] = run_in_parallel
 
     @staticmethod
     async def to_async_iter(
@@ -174,14 +180,24 @@ class AsyncBasePandasUDF[
             )
         )
 
-        async for result in self.process_chunks_async(
-            partition_context=PartitionContext(
-                partition_index=partition_index,
-                partition_start_time=partition_start_time,
-            ),
-            chunk_containers=AsyncBasePandasUDF.get_chunk_containers(chunks),
-        ):
-            yield result
+        if self.run_in_parallel:
+            async for result in self.process_chunks_async_in_parallel(
+                partition_context=PartitionContext(
+                    partition_index=partition_index,
+                    partition_start_time=partition_start_time,
+                ),
+                chunk_containers=AsyncBasePandasUDF.get_chunk_containers(chunks),
+            ):
+                yield result
+        else:
+            async for result in self.process_chunks_async(
+                partition_context=PartitionContext(
+                    partition_index=partition_index,
+                    partition_start_time=partition_start_time,
+                ),
+                chunk_containers=AsyncBasePandasUDF.get_chunk_containers(chunks),
+            ):
+                yield result
 
     async def process_chunks_async(
         self,
@@ -224,6 +240,78 @@ class AsyncBasePandasUDF[
                 ):
                     output_values.append(output_value)
                 yield await self.create_output_from_dict(output_values)
+
+    async def process_chunk_container(
+        self,
+        *,
+        chunk_container: ChunkContainer[TInputColumnDataType],
+        partition_context: PartitionContext,
+    ) -> TOutputDataSource:
+        """
+        This function processes a single chunk of input data asynchronously.
+
+
+        :param chunk_container: the chunk container
+        :param partition_context: the context for the partition
+        :return: the output data
+        """
+        if len(chunk_container.chunk_input_values) == 0:
+            return await self.create_output_from_dict([])
+        else:
+            output_values: List[TOutputColumnDataType] = []
+            chunk_input_range: range = range(
+                chunk_container.begin_chunk_input_values_index,
+                chunk_container.end_chunk_input_values_index,
+            )
+            async for output_value in cast(
+                AsyncGenerator[TOutputColumnDataType, None],
+                self.async_func(
+                    run_context=AsyncPandasBatchFunctionRunContext(
+                        partition_index=partition_context.partition_index,
+                        chunk_index=chunk_container.chunk_index,
+                        chunk_input_range=chunk_input_range,
+                        partition_start_time=partition_context.partition_start_time,
+                    ),
+                    input_values=chunk_container.chunk_input_values,
+                    parameters=self.parameters,
+                ),
+            ):
+                output_values.append(output_value)
+            return await self.create_output_from_dict(output_values)
+
+    async def process_chunks_async_in_parallel(
+        self,
+        *,
+        partition_context: PartitionContext,
+        chunk_containers: AsyncGenerator[ChunkContainer[TInputColumnDataType], None],
+    ) -> AsyncGenerator[TOutputDataSource, None]:
+        """
+        This function processes the chunks of input data asynchronously in parallel.  You can override this function
+        to add additional processing logic.
+
+
+        :param partition_context: the context for the partition
+        :param chunk_containers: the async generator of chunk containers
+        :return: an async generator of output data
+        """
+
+        # read the whole list from async generator so we can kick off all the tasks in parallel
+        chunk_containers_list: List[ChunkContainer[TInputColumnDataType]] = [
+            x async for x in chunk_containers
+        ]
+
+        async def process_chunk_container_fn(
+            row: ChunkContainer[TInputColumnDataType],
+        ) -> TOutputDataSource:
+            return await self.process_chunk_container(
+                chunk_container=row, partition_context=partition_context
+            )
+
+        async for result in AsyncParallelProcessor.process_rows_in_parallel(
+            rows=chunk_containers_list,
+            process_row_fn=process_chunk_container_fn,
+        ):
+            yield result
 
     @abstractmethod
     async def create_output_from_dict(
