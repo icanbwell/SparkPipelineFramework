@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from aioresponses import aioresponses
 
@@ -6,6 +8,9 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 )
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_sender_parameters import (
     ElasticSearchSenderParameters,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
 )
 
 
@@ -32,10 +37,13 @@ async def test_process_partition_success() -> None:
             },
         )
 
-        async_gen = ElasticSearchProcessor.process_partition(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=chunk_input_range,
+        async_gen = ElasticSearchProcessor.process_chunk(
+            run_context=AsyncPandasBatchFunctionRunContext(
+                partition_index=0,
+                chunk_index=0,
+                chunk_input_range=chunk_input_range,
+                partition_start_time=datetime.now(),
+            ),
             input_values=input_values,
             parameters=parameters,
         )
@@ -63,10 +71,13 @@ async def test_process_partition_failure() -> None:
     with aioresponses() as m:
         m.post("https://elasticsearch:9200/test_index/_bulk", status=500)
 
-        async_gen = ElasticSearchProcessor.process_partition(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=chunk_input_range,
+        async_gen = ElasticSearchProcessor.process_chunk(
+            run_context=AsyncPandasBatchFunctionRunContext(
+                partition_index=0,
+                chunk_index=0,
+                chunk_input_range=chunk_input_range,
+                partition_start_time=datetime.now(),
+            ),
             input_values=input_values,
             parameters=parameters,
         )

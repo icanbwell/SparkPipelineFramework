@@ -12,8 +12,11 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
     AsyncPandasBatchFunctionRunContext,
 )
 
-AcceptedParametersType = Dict[str, Any] | object | None | Any
-AcceptedColumnDataType = Dict[str, Any] | int | float | str | bool
+# Information on Python 3.12 Typing syntax: https://realpython.com/python312-typing/
+# Mypy information on Python 3.12 generics: https://mypy.readthedocs.io/en/stable/generics.html
+
+type AcceptedParametersType = Dict[str, Any] | object | None
+type AcceptedColumnDataType = Dict[str, Any] | int | float | str | bool
 
 
 class HandlePandasBatchFunction[
@@ -52,10 +55,9 @@ This is the type alias for when we are operating on a full dataframe not on spec
 """
 
 
-class HandlePandasDataFrameBatchFunction[TParameters: AcceptedParametersType](
-    HandlePandasBatchFunction[TParameters, Dict[str, Any], Dict[str, Any]]
-):
-    pass
+type HandlePandasDataFrameBatchFunction[
+    TParameters: AcceptedParametersType
+] = HandlePandasBatchFunction[TParameters, Dict[str, Any], Dict[str, Any]]
 
 
 """
@@ -63,10 +65,9 @@ This is the type alias for when we are operating on a single column for type str
 """
 
 
-class HandlePandasStructToStructBatchFunction[TParameters: AcceptedParametersType](
-    HandlePandasBatchFunction[TParameters, Dict[str, Any], Dict[str, Any]]
-):
-    pass
+type HandlePandasStructToStructBatchFunction[
+    TParameters: AcceptedParametersType
+] = HandlePandasBatchFunction[TParameters, Dict[str, Any], Dict[str, Any]]
 
 
 """
@@ -74,10 +75,9 @@ This is the type alias for when we are operating on a single column for type sca
 """
 
 
-class HandlePandasScalarToStructBatchFunction[TParameters: AcceptedParametersType](
-    HandlePandasBatchFunction[TParameters, Union[int, float, str, bool], Dict[str, Any]]
-):
-    pass
+type HandlePandasScalarToStructBatchFunction[
+    TParameters: AcceptedParametersType
+] = HandlePandasBatchFunction[TParameters, Union[int, float, str, bool], Dict[str, Any]]
 
 
 """
@@ -85,20 +85,16 @@ This is the type alias for when we are operating on a single column for type sca
 """
 
 
-class HandlePandasScalarToScalarBatchFunction[TParameters: AcceptedParametersType](
-    HandlePandasBatchFunction[
-        TParameters, Union[int, float, str, bool], Union[int, float, str, bool]
-    ]
-):
-    pass
-
+type HandlePandasScalarToScalarBatchFunction[
+    TParameters: AcceptedParametersType
+] = HandlePandasBatchFunction[
+    TParameters, Union[int, float, str, bool], Union[int, float, str, bool]
+]
 
 """
 This is the type alias for when we are operating on a single column for type struct, and we want to output a scalar
 """
 
-
-class HandlePandasStructToScalarBatchFunction[TParameters: AcceptedParametersType](
-    HandlePandasBatchFunction[TParameters, Dict[str, Any], Union[int, float, str, bool]]
-):
-    pass
+type HandlePandasStructToScalarBatchFunction[
+    TParameters: AcceptedParametersType
+] = HandlePandasBatchFunction[TParameters, Dict[str, Any], Union[int, float, str, bool]]
