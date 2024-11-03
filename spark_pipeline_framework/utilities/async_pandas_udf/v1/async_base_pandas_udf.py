@@ -11,6 +11,7 @@ from typing import (
     Optional,
     cast,
     AsyncGenerator,
+    Any,
 )
 
 # noinspection PyPackageRequirements
@@ -255,13 +256,16 @@ class AsyncBasePandasUDF[
         *,
         chunk_container: ChunkContainer[TInputColumnDataType],
         partition_context: PartitionContext,
+        **kwargs: Any,
     ) -> TOutputDataSource:
         """
         This function processes a single chunk of input data asynchronously.
+        Override this to pass additional parameters to the async function.
 
 
         :param chunk_container: the chunk container
         :param partition_context: the context for the partition
+        :param kwargs: additional parameters
         :return: the output data
         """
 
@@ -283,7 +287,9 @@ class AsyncBasePandasUDF[
                 chunk_container.end_chunk_input_values_index,
             )
             async for output_value in cast(
-                AsyncGenerator[TOutputColumnDataType, None],
+                AsyncGenerator[
+                    TOutputColumnDataType, None
+                ],  # mypy can't figure out that self.async_func is an async generator
                 self.async_func(
                     run_context=AsyncPandasBatchFunctionRunContext(
                         partition_index=partition_context.partition_index,
@@ -293,6 +299,7 @@ class AsyncBasePandasUDF[
                     ),
                     input_values=chunk_container.chunk_input_values,
                     parameters=self.parameters,
+                    **kwargs,
                 ),
             ):
                 output_values.append(output_value)
@@ -308,6 +315,7 @@ class AsyncBasePandasUDF[
         *,
         partition_context: PartitionContext,
         chunk_containers: AsyncGenerator[ChunkContainer[TInputColumnDataType], None],
+        **kwargs: Any,
     ) -> AsyncGenerator[TOutputDataSource, None]:
         """
         This function processes the chunks of input data asynchronously in parallel.  You can override this function
@@ -316,6 +324,7 @@ class AsyncBasePandasUDF[
 
         :param partition_context: the context for the partition
         :param chunk_containers: the async generator of chunk containers
+        :param kwargs: additional parameters
         :return: an async generator of output data
         """
 
@@ -334,10 +343,11 @@ class AsyncBasePandasUDF[
             row: ChunkContainer[TInputColumnDataType],
             parameters: Optional[TParameters],
             log_level: Optional[LogLevel],
+            **kwargs: Any,
         ) -> TOutputDataSource:
             """This functions wraps the process_chunk_container function which is an instance method"""
             return await self.process_chunk_container(
-                chunk_container=row, partition_context=partition_context
+                chunk_container=row, partition_context=partition_context, **kwargs
             )
 
         # now run all the tasks in parallel yielding the results as they get ready
@@ -349,6 +359,7 @@ class AsyncBasePandasUDF[
             max_concurrent_tasks=self.maximum_concurrent_tasks,
             parameters=parameters,
             log_level=self.log_level,
+            **kwargs,
         ):
             yield result
 

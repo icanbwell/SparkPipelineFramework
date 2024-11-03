@@ -39,6 +39,7 @@ class HandlePandasBatchFunction[
         run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[TInputColumnDataType],
         parameters: Optional[TParameters],
+        **kwargs: Any,
     ) -> AsyncGenerator[TOutputColumnDataType, None]:
         """
         This function is called with a batch of input values and should return a batch of output values.

@@ -12,6 +12,7 @@ class ParallelFunction[TInput, TOutput, TParameters](Protocol):
         row: TInput,
         parameters: Optional[TParameters],
         log_level: Optional[LogLevel],
+        **kwargs: Any,
     ) -> TOutput:
         """
         Handle a batch of data
@@ -31,6 +32,7 @@ class AsyncParallelProcessor:
         max_concurrent_tasks: int,
         parameters: Optional[TParameters],
         log_level: Optional[LogLevel] = None,
+        **kwargs: Any,
     ) -> AsyncGenerator[TOutput, None]:
         """
         Given a list of rows, it calls the process_row_fn for each row in parallel and yields the results
@@ -40,6 +42,7 @@ class AsyncParallelProcessor:
         :param max_concurrent_tasks: maximum number of tasks to run concurrently
         :param parameters: parameters to pass to the process_row_fn
         :param log_level: log level
+        :param kwargs: additional parameters
         :return: results of processing
         """
         semaphore: asyncio.Semaphore = asyncio.Semaphore(max_concurrent_tasks)
@@ -49,7 +52,7 @@ class AsyncParallelProcessor:
         async def process_with_semaphore(*, row1: TInput) -> TOutput:
             async with semaphore:
                 return await process_row_fn(
-                    row=row1, parameters=parameters, log_level=log_level
+                    row=row1, parameters=parameters, log_level=log_level, **kwargs
                 )
 
         # Initial filling of the pending set up to max_concurrent_tasks
