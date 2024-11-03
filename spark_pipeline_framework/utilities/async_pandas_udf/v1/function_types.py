@@ -15,7 +15,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 # Information on Python 3.12 Typing syntax: https://realpython.com/python312-typing/
 # Mypy information on Python 3.12 generics: https://mypy.readthedocs.io/en/stable/generics.html
 
-type AcceptedParametersType = Dict[str, Any] | object | None
+type AcceptedParametersType = Dict[str, Any] | object
 type AcceptedColumnDataType = Dict[str, Any] | int | float | str | bool
 
 

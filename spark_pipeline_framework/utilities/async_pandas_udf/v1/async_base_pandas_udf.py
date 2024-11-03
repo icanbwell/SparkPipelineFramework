@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from abc import abstractmethod
 from datetime import datetime
+from logging import Logger
 from typing import (
     Iterator,
     AsyncIterator,
@@ -18,6 +19,8 @@ import pandas as pd
 # noinspection PyPackageRequirements
 from pyspark import TaskContext
 
+from spark_pipeline_framework.logger.log_level import LogLevel
+from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
@@ -68,6 +71,7 @@ class AsyncBasePandasUDF[
         max_chunk_size: int,
         process_chunks_in_parallel: Optional[bool] = None,
         maximum_concurrent_tasks: int = 100 * 1000,
+        log_level: Optional[LogLevel] = None,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  The subclass must
@@ -87,6 +91,10 @@ class AsyncBasePandasUDF[
         self.max_chunk_size: int = max_chunk_size
         self.process_chunks_in_parallel: Optional[bool] = process_chunks_in_parallel
         self.maximum_concurrent_tasks: int = maximum_concurrent_tasks
+        self.log_level: Optional[LogLevel] = log_level
+        self.logger: Logger = get_logger(
+            __name__, level=log_level.value if log_level else "INFO"
+        )
 
     @staticmethod
     async def to_async_iter(
@@ -191,6 +199,9 @@ class AsyncBasePandasUDF[
         )
 
         if self.process_chunks_in_parallel:
+            self.logger.debug(
+                f"Starting process_partition_async | partition: {partition_index} | type: parallel"
+            )
             async for result in self.process_chunks_async_in_parallel(
                 partition_context=PartitionContext(
                     partition_index=partition_index,
@@ -200,7 +211,10 @@ class AsyncBasePandasUDF[
             ):
                 yield result
         else:
-            async for result in self.process_chunks_async(
+            self.logger.debug(
+                f"Starting process_partition_async | partition: {partition_index} | type: sequential"
+            )
+            async for result in self.process_chunks_sequential_async(
                 partition_context=PartitionContext(
                     partition_index=partition_index,
                     partition_start_time=partition_start_time,
@@ -209,7 +223,11 @@ class AsyncBasePandasUDF[
             ):
                 yield result
 
-    async def process_chunks_async(
+        self.logger.debug(
+            f"Finished process_partition_async | partition {partition_index}"
+        )
+
+    async def process_chunks_sequential_async(
         self,
         *,
         partition_context: PartitionContext,
@@ -227,29 +245,10 @@ class AsyncBasePandasUDF[
 
         chunk_container: ChunkContainer[TInputColumnDataType]
         async for chunk_container in chunk_containers:
-            if len(chunk_container.chunk_input_values) == 0:
-                yield await self.create_output_from_dict([])
-            else:
-                output_values: List[TOutputColumnDataType] = []
-                chunk_input_range: range = range(
-                    chunk_container.begin_chunk_input_values_index,
-                    chunk_container.end_chunk_input_values_index,
-                )
-                async for output_value in cast(
-                    AsyncGenerator[TOutputColumnDataType, None],
-                    self.async_func(
-                        run_context=AsyncPandasBatchFunctionRunContext(
-                            partition_index=partition_context.partition_index,
-                            chunk_index=chunk_container.chunk_index,
-                            chunk_input_range=chunk_input_range,
-                            partition_start_time=partition_context.partition_start_time,
-                        ),
-                        input_values=chunk_container.chunk_input_values,
-                        parameters=self.parameters,
-                    ),
-                ):
-                    output_values.append(output_value)
-                yield await self.create_output_from_dict(output_values)
+            output_data: TOutputDataSource = await self.process_chunk_container(
+                chunk_container=chunk_container, partition_context=partition_context
+            )
+            yield output_data
 
     async def process_chunk_container(
         self,
@@ -265,7 +264,17 @@ class AsyncBasePandasUDF[
         :param partition_context: the context for the partition
         :return: the output data
         """
+
+        self.logger.debug(
+            f"Starting process_chunk_container | partition: {partition_context.partition_index}"
+            f" | Chunk: {chunk_container.chunk_index}"
+            f" | range: {chunk_container.begin_chunk_input_values_index}-{chunk_container.end_chunk_input_values_index}"
+        )
         if len(chunk_container.chunk_input_values) == 0:
+            self.logger.debug(
+                f"Empty chunk | partition: {partition_context.partition_index}"
+                f" | Chunk: {chunk_container.chunk_index}"
+            )
             return await self.create_output_from_dict([])
         else:
             output_values: List[TOutputColumnDataType] = []
@@ -287,6 +296,11 @@ class AsyncBasePandasUDF[
                 ),
             ):
                 output_values.append(output_value)
+            self.logger.debug(
+                f"Finished process_chunk_container | partition: {partition_context.partition_index}"
+                f" | Chunk: {chunk_container.chunk_index}"
+                f" | range: {chunk_container.begin_chunk_input_values_index}-{chunk_container.end_chunk_input_values_index}"
+            )
             return await self.create_output_from_dict(output_values)
 
     async def process_chunks_async_in_parallel(
@@ -310,8 +324,16 @@ class AsyncBasePandasUDF[
             x async for x in chunk_containers
         ]
 
+        self.logger.debug(
+            f"Starting process_chunks_async_in_parallel | partition: {partition_context.partition_index}"
+            f" | chunk_count: {len(chunk_containers_list)}"
+            f" | range: {chunk_containers_list[0].begin_chunk_input_values_index}-{chunk_containers_list[-1].end_chunk_input_values_index}"
+        )
+
         async def process_chunk_container_fn(
             row: ChunkContainer[TInputColumnDataType],
+            parameters: Optional[TParameters],
+            log_level: Optional[LogLevel],
         ) -> TOutputDataSource:
             """This functions wraps the process_chunk_container function which is an instance method"""
             return await self.process_chunk_container(
@@ -320,12 +342,21 @@ class AsyncBasePandasUDF[
 
         # now run all the tasks in parallel yielding the results as they get ready
         result: TOutputDataSource
+        parameters: TParameters | None = self.parameters
         async for result in AsyncParallelProcessor.process_rows_in_parallel(
             rows=chunk_containers_list,
             process_row_fn=process_chunk_container_fn,
             max_concurrent_tasks=self.maximum_concurrent_tasks,
+            parameters=parameters,
+            log_level=self.log_level,
         ):
             yield result
+
+        self.logger.debug(
+            f"Finished process_chunks_async_in_parallel |  partition: {partition_context.partition_index}"
+            f" | chunk_count: {len(chunk_containers_list)}"
+            f" | range: {chunk_containers_list[0].begin_chunk_input_values_index}-{chunk_containers_list[-1].end_chunk_input_values_index}"
+        )
 
     @abstractmethod
     async def create_output_from_dict(

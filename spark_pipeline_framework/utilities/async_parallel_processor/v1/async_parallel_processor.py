@@ -1,9 +1,18 @@
 import asyncio
-from typing import AsyncGenerator, Protocol, List
+from asyncio import Task
+from typing import AsyncGenerator, Protocol, List, Optional, Set, Iterator, Dict, Any
+
+from spark_pipeline_framework.logger.log_level import LogLevel
 
 
-class ParallelFunction[TInput, TOutput](Protocol):
-    async def __call__(self, *, row: TInput) -> TOutput:
+class ParallelFunction[TInput, TOutput, TParameters](Protocol):
+    async def __call__(
+        self,
+        *,
+        row: TInput,
+        parameters: Optional[TParameters],
+        log_level: Optional[LogLevel],
+    ) -> TOutput:
         """
         Handle a batch of data
 
@@ -15,11 +24,13 @@ class ParallelFunction[TInput, TOutput](Protocol):
 class AsyncParallelProcessor:
     @staticmethod
     async def process_rows_in_parallel[
-        TInput, TOutput
+        TInput, TOutput, TParameters: Dict[str, Any] | object
     ](
         rows: List[TInput],
-        process_row_fn: ParallelFunction[TInput, TOutput],
+        process_row_fn: ParallelFunction[TInput, TOutput, TParameters],
         max_concurrent_tasks: int,
+        parameters: Optional[TParameters],
+        log_level: Optional[LogLevel] = None,
     ) -> AsyncGenerator[TOutput, None]:
         """
         Given a list of rows, it calls the process_row_fn for each row in parallel and yields the results
@@ -27,23 +38,28 @@ class AsyncParallelProcessor:
         :param rows: list of rows to process
         :param process_row_fn: function to process each row
         :param max_concurrent_tasks: maximum number of tasks to run concurrently
+        :param parameters: parameters to pass to the process_row_fn
+        :param log_level: log level
         :return: results of processing
         """
-        semaphore = asyncio.Semaphore(max_concurrent_tasks)
-        pending = set()
-        row_iterator = iter(rows)
+        semaphore: asyncio.Semaphore = asyncio.Semaphore(max_concurrent_tasks)
+        pending: Set[Task[TOutput]] = set()
+        row_iterator: Iterator[TInput] = iter(rows)
 
         async def process_with_semaphore(*, row1: TInput) -> TOutput:
             async with semaphore:
-                return await process_row_fn(row=row1)
+                return await process_row_fn(
+                    row=row1, parameters=parameters, log_level=log_level
+                )
 
         # Initial filling of the pending set up to max_concurrent_tasks
         for _ in range(min(max_concurrent_tasks, len(rows))):
-            row = next(row_iterator)
+            row: TInput = next(row_iterator)
             pending.add(asyncio.create_task(process_with_semaphore(row1=row)))
 
         try:
             while pending:
+                done: Set[Task[TOutput]]
                 done, pending = await asyncio.wait(
                     pending, return_when=asyncio.FIRST_COMPLETED
                 )
