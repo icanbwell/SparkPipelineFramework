@@ -7,7 +7,6 @@ from typing import (
     List,
     cast,
     Callable,
-    TypeVar,
     Iterator,
     Optional,
 )
@@ -22,12 +21,11 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_ud
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasStructToStructBatchFunction,
+    AcceptedParametersType,
 )
 
-TParameters = TypeVar("TParameters")
 
-
-class AsyncPandasStructColumnToStructColumnUDF(
+class AsyncPandasStructColumnToStructColumnUDF[TParameters: AcceptedParametersType](
     AsyncBasePandasUDF[
         TParameters,
         pd.Series,  # type:ignore[type-arg]

@@ -1,5 +1,5 @@
 import asyncio
-from typing import AsyncGenerator, Protocol
+from typing import AsyncGenerator, Protocol, List
 
 
 class ParallelFunction[TInput, TOutput](Protocol):
@@ -17,7 +17,7 @@ class AsyncParallelProcessor:
     async def process_rows_in_parallel[
         TInput, TOutput
     ](
-        rows: list[TInput], process_row_fn: ParallelFunction[TInput, TOutput]
+        rows: List[TInput], process_row_fn: ParallelFunction[TInput, TOutput]
     ) -> AsyncGenerator[TOutput, None]:
         """
         Given a list of rows, it calls the process_row_fn for each row in parallel and yields the results

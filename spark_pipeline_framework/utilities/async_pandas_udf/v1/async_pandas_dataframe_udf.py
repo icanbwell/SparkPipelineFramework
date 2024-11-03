@@ -7,7 +7,6 @@ from typing import (
     Dict,
     List,
     Callable,
-    TypeVar,
     Iterable,
     cast,
     Optional,
@@ -20,12 +19,11 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_ud
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasDataFrameBatchFunction,
+    AcceptedParametersType,
 )
 
-TParameters = TypeVar("TParameters")
 
-
-class AsyncPandasDataFrameUDF(
+class AsyncPandasDataFrameUDF[TParameters: AcceptedParametersType](
     AsyncBasePandasUDF[
         TParameters, pd.DataFrame, pd.DataFrame, Dict[str, Any], Dict[str, Any]
     ]

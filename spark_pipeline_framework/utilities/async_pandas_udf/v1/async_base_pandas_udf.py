@@ -6,15 +6,10 @@ from datetime import datetime
 from typing import (
     Iterator,
     AsyncIterator,
-    Any,
-    Dict,
     List,
-    TypeVar,
     Optional,
-    Generic,
     cast,
     AsyncGenerator,
-    Union,
 )
 
 import pandas as pd
@@ -25,32 +20,20 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchFunction,
+    AcceptedParametersType,
+    AcceptedColumnDataType,
 )
 
-TParameters = TypeVar("TParameters")
-TInputDataSource = TypeVar(
-    "TInputDataSource", pd.DataFrame, pd.Series  # type:ignore[type-arg]
-)
-TOutputDataSource = TypeVar(
-    "TOutputDataSource", pd.DataFrame, pd.Series  # type:ignore[type-arg]
-)
-TInputColumnDataType = TypeVar(
-    "TInputColumnDataType", Dict[str, Any], Union[int, float, str, bool]
-)
-TOutputColumnDataType = TypeVar(
-    "TOutputColumnDataType", Dict[str, Any], Union[int, float, str, bool]
-)
+AcceptedDataSourceType = pd.DataFrame | pd.Series  # type:ignore[type-arg]
 
 
-class AsyncBasePandasUDF(
-    Generic[
-        TParameters,
-        TInputDataSource,
-        TOutputDataSource,
-        TInputColumnDataType,
-        TOutputColumnDataType,
-    ]
-):
+class AsyncBasePandasUDF[
+    TParameters: AcceptedParametersType,
+    TInputDataSource: AcceptedDataSourceType,
+    TOutputDataSource: AcceptedDataSourceType,
+    TInputColumnDataType: AcceptedColumnDataType,
+    TOutputColumnDataType: AcceptedColumnDataType,
+]:
     """
     This base class implements the logic to run an async function in Spark using Pandas UDFs.
 

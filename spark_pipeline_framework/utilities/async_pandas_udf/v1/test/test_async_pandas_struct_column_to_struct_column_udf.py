@@ -7,10 +7,10 @@ from typing import (
     Any,
     Optional,
     AsyncGenerator,
-    cast,
     Iterable,
     Tuple,
     Generator,
+    cast,
 )
 
 from pyspark.sql import SparkSession, DataFrame
@@ -24,10 +24,10 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_struct_udf import (
     AsyncPandasStructColumnToStructColumnUDF,
 )
-
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasBatchFunction,
+    HandlePandasStructToStructBatchFunction,
 )
+
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
 )
@@ -67,7 +67,6 @@ def test_async_pandas_struct_column_to_struct_column_udf(
         log_level: str = "INFO"
 
     async def test_async(
-        *,
         run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
@@ -109,8 +108,7 @@ def test_async_pandas_struct_column_to_struct_column_udf(
         colName="processed_name",
         col=AsyncPandasStructColumnToStructColumnUDF(
             async_func=cast(
-                HandlePandasBatchFunction[MyParameters, Dict[str, Any], Dict[str, Any]],
-                test_async,
+                HandlePandasStructToStructBatchFunction[MyParameters], test_async
             ),
             parameters=MyParameters(),
             batch_size=2,
