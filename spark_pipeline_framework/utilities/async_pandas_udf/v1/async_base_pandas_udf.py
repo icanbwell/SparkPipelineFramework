@@ -16,6 +16,10 @@ from typing import (
 
 # noinspection PyPackageRequirements
 import pandas as pd
+from helix_fhir_client_sdk.utilities.async_parallel_processor.v1.async_parallel_processor import (
+    AsyncParallelProcessor,
+    ParallelFunctionContext,
+)
 
 # noinspection PyPackageRequirements
 from pyspark import TaskContext
@@ -37,10 +41,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types impor
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.partition_context import (
     PartitionContext,
-)
-from spark_pipeline_framework.utilities.async_parallel_processor.v1.async_parallel_processor import (
-    AsyncParallelProcessor,
-    ParallelFunctionContext,
 )
 
 AcceptedDataSourceType = pd.DataFrame | pd.Series  # type:ignore[type-arg]
