@@ -63,7 +63,7 @@ class AsyncBasePandasUDF[
         ],
         parameters: Optional[TParameters],
         batch_size: int,
-        run_in_parallel: Optional[bool] = None,
+        process_chunks_in_parallel: Optional[bool] = None,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  The subclass must
@@ -73,14 +73,14 @@ class AsyncBasePandasUDF[
                             returns a list of dictionaries
         :param parameters: parameters to pass to the async function
         :param batch_size: the size of the batches
-        :param run_in_parallel: whether to run all the chunks in a partition in parallel (default is sequential)
+        :param process_chunks_in_parallel: whether to run all the chunks in a partition in parallel (default is sequential)
         """
         self.async_func: HandlePandasBatchFunction[
             TParameters, TInputColumnDataType, TOutputColumnDataType
         ] = async_func
         self.parameters: Optional[TParameters] = parameters
         self.batch_size: int = batch_size
-        self.run_in_parallel: Optional[bool] = run_in_parallel
+        self.process_chunks_in_parallel: Optional[bool] = process_chunks_in_parallel
 
     @staticmethod
     async def to_async_iter(
@@ -163,7 +163,7 @@ class AsyncBasePandasUDF[
         self, batch_iter: Iterator[TInputDataSource]
     ) -> AsyncIterator[TOutputDataSource]:
         """
-        Apply the custom function `standardize_batch` to the input batch iterator asynchronously.
+        Apply the custom function `self.async_func` to the input batch iterator asynchronously.
         This is an async function that processes the input data in batches.
 
         :param batch_iter: iterator of batches of input data
@@ -180,7 +180,7 @@ class AsyncBasePandasUDF[
             )
         )
 
-        if self.run_in_parallel:
+        if self.process_chunks_in_parallel:
             async for result in self.process_chunks_async_in_parallel(
                 partition_context=PartitionContext(
                     partition_index=partition_index,
@@ -303,10 +303,13 @@ class AsyncBasePandasUDF[
         async def process_chunk_container_fn(
             row: ChunkContainer[TInputColumnDataType],
         ) -> TOutputDataSource:
+            """This functions wraps the process_chunk_container function which is an instance method"""
             return await self.process_chunk_container(
                 chunk_container=row, partition_context=partition_context
             )
 
+        # now run all the tasks in parallel yielding the results as they get ready
+        result: TOutputDataSource
         async for result in AsyncParallelProcessor.process_rows_in_parallel(
             rows=chunk_containers_list,
             process_row_fn=process_chunk_container_fn,
@@ -329,6 +332,12 @@ class AsyncBasePandasUDF[
     async def collect_async_iterator(
         self, async_iter: AsyncIterator[TOutputDataSource]
     ) -> List[TOutputDataSource]:
+        """
+        This function collects the output of an async iterator into a list.
+
+        :param async_iter: the async iterator
+        :return: a list of the output
+        """
         return [item async for item in async_iter]
 
     def apply_process_batch_udf(
