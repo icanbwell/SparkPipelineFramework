@@ -4,7 +4,6 @@ from typing import (
     List,
     cast,
     Callable,
-    TypeVar,
     Iterator,
     Optional,
     Dict,
@@ -21,14 +20,13 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_ud
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasScalarToStructBatchFunction,
+    AcceptedParametersType,
 )
-
-TParameters = TypeVar("TParameters")
 
 MyColumnDataType = int | float | str | bool
 
 
-class AsyncPandasScalarColumnToStructColumnUDF(
+class AsyncPandasScalarColumnToStructColumnUDF[TParameters: AcceptedParametersType](
     AsyncBasePandasUDF[
         TParameters,
         pd.Series,  # type:ignore[type-arg]
