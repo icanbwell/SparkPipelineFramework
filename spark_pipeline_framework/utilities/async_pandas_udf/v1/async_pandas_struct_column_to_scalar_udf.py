@@ -19,6 +19,9 @@ from pyspark.sql.types import AtomicType
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasStructToScalarBatchFunction,
     AcceptedParametersType,
@@ -41,7 +44,7 @@ class AsyncPandasStructColumnToScalarColumnUDF[TParameters: AcceptedParametersTy
         *,
         async_func: HandlePandasStructToScalarBatchFunction[TParameters],
         parameters: Optional[TParameters],
-        max_chunk_size: int,
+        pandas_udf_parameters: AsyncPandasUdfParameters,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  This class is used
@@ -50,12 +53,12 @@ class AsyncPandasStructColumnToScalarColumnUDF[TParameters: AcceptedParametersTy
 
         :param async_func: the async function to run
         :param parameters: the parameters to pass to the async function
-        :param max_chunk_size: the size of the batches to process
+        :param pandas_udf_parameters: the parameters to pass to the Pand
         """
         super().__init__(
             async_func=async_func,
             parameters=parameters,
-            max_chunk_size=max_chunk_size,
+            pandas_udf_parameters=pandas_udf_parameters,
         )
 
     async def get_input_values_from_chunk(

@@ -18,6 +18,9 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
@@ -141,7 +144,7 @@ def test_async_pandas_dataframe_udf_large(spark_session: SparkSession) -> None:
             async_func=cast(
                 HandlePandasDataFrameBatchFunction[MyParameters], test_async
             ),
-            max_chunk_size=2,
+            pandas_udf_parameters=AsyncPandasUdfParameters(max_chunk_size=2),
         ).get_pandas_udf(),
         schema=output_schema,
     )

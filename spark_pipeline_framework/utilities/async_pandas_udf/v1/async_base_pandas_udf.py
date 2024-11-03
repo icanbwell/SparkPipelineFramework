@@ -22,6 +22,9 @@ from pyspark import TaskContext
 
 from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
@@ -69,10 +72,7 @@ class AsyncBasePandasUDF[
             TParameters, TInputColumnDataType, TOutputColumnDataType
         ],
         parameters: Optional[TParameters],
-        max_chunk_size: int,
-        process_chunks_in_parallel: Optional[bool] = None,
-        maximum_concurrent_tasks: int = 100 * 1000,
-        log_level: Optional[LogLevel] = None,
+        pandas_udf_parameters: AsyncPandasUdfParameters,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  The subclass must
@@ -81,20 +81,20 @@ class AsyncBasePandasUDF[
         :param async_func: an async function that takes a list of dictionaries as input and
                             returns a list of dictionaries
         :param parameters: parameters to pass to the async function
-        :param max_chunk_size: the size of the chunks
-        :param process_chunks_in_parallel: whether to run all the chunks in a partition in parallel (default is sequential)
-        :param maximum_concurrent_tasks: maximum number of tasks to run concurrently (default is 100,000)
+        :param pandas_udf_parameters: the parameters for the Pandas UDF
         """
         self.async_func: HandlePandasBatchFunction[
             TParameters, TInputColumnDataType, TOutputColumnDataType
         ] = async_func
         self.parameters: Optional[TParameters] = parameters
-        self.max_chunk_size: int = max_chunk_size
-        self.process_chunks_in_parallel: Optional[bool] = process_chunks_in_parallel
-        self.maximum_concurrent_tasks: int = maximum_concurrent_tasks
-        self.log_level: Optional[LogLevel] = log_level
+        self.pandas_udf_parameters: AsyncPandasUdfParameters = pandas_udf_parameters
         self.logger: Logger = get_logger(
-            __name__, level=log_level.value if log_level else "INFO"
+            __name__,
+            level=(
+                pandas_udf_parameters.log_level.value
+                if pandas_udf_parameters.log_level
+                else "INFO"
+            ),
         )
 
     @staticmethod
@@ -200,12 +200,12 @@ class AsyncBasePandasUDF[
         chunk_input_values: List[TInputColumnDataType]
         chunks: AsyncGenerator[List[TInputColumnDataType], None] = (
             self.get_chunks_of_size(
-                chunk_size=self.max_chunk_size,
+                chunk_size=self.pandas_udf_parameters.max_chunk_size,
                 chunk_iterator=self.to_async_iter(chunk_iterator),
             )
         )
 
-        if self.process_chunks_in_parallel:
+        if self.pandas_udf_parameters.process_chunks_in_parallel:
             self.logger.debug(
                 f"Starting process_partition_async | partition: {partition_index} | type: parallel"
             )
@@ -368,9 +368,9 @@ class AsyncBasePandasUDF[
         async for result in AsyncParallelProcessor.process_rows_in_parallel(
             rows=chunk_containers_list,
             process_row_fn=process_chunk_container_fn,
-            max_concurrent_tasks=self.maximum_concurrent_tasks,
+            max_concurrent_tasks=self.pandas_udf_parameters.maximum_concurrent_tasks,
             parameters=parameters,
-            log_level=self.log_level,
+            log_level=self.pandas_udf_parameters.log_level,
             **kwargs,
         ):
             yield result

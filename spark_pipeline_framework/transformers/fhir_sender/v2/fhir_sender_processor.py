@@ -23,6 +23,9 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
     FhirSenderParameters,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
@@ -157,7 +160,9 @@ class FhirSenderProcessor:
                 FhirSenderProcessor.process_chunk,
             ),
             parameters=parameters,
-            max_chunk_size=parameters.batch_size or 100,
+            pandas_udf_parameters=AsyncPandasUdfParameters(
+                max_chunk_size=parameters.batch_size or 100
+            ),
         ).get_pandas_udf()
 
     @staticmethod

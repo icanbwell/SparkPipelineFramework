@@ -16,6 +16,9 @@ from typing import (
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StringType, StructType, StructField
 
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
@@ -104,7 +107,7 @@ def test_async_pandas_scalar_column_to_struct_column_udf(
                 test_async,
             ),
             parameters=MyParameters(),
-            max_chunk_size=2,
+            pandas_udf_parameters=AsyncPandasUdfParameters(max_chunk_size=2),
         ).get_pandas_udf(
             return_type=StructType(
                 [StructField("id", StringType()), StructField("name", StringType())]

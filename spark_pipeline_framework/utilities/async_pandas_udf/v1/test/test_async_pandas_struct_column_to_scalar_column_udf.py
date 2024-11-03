@@ -18,6 +18,9 @@ from pyspark.sql.functions import struct, to_json
 from pyspark.sql.types import StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
@@ -110,7 +113,7 @@ def test_async_pandas_struct_column_to_struct_column_udf(
                 test_async,
             ),
             parameters=MyParameters(),
-            max_chunk_size=2,
+            pandas_udf_parameters=AsyncPandasUdfParameters(max_chunk_size=2),
         ).get_pandas_udf(return_type=StringType())(df["name_struct"]),
     )
 

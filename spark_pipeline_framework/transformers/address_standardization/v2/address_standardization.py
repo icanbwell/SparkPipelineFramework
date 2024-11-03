@@ -21,6 +21,9 @@ from spark_pipeline_framework.transformers.address_standardization.v2.address_st
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_struct_udf import (
     AsyncPandasStructColumnToStructColumnUDF,
 )
@@ -184,7 +187,9 @@ class AddressStandardization(FrameworkTransformer):
                             cache_handler=cache_handler,
                             geolocation_column_prefix=geolocation_column_prefix,
                         ),
-                        max_chunk_size=batch_size,
+                        pandas_udf_parameters=AsyncPandasUdfParameters(
+                            max_chunk_size=batch_size
+                        ),
                     ).get_pandas_udf(
                         return_type=self.get_standardization_df_schema(
                             address_column_mapping=address_column_mapping,

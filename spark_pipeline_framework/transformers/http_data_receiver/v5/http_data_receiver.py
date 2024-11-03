@@ -24,6 +24,9 @@ from spark_pipeline_framework.transformers.http_data_receiver.v5.http_data_recei
     HttpDataReceiverProcessor,
 )
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
@@ -322,7 +325,9 @@ class HttpDataReceiver(FrameworkTransformer):
                             ],
                             HttpDataReceiverProcessor.send_chunk_request,
                         ),
-                        max_chunk_size=batch_size,
+                        pandas_udf_parameters=AsyncPandasUdfParameters(
+                            max_chunk_size=batch_size
+                        ),
                     ).get_pandas_udf(),
                     schema=row_schema,
                 )

@@ -17,6 +17,9 @@ import pandas as pd
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasDataFrameBatchFunction,
     AcceptedParametersType,
@@ -34,12 +37,12 @@ class AsyncPandasDataFrameUDF[TParameters: AcceptedParametersType](
         *,
         async_func: HandlePandasDataFrameBatchFunction[TParameters],
         parameters: Optional[TParameters],
-        max_chunk_size: int,
+        pandas_udf_parameters: AsyncPandasUdfParameters,
     ) -> None:
         super().__init__(
             async_func=async_func,
             parameters=parameters,
-            max_chunk_size=max_chunk_size,
+            pandas_udf_parameters=pandas_udf_parameters,
         )
 
     async def get_input_values_from_chunk(
