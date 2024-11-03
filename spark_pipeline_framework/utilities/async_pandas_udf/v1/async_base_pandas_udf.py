@@ -20,9 +20,8 @@ import pandas as pd
 # noinspection PyPackageRequirements
 from pyspark import TaskContext
 
-from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
@@ -91,7 +90,7 @@ class AsyncBasePandasUDF[
         self.logger: Logger = get_logger(
             __name__,
             level=(
-                pandas_udf_parameters.log_level.value
+                pandas_udf_parameters.log_level
                 if pandas_udf_parameters.log_level
                 else "INFO"
             ),
@@ -354,7 +353,7 @@ class AsyncBasePandasUDF[
         async def process_chunk_container_fn(
             row: ChunkContainer[TInputColumnDataType],
             parameters: Optional[TParameters],
-            log_level: Optional[LogLevel],
+            log_level: Optional[str],
             **kwargs: Any,
         ) -> TOutputDataSource:
             """This functions wraps the process_chunk_container function which is an instance method"""

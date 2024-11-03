@@ -2,8 +2,6 @@ import asyncio
 from asyncio import Task
 from typing import AsyncGenerator, Protocol, List, Optional, Set, Iterator, Dict, Any
 
-from spark_pipeline_framework.logger.log_level import LogLevel
-
 
 class ParallelFunction[TInput, TOutput, TParameters](Protocol):
     async def __call__(
@@ -11,7 +9,7 @@ class ParallelFunction[TInput, TOutput, TParameters](Protocol):
         *,
         row: TInput,
         parameters: Optional[TParameters],
-        log_level: Optional[LogLevel],
+        log_level: Optional[str],
         **kwargs: Any,
     ) -> TOutput:
         """
@@ -31,7 +29,7 @@ class AsyncParallelProcessor:
         process_row_fn: ParallelFunction[TInput, TOutput, TParameters],
         max_concurrent_tasks: int,
         parameters: Optional[TParameters],
-        log_level: Optional[LogLevel] = None,
+        log_level: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncGenerator[TOutput, None]:
         """

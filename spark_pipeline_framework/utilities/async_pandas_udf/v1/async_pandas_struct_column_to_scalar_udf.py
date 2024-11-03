@@ -19,7 +19,7 @@ from pyspark.sql.types import AtomicType
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (

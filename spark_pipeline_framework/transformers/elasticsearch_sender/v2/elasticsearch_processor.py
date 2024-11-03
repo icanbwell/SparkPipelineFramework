@@ -25,7 +25,7 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_sender_parameters import (
     ElasticSearchSenderParameters,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (

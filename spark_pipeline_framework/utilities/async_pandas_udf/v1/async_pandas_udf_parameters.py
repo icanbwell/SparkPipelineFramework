@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from spark_pipeline_framework.logger.log_level import LogLevel
-
 
 @dataclass
 class AsyncPandasUdfParameters:
@@ -11,13 +9,13 @@ class AsyncPandasUdfParameters:
     """
 
     """  the size of the chunks """
-    max_chunk_size: int
+    max_chunk_size: int = 100
 
     """ whether to run all the chunks in a partition in parallel (default is sequential) """
     process_chunks_in_parallel: Optional[bool] = None
 
     """ log level """
-    log_level: Optional[LogLevel] = None
+    log_level: Optional[str] = None
 
     """ maximum number of tasks to run concurrently (default is 100,000)"""
-    maximum_concurrent_tasks: int = 100 * 1000
+    maximum_concurrent_tasks: int = 100

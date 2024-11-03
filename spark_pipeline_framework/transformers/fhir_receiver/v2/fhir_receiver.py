@@ -1,10 +1,8 @@
 from datetime import datetime
-from datetime import datetime
 from os import environ
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable
 
-# noinspection PyPep8Naming
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 from pyspark import StorageLevel
@@ -28,6 +26,9 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_proces
 )
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
@@ -96,6 +97,9 @@ class FhirReceiver(FrameworkTransformer):
         refresh_token_function: Optional[RefreshTokenFunction] = None,
         log_level: Optional[str] = None,
         use_id_above_for_paging: Optional[bool] = True,
+        max_chunk_size: int = 100,
+        process_chunks_in_parallel: bool = True,
+        maximum_concurrent_tasks: int = 100,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -400,6 +404,19 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(use_id_above_for_paging=use_id_above_for_paging)
 
+        self.max_chunk_size: Param[int] = Param(self, "max_chunk_size", "")
+        self._setDefault(max_chunk_size=max_chunk_size)
+
+        self.process_chunks_in_parallel: Param[bool] = Param(
+            self, "process_chunks_in_parallel", ""
+        )
+        self._setDefault(process_chunks_in_parallel=process_chunks_in_parallel)
+
+        self.maximum_concurrent_tasks: Param[int] = Param(
+            self, "maximum_concurrent_tasks", ""
+        )
+        self._setDefault(maximum_concurrent_tasks=maximum_concurrent_tasks)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -504,6 +521,12 @@ class FhirReceiver(FrameworkTransformer):
             self.use_id_above_for_paging
         )
 
+        max_chunk_size: int = self.getOrDefault(self.max_chunk_size)
+        process_chunks_in_parallel: bool = self.getOrDefault(
+            self.process_chunks_in_parallel
+        )
+        maximum_concurrent_tasks: int = self.getOrDefault(self.maximum_concurrent_tasks)
+
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
                 f"{parameters['team_name']}:helix.pipelines:{parameters['flow_name']}".replace(
@@ -595,6 +618,12 @@ class FhirReceiver(FrameworkTransformer):
                 ignore_status_codes=ignore_status_codes,
                 refresh_token_function=refresh_token_function,
                 use_id_above_for_paging=use_id_above_for_paging,
+                pandas_udf_parameters=AsyncPandasUdfParameters(
+                    max_chunk_size=max_chunk_size,
+                    process_chunks_in_parallel=process_chunks_in_parallel,
+                    log_level=log_level,
+                    maximum_concurrent_tasks=maximum_concurrent_tasks,
+                ),
             )
 
             if id_view:

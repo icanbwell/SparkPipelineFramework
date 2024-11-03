@@ -16,7 +16,7 @@ from typing import (
 from pyspark.sql import SparkSession, DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
@@ -59,6 +59,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
 
     @dataclasses.dataclass
     class MyParameters:
+        pandas_udf_parameters: AsyncPandasUdfParameters
         log_level: str = "INFO"
 
     async def test_async(
@@ -102,7 +103,9 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
 
     result_df: DataFrame = df.mapInPandas(
         AsyncPandasDataFrameUDF(
-            parameters=MyParameters(log_level="DEBUG"),
+            parameters=MyParameters(
+                log_level="DEBUG", pandas_udf_parameters=AsyncPandasUdfParameters()
+            ),
             async_func=cast(
                 HandlePandasDataFrameBatchFunction[MyParameters], test_async
             ),

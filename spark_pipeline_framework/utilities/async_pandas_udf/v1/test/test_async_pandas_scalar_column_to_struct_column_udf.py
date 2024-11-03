@@ -16,7 +16,7 @@ from typing import (
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StringType, StructType, StructField
 
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (

@@ -12,6 +12,9 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 
 
 @pytest.mark.asyncio
@@ -24,6 +27,7 @@ async def test_process_partition_success() -> None:
         name="test_name",
         doc_id_prefix=None,
         timeout=60,
+        pandas_udf_parameters=AsyncPandasUdfParameters(),
     )
     input_values = [{"value": '{"key": "value"}'}]
     chunk_input_range = range(0, 1)
@@ -64,6 +68,7 @@ async def test_process_partition_failure() -> None:
         name="test_name",
         doc_id_prefix=None,
         timeout=60,
+        pandas_udf_parameters=AsyncPandasUdfParameters(),
     )
     input_values = [{"value": '{"key": "value"}'}]
     chunk_input_range = range(0, 1)
@@ -98,6 +103,7 @@ async def test_send_partition_to_server_async() -> None:
         name="test_name",
         doc_id_prefix=None,
         timeout=60,
+        pandas_udf_parameters=AsyncPandasUdfParameters(),
     )
     rows = [{"value": '{"key": "value"}'}]
 

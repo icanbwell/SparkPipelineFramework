@@ -24,7 +24,7 @@ from spark_pipeline_framework.transformers.http_data_receiver.v5.http_data_recei
     HttpDataReceiverProcessor,
 )
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf_parameters import (
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
@@ -80,6 +80,10 @@ class HttpDataReceiver(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = None,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
+        log_level: str = "INFO",
+        max_chunk_size: int = 100,
+        process_chunks_in_parallel: bool = True,
+        maximum_concurrent_tasks: int = 100,
     ) -> None:
         """
         Transformer to call and receive data from an API
@@ -104,6 +108,10 @@ class HttpDataReceiver(FrameworkTransformer):
         :param progress_logger: progress logger
         :param cert: certificate or ca bundle file path
         :param verify: controls whether the SSL certificate of the server should be verified when making HTTPS requests.
+        :param log_level: log level
+        :param max_chunk_size: maximum chunk size
+        :param process_chunks_in_parallel: process chunks in parallel
+        :param maximum_concurrent_tasks: maximum concurrent tasks
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -176,6 +184,22 @@ class HttpDataReceiver(FrameworkTransformer):
         self.verify: Param[Optional[Union[bool, str]]] = Param(self, "verify", "")
         self._setDefault(verify=verify)
 
+        self.log_level: Param[str] = Param(self, "log_level", "")
+        self._setDefault(log_level=log_level)
+
+        self.max_chunk_size: Param[int] = Param(self, "max_chunk_size", "")
+        self._setDefault(max_chunk_size=max_chunk_size)
+
+        self.process_chunks_in_parallel: Param[bool] = Param(
+            self, "process_chunks_in_parallel", ""
+        )
+        self._setDefault(process_chunks_in_parallel=process_chunks_in_parallel)
+
+        self.maximum_concurrent_tasks: Param[int] = Param(
+            self, "maximum_concurrent_tasks", ""
+        )
+        self._setDefault(maximum_concurrent_tasks=maximum_concurrent_tasks)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -205,6 +229,13 @@ class HttpDataReceiver(FrameworkTransformer):
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         cert: Optional[Union[str, Tuple[str, str]]] = self.getOrDefault(self.cert)
         verify: Optional[Union[bool, str]] = self.getOrDefault(self.verify)
+
+        log_level: str = self.getOrDefault(self.log_level)
+        max_chunk_size: int = self.getOrDefault(self.max_chunk_size)
+        process_chunks_in_parallel: bool = self.getOrDefault(
+            self.process_chunks_in_parallel
+        )
+        maximum_concurrent_tasks: int = self.getOrDefault(self.maximum_concurrent_tasks)
 
         with ProgressLogMetric(
             name=f"{name}_http_data_receiver_v4", progress_logger=progress_logger
@@ -259,13 +290,19 @@ class HttpDataReceiver(FrameworkTransformer):
             )
 
             parameters: HttpDataReceiverParameters = HttpDataReceiverParameters(
-                log_level="DEBUG",
+                log_level=log_level,
                 response_processor=response_processor,
                 raise_error=raise_error,
                 credentials=credentials,
                 auth_url=auth_url,
                 cert=cert,
                 verify=verify,
+                pandas_udf_parameters=AsyncPandasUdfParameters(
+                    max_chunk_size=max_chunk_size,
+                    process_chunks_in_parallel=process_chunks_in_parallel,
+                    log_level=log_level,
+                    maximum_concurrent_tasks=maximum_concurrent_tasks,
+                ),
             )
             if run_sync:
                 rows: List[Dict[str, Any]] = [

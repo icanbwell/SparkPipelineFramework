@@ -1,6 +1,9 @@
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 
 
 def get_fhir_receiver_parameters() -> FhirReceiverParameters:
@@ -42,4 +45,5 @@ def get_fhir_receiver_parameters() -> FhirReceiverParameters:
         ignore_status_codes=[],
         refresh_token_function=None,
         use_id_above_for_paging=True,
+        pandas_udf_parameters=AsyncPandasUdfParameters(),
     )
