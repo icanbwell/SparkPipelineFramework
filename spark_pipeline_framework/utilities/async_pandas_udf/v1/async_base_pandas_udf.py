@@ -95,10 +95,6 @@ class AsyncBasePandasUDF[
                 else "INFO"
             ),
         )
-        if self.pandas_udf_parameters.async_parallel_processor is None:
-            self.pandas_udf_parameters.async_parallel_processor = AsyncParallelProcessor(
-                max_concurrent_tasks=self.pandas_udf_parameters.maximum_concurrent_tasks
-            )
 
     @staticmethod
     async def to_async_iter(
@@ -183,6 +179,7 @@ class AsyncBasePandasUDF[
     async def process_partition_async(
         self,
         chunk_iterator: Iterator[TInputDataSource],
+        async_parallel_processor: Optional[AsyncParallelProcessor] = None,
         **kwargs: Any,
     ) -> AsyncIterator[TOutputDataSource]:
         """
@@ -194,8 +191,16 @@ class AsyncBasePandasUDF[
 
         :param chunk_iterator: iterator of chunks of input data
         :param kwargs: additional parameters
+        :param async_parallel_processor: The async parallel processor to use.  If not set, a new one will be created.
+                                        You may want to pass one in if you want to share the task pool with other work so
+                                        max_concurrent_tasks is respected across all work.
         :return: async iterator of chunks of output data
         """
+
+        if async_parallel_processor is None:
+            async_parallel_processor = AsyncParallelProcessor(
+                max_concurrent_tasks=self.pandas_udf_parameters.maximum_concurrent_tasks
+            )
         task_context: Optional[TaskContext] = TaskContext.get()
         partition_index: int = task_context.partitionId() if task_context else 0
         partition_start_time: datetime = datetime.now()
@@ -218,6 +223,7 @@ class AsyncBasePandasUDF[
                     partition_start_time=partition_start_time,
                 ),
                 chunk_containers=AsyncBasePandasUDF.get_chunk_containers(chunks),
+                async_parallel_processor=async_parallel_processor,
                 **kwargs,
             ):
                 yield result
@@ -330,6 +336,7 @@ class AsyncBasePandasUDF[
         *,
         partition_context: PartitionContext,
         chunk_containers: AsyncGenerator[ChunkContainer[TInputColumnDataType], None],
+        async_parallel_processor: AsyncParallelProcessor,
         **kwargs: Any,
     ) -> AsyncGenerator[TOutputDataSource, None]:
         """
@@ -340,6 +347,7 @@ class AsyncBasePandasUDF[
         :param partition_context: the context for the partition
         :param chunk_containers: the async generator of chunk containers
         :param kwargs: additional parameters
+        :param async_parallel_processor: The async parallel processor to use.
         :return: an async generator of output data
         """
 
@@ -354,6 +362,7 @@ class AsyncBasePandasUDF[
             f" | range: {chunk_containers_list[0].begin_chunk_input_values_index}-{chunk_containers_list[-1].end_chunk_input_values_index}"
         )
 
+        # noinspection PyShadowingNames,PyUnusedLocal
         async def process_chunk_container_fn(
             row: ChunkContainer[TInputColumnDataType],
             parameters: Optional[TParameters],
@@ -369,11 +378,9 @@ class AsyncBasePandasUDF[
         result: TOutputDataSource
         parameters: TParameters | None = self.parameters
 
-        assert self.pandas_udf_parameters.async_parallel_processor is not None
+        assert async_parallel_processor is not None
         # noinspection PyTypeChecker
-        async for (
-            result
-        ) in self.pandas_udf_parameters.async_parallel_processor.process_rows_in_parallel(
+        async for result in async_parallel_processor.process_rows_in_parallel(
             rows=chunk_containers_list,
             process_row_fn=process_chunk_container_fn,
             max_concurrent_tasks=self.pandas_udf_parameters.maximum_concurrent_tasks,

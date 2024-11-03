@@ -1,10 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from spark_pipeline_framework.utilities.async_parallel_processor.v1.async_parallel_processor import (
-    AsyncParallelProcessor,
-)
-
 
 @dataclass
 class AsyncPandasUdfParameters:
@@ -23,10 +19,3 @@ class AsyncPandasUdfParameters:
 
     """ maximum number of tasks to run concurrently (default is 100,000)"""
     maximum_concurrent_tasks: int = 100
-
-    """ 
-    The async parallel processor to use.  If not set, a new one will be created.
-    You may want to pass one in if you want to share the task pool with other work so
-    max_concurrent_tasks is respected across all work. 
-     """
-    async_parallel_processor: Optional[AsyncParallelProcessor] = None
