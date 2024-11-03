@@ -520,7 +520,7 @@ class FhirSender(FrameworkTransformer):
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
                     # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
                     result_df = json_df.mapInPandas(
-                        FhirSenderProcessor.get_process_batch_function(
+                        FhirSenderProcessor.get_process_partition_function(
                             parameters=sender_parameters
                         ),
                         schema=FhirMergeResponseItemSchema.get_schema(),

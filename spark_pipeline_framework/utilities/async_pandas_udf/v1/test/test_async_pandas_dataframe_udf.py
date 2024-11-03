@@ -16,6 +16,9 @@ from typing import (
 from pyspark.sql import SparkSession, DataFrame
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
@@ -57,16 +60,14 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
 
     async def test_async(
         *,
-        partition_index: int,
-        chunk_index: int,
-        chunk_input_range: range,
+        run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         if parameters is not None and parameters.log_level == "DEBUG":
             spark_partition_information: SparkPartitionInformation = (
                 SparkPartitionInformation.from_current_task_context(
-                    chunk_index=chunk_index,
+                    chunk_index=run_context.chunk_index,
                 )
             )
             logger = get_logger(__name__)
@@ -80,9 +81,9 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
             print(
                 f"{formatted_time}: "
                 f"{message}"
-                f" | Partition: {partition_index}"
-                f" | Chunk: {chunk_index}"
-                f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+                f" | Partition: {run_context.partition_index}"
+                f" | Chunk: {run_context.chunk_index}"
+                f" | range: {run_context.chunk_input_range.start}-{run_context.chunk_input_range.stop}"
                 f" | Ids ({len(ids)}): {ids}"
                 f" | {spark_partition_information}"
             )

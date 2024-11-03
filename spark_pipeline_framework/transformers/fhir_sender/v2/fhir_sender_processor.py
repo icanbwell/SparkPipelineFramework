@@ -23,6 +23,9 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
     FhirSenderParameters,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
@@ -48,20 +51,16 @@ from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_par
 
 class FhirSenderProcessor:
     @staticmethod
-    async def process_partition(
+    async def process_chunk(
         *,
-        partition_index: int,
-        chunk_index: int,
-        chunk_input_range: range,
+        run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[FhirSenderParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Process a partition of data asynchronously
 
-        :param partition_index: partition index
-        :param chunk_index: chunk index
-        :param chunk_input_range: chunk input range
+        :param run_context: run context
         :param input_values: input values
         :param parameters: parameters
         :return: output values
@@ -75,7 +74,7 @@ class FhirSenderProcessor:
         )
         spark_partition_information: SparkPartitionInformation = (
             SparkPartitionInformation.from_current_task_context(
-                chunk_index=chunk_index,
+                chunk_index=run_context.chunk_index,
             )
         )
         message: str = f"FhirSenderProcessor:process_partition"
@@ -84,9 +83,9 @@ class FhirSenderProcessor:
         formatted_message: str = (
             f"{formatted_time}: "
             f"{message}"
-            f" | Partition: {partition_index}"
-            f" | Chunk: {chunk_index}"
-            f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+            f" | Partition: {run_context.partition_index}"
+            f" | Chunk: {run_context.chunk_index}"
+            f" | range: {run_context.chunk_input_range.start}-{run_context.chunk_input_range.stop}"
             f" | {spark_partition_information}"
         )
         logger.info(formatted_message)
@@ -95,15 +94,15 @@ class FhirSenderProcessor:
         try:
             r: FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse
             async for r in FhirSenderProcessor.send_partition_to_server_async(
-                partition_index=partition_index,
-                chunk_index=chunk_index,
+                partition_index=run_context.partition_index,
+                chunk_index=run_context.chunk_index,
                 parameters=parameters,
                 rows=input_values,
             ):
                 logger.debug(
                     f"Received result"
-                    f" | Partition: {partition_index}"
-                    f" | Chunk: {chunk_index}"
+                    f" | Partition: {run_context.partition_index}"
+                    f" | Chunk: {run_context.chunk_index}"
                     f" | Status: {r.status}"
                     f" | Url: {r.url}"
                     f" | Count: {len(r.responses)}"
@@ -126,7 +125,7 @@ class FhirSenderProcessor:
                     ).to_dict()
         except Exception as e:
             logger.error(
-                f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"
+                f"Error processing partition {run_context.partition_index} chunk {run_context.chunk_index}: {str(e)}"
             )
             # if an exception is thrown then return an error for each row
             for input_value in input_values:
@@ -141,7 +140,7 @@ class FhirSenderProcessor:
         assert count == len(input_values), f"count={count}, len={len(input_values)}"
 
     @staticmethod
-    def get_process_batch_function(
+    def get_process_partition_function(
         *, parameters: FhirSenderParameters
     ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """
@@ -155,7 +154,7 @@ class FhirSenderProcessor:
         return AsyncPandasDataFrameUDF(
             async_func=cast(
                 HandlePandasDataFrameBatchFunction[FhirSenderParameters],
-                FhirSenderProcessor.process_partition,
+                FhirSenderProcessor.process_chunk,
             ),
             parameters=parameters,
             batch_size=parameters.batch_size or 100,

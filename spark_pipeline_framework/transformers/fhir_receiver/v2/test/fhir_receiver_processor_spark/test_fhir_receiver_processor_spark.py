@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from os import path, makedirs
 from pathlib import Path
 from shutil import rmtree
@@ -16,6 +17,9 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_proces
 from spark_pipeline_framework.transformers.fhir_receiver.v2.test.fhir_receiver_processor.get_fhir_receiver_parameters import (
     get_fhir_receiver_parameters,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
@@ -25,7 +29,6 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception imp
 async def test_get_all_resources_async(
     spark_session: SparkSession, use_data_streaming: bool
 ) -> None:
-
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
@@ -102,7 +105,6 @@ async def test_get_all_resources_async(
 async def test_get_all_resources_not_found_non_streaming_async(
     spark_session: SparkSession,
 ) -> None:
-
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
@@ -151,7 +153,6 @@ async def test_get_all_resources_not_found_non_streaming_async(
 async def test_get_all_resources_not_found_streaming_async(
     spark_session: SparkSession,
 ) -> None:
-
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
@@ -198,7 +199,6 @@ async def test_get_all_resources_not_found_streaming_async(
 async def test_get_all_resources_empty_bundle__async(
     spark_session: SparkSession, use_data_streaming: bool
 ) -> None:
-
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("../temp")
     if path.isdir(temp_folder):
@@ -280,10 +280,13 @@ async def test_process_partition_single_row() -> None:
             payload={"resourceType": "Patient", "id": "1"},
         )
 
-        async for result in FhirReceiverProcessorSpark.process_partition(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=range(1),
+        async for result in FhirReceiverProcessorSpark.process_chunk(
+            run_context=AsyncPandasBatchFunctionRunContext(
+                partition_index=0,
+                chunk_index=0,
+                chunk_input_range=range(1),
+                partition_start_time=datetime.now(),
+            ),
             input_values=input_values,
             parameters=parameters,
         ):
@@ -310,10 +313,13 @@ async def test_process_partition_multiple_rows_bundle() -> None:
             },
         )
 
-        async for result in FhirReceiverProcessorSpark.process_partition(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=range(1),
+        async for result in FhirReceiverProcessorSpark.process_chunk(
+            run_context=AsyncPandasBatchFunctionRunContext(
+                partition_index=0,
+                chunk_index=0,
+                chunk_input_range=range(1),
+                partition_start_time=datetime.now(),
+            ),
             input_values=input_values,
             parameters=parameters,
         ):

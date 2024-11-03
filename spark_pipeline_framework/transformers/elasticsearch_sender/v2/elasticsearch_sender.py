@@ -212,7 +212,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
                     # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
                     result_df = json_df.mapInPandas(
-                        ElasticSearchProcessor.get_process_batch_function(
+                        ElasticSearchProcessor.get_process_partition_function(
                             parameters=sender_parameters,
                             batch_size=batch_size,
                         ),

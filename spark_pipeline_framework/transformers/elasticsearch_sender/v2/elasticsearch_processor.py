@@ -145,7 +145,7 @@ class ElasticSearchProcessor:
         assert count == len(input_values), f"count={count}, len={len(input_values)}"
 
     @staticmethod
-    def get_process_batch_function(
+    def get_process_partition_function(
         *, parameters: ElasticSearchSenderParameters, batch_size: int
     ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """

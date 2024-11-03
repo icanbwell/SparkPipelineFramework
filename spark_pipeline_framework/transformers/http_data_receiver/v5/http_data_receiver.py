@@ -320,7 +320,7 @@ class HttpDataReceiver(FrameworkTransformer):
                             HandlePandasDataFrameBatchFunction[
                                 HttpDataReceiverParameters
                             ],
-                            HttpDataReceiverProcessor.send_partition_request_to_server_async,
+                            HttpDataReceiverProcessor.send_chunk_request,
                         ),
                         batch_size=batch_size,
                     ).get_pandas_udf(),
