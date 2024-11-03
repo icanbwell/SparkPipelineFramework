@@ -178,13 +178,19 @@ class AsyncBasePandasUDF[
             yield chunk_container
 
     async def process_partition_async(
-        self, chunk_iterator: Iterator[TInputDataSource]
+        self,
+        chunk_iterator: Iterator[TInputDataSource],
+        **kwargs: Any,
     ) -> AsyncIterator[TOutputDataSource]:
         """
         Apply the custom function `self.async_func` to the input chunk iterator asynchronously.
         This is an async function that processes the input data in chunks.
+        Override if you want to do more when processing a partition.  Use kwargs to pass additional parameters.
+        These parameters will be passed to the async function.
+
 
         :param chunk_iterator: iterator of chunks of input data
+        :param kwargs: additional parameters
         :return: async iterator of chunks of output data
         """
         task_context: Optional[TaskContext] = TaskContext.get()
@@ -209,6 +215,7 @@ class AsyncBasePandasUDF[
                     partition_start_time=partition_start_time,
                 ),
                 chunk_containers=AsyncBasePandasUDF.get_chunk_containers(chunks),
+                **kwargs,
             ):
                 yield result
         else:
@@ -221,6 +228,7 @@ class AsyncBasePandasUDF[
                     partition_start_time=partition_start_time,
                 ),
                 chunk_containers=AsyncBasePandasUDF.get_chunk_containers(chunks),
+                **kwargs,
             ):
                 yield result
 
@@ -233,6 +241,7 @@ class AsyncBasePandasUDF[
         *,
         partition_context: PartitionContext,
         chunk_containers: AsyncGenerator[ChunkContainer[TInputColumnDataType], None],
+        **kwargs: Any,
     ) -> AsyncGenerator[TOutputDataSource, None]:
         """
         This function processes the chunks of input data asynchronously.  You can override this function
@@ -241,13 +250,16 @@ class AsyncBasePandasUDF[
 
         :param partition_context: the context for the partition
         :param chunk_containers: the async generator of chunk containers
+        :param kwargs: additional parameters
         :return: an async generator of output data
         """
 
         chunk_container: ChunkContainer[TInputColumnDataType]
         async for chunk_container in chunk_containers:
             output_data: TOutputDataSource = await self.process_chunk_container(
-                chunk_container=chunk_container, partition_context=partition_context
+                chunk_container=chunk_container,
+                partition_context=partition_context,
+                **kwargs,
             )
             yield output_data
 
