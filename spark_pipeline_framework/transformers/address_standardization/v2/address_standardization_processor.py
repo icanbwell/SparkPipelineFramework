@@ -4,6 +4,9 @@ from logging import Logger
 from typing import Any, Dict, List, Optional, AsyncGenerator
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.helix_geolocation.v2.address_standardizer import (
     AddressStandardizer,
 )
@@ -43,9 +46,7 @@ class AddressStandardizationProcessor:
     @staticmethod
     async def standardize_list(
         *,
-        partition_index: int,
-        chunk_index: int,
-        chunk_input_range: range,
+        run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[AddressStandardizationParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
@@ -56,9 +57,7 @@ class AddressStandardizationProcessor:
         address1, address2, city, state, zip, latitude, longitude
 
         :param input_values:
-        :param partition_index:
-        :param chunk_index:
-        :param chunk_input_range:
+        :param run_context: the run context
         :param parameters:
         :return:
         """
@@ -83,7 +82,7 @@ class AddressStandardizationProcessor:
         )
         spark_partition_information: SparkPartitionInformation = (
             SparkPartitionInformation.from_current_task_context(
-                chunk_index=chunk_index,
+                chunk_index=run_context.chunk_index,
             )
         )
         message: str = f"FhirReceiverProcessor.process_partition"
@@ -92,9 +91,9 @@ class AddressStandardizationProcessor:
         formatted_message: str = (
             f"{formatted_time}: "
             f"{message}"
-            f" | Partition: {partition_index}"
-            f" | Chunk: {chunk_index}"
-            f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+            f" | Partition: {run_context.partition_index}"
+            f" | Chunk: {run_context.chunk_index}"
+            f" | range: {run_context.chunk_input_range.start}-{run_context.chunk_input_range.stop}"
             f" | {spark_partition_information}"
         )
         logger.info(formatted_message)
@@ -122,8 +121,8 @@ class AddressStandardizationProcessor:
             )
             logger.debug(
                 f"Received result"
-                f" | Partition: {partition_index}"
-                f" | Chunk: {chunk_index}"
+                f" | Partition: {run_context.partition_index}"
+                f" | Chunk: {run_context.chunk_index}"
                 f" | Vendor: {standardizing_vendor.get_vendor_name()}"
                 f" | Count: {len(standard_addresses)}"
             )

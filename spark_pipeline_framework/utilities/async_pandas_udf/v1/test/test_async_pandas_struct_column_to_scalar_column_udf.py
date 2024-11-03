@@ -18,6 +18,9 @@ from pyspark.sql.functions import struct, to_json
 from pyspark.sql.types import StringType
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_scalar_udf import (
     AsyncPandasStructColumnToScalarColumnUDF,
 )
@@ -65,16 +68,14 @@ def test_async_pandas_struct_column_to_struct_column_udf(
 
     async def test_async(
         *,
-        partition_index: int,
-        chunk_index: int,
-        chunk_input_range: range,
+        run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
     ) -> AsyncGenerator[str, None]:
         if parameters is not None and parameters.log_level == "DEBUG":
             spark_partition_information: SparkPartitionInformation = (
                 SparkPartitionInformation.from_current_task_context(
-                    chunk_index=chunk_index,
+                    chunk_index=run_context.chunk_index,
                 )
             )
             logger = get_logger(__name__)
@@ -88,9 +89,9 @@ def test_async_pandas_struct_column_to_struct_column_udf(
             print(
                 f"{formatted_time}: "
                 f"{message}"
-                f" | Partition: {partition_index}"
-                f" | Chunk: {chunk_index}"
-                f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+                f" | Partition: {run_context.partition_index}"
+                f" | Chunk: {run_context.chunk_index}"
+                f" | range: {run_context.chunk_input_range.start}-{run_context.chunk_input_range.stop}"
                 f" | Ids ({len(ids)}): {ids}"
                 f" | {spark_partition_information}"
             )
