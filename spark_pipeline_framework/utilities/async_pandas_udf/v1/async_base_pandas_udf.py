@@ -64,6 +64,7 @@ class AsyncBasePandasUDF[
         parameters: Optional[TParameters],
         batch_size: int,
         process_chunks_in_parallel: Optional[bool] = None,
+        maximum_concurrent_tasks: int = 100 * 1000,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  The subclass must
@@ -74,6 +75,7 @@ class AsyncBasePandasUDF[
         :param parameters: parameters to pass to the async function
         :param batch_size: the size of the batches
         :param process_chunks_in_parallel: whether to run all the chunks in a partition in parallel (default is sequential)
+        :param maximum_concurrent_tasks: maximum number of tasks to run concurrently (default is 100,000)
         """
         self.async_func: HandlePandasBatchFunction[
             TParameters, TInputColumnDataType, TOutputColumnDataType
@@ -81,6 +83,7 @@ class AsyncBasePandasUDF[
         self.parameters: Optional[TParameters] = parameters
         self.batch_size: int = batch_size
         self.process_chunks_in_parallel: Optional[bool] = process_chunks_in_parallel
+        self.maximum_concurrent_tasks: int = maximum_concurrent_tasks
 
     @staticmethod
     async def to_async_iter(
@@ -313,6 +316,7 @@ class AsyncBasePandasUDF[
         async for result in AsyncParallelProcessor.process_rows_in_parallel(
             rows=chunk_containers_list,
             process_row_fn=process_chunk_container_fn,
+            max_concurrent_tasks=self.maximum_concurrent_tasks,
         ):
             yield result
 
