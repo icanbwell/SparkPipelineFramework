@@ -12,6 +12,7 @@ from typing import (
     cast,
     AsyncGenerator,
     Any,
+    Dict,
 )
 
 # noinspection PyPackageRequirements
@@ -369,7 +370,7 @@ class AsyncBasePandasUDF[
             context: ParallelFunctionContext,
             row: ChunkContainer[TInputColumnDataType],
             parameters: Optional[TParameters],
-            **kwargs: Any,
+            additional_parameters: Optional[Dict[str, Any]],
         ) -> TOutputDataSource:
             """This functions wraps the process_chunk_container function which is an instance method"""
 
