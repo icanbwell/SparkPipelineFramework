@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Task
-from typing import AsyncGenerator, Protocol, List, Optional, Set, Iterator, Dict, Any
+from typing import AsyncGenerator, Protocol, List, Optional, Set, Dict, Any
 
 
 class ParallelFunction[TInput, TOutput, TParameters](Protocol):
@@ -21,13 +21,16 @@ class ParallelFunction[TInput, TOutput, TParameters](Protocol):
 
 
 class AsyncParallelProcessor:
-    @staticmethod
+    def __init__(self, *, max_concurrent_tasks: int) -> None:
+        self.max_concurrent_tasks: int = max_concurrent_tasks
+        self.semaphore: asyncio.Semaphore = asyncio.Semaphore(max_concurrent_tasks)
+
     async def process_rows_in_parallel[
         TInput, TOutput, TParameters: Dict[str, Any] | object
     ](
+        self,
         rows: List[TInput],
         process_row_fn: ParallelFunction[TInput, TOutput, TParameters],
-        max_concurrent_tasks: int,
         parameters: Optional[TParameters],
         log_level: Optional[str] = None,
         **kwargs: Any,
@@ -37,26 +40,22 @@ class AsyncParallelProcessor:
 
         :param rows: list of rows to process
         :param process_row_fn: function to process each row
-        :param max_concurrent_tasks: maximum number of tasks to run concurrently
         :param parameters: parameters to pass to the process_row_fn
         :param log_level: log level
         :param kwargs: additional parameters
         :return: results of processing
         """
-        semaphore: asyncio.Semaphore = asyncio.Semaphore(max_concurrent_tasks)
-        pending: Set[Task[TOutput]] = set()
-        row_iterator: Iterator[TInput] = iter(rows)
 
         async def process_with_semaphore(*, row1: TInput) -> TOutput:
-            async with semaphore:
+            async with self.semaphore:
                 return await process_row_fn(
                     row=row1, parameters=parameters, log_level=log_level, **kwargs
                 )
 
-        # Initial filling of the pending set up to max_concurrent_tasks
-        for _ in range(min(max_concurrent_tasks, len(rows))):
-            row: TInput = next(row_iterator)
-            pending.add(asyncio.create_task(process_with_semaphore(row1=row)))
+        # Create all tasks at once
+        pending: Set[Task[TOutput]] = {
+            asyncio.create_task(process_with_semaphore(row1=row)) for row in rows
+        }
 
         try:
             while pending:
@@ -73,16 +72,6 @@ class AsyncParallelProcessor:
                         # Handle or re-raise error
                         # logger.error(f"Error processing row: {e}")
                         raise
-
-                # Add new tasks if there are remaining rows
-                try:
-                    while len(pending) < max_concurrent_tasks:
-                        row = next(row_iterator)
-                        pending.add(
-                            asyncio.create_task(process_with_semaphore(row1=row))
-                        )
-                except StopIteration:
-                    pass  # No more rows to process
 
         finally:
             # Cancel any pending tasks if something goes wrong

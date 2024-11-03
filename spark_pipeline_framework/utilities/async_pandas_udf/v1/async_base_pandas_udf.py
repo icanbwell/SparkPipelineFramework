@@ -95,6 +95,10 @@ class AsyncBasePandasUDF[
                 else "INFO"
             ),
         )
+        if self.pandas_udf_parameters.async_parallel_processor is None:
+            self.pandas_udf_parameters.async_parallel_processor = AsyncParallelProcessor(
+                max_concurrent_tasks=self.pandas_udf_parameters.maximum_concurrent_tasks
+            )
 
     @staticmethod
     async def to_async_iter(
@@ -364,7 +368,12 @@ class AsyncBasePandasUDF[
         # now run all the tasks in parallel yielding the results as they get ready
         result: TOutputDataSource
         parameters: TParameters | None = self.parameters
-        async for result in AsyncParallelProcessor.process_rows_in_parallel(
+
+        assert self.pandas_udf_parameters.async_parallel_processor is not None
+        # noinspection PyTypeChecker
+        async for (
+            result
+        ) in self.pandas_udf_parameters.async_parallel_processor.process_rows_in_parallel(
             rows=chunk_containers_list,
             process_row_fn=process_chunk_container_fn,
             max_concurrent_tasks=self.pandas_udf_parameters.maximum_concurrent_tasks,
