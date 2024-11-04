@@ -99,6 +99,10 @@ async def test_async_real_fhir_server_get_patients_by_id_large(
                 view="id_view",
             ).transform_async(df)
 
+            id_df: DataFrame = spark_session.table("id_view")
+            id_df.show(truncate=False)
+            assert id_df.count() == count
+
             await FhirReceiver(
                 server_url=fhir_server_url,
                 id_view="id_view",
