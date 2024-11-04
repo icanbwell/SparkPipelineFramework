@@ -35,6 +35,11 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.chunk_container import (
     ChunkContainer,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.event_handlers import (
+    OnPartitionStartEventHandler,
+    OnChunkStartEventHandler,
+    OnChunkCompletionEventHandler,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasBatchFunction,
     AcceptedParametersType,
@@ -74,6 +79,10 @@ class AsyncBasePandasUDF[
         ],
         parameters: Optional[TParameters],
         pandas_udf_parameters: AsyncPandasUdfParameters,
+        on_partition_start: OnPartitionStartEventHandler | None = None,
+        on_partition_completion: OnPartitionStartEventHandler | None = None,
+        on_chunk_start: OnChunkStartEventHandler | None = None,
+        on_chunk_completion: OnChunkCompletionEventHandler | None = None,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  The subclass must
@@ -96,6 +105,16 @@ class AsyncBasePandasUDF[
                 if pandas_udf_parameters.log_level
                 else "INFO"
             ),
+        )
+        self.on_partition_start: OnPartitionStartEventHandler | None = (
+            on_partition_start
+        )
+        self.on_partition_completion: OnPartitionStartEventHandler | None = (
+            on_partition_completion
+        )
+        self.on_chunk_start: OnChunkStartEventHandler | None = on_chunk_start
+        self.on_chunk_completion: OnChunkCompletionEventHandler | None = (
+            on_chunk_completion
         )
 
     @staticmethod
@@ -208,6 +227,9 @@ class AsyncBasePandasUDF[
         partition_index: int = task_context.partitionId() if task_context else 0
         partition_start_time: datetime = datetime.now()
 
+        if self.on_partition_start is not None:
+            await self.on_partition_start(partition_index=partition_index)
+
         chunk_input_values: List[TInputColumnDataType]
         chunks: AsyncGenerator[List[TInputColumnDataType], None] = (
             self.get_chunks_of_size(
@@ -247,6 +269,8 @@ class AsyncBasePandasUDF[
         self.logger.debug(
             f"Finished process_partition_async | partition {partition_index}"
         )
+        if self.on_partition_completion is not None:
+            await self.on_partition_completion(partition_index=partition_index)
 
     async def process_chunks_sequential_async(
         self,
@@ -293,6 +317,17 @@ class AsyncBasePandasUDF[
         :return: the output data
         """
 
+        chunk_start_time: datetime = datetime.now()
+        if self.on_chunk_start is not None:
+            await self.on_chunk_start(
+                partition_index=partition_context.partition_index,
+                chunk_index=chunk_container.chunk_index,
+                chunk_range=range(
+                    chunk_container.begin_chunk_input_values_index,
+                    chunk_container.end_chunk_input_values_index,
+                ),
+                chunk_start_time=chunk_start_time,
+            )
         self.logger.debug(
             f"Starting process_chunk_container | partition: {partition_context.partition_index}"
             f" | Chunk: {chunk_container.chunk_index}"
@@ -323,7 +358,7 @@ class AsyncBasePandasUDF[
                     ),
                     input_values=chunk_container.chunk_input_values,
                     parameters=self.parameters,
-                    **kwargs,
+                    additional_parameters=kwargs,
                 ),
             ):
                 output_values.append(output_value)
@@ -332,6 +367,20 @@ class AsyncBasePandasUDF[
                 f" | Chunk: {chunk_container.chunk_index}"
                 f" | range: {chunk_container.begin_chunk_input_values_index}-{chunk_container.end_chunk_input_values_index}"
             )
+            chunk_end_time: datetime = datetime.now()
+            chunk_duration: float = (chunk_end_time - chunk_start_time).total_seconds()
+            if self.on_chunk_completion is not None:
+                await self.on_chunk_completion(
+                    partition_index=partition_context.partition_index,
+                    chunk_index=chunk_container.chunk_index,
+                    chunk_range=range(
+                        chunk_container.begin_chunk_input_values_index,
+                        chunk_container.end_chunk_input_values_index,
+                    ),
+                    chunk_start_time=chunk_start_time,
+                    chunk_end_time=chunk_end_time,
+                    chunk_duration=chunk_duration,
+                )
             return await self.create_output_from_dict(output_values)
 
     async def process_chunks_async_in_parallel(
