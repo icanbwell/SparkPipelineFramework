@@ -32,6 +32,8 @@ async def test_fhir_sender_patch(spark_session: SparkSession) -> None:
     async with FhirServerTestContext(
         resource_type="Patient"
     ) as fhir_server_test_context:
+        test_files_merge_dir: Path = data_dir.joinpath("test_files/patients")
+
         test_files_dir: Path = data_dir.joinpath("test_files/patients_patch")
         response_files_dir: Path = temp_folder.joinpath("patients-response")
         parameters = {"flow_name": "Test Pipeline V2"}
@@ -48,6 +50,21 @@ async def test_fhir_sender_patch(spark_session: SparkSession) -> None:
         environ["LOGLEVEL"] = "DEBUG"
         # Act
         with ProgressLogger() as progress_logger:
+            FhirSender(
+                resource="Patient",
+                server_url=fhir_server_url,
+                file_path=test_files_merge_dir,
+                response_path=response_files_dir,
+                progress_logger=progress_logger,
+                batch_size=1,
+                run_synchronously=True,
+                additional_request_headers={"SampleHeader": "SampleValue"},
+                parameters=parameters,
+                auth_client_id=auth_client_id,
+                auth_client_secret=auth_client_secret,
+                auth_well_known_url=auth_well_known_url,
+            ).transform(df)
+
             FhirSender(
                 resource="Patient",
                 server_url=fhir_server_url,
