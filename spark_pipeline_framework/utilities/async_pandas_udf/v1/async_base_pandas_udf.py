@@ -79,10 +79,6 @@ class AsyncBasePandasUDF[
         ],
         parameters: Optional[TParameters],
         pandas_udf_parameters: AsyncPandasUdfParameters,
-        on_partition_start: OnPartitionStartEventHandler | None = None,
-        on_partition_completion: OnPartitionStartEventHandler | None = None,
-        on_chunk_start: OnChunkStartEventHandler | None = None,
-        on_chunk_completion: OnChunkCompletionEventHandler | None = None,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  The subclass must
@@ -106,16 +102,47 @@ class AsyncBasePandasUDF[
                 else "INFO"
             ),
         )
-        self.on_partition_start: OnPartitionStartEventHandler | None = (
-            on_partition_start
+        self._on_partition_start_event_handler: OnPartitionStartEventHandler | None = (
+            None
         )
-        self.on_partition_completion: OnPartitionStartEventHandler | None = (
-            on_partition_completion
-        )
-        self.on_chunk_start: OnChunkStartEventHandler | None = on_chunk_start
-        self.on_chunk_completion: OnChunkCompletionEventHandler | None = (
-            on_chunk_completion
-        )
+        self._on_partition_completion_event_handler: (
+            OnPartitionStartEventHandler | None
+        ) = None
+        self._on_chunk_start_event_handler: OnChunkStartEventHandler | None = None
+
+    @property
+    def on_partition_start(self) -> OnPartitionStartEventHandler | None:
+        return self._on_partition_start_event_handler
+
+    @on_partition_start.setter
+    def on_partition_start(self, value: OnPartitionStartEventHandler | None) -> None:
+        self._on_partition_start_event_handler = value
+
+    @property
+    def on_partition_completion(self) -> OnPartitionStartEventHandler | None:
+        return self._on_partition_completion_event_handler
+
+    @on_partition_completion.setter
+    def on_partition_completion(
+        self, value: OnPartitionStartEventHandler | None
+    ) -> None:
+        self._on_partition_completion_event_handler = value
+
+    @property
+    def on_chunk_start(self) -> OnChunkStartEventHandler | None:
+        return self._on_chunk_start_event_handler
+
+    @on_chunk_start.setter
+    def on_chunk_start(self, value: OnChunkStartEventHandler | None) -> None:
+        self._on_chunk_start_event_handler = value
+
+    @property
+    def on_chunk_completion(self) -> OnChunkCompletionEventHandler | None:
+        return self._on_chunk_completion_event_handler
+
+    @on_chunk_completion.setter
+    def on_chunk_completion(self, value: OnChunkCompletionEventHandler | None) -> None:
+        self._on_chunk_completion_event_handler = value
 
     @staticmethod
     async def to_async_iter(
@@ -227,8 +254,10 @@ class AsyncBasePandasUDF[
         partition_index: int = task_context.partitionId() if task_context else 0
         partition_start_time: datetime = datetime.now()
 
-        if self.on_partition_start is not None:
-            await self.on_partition_start(partition_index=partition_index)
+        if self._on_partition_start_event_handler is not None:
+            await self._on_partition_start_event_handler(
+                partition_index=partition_index
+            )
 
         chunk_input_values: List[TInputColumnDataType]
         chunks: AsyncGenerator[List[TInputColumnDataType], None] = (
@@ -269,8 +298,10 @@ class AsyncBasePandasUDF[
         self.logger.debug(
             f"Finished process_partition_async | partition {partition_index}"
         )
-        if self.on_partition_completion is not None:
-            await self.on_partition_completion(partition_index=partition_index)
+        if self._on_partition_completion_event_handler is not None:
+            await self._on_partition_completion_event_handler(
+                partition_index=partition_index
+            )
 
     async def process_chunks_sequential_async(
         self,
@@ -318,8 +349,8 @@ class AsyncBasePandasUDF[
         """
 
         chunk_start_time: datetime = datetime.now()
-        if self.on_chunk_start is not None:
-            await self.on_chunk_start(
+        if self._on_chunk_start_event_handler is not None:
+            await self._on_chunk_start_event_handler(
                 partition_index=partition_context.partition_index,
                 chunk_index=chunk_container.chunk_index,
                 chunk_range=range(
@@ -369,8 +400,8 @@ class AsyncBasePandasUDF[
             )
             chunk_end_time: datetime = datetime.now()
             chunk_duration: float = (chunk_end_time - chunk_start_time).total_seconds()
-            if self.on_chunk_completion is not None:
-                await self.on_chunk_completion(
+            if self._on_chunk_completion_event_handler is not None:
+                await self._on_chunk_completion_event_handler(
                     partition_index=partition_context.partition_index,
                     chunk_index=chunk_container.chunk_index,
                     chunk_range=range(
