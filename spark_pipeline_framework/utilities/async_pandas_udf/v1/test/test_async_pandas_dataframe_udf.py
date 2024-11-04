@@ -7,7 +7,6 @@ from typing import (
     Any,
     Optional,
     AsyncGenerator,
-    cast,
     Iterable,
     Tuple,
     Generator,
@@ -24,9 +23,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
-)
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasDataFrameBatchFunction,
 )
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
@@ -62,11 +58,12 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
         pandas_udf_parameters: AsyncPandasUdfParameters
         log_level: str = "INFO"
 
+    # noinspection PyUnusedLocal
     async def test_async(
-        *,
         run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         if parameters is not None and parameters.log_level == "DEBUG":
             spark_partition_information: SparkPartitionInformation = (
@@ -106,9 +103,7 @@ def test_async_pandas_dataframe_udf(spark_session: SparkSession) -> None:
             parameters=MyParameters(
                 log_level="DEBUG", pandas_udf_parameters=AsyncPandasUdfParameters()
             ),
-            async_func=cast(
-                HandlePandasDataFrameBatchFunction[MyParameters], test_async
-            ),
+            async_func=test_async,  # type: ignore[arg-type]
             pandas_udf_parameters=AsyncPandasUdfParameters(max_chunk_size=1),
         ).get_pandas_udf(),
         schema=df.schema,

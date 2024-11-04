@@ -10,7 +10,10 @@ from typing import (
     AsyncGenerator,
 )
 
+# noinspection PyPackageRequirements
 from aiohttp import ClientResponse
+
+# noinspection PyPackageRequirements
 from pyspark import SparkFiles
 
 from spark_pipeline_framework.transformers.http_data_receiver.v5.common import (
@@ -34,13 +37,13 @@ from spark_pipeline_framework.utilities.oauth2_helpers.v3.oauth2_client_credenti
 
 class HttpDataReceiverProcessor:
 
+    # noinspection PyUnusedLocal
     @staticmethod
-    # function that is called for each partition
     async def send_chunk_request(
-        *,
         run_context: AsyncPandasBatchFunctionRunContext,
         rows: Iterable[Dict[str, Any]],
         parameters: HttpDataReceiverParameters,
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         This function processes a partition calling fhir server for each row in the partition
@@ -52,6 +55,7 @@ class HttpDataReceiverProcessor:
         :param run_context: run context
         :param rows: rows to process
         :param parameters: FhirReceiverParameters
+        :param additional_parameters: additional parameters
         :return: rows
         """
 
@@ -138,6 +142,7 @@ class HttpDataReceiverProcessor:
             ):
                 yield r
 
+    # noinspection PyUnusedLocal
     @staticmethod
     async def process_record_async(
         *,

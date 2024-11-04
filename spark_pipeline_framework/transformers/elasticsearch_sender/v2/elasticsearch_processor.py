@@ -10,7 +10,6 @@ from typing import (
     Callable,
     Iterator,
     AsyncGenerator,
-    cast,
 )
 
 import pandas as pd
@@ -34,9 +33,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasDataFrameBatchFunction,
-)
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
 )
@@ -48,6 +44,7 @@ class ElasticSearchProcessor:
         run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[ElasticSearchSenderParameters],
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Process a partition of data asynchronously
@@ -55,6 +52,7 @@ class ElasticSearchProcessor:
         :param run_context: run context
         :param input_values: input values
         :param parameters: parameters
+        :param additional_parameters: additional parameters
         :return: output values
         """
         assert parameters
@@ -161,10 +159,7 @@ class ElasticSearchProcessor:
         """
 
         return AsyncPandasDataFrameUDF(
-            async_func=cast(
-                HandlePandasDataFrameBatchFunction[ElasticSearchSenderParameters],
-                ElasticSearchProcessor.process_chunk,
-            ),
+            async_func=ElasticSearchProcessor.process_chunk,  # type: ignore[arg-type]
             parameters=parameters,
             pandas_udf_parameters=AsyncPandasUdfParameters(max_chunk_size=batch_size),
         ).get_pandas_udf()

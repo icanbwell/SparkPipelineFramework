@@ -11,7 +11,6 @@ from typing import (
     Callable,
     Iterator,
     AsyncGenerator,
-    cast,
 )
 
 import pandas as pd
@@ -32,9 +31,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasDataFrameBatchFunction,
-)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
 )
@@ -53,12 +49,13 @@ from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_par
 
 
 class FhirSenderProcessor:
+    # noinspection PyUnusedLocal
     @staticmethod
     async def process_chunk(
-        *,
         run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[FhirSenderParameters],
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Process a partition of data asynchronously
@@ -66,6 +63,7 @@ class FhirSenderProcessor:
         :param run_context: run context
         :param input_values: input values
         :param parameters: parameters
+        :param additional_parameters: additional parameters
         :return: output values
         """
         assert parameters
@@ -155,10 +153,7 @@ class FhirSenderProcessor:
         """
 
         return AsyncPandasDataFrameUDF(
-            async_func=cast(
-                HandlePandasDataFrameBatchFunction[FhirSenderParameters],
-                FhirSenderProcessor.process_chunk,
-            ),
+            async_func=FhirSenderProcessor.process_chunk,  # type: ignore[arg-type]
             parameters=parameters,
             pandas_udf_parameters=AsyncPandasUdfParameters(
                 max_chunk_size=parameters.batch_size or 100

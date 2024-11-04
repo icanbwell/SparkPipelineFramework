@@ -289,6 +289,7 @@ async def test_process_partition_single_row() -> None:
             ),
             input_values=input_values,
             parameters=parameters,
+            additional_parameters=None,
         ):
             assert isinstance(result, dict)
             assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
@@ -322,6 +323,7 @@ async def test_process_partition_multiple_rows_bundle() -> None:
             ),
             input_values=input_values,
             parameters=parameters,
+            additional_parameters=None,
         ):
             assert isinstance(result, dict)
             assert result["responses"] == [

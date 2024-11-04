@@ -50,6 +50,7 @@ async def test_process_partition_success() -> None:
             ),
             input_values=input_values,
             parameters=parameters,
+            additional_parameters=None,
         )
 
         results = [result async for result in async_gen]
@@ -85,6 +86,7 @@ async def test_process_partition_failure() -> None:
             ),
             input_values=input_values,
             parameters=parameters,
+            additional_parameters=None,
         )
 
         results = [result async for result in async_gen]

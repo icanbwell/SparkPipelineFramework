@@ -30,9 +30,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_par
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasDataFrameBatchFunction,
-)
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -356,12 +353,7 @@ class HttpDataReceiver(FrameworkTransformer):
                 result_df: DataFrame = requests_df.mapInPandas(
                     AsyncPandasDataFrameUDF(
                         parameters=parameters,
-                        async_func=cast(
-                            HandlePandasDataFrameBatchFunction[
-                                HttpDataReceiverParameters
-                            ],
-                            HttpDataReceiverProcessor.send_chunk_request,
-                        ),
+                        async_func=HttpDataReceiverProcessor.send_chunk_request,  # type: ignore[arg-type]
                         pandas_udf_parameters=AsyncPandasUdfParameters(
                             max_chunk_size=batch_size
                         ),

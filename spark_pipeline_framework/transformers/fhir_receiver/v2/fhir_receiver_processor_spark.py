@@ -53,9 +53,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasDataFrameBatchFunction,
-)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
 )
@@ -79,12 +76,13 @@ class FhirReceiverProcessorSpark:
     This class contains the methods to process the FHIR receiver in Spark
     """
 
+    # noinspection PyUnusedLocal
     @staticmethod
     async def process_chunk(
-        *,
         run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[FhirReceiverParameters],
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Process a partition of data asynchronously
@@ -92,6 +90,7 @@ class FhirReceiverProcessorSpark:
         :param run_context: run context
         :param input_values: input values
         :param parameters: parameters
+        :param additional_parameters: additional parameters
         :return: output values
         """
         assert parameters
@@ -174,10 +173,7 @@ class FhirReceiverProcessorSpark:
         """
 
         return AsyncPandasDataFrameUDF(
-            async_func=cast(
-                HandlePandasDataFrameBatchFunction[FhirReceiverParameters],
-                FhirReceiverProcessorSpark.process_chunk,
-            ),
+            async_func=FhirReceiverProcessorSpark.process_chunk,  # type: ignore[arg-type]
             parameters=parameters,
             pandas_udf_parameters=AsyncPandasUdfParameters(
                 max_chunk_size=parameters.batch_size or 100
