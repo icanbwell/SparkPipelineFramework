@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Optional, Callable, cast
+from typing import Any, Dict, List, Optional, Callable
 
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -26,9 +26,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_par
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_column_to_struct_udf import (
     AsyncPandasStructColumnToStructColumnUDF,
-)
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasStructToStructBatchFunction,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler import (
@@ -173,12 +170,7 @@ class AddressStandardization(FrameworkTransformer):
                 combined_df = address_df.withColumn(
                     colName="standardized_address",
                     col=AsyncPandasStructColumnToStructColumnUDF(
-                        async_func=cast(
-                            HandlePandasStructToStructBatchFunction[
-                                AddressStandardizationParameters
-                            ],
-                            AddressStandardizationProcessor.standardize_list,
-                        ),
+                        async_func=AddressStandardizationProcessor.standardize_list,  # type: ignore[arg-type]
                         parameters=AddressStandardizationParameters(
                             total_partitions=total_partitions,
                             log_level=os.getenv("LOGLEVEL", "INFO"),

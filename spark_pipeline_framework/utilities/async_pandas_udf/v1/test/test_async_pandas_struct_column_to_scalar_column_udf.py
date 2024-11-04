@@ -7,7 +7,6 @@ from typing import (
     Any,
     Optional,
     AsyncGenerator,
-    cast,
     Iterable,
     Tuple,
     Generator,
@@ -28,9 +27,6 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_struct_
     AsyncPandasStructColumnToScalarColumnUDF,
 )
 
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasStructToScalarBatchFunction,
-)
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
 )
@@ -69,11 +65,12 @@ def test_async_pandas_struct_column_to_struct_column_udf(
     class MyParameters:
         log_level: str = "INFO"
 
+    # noinspection PyUnusedLocal
     async def test_async(
-        *,
         run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[MyParameters],
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[str, None]:
         if parameters is not None and parameters.log_level == "DEBUG":
             spark_partition_information: SparkPartitionInformation = (
@@ -108,10 +105,7 @@ def test_async_pandas_struct_column_to_struct_column_udf(
     result_df: DataFrame = df.withColumn(
         colName="processed_name",
         col=AsyncPandasStructColumnToScalarColumnUDF(
-            async_func=cast(
-                HandlePandasStructToScalarBatchFunction[MyParameters],
-                test_async,
-            ),
+            async_func=test_async,  # type: ignore[arg-type]
             parameters=MyParameters(),
             pandas_udf_parameters=AsyncPandasUdfParameters(max_chunk_size=2),
         ).get_pandas_udf(return_type=StringType())(df["name_struct"]),

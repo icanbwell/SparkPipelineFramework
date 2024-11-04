@@ -45,10 +45,10 @@ class AddressStandardizationProcessor:
     # noinspection PyUnusedLocal
     @staticmethod
     async def standardize_list(
-        *,
         run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[AddressStandardizationParameters],
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Standardize a list of raw addresses.  raw address is a dictionary with the following keys
@@ -59,6 +59,7 @@ class AddressStandardizationProcessor:
         :param input_values:
         :param run_context: the run context
         :param parameters:
+        :param additional_parameters:
         :return:
         """
         assert parameters, "parameters is required"

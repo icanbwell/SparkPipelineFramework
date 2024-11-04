@@ -109,6 +109,9 @@ class AsyncBasePandasUDF[
             OnPartitionStartEventHandler | None
         ) = None
         self._on_chunk_start_event_handler: OnChunkStartEventHandler | None = None
+        self._on_chunk_completion_event_handler: (
+            OnChunkCompletionEventHandler | None
+        ) = None
 
     @property
     def on_partition_start(self) -> OnPartitionStartEventHandler | None:

@@ -126,6 +126,7 @@ async def test_standardize_list() -> None:
             ),
             input_values=input_values,
             parameters=address_standardization_parameters,
+            additional_parameters=None,
         ):
             assert result == expected_output[0]
 
@@ -153,6 +154,7 @@ async def test_standardize_list_missing_parameters() -> None:
             ),
             input_values=input_values,
             parameters=None,
+            additional_parameters=None,
         ):
             pass
 
@@ -201,5 +203,6 @@ async def test_standardize_list_invalid_input() -> None:
             ),
             input_values=input_values,
             parameters=address_standardization_parameters,
+            additional_parameters=None,
         ):
             pass
