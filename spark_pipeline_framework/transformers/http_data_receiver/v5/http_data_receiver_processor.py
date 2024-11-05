@@ -10,7 +10,10 @@ from typing import (
     AsyncGenerator,
 )
 
+# noinspection PyPackageRequirements
 from aiohttp import ClientResponse
+
+# noinspection PyPackageRequirements
 from pyspark import SparkFiles
 
 from spark_pipeline_framework.transformers.http_data_receiver.v5.common import (
@@ -23,6 +26,9 @@ from spark_pipeline_framework.utilities.api_helper.v2.http_request import (
     HelixHttpRequest,
     RequestType,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.oauth2_helpers.v3.oauth2_client_credentials_flow import (
     OAuth2ClientCredentialsFlow,
     OAuth2Credentails,
@@ -31,13 +37,13 @@ from spark_pipeline_framework.utilities.oauth2_helpers.v3.oauth2_client_credenti
 
 class HttpDataReceiverProcessor:
 
+    # noinspection PyUnusedLocal
     @staticmethod
-    # function that is called for each partition
-    async def send_partition_request_to_server_async(
-        *,
-        partition_index: int,
+    async def send_chunk_request(
+        run_context: AsyncPandasBatchFunctionRunContext,
         rows: Iterable[Dict[str, Any]],
         parameters: HttpDataReceiverParameters,
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         This function processes a partition calling fhir server for each row in the partition
@@ -46,15 +52,16 @@ class HttpDataReceiverProcessor:
         https://spark.apache.org/docs/latest/rdd-programming-guide.html#passing-functions-to-spark
 
 
-        :param partition_index: partition index
+        :param run_context: run context
         :param rows: rows to process
         :param parameters: FhirReceiverParameters
+        :param additional_parameters: additional parameters
         :return: rows
         """
 
         row: List[Dict[str, Any]]
         async for row in HttpDataReceiverProcessor.process_rows_async(
-            partition_index=partition_index,
+            partition_index=run_context.partition_index,
             rows=rows,
             response_processor=parameters.response_processor,
             raise_error=parameters.raise_error,
@@ -135,6 +142,7 @@ class HttpDataReceiverProcessor:
             ):
                 yield r
 
+    # noinspection PyUnusedLocal
     @staticmethod
     async def process_record_async(
         *,

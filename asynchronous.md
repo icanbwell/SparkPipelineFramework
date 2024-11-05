@@ -25,6 +25,7 @@ Examples of this include when you read FHIR resources from a source dataframe, s
 In this case your goal is to create a new data frame that has the same number of rows as the input data frame.
 
 For this case, you can use the `AsyncPandasDataFrameUDF` class like so:
+
 ```python
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
@@ -47,27 +48,27 @@ from typing import (
 import dataclasses
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType
 
+
 @dataclasses.dataclass
 class MyParameters:
     log_level: str
-    
-    
+
 
 def my_code():
     async def test_async(
-        *,
-        partition_index: int,
-        chunk_index: int,
-        chunk_input_range: range,
-        input_values: List[Dict[str, Any]],
-        parameters: Optional[MyParameters],
+            *,
+            partition_index: int,
+            chunk_index: int,
+            chunk_input_range: range,
+            input_values: List[Dict[str, Any]],
+            parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         # your async code here
         # yield a dict for each row in the input_values list
         yield {
             "name": "test"
         }
-    
+
         output_schema = StructType(
             [
                 StructField("name", StringType(), True),
@@ -79,10 +80,10 @@ def my_code():
                 async_func=cast(
                     HandlePandasDataFrameBatchFunction[MyParameters], test_async
                 ),
-                batch_size=2,
-        ).get_pandas_udf(),
-        schema=output_schema,
-    )
+                max_chunk_size=2,
+            ).get_pandas_udf(),
+            schema=output_schema,
+        )
 ```
 
 ### Case 2: When you want to read a single column (or set of columns) and want to append (or replace) a column in the same dataframe
@@ -97,6 +98,7 @@ There are four kinds of column transformations:
 4. Scalar column to scalar column. Use `AsyncPandasScalarColumnToScalarColumnUDF` class.
 
 For example for scalar column to scalar column transformation, you can use the `AsyncPandasScalarColumnToScalarColumnUDF` class like so:
+
 ```python
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_scalar_column_to_scalar_udf import (
     AsyncPandasScalarColumnToScalarColumnUDF,
@@ -104,7 +106,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_scalar_
 from pyspark.sql import SparkSession, DataFrame
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasScalarToScalarBatchFunction,
-)   
+)
 from typing import (
     List,
     Dict,
@@ -116,23 +118,25 @@ from typing import (
 import dataclasses
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType
 
+
 @dataclasses.dataclass
 class MyParameters:
     log_level: str
 
+
 def my_code():
     async def test_async(
-        *,
-        partition_index: int,
-        chunk_index: int,
-        chunk_input_range: range,
-        input_values: List[Dict[str, Any]],
-        parameters: Optional[MyParameters],
+            *,
+            partition_index: int,
+            chunk_index: int,
+            chunk_input_range: range,
+            input_values: List[Dict[str, Any]],
+            parameters: Optional[MyParameters],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         # your async code here
         # yield a dict for each row in the input_values list
         yield {}
-    
+
         output_schema = StructType(
             [
                 # your output schema here
@@ -156,9 +160,9 @@ def my_code():
                     test_async,
                 ),
                 parameters=MyParameters(log_level="DEBUG"),
-                batch_size=2,
+                max_chunk_size=2,
             ).get_pandas_udf(return_type=StringType())(source_df["name"]),
-    )
+        )
 ```
 
 # Logging

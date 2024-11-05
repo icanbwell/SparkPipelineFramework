@@ -23,7 +23,6 @@ services:
         ELASTICSEARCH_HOST: https://elasticsearch:9200
     volumes:
       - ./:/SparkpipelineFramework/
-#      - ~/.local/share/virtualenvs:/root/.local/share/virtualenvs:rw
 #      - ../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.10/dist-packages/helix_fhir_client_sdk
 #      - ../mockserver_client/mockserver_client:/usr/local/lib/python3.10/dist-packages/mockserver_client
     container_name: spf_dev

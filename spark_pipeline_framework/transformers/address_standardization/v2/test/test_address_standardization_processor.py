@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from aioresponses import aioresponses
 from typing import Dict, List, Any, Optional
@@ -6,6 +8,9 @@ from unittest.mock import AsyncMock, MagicMock
 from spark_pipeline_framework.transformers.address_standardization.v2.address_standardization_processor import (
     AddressStandardizationProcessor,
     AddressStandardizationParameters,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler import (
     CacheHandler,
@@ -113,11 +118,15 @@ async def test_standardize_list() -> None:
         m.post("http://mock_standardization_service", payload=expected_output)
 
         async for result in AddressStandardizationProcessor.standardize_list(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=range(1),
+            run_context=AsyncPandasBatchFunctionRunContext(
+                partition_index=0,
+                chunk_index=0,
+                chunk_input_range=range(1),
+                partition_start_time=datetime.now(),
+            ),
             input_values=input_values,
             parameters=address_standardization_parameters,
+            additional_parameters=None,
         ):
             assert result == expected_output[0]
 
@@ -137,11 +146,15 @@ async def test_standardize_list_missing_parameters() -> None:
 
     with pytest.raises(AssertionError, match="parameters is required"):
         async for _ in AddressStandardizationProcessor.standardize_list(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=range(1),
+            run_context=AsyncPandasBatchFunctionRunContext(
+                partition_index=0,
+                chunk_index=0,
+                chunk_input_range=range(1),
+                partition_start_time=datetime.now(),
+            ),
             input_values=input_values,
             parameters=None,
+            additional_parameters=None,
         ):
             pass
 
@@ -182,10 +195,14 @@ async def test_standardize_list_invalid_input() -> None:
 
     with pytest.raises(AssertionError, match="address_column_mapping is required"):
         async for _ in AddressStandardizationProcessor.standardize_list(
-            partition_index=0,
-            chunk_index=0,
-            chunk_input_range=range(1),
+            run_context=AsyncPandasBatchFunctionRunContext(
+                partition_index=0,
+                chunk_index=0,
+                chunk_input_range=range(1),
+                partition_start_time=datetime.now(),
+            ),
             input_values=input_values,
             parameters=address_standardization_parameters,
+            additional_parameters=None,
         ):
             pass
