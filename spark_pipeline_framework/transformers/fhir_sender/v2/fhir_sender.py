@@ -31,6 +31,9 @@ from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token_async,
@@ -95,6 +98,9 @@ class FhirSender(FrameworkTransformer):
         drop_fields_from_json: Optional[List[str]] = None,
         source_view: Optional[str] = None,
         log_level: Optional[str] = None,
+        max_chunk_size: int = 100,
+        process_chunks_in_parallel: Optional[bool] = True,
+        maximum_concurrent_tasks: int = 100,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -125,6 +131,11 @@ class FhirSender(FrameworkTransformer):
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         :param sort_by_column_name_and_type: (Optional) tuple of columnName, columnType to be used for sorting
         :param drop_fields_from_json: (Optional) List of field names to drop from json
+        :param source_view: (Optional) source view to read from
+        :param log_level: (Optional) log level
+        :param max_chunk_size: (Optional) max chunk size
+        :param process_chunks_in_parallel: (Optional) process chunks in parallel
+        :param maximum_concurrent_tasks: (Optional) maximum concurrent tasks
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -280,11 +291,21 @@ class FhirSender(FrameworkTransformer):
         self.source_view: Param[Optional[str]] = Param(self, "source_view", "")
         self._setDefault(source_view=None)
 
+        self.max_chunk_size: Param[int] = Param(self, "max_chunk_size", "")
+        self._setDefault(max_chunk_size=max_chunk_size)
+
+        self.process_chunks_in_parallel: Param[Optional[bool]] = Param(
+            self, "process_chunks_in_parallel", ""
+        )
+        self._setDefault(process_chunks_in_parallel=process_chunks_in_parallel)
+
+        self.maximum_concurrent_tasks: Param[int] = Param(
+            self, "maximum_concurrent_tasks", ""
+        )
+        self._setDefault(maximum_concurrent_tasks=maximum_concurrent_tasks)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    def _transform(self, df: DataFrame) -> DataFrame:
-        return AsyncHelper.run(self._transform_async(df))
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         file_path: Path | str | Callable[[str | None], Path | str] | None = (
@@ -363,6 +384,12 @@ class FhirSender(FrameworkTransformer):
         run_synchronously: Optional[bool] = self.getOrDefault(self.run_synchronously)
 
         source_view: Optional[str] = self.getOrDefault(self.source_view)
+
+        max_chunk_size: int = self.getOrDefault(self.max_chunk_size)
+        process_chunks_in_parallel: Optional[bool] = self.getOrDefault(
+            self.process_chunks_in_parallel
+        )
+        maximum_concurrent_tasks: int = self.getOrDefault(self.maximum_concurrent_tasks)
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -473,7 +500,6 @@ class FhirSender(FrameworkTransformer):
                     f"----- Total Batches for {resource_name}: {total_partitions}  -----"
                 )
 
-                result_df: Optional[DataFrame] = None
                 sender_parameters: FhirSenderParameters = FhirSenderParameters(
                     total_partitions=total_partitions,
                     operation=operation,
@@ -493,6 +519,12 @@ class FhirSender(FrameworkTransformer):
                     validation_server_url=validation_server_url,
                     retry_count=retry_count,
                     exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                    pandas_udf_parameters=AsyncPandasUdfParameters(
+                        log_level=log_level,
+                        max_chunk_size=max_chunk_size,
+                        process_chunks_in_parallel=process_chunks_in_parallel,
+                        maximum_concurrent_tasks=maximum_concurrent_tasks,
+                    ),
                 )
                 if run_synchronously:
                     rows_to_send: List[Dict[str, Any]] = [
@@ -523,7 +555,7 @@ class FhirSender(FrameworkTransformer):
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
                     # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
                     result_df = json_df.mapInPandas(
-                        FhirSenderProcessor.get_process_batch_function(
+                        FhirSenderProcessor.get_process_partition_function(
                             parameters=sender_parameters
                         ),
                         schema=FhirMergeResponseItemSchema.get_schema(),

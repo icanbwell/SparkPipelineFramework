@@ -44,11 +44,14 @@ from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
-)
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasDataFrameBatchFunction,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
@@ -73,23 +76,21 @@ class FhirReceiverProcessorSpark:
     This class contains the methods to process the FHIR receiver in Spark
     """
 
+    # noinspection PyUnusedLocal
     @staticmethod
-    async def process_partition(
-        *,
-        partition_index: int,
-        chunk_index: int,
-        chunk_input_range: range,
+    async def process_chunk(
+        run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[FhirReceiverParameters],
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Process a partition of data asynchronously
 
-        :param partition_index: partition index
-        :param chunk_index: chunk index
-        :param chunk_input_range: chunk input range
+        :param run_context: run context
         :param input_values: input values
         :param parameters: parameters
+        :param additional_parameters: additional parameters
         :return: output values
         """
         assert parameters
@@ -101,20 +102,20 @@ class FhirReceiverProcessorSpark:
         )
         spark_partition_information: SparkPartitionInformation = (
             SparkPartitionInformation.from_current_task_context(
-                chunk_index=chunk_index,
+                chunk_index=run_context.chunk_index,
             )
         )
         # ids = [input_value["id"] for input_value in input_values]
-        message: str = f"FhirReceiverProcessor.process_partition"
+        message: str = f"FhirReceiverProcessor.process_chunk"
         # Format the time to include hours, minutes, seconds, and milliseconds
         formatted_time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         formatted_message: str = (
             f"{formatted_time}: "
             + f"{message}"
-            + f" | Partition: {partition_index}"
+            + f" | Partition: {run_context.partition_index}"
             + (f"/{parameters.total_partitions}" if parameters.total_partitions else "")
-            + f" | Chunk: {chunk_index}"
-            + f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+            + f" | Chunk: {run_context.chunk_index}"
+            + f" | range: {run_context.chunk_input_range.start}-{run_context.chunk_input_range.stop}"
             + f" | {spark_partition_information}"
         )
         logger.info(formatted_message)
@@ -122,7 +123,7 @@ class FhirReceiverProcessorSpark:
         try:
             r: Dict[str, Any]
             async for r in FhirReceiverProcessor.send_partition_request_to_server_async(
-                partition_index=partition_index,
+                partition_index=run_context.partition_index,
                 parameters=parameters,
                 rows=input_values,
             ):
@@ -130,8 +131,8 @@ class FhirReceiverProcessorSpark:
                 # count += len(response_item.responses)
                 logger.debug(
                     f"Received result"
-                    f" | Partition: {partition_index}"
-                    f" | Chunk: {chunk_index}"
+                    f" | Partition: {run_context.partition_index}"
+                    f" | Chunk: {run_context.chunk_index}"
                     f" | Status: {response_item.status_code}"
                     f" | Url: {response_item.url}"
                     f" | Count: {response_item.received}"
@@ -139,13 +140,13 @@ class FhirReceiverProcessorSpark:
                 yield r
         except Exception as e:
             logger.error(
-                f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"
+                f"Error processing partition {run_context.partition_index} chunk {run_context.chunk_index}: {str(e)}"
             )
             # if an exception is thrown then return an error for each row
             for _ in input_values:
                 # count += 1
                 yield {
-                    FhirGetResponseSchema.partition_index: partition_index,
+                    FhirGetResponseSchema.partition_index: run_context.partition_index,
                     FhirGetResponseSchema.sent: 0,
                     FhirGetResponseSchema.received: 0,
                     FhirGetResponseSchema.url: parameters.server_url,
@@ -172,12 +173,11 @@ class FhirReceiverProcessorSpark:
         """
 
         return AsyncPandasDataFrameUDF(
-            async_func=cast(
-                HandlePandasDataFrameBatchFunction[FhirReceiverParameters],
-                FhirReceiverProcessorSpark.process_partition,
-            ),
+            async_func=FhirReceiverProcessorSpark.process_chunk,  # type: ignore[arg-type]
             parameters=parameters,
-            batch_size=parameters.batch_size or 100,
+            pandas_udf_parameters=AsyncPandasUdfParameters(
+                max_chunk_size=parameters.batch_size or 100
+            ),
         ).get_pandas_udf()
 
     @staticmethod
@@ -574,6 +574,7 @@ class FhirReceiverProcessorSpark:
                     )
                 )
         except PythonException as e:
+            # noinspection PyUnresolvedReferences
             if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
                 raise FriendlySparkException(
                     exception=e,

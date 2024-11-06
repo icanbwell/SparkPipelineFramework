@@ -96,20 +96,9 @@ class FrameworkPipeline(Transformer):
                         transformer, "_transform"
                     ):
                         # noinspection PyProtectedMember
-                        df = AsyncHelper.run(
-                            fn=transformer._transform_async(dataset=df)
-                        )
+                        df = AsyncHelper.run(fn=transformer._transform_async(df=df))
                     else:
                         df = transformer.transform(dataset=df)
-
-                    if self.log_level and self.log_level == "DEBUG":
-                        print(
-                            f"------------  Start Execution Plan for stage {stage_name} -----------"
-                        )
-                        df.explain(extended="cost")
-                        print(
-                            f"------------  End Execution Plan for stage {stage_name} -----------"
-                        )
 
             except Exception as e:
                 logger.error(
@@ -194,18 +183,9 @@ class FrameworkPipeline(Transformer):
                     )
                     if hasattr(transformer, "_transform_async"):
                         # noinspection PyProtectedMember
-                        df = await transformer._transform_async(dataset=df)
+                        df = await transformer._transform_async(df=df)
                     else:
                         df = transformer.transform(dataset=df)
-
-                    if self.log_level and self.log_level == "DEBUG":
-                        print(
-                            f"------------  Start Execution Plan for stage {stage_name} -----------"
-                        )
-                        df.explain(extended="cost")
-                        print(
-                            f"------------  End Execution Plan for stage {stage_name} -----------"
-                        )
 
             except Exception as e:
                 logger.error(

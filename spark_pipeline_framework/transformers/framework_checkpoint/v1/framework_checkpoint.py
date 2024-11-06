@@ -90,7 +90,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    def _transform(self, df: DataFrame) -> DataFrame:
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
         mode: str = self.getMode()
         file_path: Union[Path, str, Callable[[Optional[str]], Union[Path, str]]] = (
@@ -112,7 +112,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
             stream=stream,
             delta_lake_table=delta_lake_table,
         )
-        df = save_transformer.transform(df)
+        df = await save_transformer.transform_async(df)
 
         load_transformer = FrameworkParquetLoader(
             view=view,
@@ -123,7 +123,7 @@ class FrameworkCheckpoint(FrameworkTransformer):
             stream=stream,
             delta_lake_table=delta_lake_table,
         )
-        df = load_transformer.transform(df)
+        df = await load_transformer.transform_async(df)
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

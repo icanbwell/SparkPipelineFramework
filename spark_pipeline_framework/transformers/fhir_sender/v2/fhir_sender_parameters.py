@@ -1,6 +1,9 @@
 import dataclasses
 from typing import Union, Optional, List, Dict
 
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
@@ -26,3 +29,4 @@ class FhirSenderParameters:
     validation_server_url: Optional[str]
     retry_count: Optional[int]
     exclude_status_codes_from_retry: Optional[List[int]]
+    pandas_udf_parameters: AsyncPandasUdfParameters

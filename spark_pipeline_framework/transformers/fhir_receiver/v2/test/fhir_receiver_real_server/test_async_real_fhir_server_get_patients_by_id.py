@@ -45,7 +45,8 @@ async def test_async_real_fhir_server_get_patients_by_id(
         resource_type="Patient"
     ) as fhir_server_test_context:
 
-        environ["LOGLEVEL"] = "DEBUG"
+        log_level = "DEBUG"
+        environ["LOGLEVEL"] = log_level
 
         fhir_server_url: str = fhir_server_test_context.fhir_server_url
         auth_client_id = fhir_server_test_context.auth_client_id
@@ -97,7 +98,12 @@ async def test_async_real_fhir_server_get_patients_by_id(
                 use_data_streaming=use_data_streaming,
                 include_only_properties=["id"],
                 view="id_view",
+                log_level=log_level,
             ).transform_async(df)
+
+            id_df: DataFrame = spark_session.table("id_view")
+            id_df.show(truncate=False)
+            assert id_df.count() == count
 
             await FhirReceiver(
                 server_url=fhir_server_url,
@@ -111,6 +117,7 @@ async def test_async_real_fhir_server_get_patients_by_id(
                 auth_client_id=auth_client_id,
                 auth_client_secret=auth_client_secret,
                 use_data_streaming=use_data_streaming,
+                log_level=log_level,
             ).transform_async(df)
 
             # now try to read it

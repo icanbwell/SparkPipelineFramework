@@ -60,7 +60,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
-    def _transform(self, df: DataFrame) -> DataFrame:
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
         start_time: float = time.time()
         max_number_of_runs: Optional[Union[int, Callable[[], int]]] = (
@@ -113,8 +113,10 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     # use a new df everytime to avoid keeping data in memory too long
                     df.unpersist(blocking=True)
                     df = create_empty_dataframe(df.sparkSession)
-
-                    df = stage.transform(df)
+                    if hasattr(stage, "transform_async"):
+                        df = await stage.transform_async(df)
+                    else:
+                        df = stage.transform(df)
                 except Exception as e:
                     if len(e.args) >= 1:
                         # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]

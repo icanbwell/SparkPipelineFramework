@@ -28,6 +28,9 @@ from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
@@ -52,6 +55,9 @@ class ElasticSearchSender(FrameworkTransformer):
         run_synchronously: Optional[bool] = None,
         log_level: Optional[str] = None,
         timeout: int = 60,
+        max_chunk_size: int = 100,
+        process_chunks_in_parallel: Optional[bool] = True,
+        maximum_concurrent_tasks: int = 100,
     ):
         """
         Sends a folder or a view to an ElasticSearch server
@@ -66,6 +72,9 @@ class ElasticSearchSender(FrameworkTransformer):
         :param run_synchronously: if True, will send all data to ES in one go, otherwise will send in batches
         :param log_level: log level
         :param timeout: timeout in seconds
+        :param max_chunk_size: the size of the chunks
+        :param process_chunks_in_parallel: whether to run all the chunks in a partition in parallel (default is sequential)
+        :param maximum_concurrent_tasks: maximum number of tasks to run concurrently (default is 100)
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -114,11 +123,21 @@ class ElasticSearchSender(FrameworkTransformer):
         self.timeout: Param[int] = Param(self, "timeout", "")
         self._setDefault(timeout=timeout)
 
+        self.max_chunk_size: Param[int] = Param(self, "max_chunk_size", "")
+        self._setDefault(max_chunk_size=max_chunk_size)
+
+        self.process_chunks_in_parallel: Param[Optional[bool]] = Param(
+            self, "process_chunks_in_parallel", ""
+        )
+        self._setDefault(process_chunks_in_parallel=process_chunks_in_parallel)
+
+        self.maximum_concurrent_tasks: Param[int] = Param(
+            self, "maximum_concurrent_tasks", ""
+        )
+        self._setDefault(maximum_concurrent_tasks=maximum_concurrent_tasks)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
-
-    def _transform(self, df: DataFrame) -> DataFrame:
-        return AsyncHelper.run(self.transform_async(df))
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         view: Optional[str] = self.getView()
@@ -135,6 +154,13 @@ class ElasticSearchSender(FrameworkTransformer):
             "LOGLEVEL"
         )
         timeout: int = self.getOrDefault(self.timeout)
+
+        max_chunk_size: int = self.getOrDefault(self.max_chunk_size)
+        process_chunks_in_parallel: Optional[bool] = self.getOrDefault(
+            self.process_chunks_in_parallel
+        )
+        maximum_concurrent_tasks: int = self.getOrDefault(self.maximum_concurrent_tasks)
+
         doc_id_prefix: Optional[str] = None
         if parameters is not None:
             doc_id_prefix = parameters.get("doc_id_prefix", None)
@@ -184,6 +210,12 @@ class ElasticSearchSender(FrameworkTransformer):
                         name=name,
                         log_level=log_level,
                         timeout=timeout,
+                        pandas_udf_parameters=AsyncPandasUdfParameters(
+                            log_level=log_level,
+                            max_chunk_size=max_chunk_size,
+                            process_chunks_in_parallel=process_chunks_in_parallel,
+                            maximum_concurrent_tasks=maximum_concurrent_tasks,
+                        ),
                     )
                 )
                 if run_synchronously:
@@ -215,7 +247,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     # https://docs.databricks.com/en/pandas/pandas-function-apis.html#map
                     # Source Code: https://github.com/apache/spark/blob/master/python/pyspark/sql/pandas/map_ops.py#L37
                     result_df = json_df.mapInPandas(
-                        ElasticSearchProcessor.get_process_batch_function(
+                        ElasticSearchProcessor.get_process_partition_function(
                             parameters=sender_parameters,
                             batch_size=batch_size,
                         ),
@@ -237,6 +269,7 @@ class ElasticSearchSender(FrameworkTransformer):
                     failed_df.show(truncate=False, n=1000)
                     self.logger.info("---- End Reply from server ----")
                 except PythonException as e:
+                    # noinspection PyUnresolvedReferences
                     if hasattr(e, "desc") and "pyarrow.lib.ArrowTypeError" in e.desc:
                         raise FriendlySparkException(
                             exception=e,

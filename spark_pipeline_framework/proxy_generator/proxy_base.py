@@ -131,7 +131,7 @@ class ProxyBase(FrameworkTransformer):
     def transformers(self, value: Any) -> None:
         raise AttributeError("transformers property is read only.")
 
-    def _transform(self, df: DataFrame) -> DataFrame:
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         # iterate through my transformers
         transformer: Transformer
         i: int = 0
@@ -146,8 +146,10 @@ class ProxyBase(FrameworkTransformer):
             self.logger.info(
                 f"---- Running mapping transformer {i} of {count} [{stage_name}]  "
             )
-
-            df = transformer.transform(df)
+            if hasattr(transformer, "transform_async"):
+                df = await transformer.transform_async(df)
+            else:
+                df = transformer.transform(df)
         return df
 
     # noinspection PyUnusedLocal

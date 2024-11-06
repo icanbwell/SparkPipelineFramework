@@ -4,6 +4,10 @@ from typing import Optional, Dict, Any, List
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
+
 
 @dataclasses.dataclass
 class FhirReceiverParameters:
@@ -43,6 +47,7 @@ class FhirReceiverParameters:
     graph_json: Optional[Dict[str, Any]]
     ignore_status_codes: List[int]
     use_id_above_for_paging: Optional[bool]
+    pandas_udf_parameters: AsyncPandasUdfParameters
     refresh_token_function: Optional[RefreshTokenFunction] = None
 
     def set_additional_parameters(
@@ -96,4 +101,5 @@ class FhirReceiverParameters:
             ignore_status_codes=self.ignore_status_codes,
             refresh_token_function=self.refresh_token_function,
             use_id_above_for_paging=self.use_id_above_for_paging,
+            pandas_udf_parameters=self.pandas_udf_parameters,
         )
