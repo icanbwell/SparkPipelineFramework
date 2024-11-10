@@ -442,6 +442,12 @@ class AsyncBasePandasUDF[
             x async for x in chunk_containers
         ]
 
+        if len(chunk_containers_list) == 0:
+            self.logger.debug(
+                f"Empty chunk list | partition: {partition_context.partition_index}"
+            )
+            return
+
         self.logger.debug(
             f"Starting process_chunks_async_in_parallel | partition: {partition_context.partition_index}"
             f" | chunk_count: {len(chunk_containers_list)}"
