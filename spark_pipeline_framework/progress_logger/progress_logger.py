@@ -60,13 +60,13 @@ class ProgressLogger:
 
     def __enter__(self) -> "ProgressLogger":
         if self.mlflow_config is None:
-            self.logger.info("MLFLOW IS NOT ENABLED")
+            self.logger.debug("MLFLOW IS NOT ENABLED")
             return self
-        self.logger.info("MLFLOW IS ENABLED")
+        self.logger.debug("MLFLOW IS ENABLED")
 
         try:
             mlflow.set_tracking_uri(self.mlflow_config.mlflow_tracking_url)
-            self.logger.info(f"MLFLOW TRACKING URL: {mlflow.get_tracking_uri()}")
+            self.logger.debug(f"MLFLOW TRACKING URL: {mlflow.get_tracking_uri()}")
             self.start_mlflow_run(
                 run_name=self.mlflow_config.flow_run_name, is_nested=False
             )
@@ -88,7 +88,7 @@ class ProgressLogger:
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-        self.logger.info("ENDING PARENT RUN")
+        self.logger.debug("ENDING PARENT RUN")
         if exc_value:
             # there was an exception so mark the parent run as failed
             self.end_mlflow_run(status=RunStatus.FAILED)  # type:ignore[arg-type]
@@ -130,7 +130,7 @@ class ProgressLogger:
         time_diff_in_minutes: float,
         log_level: LogLevel = LogLevel.TRACE,
     ) -> None:
-        self.logger.info(f"{name}: {time_diff_in_minutes} min")
+        self.logger.debug(f"{name}: {time_diff_in_minutes} min")
         if self.mlflow_config is not None:
             try:
                 mlflow.log_metric(
@@ -203,7 +203,7 @@ class ProgressLogger:
                     file_path.parent.mkdir(exist_ok=True, parents=True)
                     with open(file_path, "w") as file:
                         file.write(contents)
-                        self.logger.info(f"Wrote sql to {file_path}")
+                        self.logger.debug(f"Wrote sql to {file_path}")
 
                     if self.mlflow_config is not None:
                         mlflow.log_artifact(local_path=str(file_path))
@@ -239,7 +239,7 @@ class ProgressLogger:
         backoff: bool = True,
         log_level: LogLevel = LogLevel.TRACE,
     ) -> None:
-        self.logger.info(event_format_string.format(event_name, current, total))
+        self.logger.debug(event_format_string.format(event_name, current, total))
         if not self.system_log_level or self.system_log_level == LogLevel.INFO:
             if (
                 log_level == LogLevel.INFO or log_level == LogLevel.ERROR
@@ -284,6 +284,8 @@ class ProgressLogger:
 
     @staticmethod
     def clean_experiments(*, tracking_uri: Optional[str]) -> None:
+
+        logger = get_logger(__name__)
         if tracking_uri is None:
             return
         mlflow.set_tracking_uri(tracking_uri)
@@ -313,10 +315,10 @@ class ProgressLogger:
             for run in runs:
                 assert isinstance(run, Run), f"Expected Run, got {type(run)}: {run}"
                 mlflow.delete_run(run.info.run_id)
-                print(f"Run with ID {run.info.run_id} has been deleted")
+                logger.info(f"Run with ID {run.info.run_id} has been deleted")
 
             mlflow.delete_experiment(exp.experiment_id)
-            print(
+            logger.info(
                 f"Experiment with ID {exp.experiment_id} and Name {exp.name} has been deleted"
             )
         experiments = ProgressLogger.get_experiments()
