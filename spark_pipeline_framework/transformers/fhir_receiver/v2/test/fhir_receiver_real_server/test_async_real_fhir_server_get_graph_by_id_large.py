@@ -10,7 +10,22 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
 from helix_fhir_client_sdk.utilities.practitioner_generator import PractitionerGenerator
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.types import StructType, StructField, ArrayType, StringType
+from spark_fhir_schemas.r4.resources.endpoint import EndpointSchema
+from spark_fhir_schemas.r4.resources.group import GroupSchema
+from spark_fhir_schemas.r4.resources.insuranceplan import InsurancePlanSchema
+from spark_fhir_schemas.r4.resources.location import LocationSchema
+from spark_fhir_schemas.r4.resources.measurereport import MeasureReportSchema
+from spark_fhir_schemas.r4.resources.organization import OrganizationSchema
+from spark_fhir_schemas.r4.resources.practitioner import PractitionerSchema
+from spark_fhir_schemas.r4.resources.practitionerrole import PractitionerRoleSchema
+from spark_fhir_schemas.r4.resources.schedule import ScheduleSchema
 
+from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.transformers.fhir_reader.v1.fhir_reader import FhirReader
+from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
+    FhirReceiver,
+)
 from spark_pipeline_framework.utilities.fhir_server_test_context.v1.fhir_server_test_context import (
     FhirServerTestContext,
 )
@@ -24,8 +39,6 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 async def test_async_real_fhir_server_get_graph_by_id_large(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
-    # import pdb
-    # pdb.set_trace()
     print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
