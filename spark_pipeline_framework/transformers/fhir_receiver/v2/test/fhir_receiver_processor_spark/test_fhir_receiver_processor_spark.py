@@ -50,10 +50,7 @@ async def test_get_all_resources_async(
                 "http://fhir-server/Patient",
                 body="""{"resource_type": "Patient", "id": "1"}\n{"resource_type": "Patient", "id": "2"}""",
             )
-            m.get(
-                "http://fhir-server/Patient?id:above=2",
-                payload=[]
-            )
+            m.get("http://fhir-server/Patient?id:above=2", payload=[])
         else:
             m.get(
                 "http://fhir-server/Patient?_count=5&_getpagesoffset=0",

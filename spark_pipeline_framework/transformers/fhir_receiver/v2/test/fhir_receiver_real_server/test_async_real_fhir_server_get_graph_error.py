@@ -28,6 +28,7 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 async def test_async_real_fhir_server_get_graph_error(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
+    print()
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
     temp_folder = data_dir.joinpath("../temp")
