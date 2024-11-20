@@ -54,6 +54,7 @@ class HelixHttpRequest:
         payload: Optional[Dict[str, str]] = None,
         retry_count: int = 3,
         backoff_factor: float = 0.1,
+        timeout_seconds: int = 120,
         retry_on_status: Optional[List[int]] = None,
         logger: Optional[Logger] = None,
         post_as_json_formatted_string: Optional[bool] = None,
@@ -71,6 +72,7 @@ class HelixHttpRequest:
         :param payload: Payload to send with the request
         :param retry_count: Number of times to retry the request
         :param backoff_factor: Factor to backoff between retries
+        :param timeout_seconds: Timeout in seconds for each request made (default to 120 seconds)
         :param retry_on_status: List of status codes to retry on
         :param logger: Logger to use
         :param post_as_json_formatted_string: Whether to post the payload as a json formatted string
@@ -89,6 +91,7 @@ class HelixHttpRequest:
         self.logger: Optional[Logger] = logger
         self.retry_count: int = retry_count
         self.backoff_factor: float = backoff_factor
+        self.timeout_seconds: int = timeout_seconds
         self.retry_on_status: List[int] = retry_on_status
         self.post_as_json_formatted_string: Optional[bool] = (
             post_as_json_formatted_string
@@ -182,7 +185,9 @@ class HelixHttpRequest:
         return response
 
     def _get_session(self) -> ClientSession:
-        timeout = aiohttp.ClientTimeout(total=self.retry_count * self.backoff_factor)
+        timeout = aiohttp.ClientTimeout(
+            total=self.retry_count * self.backoff_factor * self.timeout_seconds
+        )
         connector = aiohttp.TCPConnector(ssl=bool(self.verify))
         session = aiohttp.ClientSession(timeout=timeout, connector=connector)
         return session
