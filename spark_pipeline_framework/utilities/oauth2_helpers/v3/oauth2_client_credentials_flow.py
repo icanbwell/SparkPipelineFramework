@@ -25,6 +25,8 @@ class OAuth2ClientCredentialsFlow:
         auth_url: str,
         auth_credentials: OAuth2Credentails,
         progress_logger: Optional[ProgressLogger],
+        retry_count: int = 20,
+        backoff_factor: float = 0.1,
     ) -> None:
         """
         Encapsulate the logic to connect to OAuth2 servers using client credentials flow
@@ -32,11 +34,15 @@ class OAuth2ClientCredentialsFlow:
         :param auth_url: OAuth2 token url
         :param auth_credentials: OAuth2 credentials like client id, secrets, etc
         :param progress_logger: Progress logger
+        :param retry_count: Number of times to retry the request
+        :param backoff_factor: Factor to backoff between retries
         """
         assert auth_url
         self.auth_url: str = auth_url
         self.auth_credentials = auth_credentials
         self.progress_logger: Optional[ProgressLogger] = progress_logger
+        self.retry_count: int = retry_count
+        self.backoff_factor: float = backoff_factor
 
     def get_token(self) -> Optional[str]:
         http_request = HelixHttpRequest(
@@ -46,6 +52,8 @@ class OAuth2ClientCredentialsFlow:
                 dict_factory=lambda x: {k: v for (k, v) in x if v is not None},
             ),
             request_type=RequestType.POST,
+            retry_count=self.retry_count,
+            backoff_factor=self.backoff_factor,
         )
 
         response = AsyncHelper.run(http_request.get_result_async())
@@ -65,6 +73,8 @@ class OAuth2ClientCredentialsFlow:
                 dict_factory=lambda x: {k: v for (k, v) in x if v is not None},
             ),
             request_type=RequestType.POST,
+            retry_count=self.retry_count,
+            backoff_factor=self.backoff_factor,
         )
 
         response = await http_request.get_result_async()
