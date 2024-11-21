@@ -11,6 +11,7 @@ from typing import (
     Tuple,
     Callable,
     Awaitable,
+    Literal,
 )
 from urllib import parse
 from urllib.parse import SplitResult, SplitResultBytes
@@ -104,7 +105,7 @@ class HelixHttpRequest:
         self.raise_error = flag
 
     async def get_result_async(self) -> SingleJsonResult:
-        response = await self.get_response_async()
+        response = await self.get_response_async(cache_results="json")
         try:
             result: Dict[str, Any] = await response.json(
                 content_type=None
@@ -116,7 +117,7 @@ class HelixHttpRequest:
             ) from e
 
     async def get_results_async(self) -> ListJsonResult:
-        response = await self.get_response_async()
+        response = await self.get_response_async(cache_results="json")
         try:
             result: List[Dict[str, Any]] = await response.json(
                 content_type=None
@@ -128,12 +129,23 @@ class HelixHttpRequest:
             ) from e
 
     async def get_text_async(self) -> SingleTextResult:
-        response = await self.get_response_async()
+        response = await self.get_response_async(cache_results="text")
         return SingleTextResult(
             url=self.url, status=response.status, result=await response.text()
         )
 
-    async def get_response_async(self) -> ClientResponse:
+    async def get_response_async(
+        self, cache_results: Optional[Literal["json", "text"]] = None
+    ) -> ClientResponse:
+        """
+        Asynchronously get response using configured URL, headers, params, etc. Response body can also be cached for
+        future async retrieval outside of session scope.
+
+
+        :param cache_results: Optional flag to cache response body to be made available outside of session context
+            (via ``response.json()`` or ``response.text()``), either in ``json`` or ``text`` format
+        :return: ClientResponse
+        """
         session: ClientSession
         async with self._get_session() as session:
             arguments = {"headers": self.headers}
@@ -160,6 +172,12 @@ class HelixHttpRequest:
                     if self.logger:
                         self.logger.error(error_text)
                     raise ClientError(error_text)
+
+            # Cache response body for retrieval outside of session scope, if specified
+            if cache_results == "json":
+                _ = await response.json(content_type=None)
+            elif cache_results == "text":
+                _ = await response.text()
 
             return response
 
