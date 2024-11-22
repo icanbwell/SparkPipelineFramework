@@ -11,6 +11,7 @@ from typing import (
     Tuple,
     Callable,
     Awaitable,
+    Literal,
 )
 from urllib import parse
 from urllib.parse import SplitResult, SplitResultBytes
@@ -54,6 +55,7 @@ class HelixHttpRequest:
         payload: Optional[Dict[str, str]] = None,
         retry_count: int = 3,
         backoff_factor: float = 0.1,
+        timeout_seconds: int = 120,
         retry_on_status: Optional[List[int]] = None,
         logger: Optional[Logger] = None,
         post_as_json_formatted_string: Optional[bool] = None,
@@ -71,6 +73,7 @@ class HelixHttpRequest:
         :param payload: Payload to send with the request
         :param retry_count: Number of times to retry the request
         :param backoff_factor: Factor to backoff between retries
+        :param timeout_seconds: Timeout in seconds for each request made (default to 120 seconds)
         :param retry_on_status: List of status codes to retry on
         :param logger: Logger to use
         :param post_as_json_formatted_string: Whether to post the payload as a json formatted string
@@ -89,6 +92,7 @@ class HelixHttpRequest:
         self.logger: Optional[Logger] = logger
         self.retry_count: int = retry_count
         self.backoff_factor: float = backoff_factor
+        self.timeout_seconds: int = timeout_seconds
         self.retry_on_status: List[int] = retry_on_status
         self.post_as_json_formatted_string: Optional[bool] = (
             post_as_json_formatted_string
@@ -101,7 +105,7 @@ class HelixHttpRequest:
         self.raise_error = flag
 
     async def get_result_async(self) -> SingleJsonResult:
-        response = await self.get_response_async()
+        response = await self.get_response_async(cache_results="json")
         try:
             result: Dict[str, Any] = await response.json(
                 content_type=None
@@ -113,7 +117,7 @@ class HelixHttpRequest:
             ) from e
 
     async def get_results_async(self) -> ListJsonResult:
-        response = await self.get_response_async()
+        response = await self.get_response_async(cache_results="json")
         try:
             result: List[Dict[str, Any]] = await response.json(
                 content_type=None
@@ -125,12 +129,23 @@ class HelixHttpRequest:
             ) from e
 
     async def get_text_async(self) -> SingleTextResult:
-        response = await self.get_response_async()
+        response = await self.get_response_async(cache_results="text")
         return SingleTextResult(
             url=self.url, status=response.status, result=await response.text()
         )
 
-    async def get_response_async(self) -> ClientResponse:
+    async def get_response_async(
+        self, cache_results: Optional[Literal["json", "text"]] = None
+    ) -> ClientResponse:
+        """
+        Asynchronously get response using configured URL, headers, params, etc. Response body can also be cached for
+        future async retrieval outside of session scope.
+
+
+        :param cache_results: Optional flag to cache response body to be made available outside of session context
+            (via ``response.json()`` or ``response.text()``), either in ``json`` or ``text`` format
+        :return: ClientResponse
+        """
         session: ClientSession
         async with self._get_session() as session:
             arguments = {"headers": self.headers}
@@ -158,6 +173,12 @@ class HelixHttpRequest:
                         self.logger.error(error_text)
                     raise ClientError(error_text)
 
+            # Cache response body for retrieval outside of session scope, if specified
+            if cache_results == "json":
+                _ = await response.json(content_type=None)
+            elif cache_results == "text":
+                _ = await response.text()
+
             return response
 
     def get_querystring(self) -> Dict[str, List[str]]:
@@ -182,7 +203,9 @@ class HelixHttpRequest:
         return response
 
     def _get_session(self) -> ClientSession:
-        timeout = aiohttp.ClientTimeout(total=self.retry_count * self.backoff_factor)
+        timeout = aiohttp.ClientTimeout(
+            total=self.retry_count * self.backoff_factor * self.timeout_seconds
+        )
         connector = aiohttp.TCPConnector(ssl=bool(self.verify))
         session = aiohttp.ClientSession(timeout=timeout, connector=connector)
         return session
