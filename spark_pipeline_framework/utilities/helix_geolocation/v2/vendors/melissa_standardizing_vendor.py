@@ -72,9 +72,7 @@ class MelissaStandardizingVendor(
                                             until we cancel rest of requests
         """
         super().__init__(version)
-        assert (
-            license_key or custom_api_call
-        ), "Either license_key or custom_api_call must be provided"
+
         self._license_key: str = license_key
         self._custom_api_call_async: Optional[CustomApiCallFunction] = custom_api_call
         self._error_counter: int = 0
