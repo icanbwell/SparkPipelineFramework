@@ -64,7 +64,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
         }
         self.setParams(**kwargs)
 
-    def _transform(self, df: DataFrame) -> DataFrame:
+    async def _transform_async(self, df: DataFrame) -> DataFrame:
         view: str = self.getView()
         mapping_function: AutoMapperFunction = self.getMappingFunction()
 
@@ -119,7 +119,10 @@ class FrameworkMappingLoader(FrameworkTransformer):
                     progress_logger.start_mlflow_run(run_name=run_name, is_nested=True)
 
                 try:
-                    automapper.transform(df=df)
+                    if hasattr(automapper, "transform_async"):
+                        await automapper.transform_async(df)
+                    else:
+                        automapper.transform(df=df)
                 except Exception as e:
                     if len(e.args) >= 1:
                         e.args = (f"In AutoMapper ({stage_name})", *e.args)

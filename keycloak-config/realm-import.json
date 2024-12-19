@@ -4,6 +4,60 @@
   "enabled": true,
   "defaultSignatureAlgorithm": "RS256",
   "sslRequired": "none",
+  "clientScopes": [
+    {
+      "id": "user-scope-id",
+      "name": "user/*.*",
+      "description": "User scope",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "user-attribute-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "user-attribute",
+            "claim.name": "user-attribute",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "id": "access-scope-id",
+      "name": "access/*.*",
+      "description": "Access scope",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "access-attribute-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "access-attribute",
+            "claim.name": "access-attribute",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
   "groups": [
     {
       "id": "3a16a464-7804-4c95-b5f6-7c35e0a65169",

@@ -7,7 +7,6 @@ from typing import (
     Dict,
     List,
     Callable,
-    TypeVar,
     Iterable,
     cast,
     Optional,
@@ -18,14 +17,16 @@ import pandas as pd
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasDataFrameBatchFunction,
+    AcceptedParametersType,
 )
 
-TParameters = TypeVar("TParameters")
 
-
-class AsyncPandasDataFrameUDF(
+class AsyncPandasDataFrameUDF[TParameters: AcceptedParametersType](
     AsyncBasePandasUDF[
         TParameters, pd.DataFrame, pd.DataFrame, Dict[str, Any], Dict[str, Any]
     ]
@@ -36,15 +37,15 @@ class AsyncPandasDataFrameUDF(
         *,
         async_func: HandlePandasDataFrameBatchFunction[TParameters],
         parameters: Optional[TParameters],
-        batch_size: int,
+        pandas_udf_parameters: AsyncPandasUdfParameters,
     ) -> None:
         super().__init__(
             async_func=async_func,
             parameters=parameters,
-            batch_size=batch_size,
+            pandas_udf_parameters=pandas_udf_parameters,
         )
 
-    async def get_input_values_from_batch(
+    async def get_input_values_from_chunk(
         self, batch: pd.DataFrame
     ) -> List[Dict[str, Any]]:
         pdf_json: str = batch.to_json(orient="records")
@@ -66,5 +67,5 @@ class AsyncPandasDataFrameUDF(
         """
         return cast(
             Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]],
-            self.apply_process_batch_udf,
+            self.apply_process_partition_udf,
         )

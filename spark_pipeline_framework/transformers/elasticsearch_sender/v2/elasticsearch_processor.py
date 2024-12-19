@@ -10,7 +10,6 @@ from typing import (
     Callable,
     Iterator,
     AsyncGenerator,
-    cast,
 )
 
 import pandas as pd
@@ -25,11 +24,14 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_sender_parameters import (
     ElasticSearchSenderParameters,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
+    AsyncPandasBatchFunctionRunContext,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
-)
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
-    HandlePandasDataFrameBatchFunction,
 )
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
@@ -38,22 +40,19 @@ from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_par
 
 class ElasticSearchProcessor:
     @staticmethod
-    async def process_partition(
-        *,
-        partition_index: int,
-        chunk_index: int,
-        chunk_input_range: range,
+    async def process_chunk(
+        run_context: AsyncPandasBatchFunctionRunContext,
         input_values: List[Dict[str, Any]],
         parameters: Optional[ElasticSearchSenderParameters],
+        additional_parameters: Optional[Dict[str, Any]],
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Process a partition of data asynchronously
 
-        :param partition_index: partition index
-        :param chunk_index: chunk index
-        :param chunk_input_range: chunk input range
+        :param run_context: run context
         :param input_values: input values
         :param parameters: parameters
+        :param additional_parameters: additional parameters
         :return: output values
         """
         assert parameters
@@ -65,7 +64,7 @@ class ElasticSearchProcessor:
         )
         spark_partition_information: SparkPartitionInformation = (
             SparkPartitionInformation.from_current_task_context(
-                chunk_index=chunk_index,
+                chunk_index=run_context.chunk_index,
             )
         )
         if parameters is not None and parameters.log_level == "DEBUG":
@@ -79,9 +78,9 @@ class ElasticSearchProcessor:
             formatted_message: str = (
                 f"{formatted_time}: "
                 f"{message}"
-                f" | Partition: {partition_index}/{parameters.total_partitions}"
-                f" | Chunk: {chunk_index}"
-                f" | range: {chunk_input_range.start}-{chunk_input_range.stop}"
+                f" | Partition: {run_context.partition_index}/{parameters.total_partitions}"
+                f" | Chunk: {run_context.chunk_index}"
+                f" | range: {run_context.chunk_input_range.start}-{run_context.chunk_input_range.stop}"
                 f" | {spark_partition_information}"
             )
             logger.debug(formatted_message)
@@ -91,7 +90,7 @@ class ElasticSearchProcessor:
             full_result: Optional[ElasticSearchResult] = None
             result: ElasticSearchResult
             async for result in ElasticSearchProcessor.send_partition_to_server_async(
-                partition_index=partition_index,
+                partition_index=run_context.partition_index,
                 parameters=parameters,
                 rows=input_values,
             ):
@@ -99,8 +98,8 @@ class ElasticSearchProcessor:
                     count += result.success + result.failed
                     logger.debug(
                         f"Received result"
-                        f" | Partition: {partition_index}"
-                        f" | Chunk: {chunk_index}"
+                        f" | Partition: {run_context.partition_index}"
+                        f" | Chunk: {run_context.chunk_index}"
                         f" | Successful: {result.success}"
                         f" | Failed: {result.failed}"
                     )
@@ -111,14 +110,14 @@ class ElasticSearchProcessor:
                 else:
                     count += 1
                     logger.warning(
-                        f"Got None result for partition {partition_index} chunk {chunk_index}"
+                        f"Got None result for partition {run_context.partition_index} chunk {run_context.chunk_index}"
                     )
                     error_result: ElasticSearchResult = ElasticSearchResult(
                         url=parameters.index,
                         success=0,
                         failed=1,
                         payload=[],
-                        partition_index=partition_index,
+                        partition_index=run_context.partition_index,
                         error="Got None result",
                     )
 
@@ -130,14 +129,14 @@ class ElasticSearchProcessor:
             yield full_result.to_dict_flatten_payload()
         except Exception as e:
             logger.error(
-                f"Error processing partition {partition_index} chunk {chunk_index}: {str(e)}"
+                f"Error processing partition {run_context.partition_index} chunk {run_context.chunk_index}: {str(e)}"
             )
             # if an exception is thrown then return an error for each row
             for _ in input_values:
                 count += 1
                 yield {
                     "error": str(e),
-                    "partition_index": partition_index,
+                    "partition_index": run_context.partition_index,
                     "url": parameters.index,
                     "success": 0,
                     "failed": 1,
@@ -147,7 +146,7 @@ class ElasticSearchProcessor:
         assert count == len(input_values), f"count={count}, len={len(input_values)}"
 
     @staticmethod
-    def get_process_batch_function(
+    def get_process_partition_function(
         *, parameters: ElasticSearchSenderParameters, batch_size: int
     ) -> Callable[[Iterable[pd.DataFrame]], Iterator[pd.DataFrame]]:
         """
@@ -160,12 +159,9 @@ class ElasticSearchProcessor:
         """
 
         return AsyncPandasDataFrameUDF(
-            async_func=cast(
-                HandlePandasDataFrameBatchFunction[ElasticSearchSenderParameters],
-                ElasticSearchProcessor.process_partition,
-            ),
+            async_func=ElasticSearchProcessor.process_chunk,  # type: ignore[arg-type]
             parameters=parameters,
-            batch_size=batch_size,
+            pandas_udf_parameters=AsyncPandasUdfParameters(max_chunk_size=batch_size),
         ).get_pandas_udf()
 
     @staticmethod
