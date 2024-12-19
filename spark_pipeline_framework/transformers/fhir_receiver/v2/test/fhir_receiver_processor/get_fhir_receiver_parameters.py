@@ -1,3 +1,5 @@
+from typing import Optional
+
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
@@ -6,7 +8,9 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_par
 )
 
 
-def get_fhir_receiver_parameters() -> FhirReceiverParameters:
+def get_fhir_receiver_parameters(
+    use_data_streaming: Optional[bool] = None,
+) -> FhirReceiverParameters:
     return FhirReceiverParameters(
         total_partitions=1,
         batch_size=10,
@@ -40,7 +44,7 @@ def get_fhir_receiver_parameters() -> FhirReceiverParameters:
         resource_type="Patient",
         error_view=None,
         url_column=None,
-        use_data_streaming=None,
+        use_data_streaming=use_data_streaming,
         graph_json=None,
         ignore_status_codes=[],
         refresh_token_function=None,
