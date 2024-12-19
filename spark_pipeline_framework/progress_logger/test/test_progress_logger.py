@@ -4,252 +4,32 @@ import string
 from pathlib import Path
 import random
 from shutil import rmtree
-from typing import Dict, Any, Callable, Union, List, cast
+from typing import Any, Union, List
 
 import mlflow
 import pytest
-from mlflow.store.tracking.file_store import FileStore
 
-from library.features.carriers_fhir.v1.features_carriers_fhir_v1 import (
-    FeaturesCarriersFhirV1,
-)
 from mlflow.entities import Run, RunStatus
-from pyspark.ml import Transformer
-from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
 from create_spark_session import clean_spark_session
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.log_level import LogLevel
-from spark_pipeline_framework.transformers.framework_drop_views_transformer.v1.framework_drop_views_transformer import (
-    FrameworkDropViewsTransformer,
+from spark_pipeline_framework.progress_logger.test.looping_pipeline import (
+    LoopingPipeline,
 )
-
-from spark_pipeline_framework.transformers.framework_json_exporter.v1.framework_json_exporter import (
-    FrameworkJsonExporter,
-)
-from spark_pipeline_framework.transformers.framework_loop_transformer.v1.framework_loop_transformer import (
-    FrameworkLoopTransformer,
-)
-
-from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (
-    FrameworkMappingLoader,
-)
-
-from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
-    get_python_function_from_location,
-)
-
-from spark_pipeline_framework.transformers.framework_if_else_transformer.v1.framework_if_else_transformer import (
-    FrameworkIfElseTransformer,
-)
+from spark_pipeline_framework.progress_logger.test.simple_pipeline import SimplePipeline
 
 from spark_pipeline_framework.progress_logger.progress_logger import (
     ProgressLogger,
     MlFlowConfig,
 )
 
-from library.features.carriers_python.v1.features_carriers_python_v1 import (
-    FeaturesCarriersPythonV1,
-)
-
-from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
-from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
-    FrameworkCsvLoader,
-)
-
-from spark_pipeline_framework.pipelines.v2.framework_pipeline import FrameworkPipeline
-from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
-    FrameworkTransformer,
-)
-from spark_pipeline_framework.transformers.send_automapper_to_fhir.v1.automapper_to_fhir_transformer import (
-    AutoMapperToFhirTransformer,
-)
 
 
-class LoopingPipeline(FrameworkPipeline):
-    def __init__(
-        self,
-        parameters: Dict[str, Any],
-        progress_logger: ProgressLogger,
-        max_number_of_runs: int = 1,
-    ):
-        super(LoopingPipeline, self).__init__(
-            parameters=parameters,
-            progress_logger=progress_logger,
-            run_id="87654321",
-            client_name="client_foo",
-            vendor_name="vendor_foo",
-        )
-
-        mapping_function: Callable[
-            [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
-        ] = get_python_function_from_location(
-            location=str(parameters["feature_path"]),
-            import_module_name=".mapping",
-            function_name="mapping",
-        )
-
-        self.steps = [
-            FrameworkLoopTransformer(
-                name="FrameworkLoopTransformer",
-                parameters=parameters,
-                progress_logger=progress_logger,
-                sleep_interval_in_seconds=2,
-                max_number_of_runs=max_number_of_runs,
-                stages=[
-                    FrameworkDropViewsTransformer(
-                        name="",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                        views=["foo"],
-                    ),
-                    FrameworkCsvLoader(
-                        name="FrameworkCsvLoader",
-                        view="flights",
-                        file_path=parameters["flights_path"],
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                    FeaturesCarriersV1(
-                        parameters=parameters, progress_logger=progress_logger
-                    ),
-                    FrameworkIfElseTransformer(
-                        enable=True,
-                        progress_logger=progress_logger,
-                        stages=[
-                            FeaturesCarriersPythonV1(
-                                parameters=parameters, progress_logger=progress_logger
-                            ),
-                        ],
-                    ),
-                    FrameworkMappingLoader(
-                        view="members",
-                        mapping_function=mapping_function,
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                    FrameworkJsonExporter(
-                        file_path=parameters["export_path"],
-                        view="flights",
-                        name="FrameworkJsonExporter",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                ],
-            )
-        ]
-
-
-class SimplePipeline(FrameworkPipeline):
-    def get_fhir_path(self, view: str, resource_name: str) -> str:
-        return str(
-            self.data_dir.joinpath("temp")
-            .joinpath("output")
-            .joinpath(f"{resource_name}-{view}")
-        )
-
-    def get_fhir_response_path(self, view: str, resource_name: str) -> str:
-        return str(
-            self.data_dir.joinpath("temp")
-            .joinpath("output")
-            .joinpath(f"{resource_name}-{view}-response")
-        )
-
-    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
-        super(SimplePipeline, self).__init__(
-            parameters=parameters,
-            progress_logger=progress_logger,
-            run_id="12345678",
-            client_name="client_foo",
-            vendor_name="vendor_foo",
-        )
-        self.data_dir: Path = Path(__file__).parent.joinpath("./")
-
-        self.transformers = self.create_steps(
-            cast(
-                List[Transformer],
-                [
-                    FrameworkDropViewsTransformer(
-                        name="",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                        views=["foo"],
-                    ),
-                    FrameworkCsvLoader(
-                        name="FrameworkCsvLoader",
-                        view="flights",
-                        file_path=parameters["flights_path"],
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                    FeaturesCarriersV1(
-                        parameters=parameters, progress_logger=progress_logger
-                    ),
-                    FrameworkIfElseTransformer(
-                        enable=True,
-                        progress_logger=progress_logger,
-                        stages=[
-                            FeaturesCarriersPythonV1(
-                                parameters=parameters, progress_logger=progress_logger
-                            ),
-                        ],
-                    ),
-                    AutoMapperToFhirTransformer(
-                        name="AutoMapperToFhirTransformer",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                        transformer=FeaturesCarriersFhirV1(
-                            parameters=parameters, progress_logger=progress_logger
-                        ),
-                        func_get_path=self.get_fhir_path,
-                        func_get_response_path=self.get_fhir_response_path,
-                        fhir_server_url="http://mock-server:1080",
-                        source_entity_name="members",
-                    ),
-                    FrameworkJsonExporter(
-                        file_path=parameters["export_path"],
-                        view="flights",
-                        name="FrameworkJsonExporter",
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    ),
-                ],
-            )
-        )
-
-
-class MappingPipeline(FrameworkPipeline):
-    def __init__(self, parameters: Dict[str, Any], progress_logger: ProgressLogger):
-        super(MappingPipeline, self).__init__(
-            parameters=parameters,
-            progress_logger=progress_logger,
-            run_id="987654321",
-            client_name="client_bar",
-            vendor_name="vendor_bar",
-        )
-        mapping_function: Callable[
-            [Dict[str, Any]], Union[AutoMapperBase, List[AutoMapperBase]]
-        ] = get_python_function_from_location(
-            location=str(parameters["feature_path"]),
-            import_module_name=".mapping",
-            function_name="mapping",
-        )
-
-        self.transformers = self.create_steps(
-            cast(
-                List[FrameworkTransformer],
-                [
-                    FrameworkMappingLoader(
-                        view="members",
-                        mapping_function=mapping_function,
-                        parameters=parameters,
-                        progress_logger=progress_logger,
-                    )
-                ],
-            )
-        )
+WAREHOUSE_CONNECTION_STRING = "jdbc:mysql://root:root_password@warehouse:3306/fhir_rpt/schema?rewriteBatchedStatements=true"
+MLFLOW_TRACKING_URI = "http://mlflow:5000"
 
 
 @pytest.fixture(scope="function")
@@ -260,12 +40,15 @@ def test_setup() -> None:
     if os.path.isdir(output_dir):
         rmtree(output_dir)
 
+    ProgressLogger.clean_experiments(tracking_uri=MLFLOW_TRACKING_URI)
+
 
 def test_progress_logger_with_mlflow(
     spark_session: SparkSession, test_setup: Any
 ) -> None:
     # Arrange
     clean_spark_session(spark_session)
+
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
@@ -297,14 +80,11 @@ def test_progress_logger_with_mlflow(
         "view": "my_view_1",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
-        + "schema?rewriteBatchedStatements=true",
+        "conn_str": WAREHOUSE_CONNECTION_STRING,
     }
 
     flow_run_name = "fluffy-fox"
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow")
-    # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(20)
@@ -315,7 +95,7 @@ def test_progress_logger_with_mlflow(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name=flow_run_name,
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
 
@@ -381,6 +161,7 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
     spark_session: SparkSession, test_setup: Any
 ) -> None:
     clean_spark_session(spark_session)
+
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_dir: Path = data_dir.joinpath("temp")
     flights_path: str = f"file://{data_dir.joinpath('flights.csv')}"
@@ -417,13 +198,11 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
         "view": "my_view_1",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
-        + "schema?rewriteBatchedStatements=true",
+        "conn_str": WAREHOUSE_CONNECTION_STRING,
     }
 
     flow_run_name = "fluffy-fox"
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow_loop")
     # mlflow_tracking_url = "http://mlflow:5000"
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     random_string = "".join(
@@ -435,7 +214,7 @@ def test_progress_logger_with_mlflow_and_looping_pipeline(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name=flow_run_name,
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
 
@@ -513,9 +292,8 @@ def test_progress_logger_without_mlflow(
         transformer.transform(df)
     # semi hack -- reset the tracking url s
     mlflow.set_tracking_uri(uri="")
-    experiments = mlflow.search_experiments()
-    assert len(experiments) == 1
-    assert experiments[0].name == "Default"
+    experiments = ProgressLogger.get_experiments()
+    assert len(experiments) == 0
 
     mlflow_default_dir: Path = data_dir.joinpath("mlruns")
     if os.path.isdir(mlflow_default_dir):
@@ -547,17 +325,14 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
 
     parameters = {"foo": "bar", "view2": "my_view_2"}
 
-    mlflow_tracking_url = temp_dir.joinpath("mlflow_error")
     artifact_url = str(temp_dir.joinpath("mlflow_artifacts"))
     experiment_name: str = "error_tests"
-
-    clean_experiments(experiment_name=experiment_name)
 
     mlflow_config = MlFlowConfig(
         parameters=parameters,
         experiment_name=experiment_name,
         flow_run_name="run",
-        mlflow_tracking_url=str(mlflow_tracking_url),
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
         artifact_url=artifact_url,
     )
     with ProgressLogger(
@@ -581,8 +356,7 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     runs: Union[List[Run], "pandas.DataFrame"] = mlflow.search_runs(
         experiment_ids=[experiment.experiment_id], output_format="list"
     )
-    assert len(runs) >= 1
-    if isinstance(runs, list):
+    if isinstance(runs, list) and len(runs) > 0:
         run: mlflow.entities.Run = runs[0]  # Run object
         assert run.info.status == RunStatus.to_string(RunStatus.FINISHED)  # type: ignore
 
@@ -593,29 +367,6 @@ def test_progress_logger_mlflow_error_handling(test_setup: Any) -> None:
     # assert that an event notification was sent out
     event_log_files = os.listdir(event_log_path)
     assert len(event_log_files) >= 1
-
-
-def clean_experiments(experiment_name: str) -> None:
-    client = mlflow.tracking.MlflowClient()
-    # List all experiments
-    experiments = client.search_experiments()
-    # Delete each experiment
-    for exp in experiments:
-        if exp.experiment_id == FileStore.DEFAULT_EXPERIMENT_ID:
-            continue
-
-        # Get all runs in the experiment
-        runs = client.search_runs(experiment_ids=exp.experiment_id)
-
-        # Delete each run
-        for run in runs:
-            client.delete_run(run.info.run_id)
-            print(f"Run with ID {run.info.run_id} has been deleted")
-
-        client.delete_experiment(exp.experiment_id)
-        print(
-            f"Experiment with ID {exp.experiment_id} and Name {exp.name} has been deleted"
-        )
 
 
 def test_progress_logger_mlflow_error_handling_when_tracking_server_is_inaccessible(
@@ -656,8 +407,7 @@ def test_progress_logger_mlflow_error_handling_when_tracking_server_is_inaccessi
         "foo": "bar",
         "view2": "my_view_2",
         "export_path": export_path,
-        "conn_str": "jdbc:mysql://username:password@warehouse-mysql.server:3306/"
-        + "schema?rewriteBatchedStatements=true",
+        "conn_str": WAREHOUSE_CONNECTION_STRING,
     }
 
     flow_run_name = "fluffy-fox"

@@ -7,7 +7,6 @@ from typing import (
     List,
     cast,
     Callable,
-    TypeVar,
     Iterator,
     Optional,
 )
@@ -20,16 +19,18 @@ from pyspark.sql.types import AtomicType
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_base_pandas_udf import (
     AsyncBasePandasUDF,
 )
+from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+    AsyncPandasUdfParameters,
+)
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.function_types import (
     HandlePandasStructToScalarBatchFunction,
+    AcceptedParametersType,
 )
-
-TParameters = TypeVar("TParameters")
 
 MyColumnDataType = int | float | str | bool
 
 
-class AsyncPandasStructColumnToScalarColumnUDF(
+class AsyncPandasStructColumnToScalarColumnUDF[TParameters: AcceptedParametersType](
     AsyncBasePandasUDF[
         TParameters,
         pd.Series,  # type:ignore[type-arg]
@@ -43,7 +44,7 @@ class AsyncPandasStructColumnToScalarColumnUDF(
         *,
         async_func: HandlePandasStructToScalarBatchFunction[TParameters],
         parameters: Optional[TParameters],
-        batch_size: int,
+        pandas_udf_parameters: AsyncPandasUdfParameters,
     ) -> None:
         """
         This class wraps an async function in a Pandas UDF for use in Spark.  This class is used
@@ -52,15 +53,15 @@ class AsyncPandasStructColumnToScalarColumnUDF(
 
         :param async_func: the async function to run
         :param parameters: the parameters to pass to the async function
-        :param batch_size: the size of the batches to process
+        :param pandas_udf_parameters: the parameters to pass to the Pand
         """
         super().__init__(
             async_func=async_func,
             parameters=parameters,
-            batch_size=batch_size,
+            pandas_udf_parameters=pandas_udf_parameters,
         )
 
-    async def get_input_values_from_batch(
+    async def get_input_values_from_chunk(
         self, batch: pd.Series  # type:ignore[type-arg]
     ) -> List[Dict[str, Any]]:
         input_values: List[Dict[str, Any]] = batch.apply(json.loads).tolist()
@@ -75,7 +76,7 @@ class AsyncPandasStructColumnToScalarColumnUDF(
         self, batch_iter: Iterator[pd.Series]  # type:ignore[type-arg]
     ) -> Iterator[pd.Series]:  # type:ignore[type-arg]
         # Need this so pandas_udf can use type hints on batch_iter
-        return super().apply_process_batch_udf(batch_iter)
+        return super().apply_process_partition_udf(batch_iter)
 
     def get_pandas_udf(self, return_type: AtomicType) -> Callable[[Column], Column]:
         """
