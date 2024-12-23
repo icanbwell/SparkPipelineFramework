@@ -118,7 +118,12 @@ async def test_get_batch_result_streaming_async_no_resources() -> None:
     with aioresponses() as m:
         m.get(
             "http://fhir-server/Patient",
-            payload=[],
+            payload={
+                "resourceType": "Bundle",
+                "type": "searchset",
+                "total": 0,
+                "entry": [],
+            },
         )
 
         async_gen = FhirReceiverProcessor.get_batch_result_streaming_async(
@@ -135,11 +140,16 @@ async def test_get_batch_result_streaming_async_no_resources() -> None:
 
 
 async def test_get_batch_result_streaming_async_with_resources() -> None:
-    parameters = get_fhir_receiver_parameters(use_data_streaming=True)
+    parameters = get_fhir_receiver_parameters()
     with aioresponses() as m:
         m.get(
             "http://fhir-server/Patient",
-            payload=[{"resourceType": "Patient", "id": "1"}],
+            payload={
+                "resourceType": "Bundle",
+                "type": "searchset",
+                "total": 1,
+                "entry": [{"resource": {"resourceType": "Patient", "id": "1"}}],
+            },
         )
         m.get("http://fhir-server/Patient?id:above=1", payload=[])
 

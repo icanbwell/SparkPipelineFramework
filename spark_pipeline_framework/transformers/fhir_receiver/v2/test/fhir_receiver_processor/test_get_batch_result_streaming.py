@@ -20,16 +20,23 @@ async def test_get_batch_result_streaming_async() -> None:
     server_url = "http://mockserver.com/fhir"
 
     # Mock parameters
-    parameters = get_fhir_receiver_parameters(use_data_streaming=True)
+    parameters = get_fhir_receiver_parameters()
 
     # Mock response data
-    mock_response_data = [
-        {
-            "id": "1",
-            "resourceType": "Patient",
-            # Add other necessary fields here
-        }
-    ]
+    mock_response_data = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 1,
+        "entry": [
+            {
+                "resource": {
+                    "id": "1",
+                    "resourceType": "Patient",
+                    # Add other necessary fields here
+                }
+            }
+        ],
+    }
 
     # Expected result
     expected_result: GetBatchResult = GetBatchResult(
@@ -73,13 +80,20 @@ async def test_get_batch_result_streaming_async_single_result() -> None:
     parameters = get_fhir_receiver_parameters()
 
     # Mock response data
-    mock_response_data = [
-        {
-            "id": "1",
-            "resourceType": "Patient",
-            # Add other necessary fields here
-        }
-    ]
+    mock_response_data = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 1,
+        "entry": [
+            {
+                "resource": {
+                    "id": "1",
+                    "resourceType": "Patient",
+                    # Add other necessary fields here
+                }
+            }
+        ],
+    }
 
     # Expected result
     expected_result = GetBatchResult(
@@ -121,21 +135,30 @@ async def test_get_batch_result_streaming_async_multiple_results() -> None:
     server_url = "http://mockserver.com/fhir"
 
     # Mock parameters
-    parameters = get_fhir_receiver_parameters(use_data_streaming=True)
+    parameters = get_fhir_receiver_parameters()
 
     # Mock response data
-    mock_response_data = [
-        {
-            "id": "1",
-            "resourceType": "Patient",
-            # Add other necessary fields here
-        },
-        {
-            "id": "2",
-            "resourceType": "Patient",
-            # Add other necessary fields here
-        },
-    ]
+    mock_response_data = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 2,
+        "entry": [
+            {
+                "resource": {
+                    "id": "1",
+                    "resourceType": "Patient",
+                    # Add other necessary fields here
+                }
+            },
+            {
+                "resource": {
+                    "id": "2",
+                    "resourceType": "Patient",
+                    # Add other necessary fields here
+                }
+            },
+        ],
+    }
 
     # Expected result
     expected_results = [
@@ -185,10 +208,17 @@ async def test_get_batch_result_streaming_async_no_results() -> None:
 
     # Mock parameters
     parameters = get_fhir_receiver_parameters()
+    # Mock response data
+    mock_response_data = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 0,
+        "entry": [],
+    }
 
     # Mock the HTTP request
     with aioresponses() as m:
-        m.get(f"{server_url}/Patient", payload=[])
+        m.get(f"{server_url}/Patient", payload=mock_response_data)
 
         # Call the function
         results: List[Dict[str, Any]] = []
