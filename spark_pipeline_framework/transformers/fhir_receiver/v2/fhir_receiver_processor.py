@@ -755,7 +755,9 @@ class FhirReceiverProcessor:
                             last_json_resource = json_resources[-1]
                             id_of_last_resource = None
                             if parameters.use_uuid_for_id_above:
-                                for identifier in last_json_resource.get("identifier", []):
+                                for identifier in last_json_resource.get(
+                                    "identifier", []
+                                ):
                                     if identifier.get("id") == "uuid":
                                         id_of_last_resource = identifier.get("value")
                             elif "id" in last_json_resource:

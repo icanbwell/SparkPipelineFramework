@@ -99,7 +99,7 @@ async def test_async_real_fhir_server_get_patients_by_id(
                 include_only_properties=["id", "identifier"],
                 view="id_view",
                 log_level=log_level,
-                use_uuid_for_id_above=True
+                use_uuid_for_id_above=True,
             ).transform_async(df)
 
             id_df: DataFrame = spark_session.table("id_view")

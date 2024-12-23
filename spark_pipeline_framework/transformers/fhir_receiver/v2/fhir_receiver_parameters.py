@@ -103,5 +103,5 @@ class FhirReceiverParameters:
             refresh_token_function=self.refresh_token_function,
             use_id_above_for_paging=self.use_id_above_for_paging,
             pandas_udf_parameters=self.pandas_udf_parameters,
-            use_uuid_for_id_above=self.use_uuid_for_id_above
+            use_uuid_for_id_above=self.use_uuid_for_id_above,
         )

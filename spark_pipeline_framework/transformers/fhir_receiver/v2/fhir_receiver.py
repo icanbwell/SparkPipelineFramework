@@ -100,7 +100,7 @@ class FhirReceiver(FrameworkTransformer):
         max_chunk_size: int = 100,
         process_chunks_in_parallel: bool = True,
         maximum_concurrent_tasks: int = 100,
-        use_uuid_for_id_above: bool = False
+        use_uuid_for_id_above: bool = False,
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -633,7 +633,7 @@ class FhirReceiver(FrameworkTransformer):
                     log_level=log_level,
                     maximum_concurrent_tasks=maximum_concurrent_tasks,
                 ),
-                use_uuid_for_id_above=use_uuid_for_id_above
+                use_uuid_for_id_above=use_uuid_for_id_above,
             )
 
             if id_view:
