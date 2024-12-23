@@ -646,7 +646,7 @@ class FhirReceiverProcessor:
                                 server_page_number += 1
                             resources = resources + result_response
                         page_number += 1
-                        if limit and 0 < limit <= len(resources):
+                        if limit and 0 < limit < len(resources):
                             has_next_page = False
                 elif result.status == 200:
                     # no resources returned but status is 200 so we're done
@@ -745,6 +745,7 @@ class FhirReceiverProcessor:
                             request_id=result.request_id,
                         ) from e
                 if len(result_response) > 0:
+                    resources = resources + result_response
                     # get id of last resource
                     json_resources: List[Dict[str, Any]] = [
                         json.loads(r) for r in result_response
@@ -752,10 +753,15 @@ class FhirReceiverProcessor:
                     if isinstance(json_resources, list):
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
-                            if "id" in last_json_resource:
-                                # use id:above to optimize the next query
+                            id_of_last_resource = None
+                            if parameters.use_uuid_for_id_above:
+                                for identifier in last_json_resource.get("identifier", []):
+                                    if identifier.get("id") == "uuid":
+                                        id_of_last_resource = identifier.get("value")
+                            elif "id" in last_json_resource:
                                 id_of_last_resource = last_json_resource["id"]
-                                # remove any entry for id:above
+                            if id_of_last_resource:
+                                # use id:above to optimize the next query and remove any entry for id:above
                                 additional_parameters = list(
                                     filter(
                                         lambda x: not x.startswith("id:above"),
@@ -765,7 +771,6 @@ class FhirReceiverProcessor:
                                 additional_parameters.append(
                                     f"id:above={id_of_last_resource}"
                                 )
-                                resources = resources + result_response
                             else:
                                 has_next_page = False
                 elif result.status == 200:

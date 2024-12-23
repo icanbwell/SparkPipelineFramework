@@ -100,6 +100,7 @@ class FhirReceiver(FrameworkTransformer):
         max_chunk_size: int = 100,
         process_chunks_in_parallel: bool = True,
         maximum_concurrent_tasks: int = 100,
+        use_uuid_for_id_above: bool = False
     ) -> None:
         """
         Transformer to call and receive FHIR resources from a FHIR server
@@ -152,6 +153,8 @@ class FhirReceiver(FrameworkTransformer):
         :param graph_json: (Optional) a FHIR GraphDefinition resource to use for retrieving data
         :param run_synchronously: (Optional) Run on the Spark master to make debugging easier on dev machines
         :param refresh_token_function: (Optional) function to refresh the token
+        :param use_uuid_for_id_above: (boolean) flag indicating whether to use UUIDs for the "id:above" parameter when
+         fetching next resources.
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -417,6 +420,11 @@ class FhirReceiver(FrameworkTransformer):
         )
         self._setDefault(maximum_concurrent_tasks=maximum_concurrent_tasks)
 
+        self.use_uuid_for_id_above: Param[bool] = Param(
+            self, "use_uuid_for_id_above", ""
+        )
+        self._setDefault(use_uuid_for_id_above=use_uuid_for_id_above)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -526,6 +534,7 @@ class FhirReceiver(FrameworkTransformer):
             self.process_chunks_in_parallel
         )
         maximum_concurrent_tasks: int = self.getOrDefault(self.maximum_concurrent_tasks)
+        use_uuid_for_id_above: bool = self.getOrDefault(self.use_uuid_for_id_above)
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -624,6 +633,7 @@ class FhirReceiver(FrameworkTransformer):
                     log_level=log_level,
                     maximum_concurrent_tasks=maximum_concurrent_tasks,
                 ),
+                use_uuid_for_id_above=use_uuid_for_id_above
             )
 
             if id_view:
