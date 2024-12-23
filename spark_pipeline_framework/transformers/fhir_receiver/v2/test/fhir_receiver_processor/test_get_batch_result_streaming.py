@@ -198,6 +198,7 @@ async def test_get_batch_result_streaming_async_multiple_results() -> None:
 
         # Assert the results
         assert len(results) == 2
+        # Asserting the first dictionary only, since the second one is empty.
         assert results[0] == expected_results[0].to_dict()
 
 

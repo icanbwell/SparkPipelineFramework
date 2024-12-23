@@ -110,4 +110,4 @@ async def test_async_real_fhir_server_get_patients_large_with_limit(
         json_df.show()
         json_df.printSchema()
 
-        assert json_df.count() == count
+        assert json_df.count() == 5

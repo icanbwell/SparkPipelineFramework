@@ -279,6 +279,7 @@ async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -
 
         results = [result async for result in async_gen]
         assert len(results) == 2
+        # Asserting the first result only, since the second one is empty.
         assert results[0]["resources"][0] == '{"resourceType": "Patient", "id": "1"}'
         assert results[0]["errors"] == []
 

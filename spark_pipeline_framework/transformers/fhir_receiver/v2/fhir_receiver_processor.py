@@ -646,7 +646,7 @@ class FhirReceiverProcessor:
                                 server_page_number += 1
                             resources = resources + result_response
                         page_number += 1
-                        if limit and 0 < limit < len(resources):
+                        if limit and 0 < limit <= len(resources):
                             has_next_page = False
                 elif result.status == 200:
                     # no resources returned but status is 200 so we're done
@@ -691,6 +691,7 @@ class FhirReceiverProcessor:
         last_updated_before: Optional[datetime],
         parameters: FhirReceiverParameters,
         server_url: Optional[str],
+        limit: Optional[int] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         assert server_url
         result: FhirGetResponse
@@ -704,11 +705,13 @@ class FhirReceiverProcessor:
         # with id greater than previous page last record id.
         has_next_page: bool = True
         additional_parameters = parameters.additional_parameters or []
+        count: int = 0
         while has_next_page:
             async for result in FhirReceiverProcessor.send_fhir_request_async(
                 logger=logger,
                 resource_id=None,
                 server_url=server_url,
+                page_size=limit,
                 last_updated_after=last_updated_after,
                 last_updated_before=last_updated_before,
                 parameters=parameters.clone().set_additional_parameters(
@@ -746,6 +749,7 @@ class FhirReceiverProcessor:
                         ) from e
                 if len(result_response) > 0:
                     resources = resources + result_response
+                    count += len(resources)
                     # get id of last resource
                     json_resources: List[Dict[str, Any]] = [
                         json.loads(r) for r in result_response
@@ -774,6 +778,8 @@ class FhirReceiverProcessor:
                                     f"id:above={id_of_last_resource}"
                                 )
                             else:
+                                has_next_page = False
+                            if limit and 0 < limit <= count:
                                 has_next_page = False
                 elif result.status == 200:
                     # no resources returned but status is 200, so we're done

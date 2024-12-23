@@ -190,6 +190,7 @@ class FhirReceiverProcessorSpark:
         parameters: FhirReceiverParameters,
         server_url: Optional[str],
         results_per_batch: Optional[int],
+        limit: Optional[int] = None,
     ) -> DataFrame:
         """
         Converts the results from a batch streaming request to a DataFrame iteratively using
@@ -202,6 +203,7 @@ class FhirReceiverProcessorSpark:
         :param parameters: FhirReceiverParameters
         :param server_url: Optional[str]
         :param results_per_batch: int
+        :param limit: int
         :return: DataFrame
         """
         return await AsyncHelper.async_generator_to_dataframe(
@@ -211,6 +213,7 @@ class FhirReceiverProcessorSpark:
                 last_updated_before=last_updated_before,
                 parameters=parameters,
                 server_url=server_url,
+                limit=limit,
             ),
             schema=schema,
             results_per_batch=results_per_batch,
@@ -267,6 +270,7 @@ class FhirReceiverProcessorSpark:
                     last_updated_before=last_updated_before,
                     mode=mode,
                     parameters=parameters,
+                    limit=limit,
                 )
             )
         else:
@@ -385,6 +389,7 @@ class FhirReceiverProcessorSpark:
         last_updated_before: Optional[datetime],
         mode: str,
         parameters: FhirReceiverParameters,
+        limit: Optional[int] = None,
     ) -> DataFrame:
         """
         Get all resources from the FHIR server based on the resourceType and any additional query parameters
@@ -398,6 +403,7 @@ class FhirReceiverProcessorSpark:
         :param last_updated_before: only get records older than this
         :param mode: if output files exist, should we overwrite or append
         :param parameters: the parameters
+        :param limit: maximum number of resources to get
         :return: the data frame
         """
         list_df: DataFrame = (
@@ -409,6 +415,7 @@ class FhirReceiverProcessorSpark:
                 last_updated_before=last_updated_before,
                 schema=GetBatchResult.get_schema(),
                 results_per_batch=batch_size,
+                limit=limit,
             )
         )
         resource_df = list_df.select(explode(col("resources")).alias("resource"))
