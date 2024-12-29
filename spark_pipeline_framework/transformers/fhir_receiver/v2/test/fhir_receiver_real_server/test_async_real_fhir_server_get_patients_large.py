@@ -101,6 +101,7 @@ async def test_async_real_fhir_server_get_patients_large(
                 auth_client_id=auth_client_id,
                 auth_client_secret=auth_client_secret,
                 use_data_streaming=use_data_streaming,
+                use_uuid_for_id_above=True,
             ).transform_async(df)
 
         # Assert
