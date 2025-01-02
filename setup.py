@@ -67,7 +67,7 @@ setup(
         "opensearch-py[async]>=2.6.0",
         "pyathena>2.14.0",
         "spark-nlp>=4.2.3",
-        "pymongo>=4.8.0",
+        "pymongo>=4.10.1",
         "pandas>=2",
         "structlog>=23.1.0",
         "usaddress>=0.5.10",
