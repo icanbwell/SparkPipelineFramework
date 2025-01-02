@@ -31,7 +31,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 )
 from spark_pipeline_framework.utilities.oauth2_helpers.v3.oauth2_client_credentials_flow import (
     OAuth2ClientCredentialsFlow,
-    OAuth2Credentials,
+    OAuth2Credentails,
 )
 
 
@@ -76,7 +76,7 @@ class HttpDataReceiverProcessor:
 
     @staticmethod
     async def create_access_token_async(
-        *, auth_url: str, credentials: Optional[OAuth2Credentials]
+        *, auth_url: str, credentials: Optional[OAuth2Credentails]
     ) -> str:
         """
         Factory function to create access token
@@ -106,7 +106,7 @@ class HttpDataReceiverProcessor:
         rows: Iterable[Dict[str, Any]],
         response_processor: RESPONSE_PROCESSOR_TYPE,
         raise_error: bool,
-        credentials: Optional[OAuth2Credentials],
+        credentials: Optional[OAuth2Credentails],
         auth_url: Optional[str],
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
@@ -151,7 +151,7 @@ class HttpDataReceiverProcessor:
         row: Dict[str, Any],
         response_processor: RESPONSE_PROCESSOR_TYPE,
         raise_error: bool,
-        credentials: Optional[OAuth2Credentials],
+        credentials: Optional[OAuth2Credentails],
         auth_url: Optional[str],
         cert_files: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,

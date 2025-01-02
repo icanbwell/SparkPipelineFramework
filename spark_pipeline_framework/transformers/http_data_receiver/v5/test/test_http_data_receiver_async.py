@@ -17,7 +17,7 @@ from spark_pipeline_framework.utilities.api_helper.v2.http_request import (
     HelixHttpRequest,
 )
 from spark_pipeline_framework.utilities.oauth2_helpers.v3.oauth2_client_credentials_flow import (
-    OAuth2Credentials,
+    OAuth2Credentails,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
@@ -85,7 +85,7 @@ async def test_http_data_receiver_async(spark_session: SparkSession) -> None:
                     StructField("token_type", StringType()),
                 ]
             ),
-            credentials=OAuth2Credentials(
+            credentials=OAuth2Credentails(
                 client_id="client_id", client_secret="client_secret"
             ),
             auth_url=f"{server_url}/token",

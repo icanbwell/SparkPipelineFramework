@@ -11,7 +11,7 @@ from spark_pipeline_framework.utilities.async_helper.v1.async_helper import Asyn
 
 
 @dataclass
-class OAuth2Credentials:
+class OAuth2Credentails:
     client_id: str
     client_secret: str
     grant_type: Optional[str] = "client_credentials"
@@ -23,7 +23,7 @@ class OAuth2ClientCredentialsFlow:
         self,
         *,
         auth_url: str,
-        auth_credentials: OAuth2Credentials,
+        auth_credentials: OAuth2Credentails,
         progress_logger: Optional[ProgressLogger],
         retry_count: int = 20,
         backoff_factor: float = 0.1,
