@@ -72,7 +72,7 @@ setup(
         "structlog>=23.1.0",
         "usaddress>=0.5.10",
         "usaddress-scourgify>=0.6.0",
-        "aiohttp>=3",
+        "aiohttp>=3.10.11",
         "pydantic>=2.8.2",
         "motor[snappy,zstd]>=3.5.1",
     ],

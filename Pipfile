@@ -59,7 +59,7 @@ structlog = ">=23.1.0"
 # usaddress-scourgify is needed for normalizing addresses
 "usaddress-scourgify"=">=0.6.0" # for normalizing addresses
 # aiohttp is needed for making HTTP requests asynchronously
-aiohttp = ">=3"
+aiohttp = ">=3.10.11"
 # pydantic is needed for data class loading
 pydantic=">=2.8.2"
 # motor is needed for interacting with MongoDB asynchronously
