@@ -8,7 +8,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_par
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.oauth2_helpers.v3.oauth2_client_credentials_flow import (
-    OAuth2Credentails,
+    OAuth2Credentials,
 )
 
 
@@ -17,7 +17,7 @@ class HttpDataReceiverParameters:
     log_level: str
     response_processor: RESPONSE_PROCESSOR_TYPE
     raise_error: bool
-    credentials: OAuth2Credentails | None
+    credentials: OAuth2Credentials | None
     auth_url: Optional[str]
     cert: str | tuple[str, str] | None
     verify: bool | str | None

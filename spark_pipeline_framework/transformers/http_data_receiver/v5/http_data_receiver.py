@@ -42,7 +42,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from spark_pipeline_framework.utilities.oauth2_helpers.v3.oauth2_client_credentials_flow import (
-    OAuth2Credentails,
+    OAuth2Credentials,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
@@ -69,7 +69,7 @@ class HttpDataReceiver(FrameworkTransformer):
         batch_size: int = 1000,
         items_per_partition: Optional[int] = None,
         cache_storage_level: Optional[StorageLevel] = None,
-        credentials: Optional[OAuth2Credentails] = None,
+        credentials: Optional[OAuth2Credentials] = None,
         auth_url: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         run_sync: bool = False,
@@ -159,7 +159,7 @@ class HttpDataReceiver(FrameworkTransformer):
         )
         self._setDefault(cache_storage_level=None)
 
-        self.credentials: Param[Optional[OAuth2Credentails]] = Param(
+        self.credentials: Param[Optional[OAuth2Credentials]] = Param(
             self, "credentials", ""
         )
         self._setDefault(credentials=None)
@@ -219,7 +219,7 @@ class HttpDataReceiver(FrameworkTransformer):
         cache_storage_level: Optional[StorageLevel] = self.getOrDefault(
             self.cache_storage_level
         )
-        credentials: Optional[OAuth2Credentails] = self.getOrDefault(self.credentials)
+        credentials: Optional[OAuth2Credentials] = self.getOrDefault(self.credentials)
         auth_url: Optional[str] = self.getOrDefault(self.auth_url)
         run_sync: bool = self.getOrDefault(self.run_sync)
         raise_error: bool = self.getOrDefault(self.raise_error)
