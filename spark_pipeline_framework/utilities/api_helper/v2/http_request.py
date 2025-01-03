@@ -181,7 +181,15 @@ class HelixHttpRequest:
                     error_text = f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {response.status}: {await response.text()}."
                     if self.logger:
                         self.logger.error(error_text)
-                    raise ClientError(error_text)
+                    raise ClientResponseError(
+                        request_info=response.request_info,
+                        history=response.history,
+                        status=response.status,
+                        message=(response.reason or "Unknown error")
+                        + ": "
+                        + error_text,
+                        headers=response.headers,
+                    )
 
             # Cache response body for retrieval outside of session scope, if specified
             if cache_results == "json":
