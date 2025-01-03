@@ -106,7 +106,7 @@ sparkdataframecomparer = ">=2.0.13"
 # pytest-ayncio is needed for running async tests
 pytest-asyncio = ">=0.23.8"
 # helix-mockserver-client is needed for mocking servers
-helix-mockserver-client=">=2.0.1"
+helix-mockserver-client=">=2.0.2"
 # sparkfhirschemas is needed for FHIR schemas
 sparkfhirschemas = ">=2.0.2"
 # types-boto3 is needed for type hints for boto3
