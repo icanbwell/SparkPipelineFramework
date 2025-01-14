@@ -88,16 +88,18 @@ def create_spark_session(request: Any) -> SparkSession:
         os.environ["SPARK_HOME"] = "/usr/local/opt/spark"
     clean_spark_dir()
     master = "local[2]"
-    jars = [
-        "mysql:mysql-connector-java:8.0.33",
-        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1",
-        "io.delta:delta-spark_2.12:3.2.0",
-        "io.delta:delta-storage:3.2.0",
-        "com.johnsnowlabs.nlp:spark-nlp_2.12:5.3.3",
-        "org.apache.spark:spark-hadoop-cloud_2.12:3.5.1",
-        "com.amazonaws:aws-java-sdk-bundle:1.12.262",
-        "com.databricks:spark-xml_2.12:0.18.0",
-    ]
+
+    # These jar files are already contained in the imranq2/helix.spark image
+    # jars = [
+    #     "mysql:mysql-connector-java:8.0.33",
+    #     "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1",
+    #     "io.delta:delta-spark_2.12:3.2.0",
+    #     "io.delta:delta-storage:3.2.0",
+    #     "com.johnsnowlabs.nlp:spark-nlp_2.12:5.3.3",
+    #     "org.apache.spark:spark-hadoop-cloud_2.12:3.5.1",
+    #     "com.amazonaws:aws-java-sdk-bundle:1.12.262",
+    #     "com.databricks:spark-xml_2.12:0.18.0",
+    # ]
     session = (
         SparkSession.builder.appName("pytest-pyspark-local-testing")
         .master(master)
@@ -113,7 +115,7 @@ def create_spark_session(request: Any) -> SparkSession:
             "spark.sql.catalog.spark_catalog",
             "org.apache.spark.sql.delta.catalog.DeltaCatalog",
         )
-        .config("spark.jars.packages", ",".join(jars))
+        # .config("spark.jars.packages", ",".join(jars))
         .config("spark.sql.execution.arrow.pyspark.enabled", "true")
         .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "false")
         .config("spark.sql.execution.arrow.maxRecordsPerBatch", "2048")
