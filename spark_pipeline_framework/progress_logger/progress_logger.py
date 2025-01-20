@@ -151,6 +151,8 @@ class ProgressLogger:
         self.write_to_log(name=key, message=value)
         if self.mlflow_config is not None:
             try:
+                # Manually added the functionality of `mlflow.log_param` below to pass the `run_id` parameter,
+                # which is not yet supported in `mlflow.log_param` but is available in `MLflowClient`.
                 synchronous = not MLFLOW_ENABLE_ASYNC_LOGGING.get()
                 MlflowClient().log_param(
                     run_id=self.active_run_id[-1],
