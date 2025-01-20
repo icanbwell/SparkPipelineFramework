@@ -59,7 +59,7 @@ class ProgressLogger:
             if system_log_level_text is not None
             else None
         )
-        self.active_run_id: Optional[List[str]] = []
+        self.active_run_id: List[str] = []
 
     def __enter__(self) -> "ProgressLogger":
         if self.mlflow_config is None:
@@ -139,7 +139,8 @@ class ProgressLogger:
         if self.mlflow_config is not None:
             try:
                 mlflow.log_metric(
-                    key=self.__mlflow_clean_string(name), value=time_diff_in_minutes,
+                    key=self.__mlflow_clean_string(name),
+                    value=time_diff_in_minutes,
                     run_id=self.active_run_id[-1],
                 )
             except Exception as e:
@@ -153,12 +154,14 @@ class ProgressLogger:
             try:
                 # Manually added the functionality of `mlflow.log_param` below to pass the `run_id` parameter,
                 # which is not yet supported in `mlflow.log_param` but is available in `MLflowClient`.
-                synchronous = not MLFLOW_ENABLE_ASYNC_LOGGING.get()
+                synchronous = (
+                    not MLFLOW_ENABLE_ASYNC_LOGGING.get()  # type:ignore[no-untyped-call]
+                )
                 MlflowClient().log_param(
                     run_id=self.active_run_id[-1],
                     key=self.__mlflow_clean_string(key),
                     value=self.__mlflow_clean_param_value(value),
-                    synchronous=synchronous
+                    synchronous=synchronous,
                 )
             except Exception as e:
                 self.log_event("mlflow log param error", str({e}), log_level=log_level)
@@ -217,7 +220,9 @@ class ProgressLogger:
                         self.logger.debug(f"Wrote sql to {file_path}")
 
                     if self.mlflow_config is not None:
-                        mlflow.log_artifact(local_path=str(file_path), run_id=self.active_run_id[-1])
+                        mlflow.log_artifact(
+                            local_path=str(file_path), run_id=self.active_run_id[-1]
+                        )
 
             except Exception as e:
                 self.log_event("Error in log_artifact writing to mlflow", str(e))
