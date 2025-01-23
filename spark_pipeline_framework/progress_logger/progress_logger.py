@@ -95,13 +95,13 @@ class ProgressLogger:
         if exc_value:
             # there was an exception so mark the parent run as failed
             self.end_mlflow_run(status=RunStatus.FAILED)  # type:ignore[arg-type]
-        # safe to call without checking if we have a tracking url set for mlflow
-        self.end_mlflow_run()
+        else:
+            # safe to call without checking if we have a tracking url set for mlflow
+            self.end_mlflow_run()
 
     def start_mlflow_run(self, run_name: str, is_nested: bool = True) -> None:
         if self.mlflow_config is None:
             return
-        self.logger.info("Entered in start mlflow run")
         # get or create experiment
         experiment: Optional[Experiment] = mlflow.get_experiment_by_name(
             name=self.mlflow_config.experiment_name
@@ -117,13 +117,7 @@ class ProgressLogger:
         mlflow.set_experiment(experiment_id=experiment_id)
 
         active_run = mlflow.start_run(run_name=run_name, nested=is_nested)
-        self.logger.info(f"Active run id is {active_run.info.run_id}")
-        self.logger.info(f"Object id is {id(self)}")
-        print(f"Active run id is {active_run.info}")
-        print(f"Object id is {id(self)}")
         self.active_run_id.append(active_run.info.run_id)
-        self.logger.info(f"Active run ids are {self.active_run_id}")
-        print(f"Active run ids are {self.active_run_id}")
 
     # noinspection PyMethodMayBeStatic
     def end_mlflow_run(
@@ -131,11 +125,6 @@ class ProgressLogger:
     ) -> None:
         if self.mlflow_config is None:
             return
-        self.logger.info("Reached mlflow end run")
-        self.logger.info(f"Object id is {id(self)}")
-        print(f"Object id is {id(self)}")
-        self.logger.info(f"Active run ids are {self.active_run_id}")
-        print(f"active run ids are {self.active_run_id}")
         mlflow.end_run(
             status=RunStatus.to_string(status)  # type:ignore[no-untyped-call]
         )
