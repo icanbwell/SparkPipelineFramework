@@ -118,7 +118,9 @@ class ProgressLogger:
 
         active_run = mlflow.start_run(run_name=run_name, nested=is_nested)
         self.logger.info(f"Active run id is {active_run.info.run_id}")
+        self.logger.info(f"Object id is {id(self)}")
         print(f"Active run id is {active_run.info}")
+        print(f"Object id is {id(self)}")
         self.active_run_id.append(active_run.info.run_id)
         self.logger.info(f"Active run ids are {self.active_run_id}")
         print(f"Active run ids are {self.active_run_id}")
@@ -130,6 +132,8 @@ class ProgressLogger:
         if self.mlflow_config is None:
             return
         self.logger.info("Reached mlflow end run")
+        self.logger.info(f"Object id is {id(self)}")
+        print(f"Object id is {id(self)}")
         self.logger.info(f"Active run ids are {self.active_run_id}")
         print(f"active run ids are {self.active_run_id}")
         mlflow.end_run(
