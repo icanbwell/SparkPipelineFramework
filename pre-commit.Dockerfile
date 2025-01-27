@@ -9,6 +9,10 @@ COPY Pipfile* ./
 ARG TARGETPLATFORM
 RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 
+# Add and switch to a non-root user
+RUN useradd -m nonrootuser
+USER nonrootuser
+
 WORKDIR /sourcecode
 RUN git config --global --add safe.directory /sourcecode
 CMD ["pre-commit", "run", "--all-files"]
