@@ -10,7 +10,9 @@ ARG TARGETPLATFORM
 RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 
 # Add and switch to a non-root user
-RUN useradd -m nonrootuser
+# /reports is being used in workflow to store pytest results
+RUN useradd -m nonrootuser && \
+    mkdir -p /reports && chown -R nonrootuser:nonrootuser /reports
 USER nonrootuser
 
 WORKDIR /sourcecode
