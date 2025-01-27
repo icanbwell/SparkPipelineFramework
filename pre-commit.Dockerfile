@@ -12,7 +12,8 @@ RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 # Add and switch to a non-root user
 # /reports is being used in workflow to store pytest results
 RUN useradd -m nonrootuser && \
-    mkdir -p /reports && chown -R nonrootuser:nonrootuser /reports
+    mkdir -p /reports && chown -R nonrootuser:nonrootuser /reports && \
+    mkdir -p /spark_pipeline_framework && chown -R nonrootuser:nonrootuser /spark_pipeline_framework
 USER nonrootuser
 
 WORKDIR /sourcecode
