@@ -20,9 +20,9 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Check file permissions
-        run: |
-          ls -lR ${{ github.workspace }}
+      - name: Permission setup for non root user
+        run: sudo chown -R 1001:1001 ${{ github.workspace }}
+
       - name: pre-commit
         run: make run-pre-commit
 
