@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Check file permissions
+        run: |
+          ls -lR ${{ github.workspace }}
       - name: pre-commit
         run: make run-pre-commit
 
