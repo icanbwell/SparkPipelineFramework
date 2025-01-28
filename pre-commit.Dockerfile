@@ -11,8 +11,10 @@ RUN pipenv sync --dev --system --extra-pip-args="--prefer-binary"
 
 # Add and switch to a non-root user
 # /reports is being used in workflow to store pytest results
-RUN useradd -m -u 1001 -g 1001 -s /bin/bash nonrootuser && \
-    mkdir -p /reports && chown -R nonrootuser:nonrootuser /reports && \
+RUN groupadd -g 1001 nonrootgroup && \
+    useradd -m -u 1001 -g 1001 -s /bin/bash nonrootuser && \
+    mkdir -p /reports && \
+    chown -R 1001:1001 /reports
 
 USER nonrootuser
 
