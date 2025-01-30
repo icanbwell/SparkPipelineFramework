@@ -673,6 +673,7 @@ class FhirReceiver(FrameworkTransformer):
                     view=view,
                     error_view=error_view,
                     logger=self.logger,
+                    schema=schema,
                 )
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
