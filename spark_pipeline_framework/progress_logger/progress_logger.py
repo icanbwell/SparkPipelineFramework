@@ -116,7 +116,11 @@ class ProgressLogger:
             experiment_id = experiment.experiment_id
         mlflow.set_experiment(experiment_id=experiment_id)
 
-        active_run = mlflow.start_run(run_name=run_name, nested=is_nested)
+        active_run = mlflow.start_run(
+            run_name=run_name,
+            nested=is_nested,
+            parent_run_id=self.active_run_id[-1] if is_nested else None,
+        )
         self.active_run_id.append(active_run.info.run_id)
 
     # noinspection PyMethodMayBeStatic
