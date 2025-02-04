@@ -120,15 +120,26 @@ class ProgressLogger:
         print(
             f"Start mlflow run. Before Active run id: {self.active_run_id}. Current thread ID: {threading.get_ident()}"
         )
-        active_run = mlflow.start_run(
-            run_name=run_name,
-            nested=is_nested,
-            parent_run_id=self.active_run_id[-1] if is_nested else None,
-        )
-        self.active_run_id.append(active_run.info.run_id)
-        print(
-            f"Start mlflow run. After Active run id: {self.active_run_id}. Current thread ID: {threading.get_ident()}"
-        )
+        max_retry_count = 3
+        for _ in range(max_retry_count):
+            try:
+                print("Starting mlflow run ", run_name)
+                active_run = mlflow.start_run(
+                    run_name=run_name,
+                    nested=is_nested,
+                    parent_run_id=self.active_run_id[-1] if is_nested else None,
+                )
+                self.active_run_id.append(active_run.info.run_id)
+                print(
+                    f"Start mlflow run. After Active run id: {self.active_run_id}. Current thread ID: {threading.get_ident()}"
+                )
+                break
+            except Exception as e:
+                # there can be a race condition while accessing active_run_id in multiple coroutines and threads.
+                # So, to handle this, use retry logic temporarily.
+                self.logger.info(
+                    f"[ProgressLogger] Start run failed with exception {e}"
+                )
 
     # noinspection PyMethodMayBeStatic
     def end_mlflow_run(
