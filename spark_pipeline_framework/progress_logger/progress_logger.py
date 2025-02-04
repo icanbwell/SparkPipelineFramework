@@ -153,7 +153,19 @@ class ProgressLogger:
         mlflow.end_run(
             status=RunStatus.to_string(status)  # type:ignore[no-untyped-call]
         )
-        self.active_run_id.pop()
+        run_id = self.active_run_id.pop()
+        if MlflowClient().get_run(
+            run_id
+        ).info.status == RunStatus.to_string(  # type:ignore[no-untyped-call]
+            RunStatus.RUNNING
+        ):
+            # Check if the run with the run_id has finished or not.
+            # It can happen that a run doesn't finish because MLflow creates a separate stack for each thread.
+            # Therefore, we need to handle this case manually using MlflowClient.
+            MlflowClient().set_terminated(
+                run_id, RunStatus.to_string(status)  # type:ignore[no-untyped-call]
+            )
+            print("End mlflow run. Terminated Manually", run_id)
         print(
             f"End mlflow run. After Active run id: {self.active_run_id}. Current thread ID: {threading.get_ident()}"
         )
