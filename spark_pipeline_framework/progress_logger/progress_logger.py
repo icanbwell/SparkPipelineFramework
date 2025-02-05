@@ -1,5 +1,4 @@
 import re
-import threading
 from os import environ
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -117,22 +116,15 @@ class ProgressLogger:
             experiment_id = experiment.experiment_id
         mlflow.set_experiment(experiment_id=experiment_id)
 
-        print(
-            f"Start mlflow run. Before Active run id: {self.active_run_id}. Current thread ID: {threading.get_ident()}"
-        )
         max_retry_count = 3
         for _ in range(max_retry_count):
             try:
-                print("Starting mlflow run ", run_name)
                 active_run = mlflow.start_run(
                     run_name=run_name,
                     nested=is_nested,
                     parent_run_id=self.active_run_id[-1] if is_nested else None,
                 )
                 self.active_run_id.append(active_run.info.run_id)
-                print(
-                    f"Start mlflow run. After Active run id: {self.active_run_id}. Current thread ID: {threading.get_ident()}"
-                )
                 break
             except Exception as e:
                 # there can be a race condition while accessing active_run_id in multiple coroutines and threads.
@@ -147,9 +139,6 @@ class ProgressLogger:
     ) -> None:
         if self.mlflow_config is None:
             return
-        print(
-            f"End mlflow run. Before Active run id: {self.active_run_id}. Current thread ID: {threading.get_ident()}"
-        )
         mlflow.end_run(
             status=RunStatus.to_string(status)  # type:ignore[no-untyped-call]
         )
@@ -165,10 +154,6 @@ class ProgressLogger:
             MlflowClient().set_terminated(
                 run_id, RunStatus.to_string(status)  # type:ignore[no-untyped-call]
             )
-            print("End mlflow run. Terminated Manually", run_id)
-        print(
-            f"End mlflow run. After Active run id: {self.active_run_id}. Current thread ID: {threading.get_ident()}"
-        )
 
     def log_metric(
         self,
