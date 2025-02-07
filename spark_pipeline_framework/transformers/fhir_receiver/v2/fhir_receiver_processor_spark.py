@@ -236,6 +236,7 @@ class FhirReceiverProcessorSpark:
         view: Optional[str],
         error_view: Optional[str],
         logger: Logger,
+        schema: Optional[Union[StructType, DataType]] = None,
     ) -> DataFrame:
         """
         This function gets all the resources from the FHIR server based on the resourceType and
@@ -255,6 +256,7 @@ class FhirReceiverProcessorSpark:
         :param view: view to create
         :param error_view: view to create for errors
         :param logger: logger
+        :param schema: the schema to apply after we receive the data
         :return: the data frame
         """
         file_format = "delta" if delta_lake_table else "text"
@@ -308,7 +310,14 @@ class FhirReceiverProcessorSpark:
             )
 
         if view:
-            resource_df = df.sparkSession.read.format("json").load(str(file_path))
+            if schema:
+                resource_df = (
+                    df.sparkSession.read.schema(schema)  # type: ignore
+                    .format("json")
+                    .load(str(file_path))
+                )
+            else:
+                resource_df = df.sparkSession.read.format("json").load(str(file_path))
             resource_df.createOrReplaceTempView(view)
         if error_view:
             errors_df.createOrReplaceTempView(error_view)
