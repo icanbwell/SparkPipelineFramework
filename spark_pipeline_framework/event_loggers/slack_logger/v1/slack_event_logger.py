@@ -13,6 +13,7 @@ class SlackEventLogger(EventLogger):
     def __init__(
         self,
         id_: str,
+        team_name: str,
         slack_token: str,
         slack_channel: str,
         bot_user_name: str,
@@ -43,6 +44,7 @@ class SlackEventLogger(EventLogger):
         assert slack_channel
         assert bot_user_name
         self.id_: str = id_
+        self.team_name = team_name
         self.slack_token: str = slack_token
         self.slack_channel: str = slack_channel
         self.slack_error_channel: Optional[str] = slack_error_channel
