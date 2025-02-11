@@ -118,14 +118,26 @@ class SlackEventLogger(EventLogger):
 
     def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
         # don't send full exception to slack since it can have PHI
-        self.slack_client.post_message_to_slack(
-            f"Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {str(ex)}. <{self.get_grafana_url()}>"
-        )
+        message = f"[Team Owner:{self.team_name} ]Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {str(ex)}. <{self.get_grafana_url()}>"
+
+        response = self.slack_client.post_message_to_slack(message)
+        thread_ts = response.data.get("ts") if response else None
+
+        if thread_ts:
+            self.slack_error_client.post_message_to_slack(
+                f"Error Details: {str(ex)}",
+                use_conversation_threads=True,
+            )
 
         if self.slack_error_client:
-            self.slack_error_client.post_message_to_slack(
-                f"Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {str(ex)}. <{self.get_grafana_url()}>"
-            )
+            response = self.slack_error_client.post_message_to_slack(message)
+            thread_ts = response.data.get("ts") if response else None
+
+            if thread_ts:
+                self.slack_error_client.post_message_to_slack(
+                    f"Error Details: {str(ex)}",
+                    use_conversation_threads=True,
+                )      
 
     def get_grafana_url(self) -> Optional[str]:
         return (
