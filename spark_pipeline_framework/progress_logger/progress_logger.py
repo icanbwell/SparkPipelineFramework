@@ -1,4 +1,5 @@
 import re
+import threading
 from os import environ
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -60,6 +61,7 @@ class ProgressLogger:
             else None
         )
         self.active_run_id: List[str] = []
+        self.lock = threading.Lock()
 
     def __enter__(self) -> "ProgressLogger":
         if self.mlflow_config is None:
@@ -116,22 +118,17 @@ class ProgressLogger:
             experiment_id = experiment.experiment_id
         mlflow.set_experiment(experiment_id=experiment_id)
 
-        max_retry_count = 3
-        for _ in range(max_retry_count):
-            try:
-                active_run = mlflow.start_run(
-                    run_name=run_name,
-                    nested=is_nested,
-                    parent_run_id=self.active_run_id[-1] if is_nested else None,
-                )
-                self.active_run_id.append(active_run.info.run_id)
-                break
-            except Exception as e:
-                # there can be a race condition while accessing active_run_id in multiple coroutines and threads.
-                # So, to handle this, use retry logic temporarily.
-                self.logger.info(
-                    f"[ProgressLogger] Start run failed with exception {e}"
-                )
+        with self.lock:
+            # Acquiring lock because if the same list is being modified by another thread,
+            # we need to wait for that execution to complete before adding a new item
+            # Because if another thread is ending the run, we want to first complete that run successfully before
+            # starting a new run to prevent a race condition while accessing the `active_run_id` list.
+            active_run = mlflow.start_run(
+                run_name=run_name,
+                nested=is_nested,
+                parent_run_id=self.active_run_id[-1] if is_nested else None,
+            )
+            self.active_run_id.append(active_run.info.run_id)
 
     # noinspection PyMethodMayBeStatic
     def end_mlflow_run(
@@ -139,21 +136,26 @@ class ProgressLogger:
     ) -> None:
         if self.mlflow_config is None:
             return
-        mlflow.end_run(
-            status=RunStatus.to_string(status)  # type:ignore[no-untyped-call]
-        )
-        run_id = self.active_run_id.pop()
-        if MlflowClient().get_run(
-            run_id
-        ).info.status == RunStatus.to_string(  # type:ignore[no-untyped-call]
-            RunStatus.RUNNING
-        ):
-            # Check if the run with the run_id has finished or not.
-            # It can happen that a run doesn't finish because MLflow creates a separate stack for each thread.
-            # Therefore, we need to handle this case manually using MlflowClient.
-            MlflowClient().set_terminated(
-                run_id, RunStatus.to_string(status)  # type:ignore[no-untyped-call]
+
+        with self.lock:
+            # Ending the run by acquiring the lock because it also involves popping an item from the list,
+            # which can lead to a race condition. For example, during this downtime, another thread might add a new
+            # item to the list, which could be unknowingly popped out in this thread.
+            mlflow.end_run(
+                status=RunStatus.to_string(status)  # type:ignore[no-untyped-call]
             )
+            run_id = self.active_run_id.pop()
+            if MlflowClient().get_run(
+                run_id
+            ).info.status == RunStatus.to_string(  # type:ignore[no-untyped-call]
+                RunStatus.RUNNING
+            ):
+                # Check if the run with the run_id has finished or not.
+                # It can happen that a run doesn't finish because MLflow creates a separate stack for each thread.
+                # Therefore, we need to handle this case manually using MlflowClient.
+                MlflowClient().set_terminated(
+                    run_id, RunStatus.to_string(status)  # type:ignore[no-untyped-call]
+                )
 
     def log_metric(
         self,
