@@ -118,17 +118,27 @@ class ProgressLogger:
             experiment_id = experiment.experiment_id
         mlflow.set_experiment(experiment_id=experiment_id)
 
+        max_retry_count = 3
         with self.lock:
             # Acquiring lock because if the same list is being modified by another thread,
             # we need to wait for that execution to complete before adding a new item
             # Because if another thread is ending the run, we want to first complete that run successfully before
             # starting a new run to prevent a race condition while accessing the `active_run_id` list.
-            active_run = mlflow.start_run(
-                run_name=run_name,
-                nested=is_nested,
-                parent_run_id=self.active_run_id[-1] if is_nested else None,
-            )
-            self.active_run_id.append(active_run.info.run_id)
+            for _ in range(max_retry_count):
+                try:
+                    active_run = mlflow.start_run(
+                        run_name=run_name,
+                        nested=is_nested,
+                        parent_run_id=self.active_run_id[-1] if is_nested else None,
+                    )
+                    self.active_run_id.append(active_run.info.run_id)
+                    break
+                except Exception as e:
+                    # there can be a race condition while accessing active_run_id in multiple coroutines and threads.
+                    # So, to handle this, use retry logic temporarily.
+                    self.logger.info(
+                        f"[ProgressLogger] Start run failed with exception {e}"
+                    )
 
     # noinspection PyMethodMayBeStatic
     def end_mlflow_run(
