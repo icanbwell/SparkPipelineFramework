@@ -63,7 +63,7 @@ class SlackClientNative(BaseSlackClient):
             response: SlackResponse = web.chat_postMessage(
                 text=text,
                 channel=self.slack_channel,
-                thread_ts = slack_thread if slack_thread is not None else self.slack_thread
+                thread_ts = slack_thread if slack_thread is not None else self.slack_thread,
                 icon_url=self.slack_icon_url,
                 username=self.slack_user_name,
                 blocks=json.dumps(blocks) if blocks else None,
