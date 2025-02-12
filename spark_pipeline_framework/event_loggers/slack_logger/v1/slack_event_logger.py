@@ -126,10 +126,10 @@ class SlackEventLogger(EventLogger):
         thread_ts = response.data.get("ts") if response else None
 
         if thread_ts:
-            self.slack_error_client.post_message_to_slack(
+            self.slack_client.post_message_to_slack(
                 f"Error Details: {str(ex)}",
                 use_conversation_threads=True,
-                slack_thread=thread_ts
+                slack_thread=thread_ts,
             )
 
         if self.slack_error_client:
@@ -140,8 +140,8 @@ class SlackEventLogger(EventLogger):
                 self.slack_error_client.post_message_to_slack(
                     f"Error Details: {str(ex)}",
                     use_conversation_threads=True,
-                    slack_thread=thread_ts
-                )      
+                    slack_thread=thread_ts,
+                )
 
     def get_grafana_url(self) -> Optional[str]:
         return (
