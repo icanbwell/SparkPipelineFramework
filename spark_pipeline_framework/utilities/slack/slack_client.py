@@ -28,7 +28,7 @@ class SlackClient(BaseSlackClient):
         self.slack_thread: Optional[str] = None
 
     def post_message_to_slack(
-        self, text: str, blocks: Any = None, use_conversation_threads: bool = True
+        self, text: str, blocks: Any = None, use_conversation_threads: bool = True, slack_thread: str = None,
     ) -> Any:
         """
         Posts a message to Slack
@@ -57,7 +57,7 @@ class SlackClient(BaseSlackClient):
                     "icon_url": self.slack_icon_url,
                     "username": self.slack_user_name,
                     "blocks": json.dumps(blocks) if blocks else None,
-                    "thread_ts": self.slack_thread,
+                    "thread_ts":slack_thread if slack_thread is not None else self.slack_thread
                 }
             ),
             headers=headers,
