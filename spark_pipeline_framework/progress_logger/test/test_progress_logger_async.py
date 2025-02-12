@@ -1,14 +1,16 @@
 import os
 import random
 import string
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from shutil import rmtree
-from typing import Any, Union, List
+from typing import Any, cast, Dict, Union, List
 
 import mlflow
 import pandas
 import pytest
-from mlflow.entities import Run, RunStatus
+from mlflow.entities import Run, RunStatus, Experiment
+from mlflow.tracking.client import MlflowClient
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
 
@@ -431,3 +433,207 @@ async def test_progress_logger_mlflow_error_handling_when_tracking_server_is_ina
     result_df.show()
 
     assert result_df.count() > 0
+
+
+class RunLoggingContext:
+    """
+    Helper class to track logging details for a specific run
+    """
+
+    def __init__(self, run_name: str):
+        self.run_name = run_name
+        self.params: Dict[str, str] = {}
+        self.metrics: Dict[str, float] = {}
+        self.artifacts: List[str] = []
+
+
+def test_progress_logger_thread_safe_logging_with_nested_runs() -> None:
+    """
+    Test thread-safe logging across multiple threads with nested MLflow runs.
+    """
+    data_dir: Path = Path(__file__).parent.joinpath("./")
+    tmp_path: Path = data_dir.joinpath("temp")
+    flow_run_name = "fluffy-fox"
+
+    artifact_url = str(tmp_path.joinpath("mlflow_artifacts"))
+    experiment_name = "nested_runs_logging_test"
+
+    mlflow_config = MlFlowConfig(
+        parameters={},
+        experiment_name=experiment_name,
+        flow_run_name=flow_run_name,
+        mlflow_tracking_url=MLFLOW_TRACKING_URI,
+        artifact_url=artifact_url,
+    )
+
+    # Prepare run logging contexts
+    main_run_context = RunLoggingContext("main_run")
+    nested_run_contexts = [
+        RunLoggingContext(f"nested_run_{i}") for i in range(3)  # Create 3 nested runs
+    ]
+
+    def log_main_run_data(logger: ProgressLogger, context: RunLoggingContext) -> None:
+        """
+        Log data for the main run
+
+        Args:
+            logger (ProgressLogger): Logger to use
+            context (RunLoggingContext): Context to track logged data
+        """
+        logger.log_param("main_param_1", "main_value_1")
+        logger.log_metric("main_metric_1", 1)
+        context.params["main_param_1"] = "main_value_1"
+        context.metrics["main_metric_1"] = 1.0
+
+        # Log main run artifact
+        artifact_name = f"main_artifact_1.txt"
+        logger.log_artifact(artifact_name, f"Main run artifact content: 1")
+        context.artifacts.append(artifact_name)
+
+    def log_nested_run_data(logger: ProgressLogger, context: RunLoggingContext) -> None:
+        """
+        Log data for a nested run
+
+        Args:
+            logger (ProgressLogger): Main logger to create nested run
+            context (RunLoggingContext): Context to track logged data
+        """
+        try:
+            # Start nested run
+            logger.start_mlflow_run(run_name=context.run_name, is_nested=True)
+            logger.log_param("nested_param_1", "nested_value_1")
+            context.params["nested_param_1"] = "nested_value_1"
+
+            # Log nested run metrics
+            logger.log_metric("nested_metric_1", 1)
+            context.metrics["nested_metric_1"] = 1.0
+
+            # Log nested run artifact
+            artifact_name = f"nested_artifact_1.txt"
+            logger.log_artifact(artifact_name, f"Nested run artifact content: 1")
+            context.artifacts.append(artifact_name)
+
+        finally:
+            # End nested run
+            logger.end_mlflow_run()
+
+    def run_logging_test() -> str:
+        """
+        Run logging test and return the main run ID
+        Returns:
+            str: Main run ID for verification
+        """
+        # Create main logger
+        with ProgressLogger(mlflow_config=mlflow_config) as main_logger:
+            main_run_id = main_logger.active_run_id[-1]
+            # Log main run data
+            log_main_run_data(main_logger, main_run_context)
+
+            for context in nested_run_contexts:
+                # Create and log nested runs in separate threads
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    # Submit nested run logging tasks
+                    future = executor.submit(log_nested_run_data, main_logger, context)
+                    future.result()
+        return main_run_id
+
+    # Run the test and get the main run ID
+    main_run_id = run_logging_test()
+
+    def verify_mlflow_logs() -> None:
+        """
+        Verify the logged parameters, metrics, and artifacts
+        for main run and nested runs
+        """
+        client = MlflowClient()
+
+        # Verify main run logs
+        main_run = client.get_run(main_run_id)
+
+        # Check main run parameters
+        for key, value in main_run_context.params.items():
+            assert key in main_run.data.params, f"Main run parameter {key} not found"
+            assert (
+                main_run.data.params[key] == value
+            ), f"Main run parameter {key} value mismatch"
+
+        # Check main run metrics
+        main_run_metrics = {
+            metric.key: metric.value
+            for metric in client.get_metric_history(
+                run_id=main_run_id, key="main_metric_1"
+            )
+        }
+        for name, metric_value in main_run_context.metrics.items():
+            assert name in main_run_metrics, f"Main run metric {name} not found"
+            assert (
+                main_run_metrics[name] == metric_value
+            ), f"Main run metric {name} value mismatch"
+
+        # Check main run artifacts
+        main_run_artifacts = client.list_artifacts(main_run_id)
+        main_artifact_names = {artifact.path for artifact in main_run_artifacts}
+        for artifact in main_run_context.artifacts:
+            assert (
+                artifact in main_artifact_names
+            ), f"Main run artifact {artifact} not found"
+
+        # Verify nested runs
+        # Get all runs in the experiment
+        experiment = client.get_experiment_by_name(mlflow_config.experiment_name)
+        paged_nested_runs = client.search_runs(
+            [cast(Experiment, experiment).experiment_id]
+        )
+
+        # Filter out the main run
+        nested_runs = [
+            run for run in paged_nested_runs if run.info.run_id != main_run_id
+        ]
+
+        # Verify each nested run
+        for nested_context in nested_run_contexts:
+            # Find the corresponding nested run
+            nested_run = next(
+                (
+                    run
+                    for run in nested_runs
+                    if run.info.run_name == nested_context.run_name
+                ),
+                None,
+            )
+            assert (
+                nested_run is not None
+            ), f"Nested run {nested_context.run_name} not found"
+
+            # Check nested run parameters
+            for key, value in nested_context.params.items():
+                assert (
+                    key in nested_run.data.params
+                ), f"Nested run parameter {key} not found"
+                assert (
+                    nested_run.data.params[key] == value
+                ), f"Nested run parameter {key} value mismatch"
+
+            # Check nested run metrics
+            nested_run_metrics = {
+                metric.key: metric.value
+                for metric in client.get_metric_history(
+                    run_id=nested_run.info.run_id, key="nested_metric_1"
+                )
+            }
+            for name, metric_value in nested_context.metrics.items():
+                assert name in nested_run_metrics, f"Main run metric {name} not found"
+                assert (
+                    nested_run_metrics[name] == metric_value
+                ), f"Main run metric {name} value mismatch"
+
+            # Check nested run artifacts
+            nested_run_artifacts = client.list_artifacts(nested_run.info.run_id)
+            nested_artifact_names = {artifact.path for artifact in nested_run_artifacts}
+            for artifact in nested_context.artifacts:
+                assert (
+                    artifact in nested_artifact_names
+                ), f"Nested run artifact {artifact} not found"
+
+    # Perform verification
+    verify_mlflow_logs()

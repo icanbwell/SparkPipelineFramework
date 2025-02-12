@@ -10,7 +10,9 @@ import mlflow
 
 # noinspection PyPackageRequirements
 from mlflow.entities import Experiment, RunStatus, Run
+from mlflow.environment_variables import MLFLOW_ENABLE_ASYNC_LOGGING
 from mlflow.store.tracking.file_store import FileStore
+from mlflow.tracking.client import MlflowClient
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.logger.log_level import LogLevel
@@ -57,6 +59,7 @@ class ProgressLogger:
             if system_log_level_text is not None
             else None
         )
+        self.active_run_id: List[str] = []
 
     def __enter__(self) -> "ProgressLogger":
         if self.mlflow_config is None:
@@ -92,8 +95,9 @@ class ProgressLogger:
         if exc_value:
             # there was an exception so mark the parent run as failed
             self.end_mlflow_run(status=RunStatus.FAILED)  # type:ignore[arg-type]
-        # safe to call without checking if we have a tracking url set for mlflow
-        mlflow.end_run()
+        else:
+            # safe to call without checking if we have a tracking url set for mlflow
+            self.end_mlflow_run()
 
     def start_mlflow_run(self, run_name: str, is_nested: bool = True) -> None:
         if self.mlflow_config is None:
@@ -112,7 +116,22 @@ class ProgressLogger:
             experiment_id = experiment.experiment_id
         mlflow.set_experiment(experiment_id=experiment_id)
 
-        mlflow.start_run(run_name=run_name, nested=is_nested)
+        max_retry_count = 3
+        for _ in range(max_retry_count):
+            try:
+                active_run = mlflow.start_run(
+                    run_name=run_name,
+                    nested=is_nested,
+                    parent_run_id=self.active_run_id[-1] if is_nested else None,
+                )
+                self.active_run_id.append(active_run.info.run_id)
+                break
+            except Exception as e:
+                # there can be a race condition while accessing active_run_id in multiple coroutines and threads.
+                # So, to handle this, use retry logic temporarily.
+                self.logger.info(
+                    f"[ProgressLogger] Start run failed with exception {e}"
+                )
 
     # noinspection PyMethodMayBeStatic
     def end_mlflow_run(
@@ -123,6 +142,18 @@ class ProgressLogger:
         mlflow.end_run(
             status=RunStatus.to_string(status)  # type:ignore[no-untyped-call]
         )
+        run_id = self.active_run_id.pop()
+        if MlflowClient().get_run(
+            run_id
+        ).info.status == RunStatus.to_string(  # type:ignore[no-untyped-call]
+            RunStatus.RUNNING
+        ):
+            # Check if the run with the run_id has finished or not.
+            # It can happen that a run doesn't finish because MLflow creates a separate stack for each thread.
+            # Therefore, we need to handle this case manually using MlflowClient.
+            MlflowClient().set_terminated(
+                run_id, RunStatus.to_string(status)  # type:ignore[no-untyped-call]
+            )
 
     def log_metric(
         self,
@@ -134,7 +165,9 @@ class ProgressLogger:
         if self.mlflow_config is not None:
             try:
                 mlflow.log_metric(
-                    key=self.__mlflow_clean_string(name), value=time_diff_in_minutes
+                    key=self.__mlflow_clean_string(name),
+                    value=time_diff_in_minutes,
+                    run_id=self.active_run_id[-1],
                 )
             except Exception as e:
                 self.log_event("mlflow log metric error", str({e}), log_level=log_level)
@@ -145,9 +178,16 @@ class ProgressLogger:
         self.write_to_log(name=key, message=value)
         if self.mlflow_config is not None:
             try:
-                mlflow.log_param(
+                # Manually added the functionality of `mlflow.log_param` below to pass the `run_id` parameter,
+                # which is not yet supported in `mlflow.log_param` but is available in `MLflowClient`.
+                synchronous = (
+                    not MLFLOW_ENABLE_ASYNC_LOGGING.get()  # type:ignore[no-untyped-call]
+                )
+                MlflowClient().log_param(
+                    run_id=self.active_run_id[-1],
                     key=self.__mlflow_clean_string(key),
                     value=self.__mlflow_clean_param_value(value),
+                    synchronous=synchronous,
                 )
             except Exception as e:
                 self.log_event("mlflow log param error", str({e}), log_level=log_level)
@@ -206,7 +246,9 @@ class ProgressLogger:
                         self.logger.debug(f"Wrote sql to {file_path}")
 
                     if self.mlflow_config is not None:
-                        mlflow.log_artifact(local_path=str(file_path))
+                        mlflow.log_artifact(
+                            local_path=str(file_path), run_id=self.active_run_id[-1]
+                        )
 
             except Exception as e:
                 self.log_event("Error in log_artifact writing to mlflow", str(e))
