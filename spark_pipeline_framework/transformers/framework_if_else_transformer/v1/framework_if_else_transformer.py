@@ -89,7 +89,7 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
         enable_if_sql = df.sparkSession.sql(enable_sql) if enable_sql else True
         if (enable or enable is None) and enable_if_view_not_empty and enable_if_sql:
             stages: List[Transformer] = (
-                self.stages if isinstance(self.stages, list) else self.stages()
+                self.stages if isinstance(self.stages, list) else self.stages(**self.parameters)
             )
         else:
             if progress_logger is not None:

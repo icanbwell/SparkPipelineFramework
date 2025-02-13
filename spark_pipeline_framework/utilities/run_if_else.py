@@ -1,4 +1,4 @@
-from typing import List, Optional, Union, Callable
+from typing import List, Optional, Union, Callable, Dict, Any
 
 from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -20,6 +20,7 @@ def run_if_else(
     else_stages: Optional[
         Union[List[Transformer], Callable[[], List[Transformer]]]
     ] = None,
+    parameters: Optional[Dict[str, Any]] = None,
 ) -> FrameworkIfElseTransformer:
     """
     If enable flag is true then runs stages else runs else_stages
@@ -38,4 +39,5 @@ def run_if_else(
         enable_sql=enable_sql,
         stages=stages,
         else_stages=else_stages,
+        parameters=parameters
     )
