@@ -22,7 +22,7 @@ class FrameworkRunFunctionTransformer(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         update_existing_parameters: bool = False,
-        **kwargs
+        **kwargs: Optional[Dict[str, Any]]
     ) -> None:
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -35,7 +35,7 @@ class FrameworkRunFunctionTransformer(FrameworkTransformer):
         self._setDefault(fn=fn)
 
         kwargs = self._input_kwargs
-        if update_existing_parameters:
+        if update_existing_parameters and self.parameters:
             self.parameters.update(kwargs)
         self.setParams(**kwargs)
 
