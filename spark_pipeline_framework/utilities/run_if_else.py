@@ -21,6 +21,7 @@ def run_if_else(
         Union[List[Transformer], Callable[[], List[Transformer]]]
     ] = None,
     parameters: Optional[Dict[str, Any]] = None,
+    pass_parameter_in_stage: bool = False
 ) -> FrameworkIfElseTransformer:
     """
     If enable flag is true then runs stages else runs else_stages
@@ -31,6 +32,8 @@ def run_if_else(
     :param else_stages: list of transformers or a function that returns a list of transformers
     :param enable_if_view_not_empty: enable if this view is not empty
     :param enable_sql: enable if this sql returns any results
+    :param parameters: parameters required to be passed to the stage function
+    :param pass_parameter_in_stage: true if we need to pass parameter in stage fn
     """
     return FrameworkIfElseTransformer(
         name=name,
@@ -39,5 +42,6 @@ def run_if_else(
         enable_sql=enable_sql,
         stages=stages,
         else_stages=else_stages,
-        parameters=parameters
+        parameters=parameters,
+        pass_parameter_in_stage=pass_parameter_in_stage,
     )

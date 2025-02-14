@@ -28,6 +28,7 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
+        pass_parameter_in_stage: bool = False,
     ):
         """
         If enable flag is true then runs stages else runs else_stages
@@ -38,6 +39,7 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
         :param enable_sql: enables if sql returns any rows
         :param stages: list of transformers or a function that returns a list of transformers
         :param else_stages: list of transformers or a function that returns a list of transformers
+        :param pass_parameter_in_stage: true if we need to pass parameter in stage fn
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -61,6 +63,8 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
         ] = else_stages
 
         self.loop_id: Optional[str] = None
+
+        self.pass_parameter_in_stage: bool = pass_parameter_in_stage
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -89,7 +93,13 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
         enable_if_sql = df.sparkSession.sql(enable_sql) if enable_sql else True
         if (enable or enable is None) and enable_if_view_not_empty and enable_if_sql:
             stages: List[Transformer] = (
-                self.stages if isinstance(self.stages, list) else self.stages(**self.parameters)
+                self.stages
+                if isinstance(self.stages, list)
+                else (
+                    self.stages(**self.parameters)
+                    if self.parameters and self.pass_parameter_in_stage
+                    else self.stages()
+                )
             )
         else:
             if progress_logger is not None:
