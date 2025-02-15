@@ -178,7 +178,8 @@ class FrameworkSqlTransformer(FrameworkTransformer):
                         )
 
             if view:
-                if append_to_view:
+                view_exists = df.sparkSession.catalog.tableExists(view)
+                if view_exists and append_to_view:
                     original_df: DataFrame = df.sparkSession.table(view)
                     df = original_df.union(df)
                 # now point the view back to it
