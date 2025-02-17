@@ -13,13 +13,13 @@ class SlackEventLogger(EventLogger):
     def __init__(
         self,
         id_: str,
-        team_name: str,
         slack_token: str,
         slack_channel: str,
         bot_user_name: str,
         slack_error_channel: Optional[str] = None,
         log_placeholder_url: Optional[str] = None,
         flow_run_name: Optional[str] = None,
+        team_name: Optional[str] = None,
         backoff: bool = True,
         use_native_slack_client: bool = False,
     ) -> None:
