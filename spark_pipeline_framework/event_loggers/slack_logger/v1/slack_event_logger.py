@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.utilities.slack.base_slack_client import BaseSlackClient
@@ -154,8 +154,10 @@ class SlackEventLogger(EventLogger):
         if not self.log_placeholder_url:
             return None
 
-        current_time = int(datetime.utcnow().timestamp() * 1000)
-        from_time = int((datetime.utcnow() - timedelta(days=1)).timestamp() * 1000)
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        from_time = int(
+            (datetime.now(timezone.utc) - timedelta(days=1)).timestamp() * 1000
+        )
 
         return self.log_placeholder_url.format(
             flow_run_name=f"{self.flow_run_name}",
