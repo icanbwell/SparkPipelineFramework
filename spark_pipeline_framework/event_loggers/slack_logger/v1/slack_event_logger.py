@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime, timezone, timedelta
 
 from spark_pipeline_framework.event_loggers.event_logger import EventLogger
 from spark_pipeline_framework.utilities.slack.base_slack_client import BaseSlackClient
@@ -19,6 +20,7 @@ class SlackEventLogger(EventLogger):
         slack_error_channel: Optional[str] = None,
         log_placeholder_url: Optional[str] = None,
         flow_run_name: Optional[str] = None,
+        team_name: Optional[str] = None,
         backoff: bool = True,
         use_native_slack_client: bool = False,
     ) -> None:
@@ -43,6 +45,7 @@ class SlackEventLogger(EventLogger):
         assert slack_channel
         assert bot_user_name
         self.id_: str = id_
+        self.team_name = team_name
         self.slack_token: str = slack_token
         self.slack_channel: str = slack_channel
         self.slack_error_channel: Optional[str] = slack_error_channel
@@ -118,18 +121,46 @@ class SlackEventLogger(EventLogger):
 
     def log_exception(self, event_name: str, event_text: str, ex: Exception) -> None:
         # don't send full exception to slack since it can have PHI
-        self.slack_client.post_message_to_slack(
-            f"Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {str(ex)}. <{self.get_grafana_url()}>"
+        message = (
+            f"*Event Name:* Helix Pipeline Failure\n"
+            f"{f'*Team Owner:* {self.team_name}\n' if self.team_name else ''}"
+            f"*Flow Run Name:* {self.flow_run_name}\n"
+            f"*Deployment Name:* {event_name}\n"
+            f"*Run ID:* {self.id_}\n"
+            f"*Grafana URL:* <{self.get_grafana_url()}|View Logs>"
         )
+        response = self.slack_client.post_message_to_slack(message)
+        thread_ts = response.data.get("ts") if response else None
 
-        if self.slack_error_client:
-            self.slack_error_client.post_message_to_slack(
-                f"Helix Pipeline Failure: {self.id_} {event_name}: {event_text} {str(ex)}. <{self.get_grafana_url()}>"
+        if thread_ts:
+            self.slack_client.post_message_to_slack(
+                f"*Event Details:* {event_text}\n*Error Details:* ```{str(ex)}```",
+                use_conversation_threads=True,
+                slack_thread=thread_ts,
             )
 
+        if self.slack_error_client:
+            response = self.slack_error_client.post_message_to_slack(message)
+            thread_ts = response.data.get("ts") if response else None
+
+            if thread_ts:
+                self.slack_error_client.post_message_to_slack(
+                    f"Error Details: {str(ex)}",
+                    use_conversation_threads=True,
+                    slack_thread=thread_ts,
+                )
+
     def get_grafana_url(self) -> Optional[str]:
-        return (
-            self.log_placeholder_url.format(flow_run_name=f"{self.flow_run_name}")
-            if self.log_placeholder_url
-            else None
+        if not self.log_placeholder_url:
+            return None
+
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        from_time = int(
+            (datetime.now(timezone.utc) - timedelta(days=1)).timestamp() * 1000
+        )
+
+        return self.log_placeholder_url.format(
+            flow_run_name=f"{self.flow_run_name}",
+            from_time=from_time,
+            to_time=current_time,
         )
