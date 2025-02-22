@@ -4,7 +4,7 @@
     "method": "POST",
     "querystring": {
       "contained": "true",
-      "id": "01-practitioner,02-practitioner"
+      "_id": "01-practitioner,02-practitioner"
     },
     "body": {
       "resourceType": "GraphDefinition",

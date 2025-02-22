@@ -1,6 +1,7 @@
 from typing import List, Set, Tuple, Type, Optional, Any, Dict
 
 import pymongo
+from pymongo.collection import Collection
 import structlog
 from pymongo import UpdateOne, MongoClient
 
@@ -43,7 +44,7 @@ class DocumentDBCacheHandler(CacheHandler):
         self.__server_url: Optional[str] = server_url
         self.database_name: str = database_name
         self.collection_name: str = collection_name
-        self.__collection: Optional[pymongo.collection.Collection[Any]] = None
+        self.__collection: Optional[Collection[Any]] = None
 
     @property
     def _server_url(self) -> str:
@@ -54,7 +55,7 @@ class DocumentDBCacheHandler(CacheHandler):
             return self.__server_url
 
     @property
-    def _collection(self) -> pymongo.collection.Collection[Any]:
+    def _collection(self) -> Collection[Any]:
         if self.__collection is not None:
             return self.__collection
         else:

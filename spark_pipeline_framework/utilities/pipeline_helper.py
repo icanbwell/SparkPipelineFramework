@@ -15,6 +15,6 @@ def create_steps(
         List[Union[Transformer, List[Transformer]]],
         List[Union[FrameworkTransformer, List[FrameworkTransformer]]],
         # List[DefaultParamsReadable[Any]],
-    ]
+    ],
 ) -> List[Transformer]:
     return flatten(my_list)
