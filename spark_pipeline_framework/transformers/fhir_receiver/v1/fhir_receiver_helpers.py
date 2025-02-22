@@ -1076,39 +1076,11 @@ class FhirReceiverHelpers:
                         refresh_token_function=refresh_token_function,
                     )
                 )
-                result_response: List[str] = []
-                try:
-                    result_response = FhirReceiverHelpers.json_str_to_list_str(
-                        result.responses
-                    )
-                except JSONDecodeError as e:
-                    if error_view:
-                        errors.append(
-                            json.dumps(
-                                {
-                                    "url": result.url,
-                                    "status_code": result.status,
-                                    "error_text": str(e) + " : " + result.responses,
-                                    "request_id": result.request_id,
-                                },
-                                default=str,
-                            )
-                        )
-                    else:
-                        raise FhirParserException(
-                            url=result.url,
-                            message="Parsing result as json failed",
-                            json_data=result.responses,
-                            response_status_code=result.status,
-                            request_id=result.request_id,
-                        ) from e
 
                 auth_access_token = result.access_token
-                if len(result_response) > 0:
+                if len(result.get_resources()) > 0:
                     # get id of last resource
-                    json_resources: List[Dict[str, Any]] = [
-                        json.loads(r) for r in result_response
-                    ]
+                    json_resources: List[Dict[str, Any]] = result.get_resources()
                     if isinstance(json_resources, list):  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
@@ -1144,7 +1116,9 @@ class FhirReceiverHelpers:
                                 )
                             else:
                                 server_page_number += 1
-                            resources = resources + result_response
+                            resources = resources + [
+                                json.dumps(r) for r in result.get_resources()
+                            ]
                         page_number += 1
                         if limit and 0 < limit <= len(resources):
                             has_next_page = False

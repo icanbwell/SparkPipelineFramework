@@ -1,5 +1,6 @@
 import pymongo
 from pymongo import MongoClient, UpdateOne
+from pymongo.collection import Collection
 from typing import List, Dict, Any, Set, Tuple, Generator, Sequence, Iterable
 import pathlib
 import glob
@@ -387,7 +388,7 @@ def extract_addresses_to_be_geocoded(
 # checks address cache collection for list of addresses
 # returns a list of addresses missing from the address cache
 def check_cache(
-    collection: pymongo.collection.Collection[Dict[str, Any]],
+    collection: Collection[Dict[str, Any]],
     raw_addresses: List[RawAddress],
 ) -> Tuple[List[RawAddress], List[RawAddress]]:
     # save addresses in a dictionary to look up later
@@ -422,7 +423,7 @@ def check_cache(
 
 # saves vendor responses to address cache
 def save_to_cache(
-    _collection: pymongo.collection.Collection[Dict[str, Any]],
+    _collection: Collection[Dict[str, Any]],
     vendor_responses: List[VendorResponse],
 ) -> None:
     requests = [
