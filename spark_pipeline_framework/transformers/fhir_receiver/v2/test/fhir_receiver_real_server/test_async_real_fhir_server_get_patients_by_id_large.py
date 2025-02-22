@@ -95,8 +95,9 @@ async def test_async_real_fhir_server_get_patients_by_id_large(
                 auth_client_id=auth_client_id,
                 auth_client_secret=auth_client_secret,
                 use_data_streaming=use_data_streaming,
-                include_only_properties=["id"],
+                include_only_properties=["id", "identifier"],
                 view="id_view",
+                use_uuid_for_id_above=True,
             ).transform_async(df)
 
             id_df: DataFrame = spark_session.table("id_view")

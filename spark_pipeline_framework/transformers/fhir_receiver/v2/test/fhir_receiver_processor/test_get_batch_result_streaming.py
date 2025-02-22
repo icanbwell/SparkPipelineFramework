@@ -55,6 +55,7 @@ async def test_get_batch_result_streaming_async() -> None:
     # Mock the HTTP request
     with aioresponses() as m:
         m.get(f"{server_url}/Patient", payload=mock_response_data)
+        m.get(f"{server_url}/Patient?id:above=1", payload=[])
 
         # Call the function
         results: List[Dict[str, Any]] = []
@@ -67,7 +68,7 @@ async def test_get_batch_result_streaming_async() -> None:
             results.append(result)
 
         # Assert the results
-        assert len(results) == 1
+        assert len(results) == 2
         assert results[0] == expected_result.to_dict()
 
 
@@ -111,6 +112,7 @@ async def test_get_batch_result_streaming_async_single_result() -> None:
     # Mock the HTTP request
     with aioresponses() as m:
         m.get(f"{server_url}/Patient", payload=mock_response_data)
+        m.get(f"{server_url}/Patient?id:above=1", payload=[])
 
         # Call the function
         results: List[Dict[str, Any]] = []
@@ -123,7 +125,7 @@ async def test_get_batch_result_streaming_async_single_result() -> None:
             results.append(result)
 
         # Assert the results
-        assert len(results) == 1
+        assert len(results) == 2
         assert results[0] == expected_result.to_dict()
 
 
@@ -182,6 +184,7 @@ async def test_get_batch_result_streaming_async_multiple_results() -> None:
     # Mock the HTTP request
     with aioresponses() as m:
         m.get(f"{server_url}/Patient", payload=mock_response_data)
+        m.get(f"{server_url}/Patient?id:above=2", payload=[])
 
         # Call the function
         results: List[Dict[str, Any]] = []
@@ -194,7 +197,8 @@ async def test_get_batch_result_streaming_async_multiple_results() -> None:
             results.append(result)
 
         # Assert the results
-        assert len(results) == 1
+        assert len(results) == 2
+        # Asserting the first dictionary only, since the second one is empty.
         assert results[0] == expected_results[0].to_dict()
 
 
