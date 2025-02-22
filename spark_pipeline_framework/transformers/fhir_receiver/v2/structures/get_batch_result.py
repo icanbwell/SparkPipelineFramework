@@ -43,7 +43,7 @@ class GetBatchResult:
 
     @staticmethod
     async def from_async_generator(
-        generator: AsyncGenerator["GetBatchResult", None]
+        generator: AsyncGenerator["GetBatchResult", None],
     ) -> Optional["GetBatchResult"]:
         """
         Reads a generator of FhirGetResponse and returns a single FhirGetResponse by appending all the FhirGetResponse
