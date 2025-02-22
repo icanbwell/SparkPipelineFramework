@@ -29,7 +29,7 @@ services:
     working_dir: /SparkpipelineFramework
 
   warehouse:
-    image: mariadb:10.11.11
+    image: mariadb:10.11.9
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: fhir_rpt
@@ -61,7 +61,7 @@ services:
     depends_on:
       - mongo
       - keycloak
-    image: imranq2/node-fhir-server-mongo:5.10.21
+    image: imranq2/node-fhir-server-mongo:5.3.16
     # To use local fhir code, comment above line and uncomment below
 #    build:
 #      dockerfile: Dockerfile
@@ -115,19 +115,19 @@ services:
         test: ["CMD-SHELL", "curl --silent --fail localhost:3000/health || exit 1"]
 
   mongo:
-    image: mongo:8.0.4
+    image: mongo:5.0.28
     ports:
       - '27017:27017'
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh mongo:27017/test --quiet
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
 
   elasticsearch:
 #    image: bitnami/elasticsearch:7.9.3  # AWS ElasticSearch supports upto 7.9
     # using OpenDistro for best compatibility with AWS Managed ElasticSearch:
     # https://opendistro.github.io/for-elasticsearch/downloads.html
-    image: opensearchproject/opensearch:1.3.20
+    image: opensearchproject/opensearch:1.3.18
     container_name: elasticsearch
     environment:
       - cluster.name=odfe-cluster
