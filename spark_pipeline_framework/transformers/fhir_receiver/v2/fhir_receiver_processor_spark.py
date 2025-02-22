@@ -375,6 +375,8 @@ class FhirReceiverProcessorSpark:
         ):
             resources.extend(result1.resources)
             errors.extend(result1.errors)
+            if limit and 0 < limit <= len(resources):
+                break
         list_df = df.sparkSession.createDataFrame(resources, schema=StringType())
         errors_df = (
             df.sparkSession.createDataFrame(  # type:ignore[type-var]
