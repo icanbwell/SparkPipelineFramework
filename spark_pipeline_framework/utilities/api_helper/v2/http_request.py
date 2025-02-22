@@ -1,6 +1,7 @@
 import json
 from enum import Enum
 from os import environ
+from copy import deepcopy
 from typing import (
     Optional,
     Dict,
@@ -165,10 +166,14 @@ class HelixHttpRequest:
 
             arguments = {k: v for k, v in arguments.items() if v is not None}
 
+            # Hide sensitive tokens to protect against unauthorized access
+            filtered_arguments = deepcopy(arguments)
+            if filtered_arguments.get('headers', {}).get('Authorization'):
+                filtered_arguments['headers']['Authorization'] = '[FILTERED]'
             response = await self._send_request_async(request_function, arguments)  # type: ignore[arg-type]
             if self.raise_error:
                 if response.status >= 400:
-                    error_text = f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {response.status}: {await response.text()}."
+                    error_text = f"Request to {self.url} with arguments {json.dumps(filtered_arguments)} failed with {response.status}: {await response.text()}."
                     if self.logger:
                         self.logger.error(error_text)
                     raise ClientError(error_text)
