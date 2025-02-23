@@ -203,7 +203,7 @@ class AsyncBasePandasUDF[
 
     @staticmethod
     async def get_chunk_containers(
-        chunks: AsyncGenerator[List[TInputColumnDataType], None]
+        chunks: AsyncGenerator[List[TInputColumnDataType], None],
     ) -> AsyncGenerator[ChunkContainer[TInputColumnDataType], None]:
         """
         create a list of chunk containers where each container contains the chunk and metadata

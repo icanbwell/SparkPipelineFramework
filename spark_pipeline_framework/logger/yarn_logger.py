@@ -1,20 +1,23 @@
 from os import environ
-from sys import stderr
+from sys import stdout
 from logging import Logger, getLogger, StreamHandler, Formatter, INFO
 from typing import Union, TextIO, Optional
 
 
 def get_logger(
-    name: str, level: Union[int, str] = INFO, formatter: Optional[Formatter] = None
+    name: str,
+    level: Union[int, str] = INFO,
+    formatter: Optional[Formatter] = None,
+    stream: Optional[TextIO] = stdout,
 ) -> Logger:
     logger: Logger = getLogger(name)
-    level = environ.get("LOGLEVEL") or level
+    level = level or environ.get("LOGLEVEL") or INFO
     logger.setLevel(level)
 
     if logger.handlers:
         pass
     else:
-        stream_handler: StreamHandler[TextIO] = StreamHandler(stderr)
+        stream_handler: StreamHandler[TextIO] = StreamHandler(stream)
         stream_handler.setLevel(level=level)
         if formatter is None:
             # noinspection SpellCheckingInspection
