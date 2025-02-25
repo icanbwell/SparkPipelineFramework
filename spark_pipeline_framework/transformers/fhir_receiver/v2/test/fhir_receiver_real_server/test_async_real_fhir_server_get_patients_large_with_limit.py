@@ -7,6 +7,7 @@ from typing import Optional
 import pytest
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
+from helix_fhir_client_sdk.utilities.fhir_server_helpers import FhirServerHelpers
 from pyspark.sql import DataFrame, SparkSession
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
@@ -28,6 +29,9 @@ async def test_async_real_fhir_server_get_patients_large_with_limit(
     spark_session: SparkSession, run_synchronously: bool, use_data_streaming: bool
 ) -> None:
     print()
+    print(
+        f"run_synchronously: {run_synchronously}, use_data_streaming: {use_data_streaming}"
+    )
     data_dir: Path = Path(__file__).parent.joinpath("./")
 
     temp_folder = data_dir.joinpath("../temp")
@@ -50,6 +54,11 @@ async def test_async_real_fhir_server_get_patients_large_with_limit(
         auth_well_known_url = fhir_server_test_context.auth_well_known_url
 
         fhir_client = await fhir_server_test_context.create_fhir_client_async()
+
+        await FhirServerHelpers.clean_fhir_server_async(
+            resource_type=resource_type, owner_tag="medstar"
+        )
+
         fhir_client = fhir_client.url(fhir_server_url).resource(resource_type)
 
         count = 10
@@ -107,7 +116,7 @@ async def test_async_real_fhir_server_get_patients_large_with_limit(
 
         # Assert
         json_df: DataFrame = df.sparkSession.read.json(str(patient_json_path))
-        json_df.show()
+        json_df.show(truncate=False, n=50)
         json_df.printSchema()
 
         assert json_df.count() == 5

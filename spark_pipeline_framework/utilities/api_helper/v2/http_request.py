@@ -18,7 +18,7 @@ from urllib import parse
 from urllib.parse import SplitResult, SplitResultBytes
 
 import aiohttp
-from aiohttp import ClientSession, ClientResponse, ClientError
+from aiohttp import ClientSession, ClientResponse, ClientError, ClientResponseError
 from logging import Logger
 
 
@@ -113,8 +113,13 @@ class HelixHttpRequest:
             )  # disable content type check since the source may not set it correctly
             return SingleJsonResult(url=self.url, status=response.status, result=result)
         except ClientError as e:
-            raise Exception(
-                f"Response: {await response.text()} with status {response.status} is not in json format from {self.request_type} {self.url}: {e}"
+            raise ClientResponseError(
+                request_info=response.request_info,
+                history=response.history,
+                status=response.status,
+                code=response.status,
+                headers=response.headers,
+                message=f"Response: {await response.text()} with status {response.status} is not in json format from {self.request_type} {self.url}: {e}",
             ) from e
 
     async def get_results_async(self) -> ListJsonResult:
@@ -125,8 +130,13 @@ class HelixHttpRequest:
             )  # disable content type check since the source may not set it correctly
             return ListJsonResult(url=self.url, status=response.status, result=result)
         except ClientError as e:
-            raise Exception(
-                f"Response: {await response.text()} with status {response.status} is not in json format from {self.request_type} {self.url}: {e}"
+            raise ClientResponseError(
+                request_info=response.request_info,
+                history=response.history,
+                status=response.status,
+                code=response.status,
+                headers=response.headers,
+                message=f"Response: {await response.text()} with status {response.status} is not in json format from {self.request_type} {self.url}: {e}",
             ) from e
 
     async def get_text_async(self) -> SingleTextResult:
@@ -177,7 +187,15 @@ class HelixHttpRequest:
                     error_text = f"Request to {self.url} with arguments {json.dumps(filtered_arguments)} failed with {response.status}: {await response.text()}."
                     if self.logger:
                         self.logger.error(error_text)
-                    raise ClientError(error_text)
+                    raise ClientResponseError(
+                        request_info=response.request_info,
+                        history=response.history,
+                        status=response.status,
+                        message=(response.reason or "Unknown error")
+                        + ": "
+                        + error_text,
+                        headers=response.headers,
+                    )
 
             # Cache response body for retrieval outside of session scope, if specified
             if cache_results == "json":

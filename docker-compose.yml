@@ -61,40 +61,30 @@ services:
     depends_on:
       - mongo
       - keycloak
-    image: imranq2/node-fhir-server-mongo:5.3.16
+    image: imranq2/node-fhir-server-mongo:5.10.21
     # To use local fhir code, comment above line and uncomment below
-#    build:
-#      dockerfile: Dockerfile
-#      context: ../fhir-server
-#      args:
-#        NODE_ENV: development
+    #    build:
+    #      dockerfile: Dockerfile
+    #      context: ../fhir-server
     environment:
-      NODE_ENV: 'development'
-      ENV: local
       SERVER_PORT: 3000
       MONGO_DB_NAME: fhir
       MONGO_URL: mongodb://mongo:27017
       AUDIT_EVENT_MONGO_DB_NAME: fhir
       AUDIT_EVENT_MONGO_URL: mongodb://mongo:27017
       RESOURCE_SERVER: http://fhir:3000/
-#      AUTH_SERVER_URI: http://mock-server:1080
-      AUTH_CONFIGURATION_URI: 'http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration'
-      AUTH_JWKS_URL: 'http://keycloak:8080/realms/bwell-realm/protocol/openid-connect/certs'
-      EXTERNAL_AUTH_JWKS_URLS: 'http://keycloak:8080/realms/bwell-realm/protocol/openid-connect/certs'
-      AUTH_CUSTOM_GROUP: "cognito:groups"
+      AUTH_SERVER_URI: http://myauthzserver.com
       AUTH_CUSTOM_SCOPE: "custom:scope"
-      # service account used to connect to OAuth IDP
       CLIENT_ID: bwell-client-id
       CLIENT_SECRET: bwell-secret
-#      INTROSPECTION_URL: http://mock-server:1080/introspect
-      CHECK_ACCESS_TAG_ON_SAVE: 1
-      IS_PRODUCTION: ""
+      INTROSPECTION_URL: https://myauthzserver.com/introspect
+      AUTH_CONFIGURATION_URI: http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration
+      AUTH_JWKS_URL: http://keycloak:8080/realms/bwell-realm/protocol/openid-connect/certs
+      EXTERNAL_AUTH_JWKS_URLS: http://keycloak:8080/realms/bwell-realm/protocol/openid-connect/certs
       RETURN_BUNDLE: "1"
       VALIDATE_SCHEMA: "1"
-      AUTH_ENABLED: "1"
       ENABLE_GRAPHQL: "1"
       ENABLE_GRAPHQLV2: "1"
-      ENABLE_GRAPHQL_PLAYGROUND: '1'
       LOGLEVEL: "DEBUG"
       SET_INDEX_HINTS: 0
       CREATE_INDEX_ON_COLLECTION_CREATION: 1
@@ -104,30 +94,27 @@ services:
       PARTITION_RESOURCES: 'AuditEvent'
       COLLECTIONS_ACCESS_INDEX: "all"
       USE_ACCESS_INDEX: 1
-      ENABLE_PATIENT_FILTERING: "1"
       ACCESS_TAGS_INDEXED: "medstar,Thedacare,bwell"
-      ENABLE_GLOBAL_ID: 1
-      NODE_OPTIONS: --max-old-space-size=20240
     ports:
       - '3000:3000'
     command: yarn start
     healthcheck:
-        test: ["CMD-SHELL", "curl --silent --fail localhost:3000/health || exit 1"]
+      test: [ "CMD-SHELL", "wget --spider --quiet localhost:3000/health || exit 1" ]
 
   mongo:
-    image: mongo:5.0.28
+    image: mongo:8.0.4
     ports:
       - '27017:27017'
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      test: echo 'db.runCommand("ping").ok' | mongosh mongo:27017/test --quiet
 
   elasticsearch:
 #    image: bitnami/elasticsearch:7.9.3  # AWS ElasticSearch supports upto 7.9
     # using OpenDistro for best compatibility with AWS Managed ElasticSearch:
     # https://opendistro.github.io/for-elasticsearch/downloads.html
-    image: opensearchproject/opensearch:1.3.18
+    image: opensearchproject/opensearch:1.3.20
     container_name: elasticsearch
     environment:
       - cluster.name=odfe-cluster
