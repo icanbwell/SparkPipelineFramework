@@ -156,7 +156,7 @@ class HelixHttpRequest:
                 request_function = session.get
             elif self.request_type == RequestType.POST:
                 arguments["data"] = (
-                    json.dumps(self.payload)  # type: ignore
+                    json.dumps(self.payload)
                     if self.post_as_json_formatted_string
                     else self.payload
                 )

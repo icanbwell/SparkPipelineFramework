@@ -161,7 +161,7 @@ class HelixHttpRequest:
         elif self.request_type == RequestType.POST:
             # https://requests.readthedocs.io/en/master/user/quickstart/#more-complicated-post-requests
             arguments["data"] = (
-                json.dumps(self.payload)  # type: ignore
+                json.dumps(self.payload)
                 if self.post_as_json_formatted_string
                 else self.payload
             )
