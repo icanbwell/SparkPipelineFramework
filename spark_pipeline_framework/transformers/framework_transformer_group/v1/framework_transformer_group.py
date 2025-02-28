@@ -80,6 +80,11 @@ class FrameworkTransformerGroup(FrameworkTransformer):
                     )
                 if hasattr(stage, "set_loop_id"):
                     stage.set_loop_id(self.loop_id)
+                if hasattr(stage, "set_telemetry_context"):
+                    stage.set_telemetry_context(
+                        telemetry_context=self.telemetry_context
+                    )
+
                 try:
                     if hasattr(stage, "transform_async"):
                         await stage.transform_async(df)

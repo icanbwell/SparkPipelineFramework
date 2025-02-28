@@ -109,6 +109,11 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                 if hasattr(stage, "set_loop_id"):
                     stage.set_loop_id(str(current_run_number))
 
+                if hasattr(stage, "set_telemetry_context"):
+                    stage.set_telemetry_context(
+                        telemetry_context=self.telemetry_context
+                    )
+
                 try:
                     # use a new df everytime to avoid keeping data in memory too long
                     df.unpersist(blocking=True)

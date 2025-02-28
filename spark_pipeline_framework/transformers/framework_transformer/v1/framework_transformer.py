@@ -15,6 +15,9 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
+from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+    TelemetryContext,
+)
 
 
 class FrameworkTransformer(
@@ -47,6 +50,8 @@ class FrameworkTransformer(
         self._setDefault(progress_logger=progress_logger)
 
         self.loop_id: Optional[str] = None
+
+        self.telemetry_context: Optional[TelemetryContext] = None
 
         self.parameters: Optional[Dict[str, Any]] = parameters
 

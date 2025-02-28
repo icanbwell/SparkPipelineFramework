@@ -117,6 +117,10 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
                 progress_logger.start_mlflow_run(run_name=stage_name, is_nested=True)
             if hasattr(stage, "set_loop_id"):
                 stage.set_loop_id(self.loop_id)
+
+            if hasattr(stage, "set_telemetry_context"):
+                stage.set_telemetry_context(telemetry_context=self.telemetry_context)
+
             try:
                 if hasattr(stage, "transform_async"):
                     df = await stage.transform_async(df)

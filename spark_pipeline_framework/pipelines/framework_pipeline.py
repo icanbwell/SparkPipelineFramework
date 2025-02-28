@@ -17,6 +17,9 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
+from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+    TelemetryContext,
+)
 
 
 class FrameworkPipeline(Transformer):
@@ -42,6 +45,7 @@ class FrameworkPipeline(Transformer):
         self.log_level: Optional[Union[int, str]] = log_level or os.environ.get(
             "LOGLEVEL"
         )
+        self.telemetry_context: Optional[TelemetryContext] = None
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -84,6 +88,11 @@ class FrameworkPipeline(Transformer):
                 )
                 if hasattr(transformer, "set_loop_id"):
                     transformer.set_loop_id(self.loop_id)
+
+                if hasattr(transformer, "set_telemetry_context"):
+                    transformer.set_telemetry_context(
+                        telemetry_context=self.telemetry_context
+                    )
 
                 with ProgressLogMetric(
                     progress_logger=self.progress_logger,
@@ -173,6 +182,11 @@ class FrameworkPipeline(Transformer):
                 )
                 if hasattr(transformer, "set_loop_id"):
                     transformer.set_loop_id(self.loop_id)
+
+                if hasattr(transformer, "set_telemetry_context"):
+                    transformer.set_telemetry_context(
+                        telemetry_context=self.telemetry_context
+                    )
 
                 with ProgressLogMetric(
                     progress_logger=self.progress_logger,
@@ -268,3 +282,6 @@ class FrameworkPipeline(Transformer):
         :param loop_id: loop id
         """
         self.loop_id = loop_id
+
+    def set_telemetry_context(self, telemetry_context: TelemetryContext) -> None:
+        self.telemetry_context = telemetry_context

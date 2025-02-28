@@ -131,6 +131,8 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             )
             if hasattr(stage, "set_loop_id"):
                 stage.set_loop_id(self.loop_id)
+            if hasattr(stage, "set_telemetry_context"):
+                stage.set_telemetry_context(telemetry_context=self.telemetry_context)
 
             assert (
                 stage_name
@@ -169,6 +171,8 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             )
             if hasattr(stage, "set_loop_id"):
                 stage.set_loop_id(self.loop_id)
+            if hasattr(stage, "set_telemetry_context"):
+                stage.set_telemetry_context(telemetry_context=self.telemetry_context)
 
             assert (
                 stage_name
