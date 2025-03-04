@@ -155,6 +155,9 @@ class FrameworkTransformer(
         """
         self.loop_id = loop_id
 
+    def set_telemetry_context(self, telemetry_context: TelemetryContext) -> None:
+        self.telemetry_context = telemetry_context
+
     async def transform_async(self, df: DataFrame) -> DataFrame:
         """
         Transform the dataset asynchronously
