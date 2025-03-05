@@ -18,11 +18,7 @@ from opentelemetry.context import Context
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
 from opentelemetry.instrumentation.asyncio import AsyncioInstrumentor
-from opentelemetry.instrumentation.boto import BotoInstrumentor
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
-from opentelemetry.instrumentation.confluent_kafka import ConfluentKafkaInstrumentor
-from opentelemetry.instrumentation.elasticsearch import ElasticsearchInstrumentor
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
@@ -136,16 +132,14 @@ class OpenTelemetry(Telemetry):
                     AsyncioInstrumentor().instrument()
                 case TelemetryTracer.AIOHTTP:
                     AioHttpClientInstrumentor().instrument()
-                case TelemetryTracer.BOTO:
-                    BotoInstrumentor().instrument()  # type: ignore[no-untyped-call]
                 case TelemetryTracer.BOTOCORE:
                     BotocoreInstrumentor().instrument()  # type: ignore[no-untyped-call]
-                case TelemetryTracer.CONFLUENT_KAFKA:
-                    ConfluentKafkaInstrumentor().instrument()
-                case TelemetryTracer.ELASTICSEARCH:
-                    ElasticsearchInstrumentor().instrument()  # type: ignore[no-untyped-call]
-                case TelemetryTracer.HTTPX:
-                    HTTPXClientInstrumentor().instrument()
+                # case TelemetryTracer.CONFLUENT_KAFKA:
+                #     ConfluentKafkaInstrumentor().instrument()
+                # case TelemetryTracer.ELASTICSEARCH:
+                #     ElasticsearchInstrumentor().instrument()  # type: ignore[no-untyped-call]
+                # case TelemetryTracer.HTTPX:
+                #     HTTPXClientInstrumentor().instrument()
                 case TelemetryTracer.PYMONGO:
                     PymongoInstrumentor().instrument()
                 case TelemetryTracer.REQUESTS:
