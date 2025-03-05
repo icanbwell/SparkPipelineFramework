@@ -26,7 +26,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.semconv.resource import ResourceAttributes
-from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags
+from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags, Tracer
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
@@ -54,6 +54,12 @@ class OpenTelemetry(Telemetry):
     Comprehensive OpenTelemetry instrumentation
     """
 
+    _trace_provider: Optional[TracerProvider]
+
+    _tracer: Optional[Tracer]
+
+    _system_metrics_instrumentor: Optional[SystemMetricsInstrumentor]
+
     def __init__(
         self,
         *,
@@ -77,6 +83,27 @@ class OpenTelemetry(Telemetry):
 
         self._telemetry_context = telemetry_context
 
+        self._metadata = {
+            "service.name": telemetry_context.service_name,
+            "deployment.environment": telemetry_context.environment,
+            "host.name": socket.gethostname(),
+            "instance.id": self._instance_id,
+        }
+
+        # if the tracer is not setup then set it up
+        if self._tracer is None:
+            self.setup_tracing(telemetry_context, write_telemetry_to_console)
+            self.setup_tracers(telemetry_context)
+
+    def setup_tracing(
+        self, telemetry_context: TelemetryContext, write_telemetry_to_console: bool
+    ) -> None:
+        """
+        Set up the OpenTelemetry tracer and exporter
+
+        :param telemetry_context: Telemetry context
+        :param write_telemetry_to_console: Whether to write telemetry to console
+        """
         # Create a resource with service details
         resource = Resource.create(
             {
@@ -86,42 +113,37 @@ class OpenTelemetry(Telemetry):
         )
         # Create trace provider
         self._trace_provider = TracerProvider(resource=resource)
-
         # Create OTLP exporter
         otlp_exporter = OTLPSpanExporter(
             endpoint=telemetry_context.endpoint,
             # Add timeout and other parameters if needed
             timeout=10,  # 10 seconds timeout
         )
-
         if write_telemetry_to_console:
             console_processor = BatchSpanProcessor(ConsoleSpanExporter())
             self._trace_provider.add_span_processor(console_processor)
-
         # Add batch span processor
         span_processor = BatchSpanProcessor(otlp_exporter)
         self._trace_provider.add_span_processor(span_processor)
-
         # Set the global tracer provider
         trace.set_tracer_provider(self._trace_provider)
-
         # Get tracer
-        self._tracer = trace.get_tracer(telemetry_context.service_name)
-
+        self._tracer: Tracer = trace.get_tracer(telemetry_context.service_name)
         # Additional instrumentation
-        self._system_metrics_instrumentor = SystemMetricsInstrumentor()
-
+        self._system_metrics_instrumentor: SystemMetricsInstrumentor = (
+            SystemMetricsInstrumentor()
+        )
         # Metadata
-        self._metadata = {
-            "service.name": telemetry_context.service_name,
-            "deployment.environment": telemetry_context.environment,
-            "host.name": socket.gethostname(),
-            "instance.id": self._instance_id,
-        }
-
         # Start instrumentation
         self._start_instrumentation()
 
+    # noinspection PyMethodMayBeStatic
+    def setup_tracers(self, telemetry_context: TelemetryContext) -> None:
+        """
+        Set up additional tracers
+
+        :param telemetry_context: Telemetry context
+        """
         # enable any tracers
         tracer: TelemetryTracer
         for tracer in telemetry_context.trace_all_calls or []:
@@ -157,6 +179,7 @@ class OpenTelemetry(Telemetry):
         """
         Start system and logging instrumentation
         """
+        assert self._system_metrics_instrumentor is not None
         try:
             self._system_metrics_instrumentor.instrument()
         except Exception as e:
@@ -340,16 +363,19 @@ class OpenTelemetry(Telemetry):
         """
         Gracefully shutdown the tracer provider
         """
-        self._trace_provider.force_flush()
-        self._trace_provider.shutdown()
+        if self._trace_provider is not None:
+            self._trace_provider.force_flush()
+            self._trace_provider.shutdown()
 
     @override
     async def flush_async(self) -> None:
         """
         Flush the span processor
         """
-        self._trace_provider.force_flush()
+        if self._trace_provider is not None:
+            self._trace_provider.force_flush()
 
+    # noinspection PyMethodMayBeStatic
     def get_current_trace_context(self) -> Optional[Tuple[str, str]]:
         """
         Retrieve the current trace and span IDs as hex strings.
