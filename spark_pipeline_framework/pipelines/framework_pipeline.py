@@ -372,5 +372,5 @@ class FrameworkPipeline(Transformer):
         """
         self.loop_id = loop_id
 
-    def set_telemetry_context(self, telemetry_context: TelemetryContext) -> None:
-        self.telemetry_context = telemetry_context
+    async def transform_async(self, df: DataFrame) -> DataFrame:
+        return await self._transform_async(df=df)

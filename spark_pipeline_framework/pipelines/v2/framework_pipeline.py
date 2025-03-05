@@ -327,3 +327,6 @@ class FrameworkPipeline(Transformer):
 
     def __str__(self) -> str:
         return json.dumps(self.as_dict(), default=str)
+
+    async def transform_async(self, df: DataFrame) -> DataFrame:
+        return await self._transform_async(df=df)
