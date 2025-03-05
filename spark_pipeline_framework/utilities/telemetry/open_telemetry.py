@@ -11,6 +11,7 @@ from typing import (
     Iterator,
     AsyncIterator,
     Union,
+    ClassVar,
 )
 
 from opentelemetry import trace
@@ -54,11 +55,11 @@ class OpenTelemetry(Telemetry):
     Comprehensive OpenTelemetry instrumentation
     """
 
-    _trace_provider: Optional[TracerProvider]
+    _trace_provider: ClassVar[Optional[TracerProvider]] = None
 
-    _tracer: Optional[Tracer]
+    _tracer: ClassVar[Optional[Tracer]] = None
 
-    _system_metrics_instrumentor: Optional[SystemMetricsInstrumentor]
+    _system_metrics_instrumentor: ClassVar[Optional[SystemMetricsInstrumentor]] = None
 
     def __init__(
         self,
@@ -91,7 +92,7 @@ class OpenTelemetry(Telemetry):
         }
 
         # if the tracer is not setup then set it up
-        if self._tracer is None:
+        if OpenTelemetry._tracer is None:
             self.setup_tracing(telemetry_context, write_telemetry_to_console)
             self.setup_tracers(telemetry_context)
 
@@ -112,7 +113,7 @@ class OpenTelemetry(Telemetry):
             }
         )
         # Create trace provider
-        self._trace_provider = TracerProvider(resource=resource)
+        OpenTelemetry._trace_provider = TracerProvider(resource=resource)
         # Create OTLP exporter
         otlp_exporter = OTLPSpanExporter(
             endpoint=telemetry_context.endpoint,
@@ -121,18 +122,16 @@ class OpenTelemetry(Telemetry):
         )
         if write_telemetry_to_console:
             console_processor = BatchSpanProcessor(ConsoleSpanExporter())
-            self._trace_provider.add_span_processor(console_processor)
+            OpenTelemetry._trace_provider.add_span_processor(console_processor)
         # Add batch span processor
         span_processor = BatchSpanProcessor(otlp_exporter)
-        self._trace_provider.add_span_processor(span_processor)
+        OpenTelemetry._trace_provider.add_span_processor(span_processor)
         # Set the global tracer provider
-        trace.set_tracer_provider(self._trace_provider)
+        trace.set_tracer_provider(OpenTelemetry._trace_provider)
         # Get tracer
-        self._tracer: Tracer = trace.get_tracer(telemetry_context.service_name)
+        OpenTelemetry._tracer = trace.get_tracer(telemetry_context.service_name)
         # Additional instrumentation
-        self._system_metrics_instrumentor: SystemMetricsInstrumentor = (
-            SystemMetricsInstrumentor()
-        )
+        OpenTelemetry._system_metrics_instrumentor = SystemMetricsInstrumentor()
         # Metadata
         # Start instrumentation
         self._start_instrumentation()
@@ -179,9 +178,9 @@ class OpenTelemetry(Telemetry):
         """
         Start system and logging instrumentation
         """
-        assert self._system_metrics_instrumentor is not None
+        assert OpenTelemetry._system_metrics_instrumentor is not None
         try:
-            self._system_metrics_instrumentor.instrument()
+            OpenTelemetry._system_metrics_instrumentor.instrument()
         except Exception as e:
             self._logger.exception(e)
 
