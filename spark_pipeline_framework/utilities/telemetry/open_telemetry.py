@@ -160,7 +160,7 @@ class OpenTelemetry(Telemetry):
         try:
             self._system_metrics_instrumentor.instrument()
         except Exception as e:
-            print(f"Instrumentation setup error: {e}")
+            self._logger.exception(e)
 
     @contextmanager
     @override
@@ -196,13 +196,13 @@ class OpenTelemetry(Telemetry):
                 is_remote=True,
                 trace_flags=TraceFlags(0x01),
             )
-            self._logger.info(
+            self._logger.debug(
                 f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name}"
                 f" with trace ID: {telemetry_parent.trace_id} and span ID: {telemetry_parent.span_id}"
             )
             ctx = trace.set_span_in_context(NonRecordingSpan(span_context))
         else:
-            self._logger.info(
+            self._logger.debug(
                 f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name} without parent trace"
             )
 
@@ -261,13 +261,13 @@ class OpenTelemetry(Telemetry):
                 is_remote=True,
                 trace_flags=TraceFlags(0x01),
             )
-            self._logger.info(
+            self._logger.debug(
                 f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name}"
                 f" with trace ID: {telemetry_parent.trace_id} and span ID: {telemetry_parent.span_id}"
             )
             ctx = trace.set_span_in_context(NonRecordingSpan(span_context))
         else:
-            self._logger.info(
+            self._logger.debug(
                 f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name} without parent trace"
             )
 
