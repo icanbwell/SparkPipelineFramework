@@ -19,7 +19,6 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
 from opentelemetry.instrumentation.asyncio import AsyncioInstrumentor
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
-from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.system_metrics import SystemMetricsInstrumentor
@@ -111,7 +110,6 @@ class OpenTelemetry(Telemetry):
 
         # Additional instrumentation
         self._system_metrics_instrumentor = SystemMetricsInstrumentor()
-        self._logging_instrumentor = LoggingInstrumentor()
 
         # Metadata
         self._metadata = {
@@ -161,7 +159,6 @@ class OpenTelemetry(Telemetry):
         """
         try:
             self._system_metrics_instrumentor.instrument()
-            self._logging_instrumentor.instrument()
         except Exception as e:
             print(f"Instrumentation setup error: {e}")
 
