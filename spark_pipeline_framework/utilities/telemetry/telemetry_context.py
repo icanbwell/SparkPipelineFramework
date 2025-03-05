@@ -1,10 +1,13 @@
 import dataclasses
-from typing import Optional, Dict, Any
+from typing import Optional, List
 
 from dataclasses_json import DataClassJsonMixin
 
 from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
     TelemetryProvider,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_tracers import (
+    TelemetryTracer,
 )
 
 
@@ -28,7 +31,8 @@ class TelemetryContext(DataClassJsonMixin):
     span_id: Optional[str] = None
     """ Span ID for the telemetry context """
 
-    carrier: Optional[Dict[str, Any]] = None
+    trace_all_calls: Optional[List[TelemetryTracer]] = None
+    """ Whether to Trace certain calls like aiohttp, pymysql, etc """
 
     @staticmethod
     def get_null_context() -> "TelemetryContext":
@@ -59,6 +63,7 @@ class TelemetryContext(DataClassJsonMixin):
             service_name=self.service_name,
             endpoint=self.endpoint,
             environment=self.environment,
+            trace_all_calls=self.trace_all_calls,
         )
 
     def create_child_context(

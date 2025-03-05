@@ -16,7 +16,16 @@ from typing import (
 from opentelemetry import trace
 from opentelemetry.context import Context
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
+from opentelemetry.instrumentation.asyncio import AsyncioInstrumentor
+from opentelemetry.instrumentation.boto import BotoInstrumentor
+from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
+from opentelemetry.instrumentation.confluent_kafka import ConfluentKafkaInstrumentor
+from opentelemetry.instrumentation.elasticsearch import ElasticsearchInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.system_metrics import SystemMetricsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -39,6 +48,9 @@ from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_tracers import (
+    TelemetryTracer,
 )
 
 
@@ -115,6 +127,31 @@ class OpenTelemetry(Telemetry):
 
         # Start instrumentation
         self._start_instrumentation()
+
+        # enable any tracers
+        tracer: TelemetryTracer
+        for tracer in telemetry_context.trace_all_calls or []:
+            match tracer:
+                case TelemetryTracer.ASYNCIO:
+                    AsyncioInstrumentor().instrument()
+                case TelemetryTracer.AIOHTTP:
+                    AioHttpClientInstrumentor().instrument()
+                case TelemetryTracer.BOTO:
+                    BotoInstrumentor().instrument()  # type: ignore[no-untyped-call]
+                case TelemetryTracer.BOTOCORE:
+                    BotocoreInstrumentor().instrument()  # type: ignore[no-untyped-call]
+                case TelemetryTracer.CONFLUENT_KAFKA:
+                    ConfluentKafkaInstrumentor().instrument()
+                case TelemetryTracer.ELASTICSEARCH:
+                    ElasticsearchInstrumentor().instrument()  # type: ignore[no-untyped-call]
+                case TelemetryTracer.HTTPX:
+                    HTTPXClientInstrumentor().instrument()
+                case TelemetryTracer.PYMONGO:
+                    PymongoInstrumentor().instrument()
+                case TelemetryTracer.REQUESTS:
+                    RequestsInstrumentor().instrument()
+                case TelemetryTracer.SYSTEM:
+                    pass
 
     def __getstate__(self) -> Dict[str, Any]:
         # Exclude certain properties from being pickled otherwise they cause errors in pickling
