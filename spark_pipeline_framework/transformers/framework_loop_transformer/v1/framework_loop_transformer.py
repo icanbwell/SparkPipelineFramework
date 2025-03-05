@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
 # noinspection PyProtectedMember
@@ -14,6 +15,18 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+    TelemetryContext,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
+    TelemetryFactory,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
+    TelemetrySpanCreator,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+    TelemetrySpanWrapper,
 )
 
 
@@ -93,42 +106,63 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     event_name=f"Started Loop for {self.getName()}",
                     event_text=str(current_run_number),
                 )
+
+            telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
+                telemetry_context=self.telemetry_context
+                or TelemetryContext.get_null_context()
+            ).create_telemetry_span_creator(log_level=environ.get("LOGLEVEL"))
+
             stage: Transformer
             for stage in stages:
                 if hasattr(stage, "getName"):
                     # noinspection Mypy
                     stage_name = stage.getName()
-                    if not stage_name:
+                    if stage_name is not None:
+                        stage_name = f"{stage_name} ({stage.__class__.__name__})"
+                    else:
                         stage_name = stage.__class__.__name__
                 else:
                     stage_name = stage.__class__.__name__
-                if progress_logger is not None:
-                    progress_logger.start_mlflow_run(
-                        run_name=stage_name, is_nested=True
-                    )
-                if hasattr(stage, "set_loop_id"):
-                    stage.set_loop_id(str(current_run_number))
 
-                if hasattr(stage, "set_telemetry_context"):
-                    stage.set_telemetry_context(
-                        telemetry_context=self.telemetry_context
+                telemetry_span: TelemetrySpanWrapper
+                async with telemetry_span_creator.create_telemetry_span(
+                    name=stage_name,
+                    attributes={
+                        "loop_id": str(current_run_number),
+                    },
+                ) as telemetry_span:
+                    child_telemetry_context = (
+                        telemetry_span.create_child_telemetry_context()
                     )
 
-                try:
-                    # use a new df everytime to avoid keeping data in memory too long
-                    df.unpersist(blocking=True)
-                    df = create_empty_dataframe(df.sparkSession)
-                    if hasattr(stage, "transform_async"):
-                        df = await stage.transform_async(df)
-                    else:
-                        df = stage.transform(df)
-                except Exception as e:
-                    if len(e.args) >= 1:
-                        # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
-                        e.args = (f"In Stage ({stage_name})", *e.args)
-                    raise e
-                if progress_logger is not None:
-                    progress_logger.end_mlflow_run()
+                    if progress_logger is not None:
+                        progress_logger.start_mlflow_run(
+                            run_name=stage_name, is_nested=True
+                        )
+                    if hasattr(stage, "set_loop_id"):
+                        stage.set_loop_id(str(current_run_number))
+
+                    if hasattr(stage, "set_telemetry_context"):
+                        stage.set_telemetry_context(
+                            telemetry_context=child_telemetry_context
+                        )
+
+                    try:
+                        # use a new df everytime to avoid keeping data in memory too long
+                        df.unpersist(blocking=True)
+                        df = create_empty_dataframe(df.sparkSession)
+                        if hasattr(stage, "transform_async"):
+                            df = await stage.transform_async(df)
+                        else:
+                            df = stage.transform(df)
+                    except Exception as e:
+                        if len(e.args) >= 1:
+                            # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                            e.args = (f"In Stage ({stage_name})", *e.args)
+                        raise e
+                    if progress_logger is not None:
+                        progress_logger.end_mlflow_run()
+
             if progress_logger is not None:
                 progress_logger.write_to_log(
                     f"---- Finished loop {current_run_number} for {self.getName()} ---------"

@@ -1,3 +1,4 @@
+from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
 # noinspection PyProtectedMember
@@ -8,6 +9,18 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+    TelemetryContext,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
+    TelemetryFactory,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
+    TelemetrySpanCreator,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+    TelemetrySpanWrapper,
 )
 
 
@@ -64,6 +77,12 @@ class FrameworkTransformerGroup(FrameworkTransformer):
             if view_enable_if_view_not_empty
             else True
         )
+
+        telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
+            telemetry_context=self.telemetry_context
+            or TelemetryContext.get_null_context()
+        ).create_telemetry_span_creator(log_level=environ.get("LOGLEVEL"))
+
         if (enable or enable is None) and enable_if_view_not_empty:
             stages: List[Transformer] = (
                 self.stages if not callable(self.stages) else self.stages()
@@ -74,30 +93,40 @@ class FrameworkTransformerGroup(FrameworkTransformer):
                     stage_name = stage.getName()
                 else:
                     stage_name = stage.__class__.__name__
-                if progress_logger is not None:
-                    progress_logger.start_mlflow_run(
-                        run_name=stage_name, is_nested=True
-                    )
-                if hasattr(stage, "set_loop_id"):
-                    stage.set_loop_id(self.loop_id)
-                if hasattr(stage, "set_telemetry_context"):
-                    stage.set_telemetry_context(
-                        telemetry_context=self.telemetry_context
+
+                telemetry_span: TelemetrySpanWrapper
+                async with telemetry_span_creator.create_telemetry_span(
+                    name=stage_name,
+                    attributes={},
+                ) as telemetry_span:
+                    child_telemetry_context = (
+                        telemetry_span.create_child_telemetry_context()
                     )
 
-                try:
-                    if hasattr(stage, "transform_async"):
-                        await stage.transform_async(df)
-                    else:
-                        df = stage.transform(df)
-                except Exception as e:
-                    if len(e.args) >= 1:
-                        # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
-                        e.args = (f"In Stage ({stage_name})", *e.args)
-                    raise e
+                    if progress_logger is not None:
+                        progress_logger.start_mlflow_run(
+                            run_name=stage_name, is_nested=True
+                        )
+                    if hasattr(stage, "set_loop_id"):
+                        stage.set_loop_id(self.loop_id)
+                    if hasattr(stage, "set_telemetry_context"):
+                        stage.set_telemetry_context(
+                            telemetry_context=child_telemetry_context
+                        )
 
-                if progress_logger is not None:
-                    progress_logger.end_mlflow_run()
+                    try:
+                        if hasattr(stage, "transform_async"):
+                            await stage.transform_async(df)
+                        else:
+                            df = stage.transform(df)
+                    except Exception as e:
+                        if len(e.args) >= 1:
+                            # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                            e.args = (f"In Stage ({stage_name})", *e.args)
+                        raise e
+
+                    if progress_logger is not None:
+                        progress_logger.end_mlflow_run()
         else:
             if progress_logger is not None:
                 progress_logger.write_to_log(

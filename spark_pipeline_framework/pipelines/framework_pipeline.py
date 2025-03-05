@@ -96,121 +96,12 @@ class FrameworkPipeline(Transformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         """
-        Runs all the transformers in the pipeline in sequence on the input DataFrame and returns the transformed DataFrame
+        Override this method to implement transformation
 
-
+        :param df: input dataframe
+        :return: transformed dataframe
         """
-        telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
-            telemetry_context=self.telemetry_context
-        ).create_telemetry_span_creator(log_level=self.log_level)
-
-        telemetry_span: TelemetrySpanWrapper
-        with telemetry_span_creator.create_telemetry_span_sync(
-            name=self.name or "framework_pipeline",
-            attributes={
-                "run_id": self._run_id,
-            }
-            | (self.attributes or {}),
-        ) as telemetry_span:
-            # set the trace and span ids in the telemetry context so even if Telemetry
-            # is done from multiple spark nodes they should all show up under the same span
-            child_telemetry_context: TelemetryContext = (
-                telemetry_span.create_child_telemetry_context()
-            )
-
-            # if steps are defined but not transformers then convert steps to transformers first
-            if len(self.steps) > 0 and len(self.transformers) == 0:
-                self.transformers = self.create_steps(self.steps)
-            # get the logger to use
-            logger = get_logger(__name__)
-            count_of_transformers: int = len(self.transformers)
-            i: int = 0
-            pipeline_name: str = self.__class__.__name__
-            self.progress_logger.log_event(
-                event_name=pipeline_name,
-                event_text=(
-                    f"Starting Pipeline {pipeline_name}" + f"_{self._run_id}"
-                    if self._run_id
-                    else ""
-                ),
-                log_level=LogLevel.INFO,
-            )
-            for transformer in self.transformers:
-                assert isinstance(transformer, Transformer), type(transformer)
-                if hasattr(transformer, "getName"):
-                    # noinspection Mypy
-                    stage_name = transformer.getName()
-                else:
-                    stage_name = transformer.__class__.__name__
-                try:
-                    i += 1
-                    logger.info(
-                        f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
-                        f"({i} of {count_of_transformers}) ----"
-                    )
-                    if hasattr(transformer, "set_loop_id"):
-                        transformer.set_loop_id(self.loop_id)
-
-                    if hasattr(transformer, "set_telemetry_context"):
-                        transformer.set_telemetry_context(
-                            telemetry_context=child_telemetry_context
-                        )
-
-                    with ProgressLogMetric(
-                        progress_logger=self.progress_logger,
-                        name=str(stage_name) or "unknown",
-                    ):
-                        self.progress_logger.log_event(
-                            pipeline_name,
-                            event_text=f"Running pipeline step {stage_name}",
-                        )
-                        if hasattr(transformer, "_transform_async") and not hasattr(
-                            transformer, "_transform"
-                        ):
-                            # noinspection PyProtectedMember
-                            df = AsyncHelper.run(fn=transformer._transform_async(df=df))
-                        else:
-                            df = transformer.transform(dataset=df)
-
-                except Exception as e:
-                    logger.error(
-                        f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
-                    )
-                    # use exception chaining to add stage name but keep original exception
-                    # friendly_spark_exception: FriendlySparkException = (
-                    #     FriendlySparkException(exception=e, stage_name=stage_name)
-                    # )
-                    # error_messages: List[str] = (
-                    #     friendly_spark_exception.message.split("\n")
-                    #     if friendly_spark_exception.message
-                    #     else []
-                    # )
-                    # for error_message in error_messages:
-                    #     logger.error(msg=error_message)
-
-                    if hasattr(transformer, "getSql"):
-                        # noinspection Mypy
-                        logger.error(transformer.getSql())
-                    logger.error(
-                        "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                    )
-                    self.progress_logger.log_exception(
-                        event_name=pipeline_name,
-                        event_text=f"Exception in Stage={stage_name}",
-                        ex=e,
-                    )
-                    # if hasattr(e, "message"):
-                    #     e.message = f"Exception in stage {stage_name}" + e.message
-                    if len(e.args) >= 1:
-                        # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
-                        e.args = (f"In Stage ({stage_name})", *e.args)
-                    raise e
-            self.progress_logger.log_event(
-                event_name=pipeline_name,
-                event_text=f"Finished Pipeline {pipeline_name}",
-                log_level=LogLevel.INFO,
-            )
-            return df
+        return AsyncHelper.run(self._transform_async(df))
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         """
@@ -257,70 +148,80 @@ class FrameworkPipeline(Transformer):
                 assert isinstance(transformer, Transformer), type(transformer)
                 if hasattr(transformer, "getName"):
                     # noinspection Mypy
-                    stage_name = transformer.getName()
+                    stage_name = (
+                        f"{transformer.getName()} ({transformer.__class__.__name__})"
+                    )
                 else:
                     stage_name = transformer.__class__.__name__
-                try:
-                    i += 1
-                    logger.info(
-                        f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
-                        f"({i} of {count_of_transformers}) ----"
-                    )
-                    if hasattr(transformer, "set_loop_id"):
-                        transformer.set_loop_id(self.loop_id)
 
-                    if hasattr(transformer, "set_telemetry_context"):
-                        transformer.set_telemetry_context(
-                            telemetry_context=child_telemetry_context
+                transformer_span: TelemetrySpanWrapper
+                async with telemetry_span_creator.create_telemetry_span(
+                    name=stage_name,
+                    attributes={},
+                    telemetry_parent=telemetry_span.create_child_telemetry_parent(),
+                ) as transformer_span:
+                    try:
+                        i += 1
+                        logger.info(
+                            f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
+                            f"({i} of {count_of_transformers}) ----"
                         )
+                        if hasattr(transformer, "set_loop_id"):
+                            transformer.set_loop_id(self.loop_id)
 
-                    with ProgressLogMetric(
-                        progress_logger=self.progress_logger,
-                        name=str(stage_name) or "unknown",
-                    ):
-                        self.progress_logger.log_event(
-                            pipeline_name,
-                            event_text=f"Running pipeline step {stage_name}",
+                        if hasattr(transformer, "set_telemetry_context"):
+                            transformer.set_telemetry_context(
+                                telemetry_context=transformer_span.create_child_telemetry_context()
+                            )
+
+                        with ProgressLogMetric(
+                            progress_logger=self.progress_logger,
+                            name=str(stage_name) or "unknown",
+                        ):
+                            self.progress_logger.log_event(
+                                pipeline_name,
+                                event_text=f"Running pipeline step {stage_name}",
+                            )
+                            if hasattr(transformer, "_transform_async"):
+                                # noinspection PyProtectedMember
+                                df = await transformer._transform_async(df=df)
+                            else:
+                                df = transformer.transform(dataset=df)
+
+                    except Exception as e:
+                        logger.error(
+                            f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
                         )
-                        if hasattr(transformer, "_transform_async"):
-                            # noinspection PyProtectedMember
-                            df = await transformer._transform_async(df=df)
-                        else:
-                            df = transformer.transform(dataset=df)
+                        # use exception chaining to add stage name but keep original exception
+                        # friendly_spark_exception: FriendlySparkException = (
+                        #     FriendlySparkException(exception=e, stage_name=stage_name)
+                        # )
+                        # error_messages: List[str] = (
+                        #     friendly_spark_exception.message.split("\n")
+                        #     if friendly_spark_exception.message
+                        #     else []
+                        # )
+                        # for error_message in error_messages:
+                        #     logger.error(msg=error_message)
 
-                except Exception as e:
-                    logger.error(
-                        f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer [{stage_name}] threw exception !!!!!!!!!!!!!"
-                    )
-                    # use exception chaining to add stage name but keep original exception
-                    # friendly_spark_exception: FriendlySparkException = (
-                    #     FriendlySparkException(exception=e, stage_name=stage_name)
-                    # )
-                    # error_messages: List[str] = (
-                    #     friendly_spark_exception.message.split("\n")
-                    #     if friendly_spark_exception.message
-                    #     else []
-                    # )
-                    # for error_message in error_messages:
-                    #     logger.error(msg=error_message)
+                        if hasattr(transformer, "getSql"):
+                            # noinspection Mypy
+                            logger.error(transformer.getSql())
+                        logger.error(
+                            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                        )
+                        self.progress_logger.log_exception(
+                            event_name=pipeline_name,
+                            event_text=f"Exception in Stage={stage_name}",
+                            ex=e,
+                        )
+                        # if hasattr(e, "message"):
+                        #     e.message = f"Exception in stage {stage_name}" + e.message
+                        if len(e.args) >= 1:
+                            # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
+                            e.args = (f"In Stage ({stage_name})", *e.args)
+                        raise e
 
-                    if hasattr(transformer, "getSql"):
-                        # noinspection Mypy
-                        logger.error(transformer.getSql())
-                    logger.error(
-                        "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                    )
-                    self.progress_logger.log_exception(
-                        event_name=pipeline_name,
-                        event_text=f"Exception in Stage={stage_name}",
-                        ex=e,
-                    )
-                    # if hasattr(e, "message"):
-                    #     e.message = f"Exception in stage {stage_name}" + e.message
-                    if len(e.args) >= 1:
-                        # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
-                        e.args = (f"In Stage ({stage_name})", *e.args)
-                    raise e
             self.progress_logger.log_event(
                 event_name=pipeline_name,
                 event_text=f"Finished Pipeline {pipeline_name}",
