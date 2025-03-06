@@ -86,7 +86,6 @@ async def run_sub_operation(
         trace_id=trace_id,
         span_id=span_id,
         service_name=service_name,
-        endpoint=endpoint,
         environment=environment,
         provider=TelemetryProvider.OPEN_TELEMETRY,
     )
@@ -113,7 +112,6 @@ async def test_open_telemetry_multi_thread() -> None:
 
     telemetry_context = TelemetryContext(
         service_name=service_name,
-        endpoint=endpoint,
         environment=environment,
         provider=TelemetryProvider.OPEN_TELEMETRY,
     )

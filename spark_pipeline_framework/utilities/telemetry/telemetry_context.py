@@ -19,9 +19,6 @@ class TelemetryContext(DataClassJsonMixin):
     service_name: str
     """ Service name for the telemetry context """
 
-    endpoint: Optional[str]
-    """ Endpoint for the telemetry context """
-
     environment: str
     """ Environment for the telemetry context """
 
@@ -46,7 +43,6 @@ class TelemetryContext(DataClassJsonMixin):
             trace_id=None,
             span_id=None,
             service_name="",
-            endpoint=None,
             environment="",
         )
 
@@ -61,7 +57,6 @@ class TelemetryContext(DataClassJsonMixin):
             trace_id=self.trace_id,
             span_id=self.span_id,
             service_name=self.service_name,
-            endpoint=self.endpoint,
             environment=self.environment,
             trace_all_calls=self.trace_all_calls,
         )

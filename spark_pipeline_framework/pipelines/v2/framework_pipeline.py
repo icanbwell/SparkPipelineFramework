@@ -58,7 +58,6 @@ class FrameworkPipeline(Transformer):
         validation_output_path: Optional[str] = None,
         log_level: Optional[Union[int, str]] = None,
         telemetry_enable: Optional[bool] = None,
-        telemetry_endpoint: Optional[str] = None,
         name: Optional[str] = None,
         attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -95,14 +94,11 @@ class FrameworkPipeline(Transformer):
         self.telemetry_enable: Optional[bool] = telemetry_enable or bool(
             os.environ.get("TELEMETRY_ENABLE")
         )
-        self.telemetry_endpoint: Optional[str] = telemetry_endpoint or os.environ.get(
-            "OTEL_EXPORTER_OTLP_ENDPOINT"
-        )
 
         self.telemetry_context: TelemetryContext = TelemetryContext(
             provider=(
                 TelemetryProvider.OPEN_TELEMETRY
-                if self.telemetry_endpoint and self.telemetry_enable
+                if self.telemetry_enable
                 else (
                     TelemetryProvider.CONSOLE
                     if self.telemetry_enable
@@ -112,7 +108,6 @@ class FrameworkPipeline(Transformer):
             trace_id=None,
             span_id=None,
             service_name="helix.pipelines",
-            endpoint=self.telemetry_endpoint,
             environment="development",
         )
 

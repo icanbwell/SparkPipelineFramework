@@ -115,7 +115,6 @@ class OpenTelemetry(Telemetry):
         # if the tracer is not setup then set it up
         if OpenTelemetry._trace_provider is None:
             self.setup_tracing(
-                telemetry_context=telemetry_context,
                 resource=resource,
                 write_telemetry_to_console=write_telemetry_to_console,
             )
@@ -135,7 +134,6 @@ class OpenTelemetry(Telemetry):
 
         if OpenTelemetry._meter_provider is None:
             self.setup_meters(
-                telemetry_context=telemetry_context,
                 resource=resource,
                 write_telemetry_to_console=write_telemetry_to_console,
             )
@@ -143,25 +141,19 @@ class OpenTelemetry(Telemetry):
     def setup_tracing(
         self,
         *,
-        telemetry_context: TelemetryContext,
         resource: Resource,
         write_telemetry_to_console: bool,
     ) -> None:
         """
         Set up the OpenTelemetry tracer and exporter
 
-        :param telemetry_context: Telemetry context
         :param resource: Resource
         :param write_telemetry_to_console: Whether to write telemetry to console
         """
         # Create trace provider
         OpenTelemetry._trace_provider = TracerProvider(resource=resource)
         # Create OTLP exporter
-        otlp_exporter = OTLPSpanExporter(
-            endpoint=telemetry_context.endpoint,
-            # Add timeout and other parameters if needed
-            timeout=10,  # 10 seconds timeout
-        )
+        otlp_exporter = OTLPSpanExporter()
         if write_telemetry_to_console:
             console_processor = BatchSpanProcessor(ConsoleSpanExporter())
             OpenTelemetry._trace_provider.add_span_processor(console_processor)
@@ -177,14 +169,11 @@ class OpenTelemetry(Telemetry):
     def setup_meters(
         self,
         *,
-        telemetry_context: TelemetryContext,
         resource: Resource,
         write_telemetry_to_console: bool,
     ) -> None:
         reader = PeriodicExportingMetricReader(
-            OTLPMetricExporter(
-                endpoint=telemetry_context.endpoint,
-            ),
+            OTLPMetricExporter(),
         )
 
         OpenTelemetry._meter_provider = MeterProvider(

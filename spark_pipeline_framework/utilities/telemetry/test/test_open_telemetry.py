@@ -19,7 +19,6 @@ def test_open_telemetry() -> None:
     telemetry_context = TelemetryContext(
         provider=TelemetryProvider.OPEN_TELEMETRY,
         service_name="example-service",
-        endpoint="otel-collector:4317",
         environment="development",
     )
     telemetry = OpenTelemetry(telemetry_context=telemetry_context, log_level="DEBUG")
