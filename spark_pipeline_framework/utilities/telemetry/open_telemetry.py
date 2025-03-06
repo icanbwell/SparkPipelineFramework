@@ -124,7 +124,7 @@ class OpenTelemetry(Telemetry):
             console_processor = BatchSpanProcessor(ConsoleSpanExporter())
             OpenTelemetry._trace_provider.add_span_processor(console_processor)
         # Add batch span processor
-        span_processor = BatchSpanProcessor(otlp_exporter)
+        span_processor = BatchSpanProcessor(span_exporter=otlp_exporter)
         OpenTelemetry._trace_provider.add_span_processor(span_processor)
         # Set the global tracer provider
         trace.set_tracer_provider(OpenTelemetry._trace_provider)
@@ -235,7 +235,10 @@ class OpenTelemetry(Telemetry):
             if v is not None and type(v) in [bool, str, bytes, int, float]
         }
 
-        _tracer = trace.get_tracer(self._telemetry_context.service_name)
+        _tracer = trace.get_tracer(
+            instrumenting_module_name=self._telemetry_context.service_name,
+            tracer_provider=OpenTelemetry._trace_provider,
+        )
         with _tracer.start_as_current_span(
             name=name,
             attributes=attributes,
@@ -300,7 +303,10 @@ class OpenTelemetry(Telemetry):
             if v is not None and type(v) in [bool, str, bytes, int, float]
         }
 
-        _tracer = trace.get_tracer(self._telemetry_context.service_name)
+        _tracer = trace.get_tracer(
+            instrumenting_module_name=self._telemetry_context.service_name,
+            tracer_provider=OpenTelemetry._trace_provider,
+        )
         with _tracer.start_as_current_span(
             name=name,
             attributes=attributes,
@@ -362,17 +368,18 @@ class OpenTelemetry(Telemetry):
         """
         Gracefully shutdown the tracer provider
         """
-        if self._trace_provider is not None:
-            self._trace_provider.force_flush()
-            self._trace_provider.shutdown()
+        if OpenTelemetry._trace_provider is not None:
+            OpenTelemetry._trace_provider.force_flush()
+            OpenTelemetry._trace_provider.shutdown()
+            OpenTelemetry._trace_provider = None
 
     @override
     async def flush_async(self) -> None:
         """
         Flush the span processor
         """
-        if self._trace_provider is not None:
-            self._trace_provider.force_flush()
+        if OpenTelemetry._trace_provider is not None:
+            OpenTelemetry._trace_provider.force_flush()
 
     # noinspection PyMethodMayBeStatic
     def get_current_trace_context(self) -> Optional[Tuple[str, str]]:
