@@ -14,20 +14,23 @@ from typing import (
     ClassVar,
 )
 
+import opentelemetry.metrics
 from opentelemetry import trace
 from opentelemetry.context import Context
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
 from opentelemetry.instrumentation.asyncio import AsyncioInstrumentor
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
-from opentelemetry.instrumentation.system_metrics import SystemMetricsInstrumentor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics._internal.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.semconv.resource import ResourceAttributes
-from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags, Tracer
+from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
@@ -57,9 +60,7 @@ class OpenTelemetry(Telemetry):
 
     _trace_provider: ClassVar[Optional[TracerProvider]] = None
 
-    _tracer: ClassVar[Optional[Tracer]] = None
-
-    _system_metrics_instrumentor: ClassVar[Optional[SystemMetricsInstrumentor]] = None
+    _meter_provider: ClassVar[Optional[MeterProvider]] = None
 
     def __init__(
         self,
@@ -92,9 +93,12 @@ class OpenTelemetry(Telemetry):
         }
 
         # if the tracer is not setup then set it up
-        if OpenTelemetry._tracer is None:
+        if OpenTelemetry._trace_provider is None:
             self.setup_tracing(telemetry_context, write_telemetry_to_console)
             self.setup_tracers(telemetry_context)
+
+        if OpenTelemetry._meter_provider is None:
+            self.setup_meters(telemetry_context, write_telemetry_to_console)
 
     def setup_tracing(
         self, telemetry_context: TelemetryContext, write_telemetry_to_console: bool
@@ -128,13 +132,22 @@ class OpenTelemetry(Telemetry):
         OpenTelemetry._trace_provider.add_span_processor(span_processor)
         # Set the global tracer provider
         trace.set_tracer_provider(OpenTelemetry._trace_provider)
-        # Get tracer
-        OpenTelemetry._tracer = trace.get_tracer(telemetry_context.service_name)
-        # Additional instrumentation
-        OpenTelemetry._system_metrics_instrumentor = SystemMetricsInstrumentor()
-        # Metadata
         # Start instrumentation
-        self._start_instrumentation()
+        # self._start_instrumentation()
+
+    # noinspection PyMethodMayBeStatic
+    def setup_meters(
+        self, telemetry_context: TelemetryContext, write_telemetry_to_console: bool
+    ) -> None:
+        reader = PeriodicExportingMetricReader(
+            OTLPMetricExporter(
+                endpoint=telemetry_context.endpoint,
+            ),
+        )
+
+        provider: MeterProvider = MeterProvider(metric_readers=[reader])
+
+        opentelemetry.metrics.set_meter_provider(provider)
 
     # noinspection PyMethodMayBeStatic
     def setup_tracers(self, telemetry_context: TelemetryContext) -> None:
@@ -174,15 +187,15 @@ class OpenTelemetry(Telemetry):
             if k in ["_instance_id", "_metadata", "telemetry_context"]
         }
 
-    def _start_instrumentation(self) -> None:
-        """
-        Start system and logging instrumentation
-        """
-        assert OpenTelemetry._system_metrics_instrumentor is not None
-        try:
-            OpenTelemetry._system_metrics_instrumentor.instrument()
-        except Exception as e:
-            self._logger.exception(e)
+    # def _start_instrumentation(self) -> None:
+    #     """
+    #     Start system and logging instrumentation
+    #     """
+    #     assert OpenTelemetry._system_metrics_instrumentor is not None
+    #     try:
+    #         OpenTelemetry._system_metrics_instrumentor.instrument()
+    #     except Exception as e:
+    #         self._logger.exception(e)
 
     @contextmanager
     @override
