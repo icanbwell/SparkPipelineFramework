@@ -13,11 +13,10 @@ from typing import (
     Union,
 )
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
-)
+from opentelemetry.metrics import Counter, UpDownCounter, Histogram
+from opentelemetry.metrics import NoOpCounter, NoOpUpDownCounter, NoOpHistogram
 
+from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.console_telemetry_history_item import (
     ConsoleTelemetryHistoryItem,
 )
@@ -27,10 +26,12 @@ from spark_pipeline_framework.utilities.telemetry.console_telemetry_span_wrapper
 from spark_pipeline_framework.utilities.telemetry.telemetry import (
     Telemetry,
 )
+from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+    TelemetryContext,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
 )
-
 from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
@@ -185,3 +186,70 @@ class ConsoleTelemetry(Telemetry):
     def __getstate__(self) -> Dict[str, Any]:
         # Exclude certain properties from being pickled otherwise they cause errors in pickling
         return {k: v for k, v in self.__dict__.items()}
+
+    @override
+    def get_counter(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> Counter:
+        """
+        Get a counter metric
+
+        :param name: Name of the counter
+        :param unit: Unit of the counter
+        :param description: Description
+        :return: The Counter metric
+        """
+        return NoOpCounter(
+            name=name,
+            unit=unit,
+            description=description,
+        )
+
+    @override
+    def get_up_down_counter(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> UpDownCounter:
+        """
+        Get a up_down_counter metric
+
+        :param name: Name of the up_down_counter
+        :param unit: Unit of the up_down_counter
+        :param description: Description
+        :return: The Counter metric
+        """
+
+        return NoOpUpDownCounter(
+            name=name,
+            unit=unit,
+            description=description,
+        )
+
+    @override
+    def get_histograms(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> Histogram:
+        """
+        Get a histograms metric
+
+        :param name: Name of the histograms
+        :param unit: Unit of the histograms
+        :param description: Description
+        :return: The Counter metric
+        """
+        return NoOpHistogram(
+            name=name,
+            unit=unit,
+            description=description,
+        )

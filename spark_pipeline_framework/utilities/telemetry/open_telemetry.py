@@ -459,6 +459,7 @@ class OpenTelemetry(Telemetry):
         context: Tuple[str, str] | None = self.get_current_trace_context()
         return context[1] if context else None
 
+    @override
     def get_counter(
         self,
         *,
@@ -493,6 +494,7 @@ class OpenTelemetry(Telemetry):
 
         return counter
 
+    @override
     def get_up_down_counter(
         self,
         *,
@@ -527,6 +529,7 @@ class OpenTelemetry(Telemetry):
 
         return up_down_counter
 
+    @override
     def get_histograms(
         self,
         *,

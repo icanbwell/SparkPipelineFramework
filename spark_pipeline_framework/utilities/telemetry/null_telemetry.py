@@ -15,6 +15,8 @@ from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
 from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
+from opentelemetry.metrics import Counter, UpDownCounter, Histogram
+from opentelemetry.metrics import NoOpCounter, NoOpUpDownCounter, NoOpHistogram
 
 
 class NullTelemetry(Telemetry):
@@ -71,4 +73,71 @@ class NullTelemetry(Telemetry):
             attributes=attributes,
             telemetry_context=self._telemetry_context,
             telemetry_parent=telemetry_parent,
+        )
+
+    @override
+    def get_counter(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> Counter:
+        """
+        Get a counter metric
+
+        :param name: Name of the counter
+        :param unit: Unit of the counter
+        :param description: Description
+        :return: The Counter metric
+        """
+        return NoOpCounter(
+            name=name,
+            unit=unit,
+            description=description,
+        )
+
+    @override
+    def get_up_down_counter(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> UpDownCounter:
+        """
+        Get a up_down_counter metric
+
+        :param name: Name of the up_down_counter
+        :param unit: Unit of the up_down_counter
+        :param description: Description
+        :return: The Counter metric
+        """
+
+        return NoOpUpDownCounter(
+            name=name,
+            unit=unit,
+            description=description,
+        )
+
+    @override
+    def get_histograms(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> Histogram:
+        """
+        Get a histograms metric
+
+        :param name: Name of the histograms
+        :param unit: Unit of the histograms
+        :param description: Description
+        :return: The Counter metric
+        """
+        return NoOpHistogram(
+            name=name,
+            unit=unit,
+            description=description,
         )
