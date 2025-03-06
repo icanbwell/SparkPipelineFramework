@@ -155,9 +155,9 @@ class OpenTelemetry(Telemetry):
             ),
         )
 
-        provider: MeterProvider = MeterProvider(metric_readers=[reader])
+        OpenTelemetry._meter_provider = MeterProvider(metric_readers=[reader])
 
-        metrics.set_meter_provider(provider)
+        metrics.set_meter_provider(OpenTelemetry._meter_provider)
 
     # noinspection PyMethodMayBeStatic
     def setup_tracers(self, telemetry_context: TelemetryContext) -> None:
