@@ -14,8 +14,7 @@ from typing import (
     ClassVar,
 )
 
-import opentelemetry.metrics
-from opentelemetry import trace
+from opentelemetry import trace, metrics
 from opentelemetry.context import Context
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -24,8 +23,13 @@ from opentelemetry.instrumentation.asyncio import AsyncioInstrumentor
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics._internal.export import PeriodicExportingMetricReader
+from opentelemetry.metrics import Meter, Counter, UpDownCounter, Histogram
+from opentelemetry.sdk.metrics import (
+    MeterProvider,
+)
+from opentelemetry.sdk.metrics.export import (
+    PeriodicExportingMetricReader,
+)
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
@@ -61,6 +65,12 @@ class OpenTelemetry(Telemetry):
     _trace_provider: ClassVar[Optional[TracerProvider]] = None
 
     _meter_provider: ClassVar[Optional[MeterProvider]] = None
+
+    _counters: ClassVar[Dict[str, Counter]] = {}
+
+    _up_down_counters: ClassVar[Dict[str, UpDownCounter]] = {}
+
+    _histograms: ClassVar[Dict[str, Histogram]] = {}
 
     def __init__(
         self,
@@ -147,7 +157,7 @@ class OpenTelemetry(Telemetry):
 
         provider: MeterProvider = MeterProvider(metric_readers=[reader])
 
-        opentelemetry.metrics.set_meter_provider(provider)
+        metrics.set_meter_provider(provider)
 
     # noinspection PyMethodMayBeStatic
     def setup_tracers(self, telemetry_context: TelemetryContext) -> None:
@@ -448,3 +458,105 @@ class OpenTelemetry(Telemetry):
         """
         context: Tuple[str, str] | None = self.get_current_trace_context()
         return context[1] if context else None
+
+    def get_counter(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> Counter:
+        """
+        Get a counter metric
+
+        :param name: Name of the counter
+        :param unit: Unit of the counter
+        :param description: Description
+        :return: The Counter metric
+        """
+        meter: Meter = metrics.get_meter(
+            name=self._telemetry_context.service_name,
+            meter_provider=OpenTelemetry._meter_provider,
+        )
+
+        # check if we already have a counter for this name
+        if name in OpenTelemetry._counters:
+            return OpenTelemetry._counters[name]
+
+        counter: Counter = meter.create_counter(
+            name=name,
+            unit=unit,
+            description=description,
+        )
+        # add to the dictionary of counters
+        OpenTelemetry._counters[name] = counter
+
+        return counter
+
+    def get_up_down_counter(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> UpDownCounter:
+        """
+        Get a up_down_counter metric
+
+        :param name: Name of the up_down_counter
+        :param unit: Unit of the up_down_counter
+        :param description: Description
+        :return: The Counter metric
+        """
+        meter: Meter = metrics.get_meter(
+            name=self._telemetry_context.service_name,
+            meter_provider=OpenTelemetry._meter_provider,
+        )
+
+        # check if we already have an up_down_counter for this name
+        if name in OpenTelemetry._up_down_counters:
+            return OpenTelemetry._up_down_counters[name]
+
+        up_down_counter: UpDownCounter = meter.create_up_down_counter(
+            name=name,
+            unit=unit,
+            description=description,
+        )
+        # add to the dictionary of counters
+        OpenTelemetry._up_down_counters[name] = up_down_counter
+
+        return up_down_counter
+
+    def get_histograms(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+    ) -> Histogram:
+        """
+        Get a histograms metric
+
+        :param name: Name of the histograms
+        :param unit: Unit of the histograms
+        :param description: Description
+        :return: The Counter metric
+        """
+        meter: Meter = metrics.get_meter(
+            name=self._telemetry_context.service_name,
+            meter_provider=OpenTelemetry._meter_provider,
+        )
+
+        # check if we already have a histograms for this name
+        if name in OpenTelemetry._histograms:
+            return OpenTelemetry._histograms[name]
+
+        histograms: Histogram = meter.create_histogram(
+            name=name,
+            unit=unit,
+            description=description,
+        )
+        # add to the dictionary of counters
+        OpenTelemetry._histograms[name] = histograms
+
+        return histograms
