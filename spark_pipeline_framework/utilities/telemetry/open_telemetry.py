@@ -1,3 +1,4 @@
+import os
 import socket
 import uuid
 from contextlib import asynccontextmanager, contextmanager
@@ -12,6 +13,7 @@ from typing import (
     AsyncIterator,
     Union,
     ClassVar,
+    List,
 )
 
 from opentelemetry import trace, metrics
@@ -102,23 +104,6 @@ class OpenTelemetry(Telemetry):
             "instance.id": self._instance_id,
         }
 
-        # if the tracer is not setup then set it up
-        if OpenTelemetry._trace_provider is None:
-            self.setup_tracing(telemetry_context, write_telemetry_to_console)
-            self.setup_tracers(telemetry_context)
-
-        if OpenTelemetry._meter_provider is None:
-            self.setup_meters(telemetry_context, write_telemetry_to_console)
-
-    def setup_tracing(
-        self, telemetry_context: TelemetryContext, write_telemetry_to_console: bool
-    ) -> None:
-        """
-        Set up the OpenTelemetry tracer and exporter
-
-        :param telemetry_context: Telemetry context
-        :param write_telemetry_to_console: Whether to write telemetry to console
-        """
         # Create a resource with service details
         resource = Resource.create(
             {
@@ -126,6 +111,49 @@ class OpenTelemetry(Telemetry):
                 ResourceAttributes.DEPLOYMENT_ENVIRONMENT: telemetry_context.environment,
             }
         )
+
+        # if the tracer is not setup then set it up
+        if OpenTelemetry._trace_provider is None:
+            self.setup_tracing(
+                telemetry_context=telemetry_context,
+                resource=resource,
+                write_telemetry_to_console=write_telemetry_to_console,
+            )
+            # see if the tracers are defined in an environment variable
+            telemetry_tracers_text: Optional[str] = os.getenv("TELEMETRY_TRACERS")
+            telemetry_tracers: List[TelemetryTracer] = (
+                [
+                    TelemetryTracer(tracer.strip())
+                    for tracer in telemetry_tracers_text.split(",")
+                ]
+                if telemetry_tracers_text
+                else []
+            )
+            if telemetry_context.trace_all_calls:
+                telemetry_tracers.extend(telemetry_context.trace_all_calls)
+            self.setup_tracers(telemetry_tracers=telemetry_tracers)
+
+        if OpenTelemetry._meter_provider is None:
+            self.setup_meters(
+                telemetry_context=telemetry_context,
+                resource=resource,
+                write_telemetry_to_console=write_telemetry_to_console,
+            )
+
+    def setup_tracing(
+        self,
+        *,
+        telemetry_context: TelemetryContext,
+        resource: Resource,
+        write_telemetry_to_console: bool,
+    ) -> None:
+        """
+        Set up the OpenTelemetry tracer and exporter
+
+        :param telemetry_context: Telemetry context
+        :param resource: Resource
+        :param write_telemetry_to_console: Whether to write telemetry to console
+        """
         # Create trace provider
         OpenTelemetry._trace_provider = TracerProvider(resource=resource)
         # Create OTLP exporter
@@ -147,7 +175,11 @@ class OpenTelemetry(Telemetry):
 
     # noinspection PyMethodMayBeStatic
     def setup_meters(
-        self, telemetry_context: TelemetryContext, write_telemetry_to_console: bool
+        self,
+        *,
+        telemetry_context: TelemetryContext,
+        resource: Resource,
+        write_telemetry_to_console: bool,
     ) -> None:
         reader = PeriodicExportingMetricReader(
             OTLPMetricExporter(
@@ -155,20 +187,22 @@ class OpenTelemetry(Telemetry):
             ),
         )
 
-        OpenTelemetry._meter_provider = MeterProvider(metric_readers=[reader])
+        OpenTelemetry._meter_provider = MeterProvider(
+            metric_readers=[reader], resource=resource
+        )
 
         metrics.set_meter_provider(OpenTelemetry._meter_provider)
 
     # noinspection PyMethodMayBeStatic
-    def setup_tracers(self, telemetry_context: TelemetryContext) -> None:
+    def setup_tracers(self, telemetry_tracers: List[TelemetryTracer]) -> None:
         """
         Set up additional tracers
 
-        :param telemetry_context: Telemetry context
+        :param telemetry_tracers: List of tracers to enable
         """
         # enable any tracers
         tracer: TelemetryTracer
-        for tracer in telemetry_context.trace_all_calls or []:
+        for tracer in telemetry_tracers:
             match tracer:
                 case TelemetryTracer.ASYNCIO:
                     AsyncioInstrumentor().instrument()
@@ -396,6 +430,11 @@ class OpenTelemetry(Telemetry):
             OpenTelemetry._trace_provider.shutdown()
             OpenTelemetry._trace_provider = None
 
+        if OpenTelemetry._meter_provider is not None:
+            OpenTelemetry._meter_provider.force_flush()
+            OpenTelemetry._meter_provider.shutdown()
+            OpenTelemetry._meter_provider = None
+
     @override
     async def flush_async(self) -> None:
         """
@@ -403,6 +442,8 @@ class OpenTelemetry(Telemetry):
         """
         if OpenTelemetry._trace_provider is not None:
             OpenTelemetry._trace_provider.force_flush()
+        if OpenTelemetry._meter_provider is not None:
+            OpenTelemetry._meter_provider.force_flush()
 
     # noinspection PyMethodMayBeStatic
     def get_current_trace_context(self) -> Optional[Tuple[str, str]]:

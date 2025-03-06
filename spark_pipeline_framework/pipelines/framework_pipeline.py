@@ -61,7 +61,9 @@ class FrameworkPipeline(Transformer):
         self.log_level: Optional[Union[int, str]] = log_level or os.environ.get(
             "LOGLEVEL"
         )
-        self.telemetry_enable: Optional[bool] = telemetry_enable
+        self.telemetry_enable: Optional[bool] = telemetry_enable or bool(
+            os.environ.get("TELEMETRY_ENABLE")
+        )
         self.telemetry_endpoint: Optional[str] = telemetry_endpoint or os.environ.get(
             "OTEL_EXPORTER_OTLP_ENDPOINT"
         )
