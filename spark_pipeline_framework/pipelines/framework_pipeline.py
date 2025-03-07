@@ -68,11 +68,7 @@ class FrameworkPipeline(Transformer):
             provider=(
                 TelemetryProvider.OPEN_TELEMETRY
                 if self.telemetry_enable
-                else (
-                    TelemetryProvider.CONSOLE
-                    if self.telemetry_enable
-                    else TelemetryProvider.NULL
-                )
+                else TelemetryProvider.NULL
             ),
             trace_id=None,
             span_id=None,
