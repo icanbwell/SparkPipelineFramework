@@ -29,6 +29,7 @@ from opentelemetry.metrics import Meter, Counter, UpDownCounter, Histogram
 from opentelemetry.sdk.metrics import (
     MeterProvider,
 )
+from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from opentelemetry.sdk.metrics.export import (
     PeriodicExportingMetricReader,
 )
@@ -79,7 +80,7 @@ class OpenTelemetry(Telemetry):
         *,
         telemetry_context: TelemetryContext,
         log_level: Optional[Union[int, str]],
-        write_telemetry_to_console: bool = False,
+        write_telemetry_to_console: Optional[bool] = None,
     ) -> None:
         """
         Initialize OpenTelemetry tracer and instrumentation
@@ -110,6 +111,10 @@ class OpenTelemetry(Telemetry):
                 ResourceAttributes.SERVICE_NAME: telemetry_context.service_name,
                 ResourceAttributes.DEPLOYMENT_ENVIRONMENT: telemetry_context.environment,
             }
+        )
+
+        write_telemetry_to_console = write_telemetry_to_console or bool(
+            os.getenv("TELEMETRY_WRITE_TO_CONSOLE", False)
         )
 
         # if the tracer is not setup then set it up
@@ -154,12 +159,12 @@ class OpenTelemetry(Telemetry):
         OpenTelemetry._trace_provider = TracerProvider(resource=resource)
         # Create OTLP exporter
         otlp_exporter = OTLPSpanExporter()
-        if write_telemetry_to_console:
-            console_processor = BatchSpanProcessor(ConsoleSpanExporter())
-            OpenTelemetry._trace_provider.add_span_processor(console_processor)
         # Add batch span processor
         span_processor = BatchSpanProcessor(span_exporter=otlp_exporter)
         OpenTelemetry._trace_provider.add_span_processor(span_processor)
+        if write_telemetry_to_console:
+            console_processor = BatchSpanProcessor(ConsoleSpanExporter())
+            OpenTelemetry._trace_provider.add_span_processor(console_processor)
         # Set the global tracer provider
         trace.set_tracer_provider(OpenTelemetry._trace_provider)
         # Start instrumentation
@@ -176,9 +181,18 @@ class OpenTelemetry(Telemetry):
             OTLPMetricExporter(),
         )
 
-        OpenTelemetry._meter_provider = MeterProvider(
-            metric_readers=[reader], resource=resource
-        )
+        # Add console exporter for debugging
+        if write_telemetry_to_console:
+            console_reader = PeriodicExportingMetricReader(
+                ConsoleMetricExporter(), export_interval_millis=5000
+            )
+            OpenTelemetry._meter_provider = MeterProvider(
+                metric_readers=[reader, console_reader], resource=resource
+            )
+        else:
+            OpenTelemetry._meter_provider = MeterProvider(
+                metric_readers=[reader], resource=resource
+            )
 
         metrics.set_meter_provider(OpenTelemetry._meter_provider)
 
