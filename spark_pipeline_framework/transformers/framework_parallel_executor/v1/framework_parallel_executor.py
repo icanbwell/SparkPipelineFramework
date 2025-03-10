@@ -1,4 +1,5 @@
 import json
+from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
@@ -17,6 +18,18 @@ from spark_pipeline_framework.utilities.parallel_pipeline_executor.v1.parallel_p
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+    TelemetryContext,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
+    TelemetryFactory,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
+    TelemetrySpanCreator,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+    TelemetrySpanWrapper,
 )
 
 
@@ -125,26 +138,46 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             progress_logger=progress_logger, max_tasks=self.max_parallel_tasks
         )
 
+        telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
+            telemetry_context=self.telemetry_context
+            or TelemetryContext.get_null_context()
+        ).create_telemetry_span_creator(log_level=environ.get("LOGLEVEL"))
+
         for stage in stages:
             stage_name: str = (
                 stage.getName() if hasattr(stage, "getName") else "Unknown Transformer"
             )
-            if hasattr(stage, "set_loop_id"):
-                stage.set_loop_id(self.loop_id)
 
-            assert (
-                stage_name
-            ), f"name must be set on every transformer in FrameworkParallelExecutor: f{json.dumps(stage, default=str)}"
-            # convert each stage into a list of stages, so it can run in parallel
-            pipeline_executor.append(name=stage_name, list_of_stages=[stage])
+            telemetry_span: TelemetrySpanWrapper
+            async with telemetry_span_creator.create_telemetry_span(
+                name=stage_name,
+                attributes={},
+            ) as telemetry_span:
+
+                if hasattr(stage, "set_loop_id"):
+                    stage.set_loop_id(self.loop_id)
+                if hasattr(stage, "set_telemetry_context"):
+                    stage.set_telemetry_context(
+                        telemetry_context=telemetry_span.create_child_telemetry_context()
+                    )
+
+                assert (
+                    stage_name
+                ), f"name must be set on every transformer in FrameworkParallelExecutor: f{json.dumps(stage, default=str)}"
+                # convert each stage into a list of stages, so it can run in parallel
+                pipeline_executor.append(name=stage_name, list_of_stages=[stage])
 
         # use a new df everytime to avoid keeping data in memory too long
         df.unpersist(blocking=True)
         df = create_empty_dataframe(df.sparkSession)
 
         async for name, _ in pipeline_executor.transform_async(df, df.sparkSession):
-            if name:
-                logger.info(f"Finished running parallel stage {name}")
+            async with telemetry_span_creator.create_telemetry_span(
+                name=name,
+                attributes={},
+            ) as telemetry_span:
+                if name:
+                    logger.info(f"Finished running parallel stage {name}")
 
         logger.info("Finished process_async")
 
@@ -169,6 +202,8 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             )
             if hasattr(stage, "set_loop_id"):
                 stage.set_loop_id(self.loop_id)
+            if hasattr(stage, "set_telemetry_context"):
+                stage.set_telemetry_context(telemetry_context=self.telemetry_context)
 
             assert (
                 stage_name

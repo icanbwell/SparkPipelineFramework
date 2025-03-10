@@ -64,6 +64,27 @@ aiohttp = ">=3.10.11"
 pydantic=">=2.8.2"
 # motor is needed for interacting with MongoDB asynchronously
 motor={ extras = ['snappy', 'zstd'], version = ">=3.5.1" }
+# dataclasses-json is needed for working with JSON data to read from and write to json
+dataclasses-json = ">=0.6.7"
+# ====== For OpenTelemetry ======
+opentelemetry-api = ">=1.30.0"
+opentelemetry-sdk = ">=1.30.0"
+opentelemetry-exporter-otlp = ">=1.30.0"
+opentelemetry-instrumentation-system-metrics = ">=0.51b0"
+opentelemetry-instrumentation-logging = ">=0.51b0"
+opentelemetry-instrumentation-pymysql = ">=0.51b0"
+opentelemetry-instrumentation-pymongo = ">=0.51b0"
+opentelemetry-instrumentation-elasticsearch = ">=0.51b0"
+opentelemetry-instrumentation-boto = ">=0.51b0"
+opentelemetry-instrumentation-botocore = ">=0.51b0"
+opentelemetry-instrumentation-httpx = ">=0.51b0"
+opentelemetry-instrumentation-asyncio = ">=0.51b0"
+opentelemetry-instrumentation-aiohttp-client = ">=0.51b0"
+opentelemetry-instrumentation-confluent-kafka = ">=0.51b0"
+opentelemetry-instrumentation-requests = ">=0.51b0"
+#opentelemetry-exporter-richconsole = ">=0.51b0"
+# ====== End OpenTelemetry ======
+
 
 
 [dev-packages]

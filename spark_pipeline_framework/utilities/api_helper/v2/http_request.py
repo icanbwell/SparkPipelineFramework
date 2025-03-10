@@ -19,6 +19,7 @@ from urllib.parse import SplitResult, SplitResultBytes
 import aiohttp
 from aiohttp import ClientSession, ClientResponse, ClientError, ClientResponseError
 from logging import Logger
+from opentelemetry.instrumentation.aiohttp_client import create_trace_config
 
 
 class RequestType(Enum):
@@ -62,6 +63,7 @@ class HelixHttpRequest:
         raise_error: bool = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
+        telemetry_enable: Optional[bool] = False,
     ) -> None:
         """
         Implementation of a simple http request class that can be used to make http requests.  v2 provides async support.
@@ -100,6 +102,7 @@ class HelixHttpRequest:
         self.raise_error = raise_error
         self.cert = cert
         self.verify = verify
+        self.telemetry_enable = telemetry_enable
 
     def set_raise_error(self, flag: bool) -> None:
         self.raise_error = flag
@@ -225,7 +228,15 @@ class HelixHttpRequest:
             total=self.retry_count * self.backoff_factor * self.timeout_seconds
         )
         connector = aiohttp.TCPConnector(ssl=bool(self.verify))
-        session = aiohttp.ClientSession(timeout=timeout, connector=connector)
+        session = (
+            aiohttp.ClientSession(
+                timeout=timeout,
+                connector=connector,
+                trace_configs=[create_trace_config()],
+            )
+            if self.telemetry_enable
+            else aiohttp.ClientSession(timeout=timeout, connector=connector)
+        )
         return session
 
     def to_string(self) -> str:
