@@ -72,8 +72,8 @@ class FrameworkPipeline(Transformer):
             ),
             trace_id=None,
             span_id=None,
-            service_name="helix.pipelines",
-            environment="development",
+            service_name=os.getenv("OTEL_SERVICE_NAME", "helix.pipelines"),
+            environment=os.getenv("ENV", "development"),
         )
 
         self.name: Optional[str] = name
