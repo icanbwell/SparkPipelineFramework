@@ -42,6 +42,7 @@ class FrameworkPipeline(Transformer):
         run_id: Optional[str] = None,
         log_level: Optional[Union[int, str]] = None,
         telemetry_enable: Optional[bool] = None,
+        telemetry_context: Optional[TelemetryContext] = None,
         name: Optional[str] = None,
         attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -64,16 +65,19 @@ class FrameworkPipeline(Transformer):
             os.environ.get("TELEMETRY_ENABLE")
         )
 
-        self.telemetry_context: TelemetryContext = TelemetryContext(
-            provider=(
-                TelemetryProvider.OPEN_TELEMETRY
-                if self.telemetry_enable
-                else TelemetryProvider.NULL
-            ),
-            trace_id=None,
-            span_id=None,
-            service_name=os.getenv("OTEL_SERVICE_NAME", "helix.pipelines"),
-            environment=os.getenv("ENV", "development"),
+        self.telemetry_context: TelemetryContext = (
+            telemetry_context
+            or TelemetryContext(
+                provider=(
+                    TelemetryProvider.OPEN_TELEMETRY
+                    if self.telemetry_enable
+                    else TelemetryProvider.NULL
+                ),
+                trace_id=None,
+                span_id=None,
+                service_name=os.getenv("OTEL_SERVICE_NAME", "helix.pipelines"),
+                environment=os.getenv("ENV", "development"),
+            )
         )
 
         self.name: Optional[str] = name
