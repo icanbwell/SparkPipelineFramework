@@ -122,6 +122,7 @@ class OpenTelemetry(Telemetry):
             self.setup_tracing(
                 resource=resource,
                 write_telemetry_to_console=write_telemetry_to_console,
+                telemetry_context=telemetry_context,
             )
             # see if the tracers are defined in an environment variable
             telemetry_tracers_text: Optional[str] = os.getenv("TELEMETRY_TRACERS")
@@ -141,24 +142,28 @@ class OpenTelemetry(Telemetry):
             self.setup_meters(
                 resource=resource,
                 write_telemetry_to_console=write_telemetry_to_console,
+                telemetry_context=telemetry_context,
             )
 
+    # noinspection PyMethodMayBeStatic
     def setup_tracing(
         self,
         *,
         resource: Resource,
+        telemetry_context: TelemetryContext,
         write_telemetry_to_console: bool,
     ) -> None:
         """
         Set up the OpenTelemetry tracer and exporter
 
         :param resource: Resource
+        :param telemetry_context: Telemetry context
         :param write_telemetry_to_console: Whether to write telemetry to console
         """
         # Create trace provider
         OpenTelemetry._trace_provider = TracerProvider(resource=resource)
         # Create OTLP exporter
-        otlp_exporter = OTLPSpanExporter()
+        otlp_exporter = OTLPSpanExporter(endpoint=telemetry_context.tracer_endpoint)
         # Add batch span processor
         span_processor = BatchSpanProcessor(span_exporter=otlp_exporter)
         OpenTelemetry._trace_provider.add_span_processor(span_processor)
@@ -175,10 +180,11 @@ class OpenTelemetry(Telemetry):
         self,
         *,
         resource: Resource,
+        telemetry_context: TelemetryContext,
         write_telemetry_to_console: bool,
     ) -> None:
         reader = PeriodicExportingMetricReader(
-            OTLPMetricExporter(),
+            OTLPMetricExporter(endpoint=telemetry_context.metrics_endpoint),
         )
 
         # Add console exporter for debugging
