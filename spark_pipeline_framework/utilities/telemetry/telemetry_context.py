@@ -31,6 +31,12 @@ class TelemetryContext(DataClassJsonMixin):
     trace_all_calls: Optional[List[TelemetryTracer]] = None
     """ Whether to Trace certain calls like aiohttp, pymysql, etc """
 
+    tracer_endpoint: Optional[str] = None
+    """ Tracer endpoint for the telemetry context """
+
+    metrics_endpoint: Optional[str] = None
+    """ Metrics endpoint for the telemetry context """
+
     @staticmethod
     def get_null_context() -> "TelemetryContext":
         """
