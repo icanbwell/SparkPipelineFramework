@@ -271,6 +271,7 @@ class FrameworkPipeline(Transformer):
             finally:
                 self._check_validation(df)
                 await telemetry_span_creator.flush_async()
+                return df
 
     def _check_validation(self, df: DataFrame) -> None:
         tables = [
