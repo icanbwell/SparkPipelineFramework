@@ -1,14 +1,14 @@
 from typing import Optional, override, Any, Dict
 
 from opentelemetry.trace import Span
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
 
-from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+from helixcore.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
 

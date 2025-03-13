@@ -4,7 +4,7 @@ from typing import Optional
 
 from helixcore.progress_logger.progress_logger import ProgressLogger
 
-from spark_pipeline_framework.utilities.api_helper.http_request import (
+from helixcore.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
 )

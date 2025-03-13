@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 from requests import Response
 
-from spark_pipeline_framework.utilities.api_helper.http_request import HelixHttpRequest
+from helixcore.utilities.api_helper.http_request import HelixHttpRequest
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame

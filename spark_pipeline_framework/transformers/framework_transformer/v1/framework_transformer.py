@@ -13,9 +13,9 @@ from typing_extensions import final
 
 from helixcore.logger.yarn_logger import get_logger
 from helixcore.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
 

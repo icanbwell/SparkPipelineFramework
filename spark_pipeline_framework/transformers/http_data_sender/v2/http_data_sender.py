@@ -27,7 +27,7 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.transformers.http_data_sender.v2.http_data_sender_processor import (
     HttpDataSenderProcessor,
 )
-from spark_pipeline_framework.utilities.api_helper.http_request import (
+from helixcore.utilities.api_helper.http_request import (
     SingleJsonResult,
     SingleTextResult,
 )

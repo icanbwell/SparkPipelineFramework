@@ -23,8 +23,8 @@ from spark_pipeline_framework.transformers.http_data_receiver.v5.http_data_recei
 from spark_pipeline_framework.transformers.http_data_receiver.v5.http_data_receiver_processor import (
     HttpDataReceiverProcessor,
 )
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (

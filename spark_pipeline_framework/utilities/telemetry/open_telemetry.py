@@ -39,23 +39,23 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.semconv.resource import ResourceAttributes
 from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags
 from helixcore.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
 
-from spark_pipeline_framework.utilities.telemetry.open_telemetry_span import (
+from helixcore.utilities.telemetry.open_telemetry_span import (
     OpenTelemetrySpanWrapper,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry import (
+from helixcore.utilities.telemetry.telemetry import (
     Telemetry,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+from helixcore.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_tracers import (
+from helixcore.utilities.telemetry.telemetry_tracers import (
     TelemetryTracer,
 )
 

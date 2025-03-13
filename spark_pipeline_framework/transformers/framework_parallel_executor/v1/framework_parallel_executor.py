@@ -2,7 +2,7 @@ import json
 from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
@@ -19,16 +19,16 @@ from spark_pipeline_framework.utilities.parallel_pipeline_executor.v1.parallel_p
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
+from helixcore.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
+from helixcore.utilities.telemetry.telemetry_span_creator import (
     TelemetrySpanCreator,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
 

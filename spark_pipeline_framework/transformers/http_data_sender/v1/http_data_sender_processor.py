@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from pyspark.sql.types import Row
 
-from spark_pipeline_framework.utilities.api_helper.http_request import (
+from helixcore.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
 )

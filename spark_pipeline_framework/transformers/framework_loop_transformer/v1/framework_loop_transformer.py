@@ -16,16 +16,16 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
+from helixcore.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
+from helixcore.utilities.telemetry.telemetry_span_creator import (
     TelemetrySpanCreator,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
 

@@ -1,7 +1,7 @@
 import dataclasses
 from typing import Union, Optional, List, Dict
 
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (

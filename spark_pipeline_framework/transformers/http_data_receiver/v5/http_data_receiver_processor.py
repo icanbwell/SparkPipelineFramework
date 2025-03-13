@@ -22,7 +22,7 @@ from spark_pipeline_framework.transformers.http_data_receiver.v5.common import (
 from spark_pipeline_framework.transformers.http_data_receiver.v5.http_data_receiver_parameters import (
     HttpDataReceiverParameters,
 )
-from spark_pipeline_framework.utilities.api_helper.v2.http_request import (
+from helixcore.utilities.api_helper.v2.http_request import (
     HelixHttpRequest,
     RequestType,
 )

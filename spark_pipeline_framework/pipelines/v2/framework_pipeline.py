@@ -23,25 +23,25 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer import (
     pipeline_validation_df_name,
 )
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_list_catalog_table_names,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
+from helixcore.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
+from helixcore.utilities.telemetry.telemetry_provider import (
     TelemetryProvider,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
+from helixcore.utilities.telemetry.telemetry_span_creator import (
     TelemetrySpanCreator,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
 

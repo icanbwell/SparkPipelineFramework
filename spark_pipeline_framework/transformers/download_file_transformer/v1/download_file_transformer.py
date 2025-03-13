@@ -11,7 +11,7 @@ import boto3
 import requests
 from boto3.s3.transfer import TransferConfig
 
-from spark_pipeline_framework.utilities.api_helper.http_request import (
+from helixcore.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
 )

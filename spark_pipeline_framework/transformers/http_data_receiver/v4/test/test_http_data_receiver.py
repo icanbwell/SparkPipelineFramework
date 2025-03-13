@@ -13,7 +13,7 @@ from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_receiver.v4.http_data_receiver import (
     HttpDataReceiver,
 )
-from spark_pipeline_framework.utilities.api_helper.http_request import HelixHttpRequest
+from helixcore.utilities.api_helper.http_request import HelixHttpRequest
 from spark_pipeline_framework.utilities.oauth2_helpers.v2.oauth2_client_credentials_flow import (
     OAuth2Credentails,
 )

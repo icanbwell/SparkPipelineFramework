@@ -1,14 +1,14 @@
 import time
 
 import pytest
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
+from helixcore.utilities.telemetry.telemetry_provider import (
     TelemetryProvider,
 )
 
-from spark_pipeline_framework.utilities.telemetry.open_telemetry import (
+from helixcore.utilities.telemetry.open_telemetry import (
     OpenTelemetry,
 )
 
