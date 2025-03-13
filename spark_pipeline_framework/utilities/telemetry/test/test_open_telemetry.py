@@ -4,11 +4,8 @@ import pytest
 from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
-from helixcore.utilities.telemetry.telemetry_provider import (
-    TelemetryProvider,
-)
 
-from helixcore.utilities.telemetry.open_telemetry import (
+from spark_pipeline_framework.utilities.telemetry.open_telemetry import (
     OpenTelemetry,
 )
 
@@ -17,7 +14,7 @@ from helixcore.utilities.telemetry.open_telemetry import (
 def test_open_telemetry() -> None:
     # Initialize telemetry
     telemetry_context = TelemetryContext(
-        provider=TelemetryProvider.OPEN_TELEMETRY,
+        telemetry_provider=OpenTelemetry.telemetry_provider,
         service_name="example-service",
         environment="development",
     )

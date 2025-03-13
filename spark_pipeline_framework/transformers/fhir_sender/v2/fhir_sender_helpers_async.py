@@ -11,7 +11,7 @@ from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateRespo
 from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+from helixcore.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
 

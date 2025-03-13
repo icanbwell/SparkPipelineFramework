@@ -43,7 +43,7 @@ from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
 
-from helixcore.utilities.telemetry.open_telemetry_span import (
+from spark_pipeline_framework.utilities.telemetry.open_telemetry_span import (
     OpenTelemetrySpanWrapper,
 )
 from helixcore.utilities.telemetry.telemetry import (
@@ -64,6 +64,8 @@ class OpenTelemetry(Telemetry):
     """
     Comprehensive OpenTelemetry instrumentation
     """
+
+    telemetry_provider: ClassVar[str] = "OpenTelemetry"
 
     _trace_provider: ClassVar[Optional[TracerProvider]] = None
 

@@ -33,6 +33,8 @@ from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
 
+from spark_pipeline_framework.utilities.telemetry.open_telemetry import OpenTelemetry
+
 
 class FrameworkPipeline(Transformer):
     def __init__(
@@ -68,8 +70,8 @@ class FrameworkPipeline(Transformer):
         self.telemetry_context: TelemetryContext = (
             telemetry_context
             or TelemetryContext(
-                provider=(
-                    TelemetryProvider.OPEN_TELEMETRY
+                telemetry_provider=(
+                    OpenTelemetry.telemetry_provider
                     if self.telemetry_enable
                     else TelemetryProvider.NULL
                 ),

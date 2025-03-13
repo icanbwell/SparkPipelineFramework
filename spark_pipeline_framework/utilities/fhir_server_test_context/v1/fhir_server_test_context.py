@@ -8,7 +8,7 @@ from helix_fhir_client_sdk.utilities.fhir_server_helpers import FhirServerHelper
 from helixcore.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token_async,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper
+from helixcore.utilities.fhir_helpers.token_helper import TokenHelper
 
 
 class FhirServerTestContext:

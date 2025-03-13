@@ -10,7 +10,7 @@ from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+from helixcore.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
 

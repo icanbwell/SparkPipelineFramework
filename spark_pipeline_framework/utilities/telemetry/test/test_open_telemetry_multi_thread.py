@@ -16,11 +16,8 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
-from helixcore.utilities.telemetry.telemetry_provider import (
-    TelemetryProvider,
-)
 
-from helixcore.utilities.telemetry.open_telemetry import OpenTelemetry
+from spark_pipeline_framework.utilities.telemetry.open_telemetry import OpenTelemetry
 from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
@@ -87,7 +84,7 @@ async def run_sub_operation(
         span_id=span_id,
         service_name=service_name,
         environment=environment,
-        provider=TelemetryProvider.OPEN_TELEMETRY,
+        telemetry_provider=OpenTelemetry.telemetry_provider,
     )
     telemetry = OpenTelemetry(
         telemetry_context=telemetry_context,
@@ -113,7 +110,7 @@ async def test_open_telemetry_multi_thread() -> None:
     telemetry_context = TelemetryContext(
         service_name=service_name,
         environment=environment,
-        provider=TelemetryProvider.OPEN_TELEMETRY,
+        telemetry_provider=OpenTelemetry.telemetry_provider,
     )
     telemetry = OpenTelemetry(
         telemetry_context=telemetry_context,

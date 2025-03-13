@@ -27,16 +27,16 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch
 from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch_result import (
     GetBatchResult,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
+from helixcore.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
+from helixcore.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
 )
 from helixcore.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+from helixcore.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
 

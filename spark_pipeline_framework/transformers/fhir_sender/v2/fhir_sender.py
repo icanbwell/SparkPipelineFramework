@@ -55,6 +55,9 @@ from spark_pipeline_framework.utilities.map_functions import remove_field_from_j
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
+from spark_pipeline_framework.utilities.spark_type_converter.v1.spark_type_converter import (
+    SparkTypeConverter,
+)
 
 
 class FhirSender(FrameworkTransformer):
@@ -546,7 +549,9 @@ class FhirSender(FrameworkTransformer):
                     result_df = (
                         df.sparkSession.createDataFrame(  # type:ignore[type-var]
                             merge_items,
-                            schema=FhirMergeResponseItemSchema.get_schema(),
+                            schema=SparkTypeConverter.convert_struct_type(
+                                FhirMergeResponseItemSchema.get_schema()
+                            ),
                         )
                     )
                 else:
@@ -558,7 +563,9 @@ class FhirSender(FrameworkTransformer):
                         FhirSenderProcessor.get_process_partition_function(
                             parameters=sender_parameters
                         ),
-                        schema=FhirMergeResponseItemSchema.get_schema(),
+                        schema=SparkTypeConverter.convert_struct_type(
+                            FhirMergeResponseItemSchema.get_schema()
+                        ),
                     )
                     # execution_plan: str = spark_get_execution_plan(
                     #     df=result_df, extended=True
@@ -579,7 +586,9 @@ class FhirSender(FrameworkTransformer):
                             )
                             result_df = (
                                 result_df.sparkSession.read.schema(
-                                    FhirMergeResponseItemSchema.get_schema()
+                                    SparkTypeConverter.convert_struct_type(
+                                        FhirMergeResponseItemSchema.get_schema()
+                                    )
                                 )
                                 .format(file_format)
                                 .load(str(response_path))
@@ -632,12 +641,17 @@ class FhirSender(FrameworkTransformer):
                                 if error_view:
                                     df.sparkSession.createDataFrame(
                                         [],
-                                        schema=FhirMergeResponseItemSchema.get_schema(),
+                                        schema=SparkTypeConverter.convert_struct_type(
+                                            FhirMergeResponseItemSchema.get_schema()
+                                        ),
                                     ).createOrReplaceTempView(error_view)
                         else:
                             if error_view:
                                 df.sparkSession.createDataFrame(
-                                    [], schema=FhirMergeResponseItemSchema.get_schema()
+                                    [],
+                                    schema=SparkTypeConverter.convert_struct_type(
+                                        FhirMergeResponseItemSchema.get_schema()
+                                    ),
                                 ).createOrReplaceTempView(error_view)
                     except PythonException as e:
                         if (

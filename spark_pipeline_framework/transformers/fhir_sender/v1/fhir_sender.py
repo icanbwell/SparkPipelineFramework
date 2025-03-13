@@ -46,6 +46,9 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
 from spark_pipeline_framework.utilities.map_functions import remove_field_from_json
+from spark_pipeline_framework.utilities.spark_type_converter.v1.spark_type_converter import (
+    SparkTypeConverter,
+)
 
 
 class FhirSender(FrameworkTransformer):
@@ -487,7 +490,10 @@ class FhirSender(FrameworkTransformer):
                     )
                     result_rows: List[Dict[str, Any]] = flatten(result_rows_list)
                     result_df = df.sparkSession.createDataFrame(  # type: ignore[type-var]
-                        result_rows, schema=FhirMergeResponseItemSchema.get_schema()
+                        result_rows,
+                        schema=SparkTypeConverter.convert_struct_type(
+                            FhirMergeResponseItemSchema.get_schema()
+                        ),
                     )
                 else:
                     # ---- Now process all the results ----
@@ -542,7 +548,9 @@ class FhirSender(FrameworkTransformer):
                             rdd1 = rdd_flat  # type: ignore
 
                         result_df = rdd1.toDF(
-                            schema=FhirMergeResponseItemSchema.get_schema()
+                            schema=SparkTypeConverter.convert_struct_type(
+                                FhirMergeResponseItemSchema.get_schema()
+                            )
                         )
 
                 if result_df is not None:

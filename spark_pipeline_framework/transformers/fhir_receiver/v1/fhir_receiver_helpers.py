@@ -31,13 +31,13 @@ from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_writer import (
     FhirGetResponseWriter,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
+from helixcore.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
 )
 from helixcore.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+from helixcore.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
 from spark_pipeline_framework.utilities.flattener.flattener import flatten

@@ -72,8 +72,8 @@ class FixFhirBundleTransformer(FrameworkTransformer):
         )
 
         resource_list_rdd: RDD[Iterable[Row]] = whole_text_rdd.map(
-            lambda x: extract_resource_from_json(
-                x[0], x[1], resources_to_extract
+            lambda x: Row(
+                *extract_resource_from_json(x[0], x[1], resources_to_extract)
             )  # x[0] is file name, x[1] is contents
         )
 

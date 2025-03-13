@@ -51,6 +51,9 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
     sc,
 )
+from spark_pipeline_framework.utilities.spark_type_converter.v1.spark_type_converter import (
+    SparkTypeConverter,
+)
 
 
 class FhirReceiver(FrameworkTransformer):
@@ -608,7 +611,11 @@ class FhirReceiver(FrameworkTransformer):
                             graph_json=graph_json,
                         )
                     )
-                    response_schema = FhirGetResponseSchema.get_schema()
+                    response_schema: StructType = (
+                        SparkTypeConverter.convert_struct_type(
+                            FhirGetResponseSchema.get_schema()
+                        )
+                    )
 
                     result_with_counts_and_responses = df.sparkSession.createDataFrame(
                         result_rows, schema=response_schema
@@ -666,7 +673,9 @@ class FhirReceiver(FrameworkTransformer):
                                 if [c in id_df.columns]
                             ]
                         )
-                    response_schema = FhirGetResponseSchema.get_schema()
+                    response_schema = SparkTypeConverter.convert_struct_type(
+                        FhirGetResponseSchema.get_schema()
+                    )
 
                     result_with_counts_and_responses = rdd.toDF(response_schema)
 
