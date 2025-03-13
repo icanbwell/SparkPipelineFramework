@@ -4,6 +4,7 @@ helper functions to abstract http requests so we have less repetitive boilerplat
 
 import json
 from enum import Enum
+from logging import Logger
 from os import environ
 from typing import Optional, Dict, Any, List, Callable, Union, NamedTuple, Tuple
 from urllib import parse
@@ -12,7 +13,6 @@ from urllib.parse import SplitResult, SplitResultBytes
 import requests
 from requests import Session, JSONDecodeError, HTTPError
 from requests.adapters import HTTPAdapter, Response
-from spark_pipeline_framework.logger.yarn_logger import Logger  # type: ignore
 
 # noinspection PyPackageRequirements
 from urllib3 import Retry

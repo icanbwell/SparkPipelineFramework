@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )

@@ -7,7 +7,7 @@ from pyspark.sql.types import StructType
 from library.pipelines.my_pipeline.v1.pipelines_my_pipeline_v1 import (
     PipelinesMyPipelineV1,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 
 
 def test_can_run_framework_pipeline_transformer(spark_session: SparkSession) -> None:

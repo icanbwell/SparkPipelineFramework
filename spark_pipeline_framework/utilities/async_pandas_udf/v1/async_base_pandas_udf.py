@@ -25,7 +25,7 @@ from helix_fhir_client_sdk.utilities.async_parallel_processor.v1.async_parallel_
 # noinspection PyPackageRequirements
 from pyspark import TaskContext
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )

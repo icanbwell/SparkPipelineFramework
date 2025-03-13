@@ -9,7 +9,7 @@ import requests
 from botocore.client import BaseClient
 from pyspark.sql import SparkSession, DataFrame
 from requests import Session
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.download_file_transformer.v1.download_file_transformer import (
     DownloadFileTransformer,
 )

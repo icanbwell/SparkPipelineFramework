@@ -3,7 +3,7 @@ from pathlib import Path
 from shutil import rmtree
 
 from pyspark.sql import SparkSession, DataFrame
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_filter_by_column.v1.framework_filter_by_column_transformer import (
     FrameworkFilterByColumnTransformer,
 )

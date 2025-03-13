@@ -16,7 +16,7 @@ from pyspark.sql import SparkSession, DataFrame
 from library.features.patients_fhir.v1.features_patients_fhir_v1 import (
     FeaturesPatientsFhirV1,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.send_automapper_to_fhir.v2.automapper_to_fhir_transformer import (
     AutoMapperToFhirTransformer,
 )

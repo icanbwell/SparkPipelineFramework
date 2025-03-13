@@ -14,7 +14,7 @@ from typing import (
 
 import pandas as pd
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_helpers import (
     ElasticSearchHelpers,
 )

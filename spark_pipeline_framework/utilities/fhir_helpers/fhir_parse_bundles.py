@@ -2,7 +2,7 @@ from typing import Any, Dict, Iterable, List, Union, Optional
 import json
 
 from pyspark.sql.types import Row
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 
 
 def combine_bundles(contents: str) -> Dict[str, Any]:

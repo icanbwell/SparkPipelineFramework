@@ -9,7 +9,7 @@ from typing import (
     Generator,
 )
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )

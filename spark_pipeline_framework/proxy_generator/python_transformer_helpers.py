@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional, Callable, Union, List, cast
 from pyspark.ml import Transformer
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 
 
 def get_python_transformer_from_location(

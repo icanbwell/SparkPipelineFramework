@@ -16,7 +16,7 @@ from typing import (
 from opentelemetry.metrics import Counter, UpDownCounter, Histogram
 from opentelemetry.metrics import NoOpCounter, NoOpUpDownCounter, NoOpHistogram
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.console_telemetry_history_item import (
     ConsoleTelemetryHistoryItem,
 )

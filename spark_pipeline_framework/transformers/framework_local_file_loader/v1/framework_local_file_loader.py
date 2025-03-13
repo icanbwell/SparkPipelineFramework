@@ -12,8 +12,8 @@ from pyspark.sql.functions import input_file_name
 from pyspark.sql.readwriter import DataFrameReader
 from pyspark.sql.types import StructType
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )

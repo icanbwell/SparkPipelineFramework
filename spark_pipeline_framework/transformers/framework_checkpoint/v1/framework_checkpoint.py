@@ -3,8 +3,8 @@ from typing import Dict, Any, Optional, Union, Callable
 
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_parquet_exporter.v1.framework_parquet_exporter import (
     FrameworkParquetExporter,
 )

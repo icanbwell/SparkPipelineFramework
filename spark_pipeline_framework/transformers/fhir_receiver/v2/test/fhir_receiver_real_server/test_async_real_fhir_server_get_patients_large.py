@@ -9,8 +9,8 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
 from pyspark.sql import DataFrame, SparkSession
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,
 )

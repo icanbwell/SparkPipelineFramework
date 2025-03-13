@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional, Union, Generator
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from pyspark.sql.types import Row
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )

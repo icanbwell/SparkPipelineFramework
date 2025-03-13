@@ -8,7 +8,7 @@ from pyspark.sql.dataframe import DataFrame
 
 from pyspark.sql.types import StructType
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 
 from spark_pipeline_framework.transformers.framework_local_file_loader.v1.framework_local_file_loader import (
     FrameworkLocalFileLoader,

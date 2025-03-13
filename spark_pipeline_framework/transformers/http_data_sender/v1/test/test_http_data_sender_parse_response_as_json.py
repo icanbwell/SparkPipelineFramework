@@ -7,7 +7,7 @@ from mockserver_client.mock_requests_loader import load_mock_source_api_json_res
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_sender.v1.http_data_sender import (
     HttpDataSender,
 )

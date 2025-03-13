@@ -5,7 +5,7 @@ from pyspark.sql.types import StructField, ArrayType, StructType
 from spark_fhir_schemas.r4.complex_types.humanname import HumanNameSchema
 from spark_fhir_schemas.r4.resources.bundle import BundleSchema
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_bundle_splitter.v1.fhir_bundle_splitter import (
     FhirBundleSplitter,
 )

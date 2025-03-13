@@ -16,7 +16,7 @@ from pyspark.sql.types import Row
 from pyspark import SparkFiles
 from requests import status_codes, Response
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,

@@ -21,7 +21,7 @@ from spark_fhir_schemas.r4.resources.practitioner import PractitionerSchema
 from spark_fhir_schemas.r4.resources.practitionerrole import PractitionerRoleSchema
 from spark_fhir_schemas.r4.resources.schedule import ScheduleSchema
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_reader.v1.fhir_reader import FhirReader
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,

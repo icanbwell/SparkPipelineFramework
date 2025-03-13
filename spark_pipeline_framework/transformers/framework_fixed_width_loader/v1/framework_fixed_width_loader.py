@@ -9,9 +9,9 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, trim
 from pyspark.sql.types import DataType, Row
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,

@@ -18,7 +18,7 @@ from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteRespo
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
     FhirSenderParameters,
 )

@@ -2,7 +2,7 @@ import re
 from typing import Any
 from pyspark.sql.dataframe import DataFrame
 from pyathena import connect as athena_connect
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.athena.athena_source_file_type import (
     AthenaSourceFileType,
 )

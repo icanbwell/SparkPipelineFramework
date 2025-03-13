@@ -3,7 +3,7 @@ from typing import Iterable, Any, Generator, Tuple, List
 
 from pyspark.sql import SparkSession, DataFrame
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_partitioner.v2.framework_partitioner import (
     FrameworkPartitioner,
 )

@@ -6,7 +6,7 @@ from pyspark.sql import SparkSession
 from library.features.carriers_python.v1.calculate import (
     FeatureCarrierPythonTransformer,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
     get_python_transformer_from_location,
 )

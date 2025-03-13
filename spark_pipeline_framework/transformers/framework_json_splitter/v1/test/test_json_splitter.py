@@ -6,7 +6,7 @@ from shutil import rmtree
 from typing import List
 
 from pyspark.sql import SparkSession, DataFrame
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_json_splitter.v1.framework_json_splitter import (
     FrameworkJsonSplitter,
 )

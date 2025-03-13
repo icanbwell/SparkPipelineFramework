@@ -25,9 +25,9 @@ from pyspark.sql.types import (
     DataType,
 )
 
-from spark_pipeline_framework.logger.log_level import LogLevel
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.log_level import LogLevel
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )

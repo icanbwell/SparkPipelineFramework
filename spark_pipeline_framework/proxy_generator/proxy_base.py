@@ -9,8 +9,8 @@ from pyspark.ml.base import Transformer
 # noinspection PyPackageRequirements
 from pyspark.sql import DataFrame
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
     get_python_transformer_from_location,
     get_python_function_from_location,

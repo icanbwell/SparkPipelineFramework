@@ -16,7 +16,7 @@ from typing import (
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )

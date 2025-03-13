@@ -4,8 +4,8 @@ from typing import Any, Dict, Union, Optional, Callable
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_base_exporter.v1.framework_base_exporter import (
     FrameworkBaseExporter,
 )

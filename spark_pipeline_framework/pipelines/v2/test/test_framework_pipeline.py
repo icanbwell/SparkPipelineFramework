@@ -20,7 +20,7 @@ from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv
     FrameworkCsvLoader,
 )
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 
 from spark_pipeline_framework.pipelines.v2.framework_pipeline import FrameworkPipeline
 from spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer import (

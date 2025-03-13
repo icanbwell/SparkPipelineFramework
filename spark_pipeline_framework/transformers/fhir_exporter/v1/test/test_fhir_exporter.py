@@ -7,7 +7,7 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
 from spark_fhir_schemas.r4.resources.patient import PatientSchema
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_exporter.v1.fhir_exporter import (
     FhirExporter,
 )

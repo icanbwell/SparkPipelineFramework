@@ -5,7 +5,7 @@ from shutil import rmtree
 from urllib.parse import urljoin
 
 from pyspark.sql import SparkSession, DataFrame
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender import FhirSender
 from spark_pipeline_framework.utilities.fhir_server_test_context.v1.fhir_server_test_context import (
     FhirServerTestContext,
