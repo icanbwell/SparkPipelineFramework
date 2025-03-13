@@ -89,29 +89,40 @@ class OpenTelemetry(Telemetry):
         # Unique instance identifier
         self._instance_id = str(uuid.uuid4())
 
+        log_level = telemetry_context.log_level or log_level or "INFO"
+
         self._logger: Logger = get_logger(
             __name__,
-            level=log_level or "INFO",
+            level=log_level,
         )
         # get_logger sets the log level to the environment variable LOGLEVEL if it exists
-        self._logger.setLevel(log_level or "INFO")
+        self._logger.setLevel(log_level)
 
         self._telemetry_context = telemetry_context
+
+        hostname: str = socket.gethostname()
 
         self._metadata = {
             "service.name": telemetry_context.service_name,
             "deployment.environment": telemetry_context.environment,
-            "host.name": socket.gethostname(),
+            "host.name": hostname,
             "instance.id": self._instance_id,
         }
 
+        if telemetry_context.attributes:
+            self._metadata.update(telemetry_context.attributes)
+
         # Create a resource with service details
-        resource = Resource.create(
-            {
-                ResourceAttributes.SERVICE_NAME: telemetry_context.service_name,
-                ResourceAttributes.DEPLOYMENT_ENVIRONMENT: telemetry_context.environment,
-            }
-        )
+        resource_attributes = {
+            ResourceAttributes.SERVICE_NAME: telemetry_context.service_name,
+            ResourceAttributes.DEPLOYMENT_ENVIRONMENT: telemetry_context.environment,
+        }
+        image_version: Optional[str] = os.getenv("DOCKER_IMAGE_VERSION")
+        if image_version:
+            resource_attributes[ResourceAttributes.SERVICE_VERSION] = image_version
+            resource_attributes[ResourceAttributes.CONTAINER_IMAGE_TAG] = image_version
+
+        resource = Resource.create(resource_attributes)
 
         write_telemetry_to_console = write_telemetry_to_console or bool(
             os.getenv("TELEMETRY_WRITE_TO_CONSOLE", False)
@@ -119,6 +130,15 @@ class OpenTelemetry(Telemetry):
 
         # if the tracer is not setup then set it up
         if OpenTelemetry._trace_provider is None:
+            otel_exporter_otlp_endpoint: Optional[str] = os.getenv(
+                "otel_exporter_otlp_endpoint"
+            )
+            self._logger.debug(
+                f"Setting up tracing on {hostname}"
+                f" with otel_exporter_otlp_endpoint: {otel_exporter_otlp_endpoint}"
+                f" telemetry_context.tracer_endpoint: {telemetry_context.tracer_endpoint}"
+            )
+
             self.setup_tracing(
                 resource=resource,
                 write_telemetry_to_console=write_telemetry_to_console,

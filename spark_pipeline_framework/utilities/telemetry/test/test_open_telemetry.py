@@ -20,6 +20,8 @@ def test_open_telemetry() -> None:
         provider=TelemetryProvider.OPEN_TELEMETRY,
         service_name="example-service",
         environment="development",
+        attributes=None,
+        log_level=None,
     )
     telemetry = OpenTelemetry(telemetry_context=telemetry_context, log_level="DEBUG")
 
