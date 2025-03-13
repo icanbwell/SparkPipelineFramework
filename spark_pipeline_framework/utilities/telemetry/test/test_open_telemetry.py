@@ -14,7 +14,7 @@ from spark_pipeline_framework.utilities.telemetry.open_telemetry import (
 
 
 @pytest.mark.skip(reason="This test is for manual testing only")
-def test_open_telemetry() -> None:
+async def test_open_telemetry_async() -> None:
     # Initialize telemetry
     telemetry_context = TelemetryContext(
         provider=TelemetryProvider.OPEN_TELEMETRY,
@@ -43,4 +43,4 @@ def test_open_telemetry() -> None:
         telemetry.add_event("operation_completed", {"key": "value"})
 
         # Shutdown telemetry
-        telemetry.shutdown()
+        await telemetry.shutdown_async()

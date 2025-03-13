@@ -161,4 +161,4 @@ async def test_open_telemetry_multi_thread() -> None:
     time.sleep(1)  # Give time for export
 
     # Shutdown properly
-    telemetry.shutdown()
+    await telemetry.shutdown_async()

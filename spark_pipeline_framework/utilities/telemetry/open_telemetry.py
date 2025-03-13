@@ -450,7 +450,7 @@ class OpenTelemetry(Telemetry):
         if current_span:
             current_span.add_event(event_name, attributes=attributes or {})
 
-    def shutdown(self) -> None:
+    async def shutdown_async(self) -> None:
         """
         Gracefully shutdown the tracer provider
         """
@@ -536,6 +536,7 @@ class OpenTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
+        attributes: Optional[Dict[str, Any]] = None,
     ) -> Counter:
         """
         Get a counter metric
@@ -543,11 +544,13 @@ class OpenTelemetry(Telemetry):
         :param name: Name of the counter
         :param unit: Unit of the counter
         :param description: Description
+        :param attributes: Additional attributes
         :return: The Counter metric
         """
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
+            attributes=attributes,
         )
 
         # check if we already have a counter for this name
@@ -571,6 +574,7 @@ class OpenTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
+        attributes: Optional[Dict[str, Any]] = None,
     ) -> UpDownCounter:
         """
         Get a up_down_counter metric
@@ -578,11 +582,13 @@ class OpenTelemetry(Telemetry):
         :param name: Name of the up_down_counter
         :param unit: Unit of the up_down_counter
         :param description: Description
+        :param attributes: Additional attributes
         :return: The Counter metric
         """
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
+            attributes=attributes,
         )
 
         # check if we already have an up_down_counter for this name
@@ -600,12 +606,13 @@ class OpenTelemetry(Telemetry):
         return up_down_counter
 
     @override
-    def get_histograms(
+    def get_histogram(
         self,
         *,
         name: str,
         unit: str,
         description: str,
+        attributes: Optional[Dict[str, Any]] = None,
     ) -> Histogram:
         """
         Get a histograms metric
@@ -613,11 +620,13 @@ class OpenTelemetry(Telemetry):
         :param name: Name of the histograms
         :param unit: Unit of the histograms
         :param description: Description
+        :param attributes: Additional attributes
         :return: The Counter metric
         """
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
+            attributes=attributes,
         )
 
         # check if we already have a histograms for this name
