@@ -33,16 +33,16 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
     FrameworkTransformer,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
+from helixcore.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+from helixcore.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
 from spark_pipeline_framework.transformers.fhir_receiver.v1.fhir_receiver_helpers import (
     FhirReceiverHelpers,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
+from helixcore.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes

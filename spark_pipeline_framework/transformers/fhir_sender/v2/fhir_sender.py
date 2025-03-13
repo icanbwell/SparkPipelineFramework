@@ -35,19 +35,19 @@ from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import 
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
+from helixcore.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token_async,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
+from helixcore.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
+from helixcore.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exception import (
+from helixcore.utilities.fhir_helpers.fhir_sender_validation_exception import (
     FhirSenderValidationException,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes

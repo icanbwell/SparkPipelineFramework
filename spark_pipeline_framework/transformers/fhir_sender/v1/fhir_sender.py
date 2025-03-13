@@ -18,7 +18,7 @@ from helixcore.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
 from helixcore.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_processor import (
@@ -30,14 +30,14 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
+from helixcore.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
+from helixcore.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
 )
 
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exception import (
+from helixcore.utilities.fhir_helpers.fhir_sender_validation_exception import (
     FhirSenderValidationException,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes

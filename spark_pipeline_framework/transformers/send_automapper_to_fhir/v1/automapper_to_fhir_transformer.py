@@ -22,7 +22,7 @@ from pyspark.sql.dataframe import DataFrame
 from helixcore.logger.yarn_logger import get_logger
 from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.proxy_generator.proxy_base import ProxyBase
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.transformers.framework_mapping_runner.v1.framework_mapping_runner import (

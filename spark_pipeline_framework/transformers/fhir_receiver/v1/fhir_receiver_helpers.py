@@ -34,7 +34,7 @@ from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_writer im
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+from helixcore.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (

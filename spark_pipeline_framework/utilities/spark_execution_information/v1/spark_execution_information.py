@@ -3,7 +3,7 @@ from typing import Optional
 from pyspark import SparkConf
 from pyspark.sql import DataFrame
 
-from spark_pipeline_framework.utilities.aws.instance_helper.v1.instance_helper import (
+from helixcore.utilities.aws.instance_helper.v1.instance_helper import (
     InstanceHelper,
 )
 

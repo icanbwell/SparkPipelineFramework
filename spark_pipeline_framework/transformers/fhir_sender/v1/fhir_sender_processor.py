@@ -5,10 +5,10 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from pyspark.sql.types import Row
 
 from helixcore.logger.yarn_logger import get_logger
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
+from helixcore.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
 )
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_helpers import (

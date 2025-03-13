@@ -20,7 +20,7 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.test.fhir_receiver_p
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+from helixcore.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
 

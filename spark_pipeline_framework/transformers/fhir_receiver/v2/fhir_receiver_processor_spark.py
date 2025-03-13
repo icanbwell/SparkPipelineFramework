@@ -47,6 +47,8 @@ from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
+
+from spark_pipeline_framework.utilities.async_dataframe_helper.v1.async_dataframe_helper import AsyncDataFrameHelper
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )
@@ -56,10 +58,10 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_datafra
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
+from helixcore.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+from helixcore.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -206,7 +208,7 @@ class FhirReceiverProcessorSpark:
         :param limit: int
         :return: DataFrame
         """
-        return await AsyncHelper.async_generator_to_dataframe(
+        return await AsyncDataFrameHelper.async_generator_to_dataframe(
             df=df,
             async_gen=FhirReceiverProcessor.get_batch_result_streaming_async(
                 last_updated_after=last_updated_after,

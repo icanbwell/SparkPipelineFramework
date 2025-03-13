@@ -8,7 +8,7 @@ from pyspark.sql import SparkSession, DataFrame
 
 from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender import FhirSender
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.utilities.fhir_server_test_context.v1.fhir_server_test_context import (

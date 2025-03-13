@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Any, AsyncGenerator, Protocol, Type
 import aiohttp
 from aiohttp import ClientResponseError
 
-from spark_pipeline_framework.utilities.aws.config import get_ssm_config
+from helixcore.utilities.aws.config import get_ssm_config
 import structlog
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.structures.raw_address import (

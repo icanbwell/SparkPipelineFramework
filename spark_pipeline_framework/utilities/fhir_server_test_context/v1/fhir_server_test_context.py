@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any, Type, Union
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.utilities.fhir_server_helpers import FhirServerHelpers
 
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
+from helixcore.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token_async,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.token_helper import TokenHelper

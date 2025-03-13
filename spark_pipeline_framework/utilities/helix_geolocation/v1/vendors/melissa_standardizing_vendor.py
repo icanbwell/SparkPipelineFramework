@@ -4,7 +4,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from spark_pipeline_framework.utilities.aws.config import get_ssm_config
+from helixcore.utilities.aws.config import get_ssm_config
 import structlog
 
 from spark_pipeline_framework.utilities.helix_geolocation.v1.raw_address import (

@@ -31,7 +31,7 @@ from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import 
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
+from helixcore.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token_async,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes

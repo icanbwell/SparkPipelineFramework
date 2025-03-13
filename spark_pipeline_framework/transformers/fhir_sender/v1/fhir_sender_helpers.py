@@ -7,7 +7,7 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 
 from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (

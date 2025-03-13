@@ -15,7 +15,7 @@ from helixcore.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
 )
-from spark_pipeline_framework.utilities.aws.s3 import parse_s3_uri
+from helixcore.utilities.aws.s3 import parse_s3_uri
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame

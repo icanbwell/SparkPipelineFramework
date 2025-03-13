@@ -14,7 +14,7 @@ from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_parse_bundles import (
+from helixcore.utilities.fhir_helpers.fhir_parse_bundles import (
     extract_resource_from_json,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
