@@ -76,7 +76,7 @@ setup(
         "pydantic>=2.8.2",
         "motor[snappy,zstd]>=3.5.1",
         "dataclasses-json>=0.6.7",
-        "helixcore>=1.0.7",
+        "helixcore>=1.0.8",
         "opentelemetry-api>=1.30.0",
         "opentelemetry-sdk>=1.30.0",
         "opentelemetry-exporter-otlp>=1.30.0",

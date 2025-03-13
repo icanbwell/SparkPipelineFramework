@@ -2,6 +2,7 @@ import json
 import os
 from typing import Any, Dict, List, Union, Optional
 
+from helixcore.utilities.telemetry.null_telemetry import NullTelemetry
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
@@ -23,9 +24,7 @@ from helixcore.utilities.telemetry.telemetry_context import (
 from helixcore.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
 )
-from helixcore.utilities.telemetry.telemetry_provider import (
-    TelemetryProvider,
-)
+
 from helixcore.utilities.telemetry.telemetry_span_creator import (
     TelemetrySpanCreator,
 )
@@ -73,7 +72,7 @@ class FrameworkPipeline(Transformer):
                 telemetry_provider=(
                     OpenTelemetry.telemetry_provider
                     if self.telemetry_enable
-                    else TelemetryProvider.NULL
+                    else NullTelemetry.telemetry_provider
                 ),
                 trace_id=None,
                 span_id=None,

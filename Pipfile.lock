@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "14b620b71317f55f5219efe69a7abc69c05983d423e3683ee620efb7d4e3baab"
+            "sha256": "d2b65bfdbc17aaa7951e0347a6c6c716689feefe06ad0d48ef496ed9cadcffb5"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -798,12 +798,12 @@
         },
         "helixcore": {
             "hashes": [
-                "sha256:70fe92ed49dffac2b2b02197233c596d99324299150b1c0c3245e3f5c4e4a379",
-                "sha256:994669b8f9e23e9d4f935728dd30171c2c5117822ff611d160c5eceb1579cfbe"
+                "sha256:101dc1fcaf04a4a91caceaa00a3d8b509939269247f6317e06a00715568f6d64",
+                "sha256:f407b3ab4edced6e40eac368729a597296e99e29a4843e92f0fb4339d27546c1"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.10'",
-            "version": "==1.0.7"
+            "version": "==1.0.8"
         },
         "idna": {
             "hashes": [
