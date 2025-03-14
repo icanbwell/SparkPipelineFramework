@@ -88,6 +88,8 @@ async def run_sub_operation(
         service_name=service_name,
         environment=environment,
         provider=TelemetryProvider.OPEN_TELEMETRY,
+        attributes=None,
+        log_level=None,
     )
     telemetry = OpenTelemetry(
         telemetry_context=telemetry_context,
@@ -114,6 +116,8 @@ async def test_open_telemetry_multi_thread() -> None:
         service_name=service_name,
         environment=environment,
         provider=TelemetryProvider.OPEN_TELEMETRY,
+        attributes=None,
+        log_level=None,
     )
     telemetry = OpenTelemetry(
         telemetry_context=telemetry_context,
@@ -157,4 +161,4 @@ async def test_open_telemetry_multi_thread() -> None:
     time.sleep(1)  # Give time for export
 
     # Shutdown properly
-    telemetry.shutdown()
+    await telemetry.shutdown_async()

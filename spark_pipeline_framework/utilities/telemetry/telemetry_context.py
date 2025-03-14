@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Optional, List
+from typing import Optional, List, Any, Dict, Union
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -21,6 +21,12 @@ class TelemetryContext(DataClassJsonMixin):
 
     environment: str
     """ Environment for the telemetry context """
+
+    attributes: Optional[Dict[str, Any]]
+    """ Additional attributes to include in telemetry """
+
+    log_level: Optional[Union[int, str]]
+    """ Log level for the telemetry context """
 
     trace_id: Optional[str] = None
     """ Trace ID for the telemetry context """
@@ -50,6 +56,8 @@ class TelemetryContext(DataClassJsonMixin):
             span_id=None,
             service_name="",
             environment="",
+            attributes=None,
+            log_level=None,
         )
 
     def copy(self) -> "TelemetryContext":
@@ -65,6 +73,8 @@ class TelemetryContext(DataClassJsonMixin):
             service_name=self.service_name,
             environment=self.environment,
             trace_all_calls=self.trace_all_calls,
+            attributes=self.attributes,
+            log_level=self.log_level,
         )
 
     def create_child_context(
