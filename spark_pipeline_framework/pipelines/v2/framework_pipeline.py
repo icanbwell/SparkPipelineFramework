@@ -4,8 +4,6 @@ from typing import Any, Dict, List, Optional, Union
 
 from helixcore.utilities.telemetry.null_telemetry import NullTelemetry
 
-# noinspection PyPackageRequirements
-from mlflow.entities import RunStatus
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
@@ -45,7 +43,7 @@ from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
 
-from spark_pipeline_framework.utilities.telemetry.open_telemetry import OpenTelemetry
+from helixcore.utilities.telemetry.open_telemetry import OpenTelemetry
 
 
 class FrameworkPipeline(Transformer):
@@ -262,7 +260,7 @@ class FrameworkPipeline(Transformer):
                                 event_text=str(e),
                                 ex=e,
                             )
-                            self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
+                            self.progress_logger.end_mlflow_run(status=None)
 
                             raise e
 

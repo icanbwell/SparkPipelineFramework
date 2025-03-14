@@ -32,7 +32,7 @@ from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
 
-from spark_pipeline_framework.utilities.telemetry.open_telemetry import OpenTelemetry
+from helixcore.utilities.telemetry.open_telemetry import OpenTelemetry
 
 
 class FrameworkPipeline(Transformer):

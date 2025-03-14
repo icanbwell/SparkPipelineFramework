@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict, Type, List
 
-from spark_pipeline_framework.utilities.dynamic_class_loader.v1.dynamic_class_loader import (
+from helixcore.utilities.dynamic_class_loader.v1.dynamic_class_loader import (
     DynamicClassLoader,
 )
 from spark_pipeline_framework.utilities.helix_geolocation.v2.standardizing_vendor import (

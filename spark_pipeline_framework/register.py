@@ -4,7 +4,7 @@ from helixcore.utilities.fhir.fhir_resource_helpers.v2.fhir_resource_helpers imp
 )
 from helixcore.utilities.telemetry.telemetry_factory import TelemetryFactory
 
-from spark_pipeline_framework.utilities.telemetry.open_telemetry import OpenTelemetry
+from helixcore.utilities.telemetry.open_telemetry import OpenTelemetry
 
 
 def register() -> None:

@@ -1,7 +1,5 @@
 from typing import Any, Callable, Dict, List, Optional, Union
 
-# noinspection PyProtectedMember,PyPackageRequirements
-from mlflow.entities import RunStatus
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql import DataFrame
@@ -136,7 +134,7 @@ class FrameworkMappingLoader(FrameworkTransformer):
                     progress_logger.log_exception(
                         event_name=str(automapper), event_text=error_msg, ex=e
                     )
-                    progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
+                    progress_logger.end_mlflow_run(status=None)
                 raise FrameworkMappingRunnerException(msg=error_msg, exception=e) from e
 
         return df
