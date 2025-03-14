@@ -37,7 +37,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.semconv.resource import ResourceAttributes
-from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags
+from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags, Span
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
@@ -289,26 +289,31 @@ class OpenTelemetry(Telemetry):
         ctx: Optional[Context] = None
 
         if telemetry_parent and telemetry_parent.trace_id and telemetry_parent.span_id:
-            # Convert hex string to int, defaulting to 0 if conversion fails
-            trace_id_int = (
-                int(telemetry_parent.trace_id, 16) if telemetry_parent.trace_id else 0
-            )
-            span_id_int = (
-                int(telemetry_parent.span_id, 16) if telemetry_parent.span_id else 0
-            )
+            # if there is not already a span then create one
+            current_span: Span = trace.get_current_span()
+            if current_span == trace.INVALID_SPAN:
+                # Convert hex string to int, defaulting to 0 if conversion fails
+                trace_id_int = (
+                    int(telemetry_parent.trace_id, 16)
+                    if telemetry_parent.trace_id
+                    else 0
+                )
+                span_id_int = (
+                    int(telemetry_parent.span_id, 16) if telemetry_parent.span_id else 0
+                )
 
-            # Create a SpanContext for the parent trace
-            span_context = SpanContext(
-                trace_id=trace_id_int,
-                span_id=span_id_int,
-                is_remote=True,
-                trace_flags=TraceFlags(0x01),
-            )
-            self._logger.debug(
-                f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name}"
-                f" with trace ID: {telemetry_parent.trace_id} and span ID: {telemetry_parent.span_id}"
-            )
-            ctx = trace.set_span_in_context(NonRecordingSpan(span_context))
+                # Create a SpanContext for the parent trace
+                span_context = SpanContext(
+                    trace_id=trace_id_int,
+                    span_id=span_id_int,
+                    is_remote=True,
+                    trace_flags=TraceFlags(0x01),
+                )
+                self._logger.debug(
+                    f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name}"
+                    f" with trace ID: {telemetry_parent.trace_id} and span ID: {telemetry_parent.span_id}"
+                )
+                ctx = trace.set_span_in_context(NonRecordingSpan(span_context))
         else:
             self._logger.debug(
                 f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name} without parent trace"
@@ -357,26 +362,31 @@ class OpenTelemetry(Telemetry):
         ctx: Optional[Context] = None
 
         if telemetry_parent and telemetry_parent.trace_id and telemetry_parent.span_id:
-            # Convert hex string to int, defaulting to 0 if conversion fails
-            trace_id_int = (
-                int(telemetry_parent.trace_id, 16) if telemetry_parent.trace_id else 0
-            )
-            span_id_int = (
-                int(telemetry_parent.span_id, 16) if telemetry_parent.span_id else 0
-            )
+            # if there is not already a span then create one
+            current_span: Span = trace.get_current_span()
+            if current_span == trace.INVALID_SPAN:
+                # Convert hex string to int, defaulting to 0 if conversion fails
+                trace_id_int = (
+                    int(telemetry_parent.trace_id, 16)
+                    if telemetry_parent.trace_id
+                    else 0
+                )
+                span_id_int = (
+                    int(telemetry_parent.span_id, 16) if telemetry_parent.span_id else 0
+                )
 
-            # Create a SpanContext for the parent trace
-            span_context = SpanContext(
-                trace_id=trace_id_int,
-                span_id=span_id_int,
-                is_remote=True,
-                trace_flags=TraceFlags(0x01),
-            )
-            self._logger.debug(
-                f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name}"
-                f" with trace ID: {telemetry_parent.trace_id} and span ID: {telemetry_parent.span_id}"
-            )
-            ctx = trace.set_span_in_context(NonRecordingSpan(span_context))
+                # Create a SpanContext for the parent trace
+                span_context = SpanContext(
+                    trace_id=trace_id_int,
+                    span_id=span_id_int,
+                    is_remote=True,
+                    trace_flags=TraceFlags(0x01),
+                )
+                self._logger.debug(
+                    f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name}"
+                    f" with trace ID: {telemetry_parent.trace_id} and span ID: {telemetry_parent.span_id}"
+                )
+                ctx = trace.set_span_in_context(NonRecordingSpan(span_context))
         else:
             self._logger.debug(
                 f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name} without parent trace"

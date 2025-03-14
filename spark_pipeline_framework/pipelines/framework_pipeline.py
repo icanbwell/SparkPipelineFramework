@@ -156,7 +156,9 @@ class FrameworkPipeline(Transformer):
                 transformer_span: TelemetrySpanWrapper
                 async with telemetry_span_creator.create_telemetry_span(
                     name=stage_name,
-                    attributes={},
+                    attributes={
+                        "loop_id": self.loop_id,
+                    },
                     telemetry_parent=telemetry_span.create_child_telemetry_parent(),
                 ) as transformer_span:
                     try:
