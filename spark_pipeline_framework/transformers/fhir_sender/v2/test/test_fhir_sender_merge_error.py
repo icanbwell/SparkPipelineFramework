@@ -7,8 +7,8 @@ import pytest
 from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from pyspark.sql import SparkSession, DataFrame
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender import FhirSender
 from spark_pipeline_framework.utilities.fhir_server_test_context.v1.fhir_server_test_context import (
     FhirServerTestContext,

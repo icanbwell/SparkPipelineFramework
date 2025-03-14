@@ -7,7 +7,7 @@ from library.features.carriers_python.v1.calculate import (
 from library.features.carriers_python.v1.features_carriers_python_v1 import (
     FeaturesCarriersPythonV1,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )

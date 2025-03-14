@@ -3,7 +3,7 @@ from typing import Callable, Dict, Any, Union, List
 
 from pyspark.sql import SparkSession, DataFrame
 from spark_auto_mapper.automappers.automapper_base import AutoMapperBase
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 
 from spark_pipeline_framework.proxy_generator.python_transformer_helpers import (
     get_python_function_from_location,

@@ -13,12 +13,12 @@ from pyspark.sql.functions import col, get_json_object
 from pyspark.sql.types import Row
 from pyspark.errors import AnalysisException
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_log_metric import (
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.progress_logger.progress_logger import ProgressLogger
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.transformers.fhir_sender.v1.fhir_sender_processor import (
@@ -30,14 +30,14 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
+from helixcore.utilities.fhir_helpers.fhir_get_access_token import (
     fhir_get_access_token,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item_schema import (
+from helixcore.utilities.fhir_helpers.fhir_merge_response_item_schema import (
     FhirMergeResponseItemSchema,
 )
 
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_validation_exception import (
+from helixcore.utilities.fhir_helpers.fhir_sender_validation_exception import (
     FhirSenderValidationException,
 )
 from spark_pipeline_framework.utilities.file_modes import FileWriteModes
@@ -46,6 +46,9 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_is_data_frame_empty,
 )
 from spark_pipeline_framework.utilities.map_functions import remove_field_from_json
+from spark_pipeline_framework.utilities.spark_type_converter.v1.spark_type_converter import (
+    SparkTypeConverter,
+)
 
 
 class FhirSender(FrameworkTransformer):
@@ -487,7 +490,10 @@ class FhirSender(FrameworkTransformer):
                     )
                     result_rows: List[Dict[str, Any]] = flatten(result_rows_list)
                     result_df = df.sparkSession.createDataFrame(  # type: ignore[type-var]
-                        result_rows, schema=FhirMergeResponseItemSchema.get_schema()
+                        result_rows,
+                        schema=SparkTypeConverter.convert_struct_type(
+                            FhirMergeResponseItemSchema.get_schema()
+                        ),
                     )
                 else:
                     # ---- Now process all the results ----
@@ -542,7 +548,9 @@ class FhirSender(FrameworkTransformer):
                             rdd1 = rdd_flat  # type: ignore
 
                         result_df = rdd1.toDF(
-                            schema=FhirMergeResponseItemSchema.get_schema()
+                            schema=SparkTypeConverter.convert_struct_type(
+                                FhirMergeResponseItemSchema.get_schema()
+                            )
                         )
 
                 if result_df is not None:

@@ -14,7 +14,7 @@ from typing import (
 
 import pandas as pd
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_helpers import (
     ElasticSearchHelpers,
 )
@@ -24,7 +24,7 @@ from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_sender_parameters import (
     ElasticSearchSenderParameters,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (

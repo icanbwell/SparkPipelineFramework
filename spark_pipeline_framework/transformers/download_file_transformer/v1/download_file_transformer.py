@@ -11,20 +11,20 @@ import boto3
 import requests
 from boto3.s3.transfer import TransferConfig
 
-from spark_pipeline_framework.utilities.api_helper.http_request import (
+from helixcore.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
 )
-from spark_pipeline_framework.utilities.aws.s3 import parse_s3_uri
+from helixcore.utilities.aws.s3 import parse_s3_uri
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
 from requests.adapters import HTTPAdapter
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_log_metric import (
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )

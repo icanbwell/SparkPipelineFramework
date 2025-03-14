@@ -6,7 +6,7 @@ from mockserver_client.mock_requests_loader import load_mock_fhir_requests_from_
 from pyspark.sql import SparkSession, DataFrame
 from spark_fhir_schemas.r4.resources.patient import PatientSchema
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v1.fhir_receiver import (
     FhirReceiver,
 )

@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 from spark_pipeline_framework.proxy_generator.proxy_base import ProxyBase
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from os import path
 
 

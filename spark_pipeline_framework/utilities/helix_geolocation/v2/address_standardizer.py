@@ -1,6 +1,6 @@
 from typing import List
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 
 from spark_pipeline_framework.utilities.helix_geolocation.v2.cache.cache_handler import (
     CacheHandler,

@@ -25,9 +25,9 @@ from pyspark.sql.types import (
     DataType,
 )
 
-from spark_pipeline_framework.logger.log_level import LogLevel
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.log_level import LogLevel
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
@@ -43,9 +43,13 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
+)
+
+from spark_pipeline_framework.utilities.async_dataframe_helper.v1.async_dataframe_helper import (
+    AsyncDataFrameHelper,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
@@ -53,13 +57,13 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
+from helixcore.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
+from helixcore.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+from helixcore.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
 from spark_pipeline_framework.utilities.pretty_print import get_pretty_data_frame
@@ -68,6 +72,9 @@ from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
 )
 from spark_pipeline_framework.utilities.spark_partition_information.v1.spark_partition_information import (
     SparkPartitionInformation,
+)
+from spark_pipeline_framework.utilities.spark_type_converter.v1.spark_type_converter import (
+    SparkTypeConverter,
 )
 
 
@@ -206,7 +213,7 @@ class FhirReceiverProcessorSpark:
         :param limit: int
         :return: DataFrame
         """
-        return await AsyncHelper.async_generator_to_dataframe(
+        return await AsyncDataFrameHelper.async_generator_to_dataframe(
             df=df,
             async_gen=FhirReceiverProcessor.get_batch_result_streaming_async(
                 last_updated_after=last_updated_after,
@@ -983,7 +990,9 @@ class FhirReceiverProcessorSpark:
             FhirReceiverProcessorSpark.get_process_batch_function(
                 parameters=parameters
             ),
-            schema=FhirGetResponseSchema.get_schema(),
+            schema=SparkTypeConverter.convert_struct_type(
+                FhirGetResponseSchema.get_schema()
+            ),
         )
         return result_with_counts_and_responses
 
@@ -1012,7 +1021,9 @@ class FhirReceiverProcessorSpark:
                 parameters=parameters,
             )
         )
-        response_schema = FhirGetResponseSchema.get_schema()
+        response_schema: StructType = SparkTypeConverter.convert_struct_type(
+            FhirGetResponseSchema.get_schema()
+        )
         result_with_counts_and_responses = (
             df.sparkSession.createDataFrame(  # type:ignore[type-var]
                 result_rows, schema=response_schema

@@ -2,48 +2,48 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Union
 
-# noinspection PyPackageRequirements
-from mlflow.entities import RunStatus
+from helixcore.utilities.telemetry.null_telemetry import NullTelemetry
+
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
-from spark_pipeline_framework.logger.log_level import LogLevel
+from helixcore.logger.log_level import LogLevel
 from spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter import (
     FrameworkCsvExporter,
 )
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_log_metric import (
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
 from spark_pipeline_framework.transformers.framework_validation_transformer.v1.framework_validation_transformer import (
     pipeline_validation_df_name,
 )
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_list_catalog_table_names,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
+from helixcore.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
-    TelemetryProvider,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
+
+from helixcore.utilities.telemetry.telemetry_span_creator import (
     TelemetrySpanCreator,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
+
+from helixcore.utilities.telemetry.open_telemetry import OpenTelemetry
 
 
 class FrameworkPipeline(Transformer):
@@ -99,10 +99,10 @@ class FrameworkPipeline(Transformer):
         self.telemetry_context: TelemetryContext = (
             telemetry_context
             or TelemetryContext(
-                provider=(
-                    TelemetryProvider.OPEN_TELEMETRY
+                telemetry_provider=(
+                    OpenTelemetry.telemetry_provider
                     if self.telemetry_enable
-                    else TelemetryProvider.NULL
+                    else NullTelemetry.telemetry_provider
                 ),
                 trace_id=None,
                 span_id=None,
@@ -260,7 +260,7 @@ class FrameworkPipeline(Transformer):
                                 event_text=str(e),
                                 ex=e,
                             )
-                            self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
+                            self.progress_logger.end_mlflow_run(status=None)
 
                             raise e
 

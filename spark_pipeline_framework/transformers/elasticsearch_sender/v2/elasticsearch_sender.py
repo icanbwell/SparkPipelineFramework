@@ -7,11 +7,11 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import to_json, struct, col
 from pyspark.errors import AnalysisException, PythonException
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_log_metric import (
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_log_metric import (
     ProgressLogMetric,
 )
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_processor import (
     ElasticSearchProcessor,
 )
@@ -27,8 +27,8 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.FriendlySparkException import (
     FriendlySparkException,
 )
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters

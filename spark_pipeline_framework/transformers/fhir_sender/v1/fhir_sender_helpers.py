@@ -6,11 +6,11 @@ from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteRespo
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+from helixcore.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
 

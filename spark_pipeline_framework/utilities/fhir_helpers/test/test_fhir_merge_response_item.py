@@ -1,6 +1,6 @@
 import pytest
 from typing import Dict, Any, List
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
+from helixcore.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
 )
 from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse

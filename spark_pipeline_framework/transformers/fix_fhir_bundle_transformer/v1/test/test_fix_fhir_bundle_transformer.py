@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import rmtree
 
 from pyspark.sql import SparkSession, DataFrame
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fix_fhir_bundle_transformer.v1.fix_fhir_bundle_transformer import (
     FixFhirBundleTransformer,
 )

@@ -9,12 +9,12 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, Row
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_parse_bundles import (
+from helixcore.utilities.fhir_helpers.fhir_parse_bundles import (
     extract_resource_from_json,
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
@@ -72,8 +72,8 @@ class FixFhirBundleTransformer(FrameworkTransformer):
         )
 
         resource_list_rdd: RDD[Iterable[Row]] = whole_text_rdd.map(
-            lambda x: extract_resource_from_json(
-                x[0], x[1], resources_to_extract
+            lambda x: Row(
+                *extract_resource_from_json(x[0], x[1], resources_to_extract)
             )  # x[0] is file name, x[1] is contents
         )
 

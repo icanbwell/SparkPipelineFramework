@@ -6,7 +6,7 @@ from requests import status_codes, Response
 from pyspark.sql.types import Row
 from pyspark import SparkFiles
 
-from spark_pipeline_framework.utilities.api_helper.http_request import (
+from helixcore.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
 )

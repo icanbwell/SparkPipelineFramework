@@ -2,14 +2,14 @@ import json
 from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
-from spark_pipeline_framework.logger.yarn_logger import get_logger
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.logger.yarn_logger import get_logger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
@@ -19,16 +19,16 @@ from spark_pipeline_framework.utilities.parallel_pipeline_executor.v1.parallel_p
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
+from helixcore.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
+from helixcore.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
+from helixcore.utilities.telemetry.telemetry_span_creator import (
     TelemetrySpanCreator,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
+from helixcore.utilities.telemetry.telemetry_span_wrapper import (
     TelemetrySpanWrapper,
 )
 

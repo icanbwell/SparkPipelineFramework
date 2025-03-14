@@ -18,11 +18,11 @@ from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteRespo
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
     FhirSenderParameters,
 )
-from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
+from helixcore.utilities.async_pandas_udf.v1.async_pandas_udf_parameters import (
     AsyncPandasUdfParameters,
 )
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
@@ -31,7 +31,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_dataframe_udf import (
     AsyncPandasDataFrameUDF,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_item import (
+from helixcore.utilities.fhir_helpers.fhir_merge_response_item import (
     FhirMergeResponseItem,
 )
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_helpers_async import (
@@ -39,7 +39,7 @@ from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_helpers_as
     send_fhir_delete_async,
     send_json_bundle_to_fhir_async,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
+from helixcore.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
 from spark_pipeline_framework.utilities.json_helpers import convert_dict_to_fhir_json

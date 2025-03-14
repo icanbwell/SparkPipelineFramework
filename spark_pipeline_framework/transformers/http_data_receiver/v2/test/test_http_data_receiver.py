@@ -8,11 +8,11 @@ from mockserver_client.mock_requests_loader import (
 )
 from mockserver_client.mockserver_client import MockServerFriendlyClient
 from pyspark.sql import SparkSession, DataFrame
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_receiver.v2.http_data_receiver import (
     HttpDataReceiver,
 )
-from spark_pipeline_framework.utilities.api_helper.http_request import HelixHttpRequest
+from helixcore.utilities.api_helper.http_request import HelixHttpRequest
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )

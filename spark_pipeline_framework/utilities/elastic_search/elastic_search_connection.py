@@ -5,9 +5,9 @@ from opensearchpy import OpenSearch, AsyncOpenSearch
 
 from furl import furl
 
-from spark_pipeline_framework.utilities.aws.config import get_ssm_config
+from helixcore.utilities.aws.config import get_ssm_config
 from botocore.exceptions import ClientError
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 
 
 class ElasticSearchConnection:

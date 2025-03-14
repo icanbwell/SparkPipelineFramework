@@ -4,7 +4,7 @@ from pyspark.sql.types import (
     Row,
 )
 
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_merge_response_schema import (
+from helixcore.utilities.fhir_helpers.fhir_merge_response_schema import (
     FhirMergeResponseSchema,
 )
 

@@ -13,7 +13,7 @@ from spark_pipeline_framework.transformers.framework_drop_duplicates_transformer
 )
 
 from spark_pipeline_framework.pipelines.framework_pipeline import FrameworkPipeline
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
     FrameworkCsvLoader,
 )

@@ -5,7 +5,7 @@ from shutil import rmtree
 import pytest
 from mockserver_client.mock_requests_loader import load_mock_source_api_json_responses
 from pyspark.sql import SparkSession, DataFrame
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver import (
     FhirReceiver,
 )

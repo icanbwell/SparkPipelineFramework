@@ -30,8 +30,6 @@ chardet="*"
 slack_sdk = ">=3.22.0"
 # smart_open is needed for reading and writing files
 smart_open = { extras = ['s3'], version = ">=6.3.0" }
-# mlflow is needed for tracking experiments in MLFlow
-mlflow-skinny = "==2.17.2"
 # sqlalchemy is needed for interacting with databases
 SQLAlchemy = ">=1.4.37"
 # sqlparse is needed for parsing SQL
@@ -66,23 +64,12 @@ pydantic=">=2.8.2"
 motor={ extras = ['snappy', 'zstd'], version = ">=3.5.1" }
 # dataclasses-json is needed for working with JSON data to read from and write to json
 dataclasses-json = ">=0.6.7"
+# helixcore provides common functionality for Helix projects
+helixcore = ">=1.0.9"
 # ====== For OpenTelemetry ======
 opentelemetry-api = ">=1.30.0"
 opentelemetry-sdk = ">=1.30.0"
 opentelemetry-exporter-otlp = ">=1.30.0"
-opentelemetry-instrumentation-system-metrics = ">=0.51b0"
-opentelemetry-instrumentation-logging = ">=0.51b0"
-opentelemetry-instrumentation-pymysql = ">=0.51b0"
-opentelemetry-instrumentation-pymongo = ">=0.51b0"
-opentelemetry-instrumentation-elasticsearch = ">=0.51b0"
-opentelemetry-instrumentation-boto = ">=0.51b0"
-opentelemetry-instrumentation-botocore = ">=0.51b0"
-opentelemetry-instrumentation-httpx = ">=0.51b0"
-opentelemetry-instrumentation-asyncio = ">=0.51b0"
-opentelemetry-instrumentation-aiohttp-client = ">=0.51b0"
-opentelemetry-instrumentation-confluent-kafka = ">=0.51b0"
-opentelemetry-instrumentation-requests = ">=0.51b0"
-#opentelemetry-exporter-richconsole = ">=0.51b0"
 # ====== End OpenTelemetry ======
 
 

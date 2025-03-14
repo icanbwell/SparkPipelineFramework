@@ -16,7 +16,7 @@ from pyspark.sql.types import (
 )
 from requests import Response
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.http_data_sender.v3.http_data_sender import (
     HttpDataSender,
 )

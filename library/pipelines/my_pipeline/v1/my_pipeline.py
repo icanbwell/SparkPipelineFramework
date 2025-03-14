@@ -8,7 +8,7 @@ from library.features.carriers_python.v1.features_carriers_python_v1 import (
 
 from library.features.carriers.v1.features_carriers_v1 import FeaturesCarriersV1
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from helixcore.progress_logger.progress_logger import ProgressLogger
 
 from spark_pipeline_framework.pipelines.framework_pipeline import FrameworkPipeline
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (

@@ -5,7 +5,7 @@ from pymongo.collection import Collection
 import structlog
 from pymongo import UpdateOne, MongoClient
 
-from spark_pipeline_framework.utilities.document_db_connection.v1.document_db_connection import (
+from helixcore.utilities.document_db_connection.v1.document_db_connection import (
     DocumentDbServerUrl,
 )
 

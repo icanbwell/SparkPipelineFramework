@@ -8,7 +8,7 @@ from motor.motor_asyncio import (
 )
 from pymongo import UpdateOne
 
-from spark_pipeline_framework.utilities.document_db_connection.v1.document_db_connection import (
+from helixcore.utilities.document_db_connection.v1.document_db_connection import (
     DocumentDbServerUrl,
 )
 

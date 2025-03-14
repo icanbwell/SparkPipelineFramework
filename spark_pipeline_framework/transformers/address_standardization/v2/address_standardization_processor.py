@@ -3,7 +3,7 @@ from datetime import datetime
 from logging import Logger
 from typing import Any, Dict, List, Optional, AsyncGenerator
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_function_run_context import (
     AsyncPandasBatchFunctionRunContext,
 )

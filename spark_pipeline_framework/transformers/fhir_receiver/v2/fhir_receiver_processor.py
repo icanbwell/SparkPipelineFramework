@@ -17,7 +17,7 @@ from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 
-from spark_pipeline_framework.logger.yarn_logger import get_logger
+from helixcore.logger.yarn_logger import get_logger
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
@@ -27,16 +27,16 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch
 from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch_result import (
     GetBatchResult,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_item import (
+from helixcore.utilities.fhir_helpers.fhir_get_response_item import (
     FhirGetResponseItem,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_parser_exception import (
+from helixcore.utilities.fhir_helpers.fhir_parser_exception import (
     FhirParserException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
+from helixcore.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
-from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
+from helixcore.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
 

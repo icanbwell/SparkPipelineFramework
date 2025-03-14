@@ -1,7 +1,7 @@
 import pytest
 from aioresponses import aioresponses
 from typing import List, Optional
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_parse_bundles import (
+from helixcore.utilities.fhir_helpers.fhir_parse_bundles import (
     combine_bundles,
     extract_resource_from_json,
 )

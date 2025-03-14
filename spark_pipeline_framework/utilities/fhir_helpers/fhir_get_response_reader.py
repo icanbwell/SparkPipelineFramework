@@ -5,7 +5,7 @@ from pyspark.sql.types import (
 )
 
 
-from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_schema import (
+from helixcore.utilities.fhir_helpers.fhir_get_response_schema import (
     FhirGetResponseSchema,
 )
 

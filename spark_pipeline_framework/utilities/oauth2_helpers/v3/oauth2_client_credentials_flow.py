@@ -2,12 +2,12 @@ import json
 from dataclasses import dataclass, asdict
 from typing import Optional
 
-from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
-from spark_pipeline_framework.utilities.api_helper.v2.http_request import (
+from helixcore.progress_logger.progress_logger import ProgressLogger
+from helixcore.utilities.api_helper.v2.http_request import (
     HelixHttpRequest,
     RequestType,
 )
-from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+from helixcore.utilities.async_helper.v1.async_helper import AsyncHelper
 
 
 @dataclass
