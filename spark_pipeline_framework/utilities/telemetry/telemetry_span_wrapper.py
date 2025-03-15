@@ -79,3 +79,6 @@ class TelemetrySpanWrapper(ABC):
         )
 
         return child_telemetry_parent
+
+    @abstractmethod
+    def set_attributes(self, attributes: Dict[str, Any]) -> None: ...
