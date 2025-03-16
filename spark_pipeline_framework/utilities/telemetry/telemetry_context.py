@@ -19,6 +19,9 @@ class TelemetryContext(DataClassJsonMixin):
     service_name: str
     """ Service name for the telemetry context """
 
+    instance_name: str
+    """ Instance name for the telemetry context.  Included in traces and metrics """
+
     environment: str
     """ Environment for the telemetry context """
 
@@ -58,6 +61,7 @@ class TelemetryContext(DataClassJsonMixin):
             environment="",
             attributes=None,
             log_level=None,
+            instance_name="",
         )
 
     def copy(self) -> "TelemetryContext":
@@ -75,6 +79,7 @@ class TelemetryContext(DataClassJsonMixin):
             trace_all_calls=self.trace_all_calls,
             attributes=self.attributes,
             log_level=self.log_level,
+            instance_name=self.instance_name,
         )
 
     def create_child_context(

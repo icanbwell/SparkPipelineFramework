@@ -39,6 +39,15 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.semconv.resource import ResourceAttributes
 from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags, Span
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_counter import (
+    TelemetryCounter,
+)
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_histogram_counter import (
+    TelemetryHistogram,
+)
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_counter import (
+    TelemetryUpDownCounter,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
@@ -69,11 +78,11 @@ class OpenTelemetry(Telemetry):
 
     _meter_provider: ClassVar[Optional[MeterProvider]] = None
 
-    _counters: ClassVar[Dict[str, Counter]] = {}
+    _counters: ClassVar[Dict[str, TelemetryCounter]] = {}
 
-    _up_down_counters: ClassVar[Dict[str, UpDownCounter]] = {}
+    _up_down_counters: ClassVar[Dict[str, TelemetryUpDownCounter]] = {}
 
-    _histograms: ClassVar[Dict[str, Histogram]] = {}
+    _histograms: ClassVar[Dict[str, TelemetryHistogram]] = {}
 
     def __init__(
         self,
@@ -547,7 +556,7 @@ class OpenTelemetry(Telemetry):
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> Counter:
+    ) -> TelemetryCounter:
         """
         Get a counter metric
 
@@ -576,10 +585,15 @@ class OpenTelemetry(Telemetry):
             unit=unit,
             description=description,
         )
-        # add to the dictionary of counters
-        OpenTelemetry._counters[name] = counter
 
-        return counter
+        counter_wrapper: TelemetryCounter = TelemetryCounter(
+            counter=counter,
+            attributes=attributes,
+        )
+        # add to the dictionary of counters
+        OpenTelemetry._counters[name] = counter_wrapper
+
+        return counter_wrapper
 
     @override
     def get_up_down_counter(
@@ -589,7 +603,7 @@ class OpenTelemetry(Telemetry):
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> UpDownCounter:
+    ) -> TelemetryUpDownCounter:
         """
         Get an up_down_counter metric
 
@@ -617,10 +631,15 @@ class OpenTelemetry(Telemetry):
             unit=unit,
             description=description,
         )
-        # add to the dictionary of counters
-        OpenTelemetry._up_down_counters[name] = up_down_counter
 
-        return up_down_counter
+        up_down_counter_wrapper: TelemetryUpDownCounter = TelemetryUpDownCounter(
+            counter=up_down_counter,
+            attributes=attributes,
+        )
+        # add to the dictionary of counters
+        OpenTelemetry._up_down_counters[name] = up_down_counter_wrapper
+
+        return up_down_counter_wrapper
 
     @override
     def get_histogram(
@@ -630,12 +649,12 @@ class OpenTelemetry(Telemetry):
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> Histogram:
+    ) -> TelemetryHistogram:
         """
-        Get a histograms metric
+        Get a histogram metric
 
-        :param name: Name of the histograms
-        :param unit: Unit of the histograms
+        :param name: Name of the histogram
+        :param unit: Unit of the histogram
         :param description: Description
         :param attributes: Additional attributes
         :return: The Counter metric
@@ -649,16 +668,20 @@ class OpenTelemetry(Telemetry):
             attributes=attributes,
         )
 
-        # check if we already have a histograms for this name
+        # check if we already have a histogram for this name
         if name in OpenTelemetry._histograms:
             return OpenTelemetry._histograms[name]
 
-        histograms: Histogram = meter.create_histogram(
+        histogram: Histogram = meter.create_histogram(
             name=name,
             unit=unit,
             description=description,
         )
-        # add to the dictionary of counters
-        OpenTelemetry._histograms[name] = histograms
 
-        return histograms
+        histogram_wrapper: TelemetryHistogram = TelemetryHistogram(
+            histogram=histogram, attributes=attributes
+        )
+        # add to the dictionary of counters
+        OpenTelemetry._histograms[name] = histogram_wrapper
+
+        return histogram_wrapper

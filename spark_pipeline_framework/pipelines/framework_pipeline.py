@@ -79,6 +79,7 @@ class FrameworkPipeline(Transformer):
                 environment=os.getenv("ENV", "development"),
                 attributes=attributes,
                 log_level=log_level,
+                instance_name=self.parameters.get("flow_run_name", "unknown"),
             )
         )
 

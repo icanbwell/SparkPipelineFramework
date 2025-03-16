@@ -3,9 +3,17 @@ from contextlib import asynccontextmanager, contextmanager
 from logging import Logger
 from typing import Optional, Dict, Any, AsyncGenerator, Generator
 
-from opentelemetry.metrics import UpDownCounter, Histogram, Counter
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_counter import (
+    TelemetryCounter,
+)
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_histogram_counter import (
+    TelemetryHistogram,
+)
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_counter import (
+    TelemetryUpDownCounter,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
@@ -138,7 +146,7 @@ class TelemetrySpanCreator:
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> Counter:
+    ) -> TelemetryCounter:
         """
         Get a counter metric
 
@@ -159,7 +167,7 @@ class TelemetrySpanCreator:
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> UpDownCounter:
+    ) -> TelemetryUpDownCounter:
         """
         Get an up_down_counter metric
 
@@ -169,7 +177,7 @@ class TelemetrySpanCreator:
         :param attributes: Optional attributes
         :return: The Counter metric
         """
-        return self.get_up_down_counter(
+        return self.telemetry.get_up_down_counter(
             name=name, unit=unit, description=description, attributes=attributes
         )
 
@@ -180,7 +188,7 @@ class TelemetrySpanCreator:
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> Histogram:
+    ) -> TelemetryHistogram:
         """
         Get a histograms metric
 

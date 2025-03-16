@@ -22,6 +22,7 @@ async def test_open_telemetry_async() -> None:
         environment="development",
         attributes=None,
         log_level=None,
+        instance_name="main-operation",
     )
     telemetry = OpenTelemetry(telemetry_context=telemetry_context, log_level="DEBUG")
 

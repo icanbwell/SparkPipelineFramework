@@ -90,6 +90,7 @@ async def run_sub_operation(
         provider=TelemetryProvider.OPEN_TELEMETRY,
         attributes=None,
         log_level=None,
+        instance_name="sub-operation",
     )
     telemetry = OpenTelemetry(
         telemetry_context=telemetry_context,
@@ -118,6 +119,7 @@ async def test_open_telemetry_multi_thread() -> None:
         provider=TelemetryProvider.OPEN_TELEMETRY,
         attributes=None,
         log_level=None,
+        instance_name="main-operation",
     )
     telemetry = OpenTelemetry(
         telemetry_context=telemetry_context,
