@@ -48,3 +48,7 @@ class OpenTelemetrySpanWrapper(TelemetrySpanWrapper):
             return None
         span_id_hex = f"{span_context.span_id:016x}"
         return span_id_hex
+
+    @override
+    def set_attributes(self, attributes: Dict[str, Any]) -> None:
+        self._span.set_attributes(attributes=attributes)

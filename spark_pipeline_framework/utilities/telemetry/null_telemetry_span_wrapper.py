@@ -2,6 +2,7 @@ from typing import (
     Optional,
     Dict,
     Any,
+    override,
 )
 
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
@@ -47,3 +48,7 @@ class NullTelemetrySpanWrapper(TelemetrySpanWrapper):
             telemetry_context=telemetry_context,
             telemetry_parent=telemetry_parent,
         )
+
+    @override
+    def set_attributes(self, attributes: Dict[str, Any]) -> None:
+        pass
