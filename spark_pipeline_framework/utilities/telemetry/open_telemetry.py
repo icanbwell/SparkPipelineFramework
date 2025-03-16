@@ -557,6 +557,10 @@ class OpenTelemetry(Telemetry):
         :param attributes: Additional attributes
         :return: The Counter metric
         """
+
+        attributes = attributes or {}
+        attributes.update(self._metadata)
+
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
@@ -587,7 +591,7 @@ class OpenTelemetry(Telemetry):
         attributes: Optional[Dict[str, Any]] = None,
     ) -> UpDownCounter:
         """
-        Get a up_down_counter metric
+        Get an up_down_counter metric
 
         :param name: Name of the up_down_counter
         :param unit: Unit of the up_down_counter
@@ -595,6 +599,9 @@ class OpenTelemetry(Telemetry):
         :param attributes: Additional attributes
         :return: The Counter metric
         """
+        attributes = attributes or {}
+        attributes.update(self._metadata)
+
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
@@ -633,6 +640,9 @@ class OpenTelemetry(Telemetry):
         :param attributes: Additional attributes
         :return: The Counter metric
         """
+        attributes = attributes or {}
+        attributes.update(self._metadata)
+
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
