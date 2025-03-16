@@ -79,8 +79,13 @@ class FrameworkPipeline(Transformer):
                 environment=os.getenv("ENV", "development"),
                 attributes=attributes,
                 log_level=log_level,
-                instance_name=self.parameters.get("flow_run_name", "unknown"),
-                service_namespace="helix-pipelines",
+                instance_name=os.getenv(
+                    "OTEL_INSTANCE_NAME",
+                    self.parameters.get("flow_run_name", "unknown"),
+                ),
+                service_namespace=os.getenv(
+                    "OTEL_SERVICE_NAMESPACE", "helix-pipelines"
+                ),
             )
         )
 
