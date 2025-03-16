@@ -1,13 +1,9 @@
 import uuid
 from contextlib import asynccontextmanager, contextmanager
 from logging import Logger
-from typing import (
-    Optional,
-    Dict,
-    Any,
-    AsyncGenerator,
-    Generator,
-)
+from typing import Optional, Dict, Any, AsyncGenerator, Generator
+
+from opentelemetry.metrics import UpDownCounter, Histogram, Counter
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
@@ -134,3 +130,66 @@ class TelemetrySpanCreator:
         """
         if self.telemetry:
             await self.telemetry.flush_async()
+
+    def get_counter(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+        attributes: Optional[Dict[str, Any]] = None,
+    ) -> Counter:
+        """
+        Get a counter metric
+
+        :param name: Name of the counter
+        :param unit: Unit of the counter
+        :param description: Description
+        :param attributes: Optional attributes
+        :return: The Counter metric
+        """
+        return self.telemetry.get_counter(
+            name=name, unit=unit, description=description, attributes=attributes
+        )
+
+    def get_up_down_counter(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+        attributes: Optional[Dict[str, Any]] = None,
+    ) -> UpDownCounter:
+        """
+        Get an up_down_counter metric
+
+        :param name: Name of the up_down_counter
+        :param unit: Unit of the up_down_counter
+        :param description: Description
+        :param attributes: Optional attributes
+        :return: The Counter metric
+        """
+        return self.get_up_down_counter(
+            name=name, unit=unit, description=description, attributes=attributes
+        )
+
+    def get_histogram(
+        self,
+        *,
+        name: str,
+        unit: str,
+        description: str,
+        attributes: Optional[Dict[str, Any]] = None,
+    ) -> Histogram:
+        """
+        Get a histograms metric
+
+        :param name: Name of the histograms
+        :param unit: Unit of the histograms
+        :param description: Description
+        :param attributes: Optional attributes
+        :return: The Counter metric
+        """
+        return self.telemetry.get_histogram(
+            name=name, unit=unit, description=description, attributes=attributes
+        )
