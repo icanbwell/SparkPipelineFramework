@@ -116,15 +116,20 @@ class OpenTelemetry(Telemetry):
             "deployment.environment": telemetry_context.environment,
             "host.name": hostname,
             "instance.id": self._instance_id,
+            "instance.name": telemetry_context.instance_name,
         }
 
         if telemetry_context.attributes:
             self._metadata.update(telemetry_context.attributes)
 
         # Create a resource with service details
+        # from https://opentelemetry.io/docs/specs/semconv/resource/
         resource_attributes = {
             ResourceAttributes.SERVICE_NAME: telemetry_context.service_name,
             ResourceAttributes.DEPLOYMENT_ENVIRONMENT: telemetry_context.environment,
+            ResourceAttributes.SERVICE_INSTANCE_ID: telemetry_context.instance_name,
+            ResourceAttributes.SERVICE_NAMESPACE: telemetry_context.service_namespace,
+            ResourceAttributes.HOST_NAME: hostname,
         }
         image_version: Optional[str] = os.getenv("DOCKER_IMAGE_VERSION")
         if image_version:

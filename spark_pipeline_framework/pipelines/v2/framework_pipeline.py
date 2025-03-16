@@ -111,6 +111,7 @@ class FrameworkPipeline(Transformer):
                 attributes=attributes,
                 log_level=log_level,
                 instance_name=self.parameters.get("flow_run_name", "unknown"),
+                service_namespace="helix-pipelines",
             )
         )
 

@@ -23,6 +23,7 @@ async def test_open_telemetry_async() -> None:
         attributes=None,
         log_level=None,
         instance_name="main-operation",
+        service_namespace="MyNamespace",
     )
     telemetry = OpenTelemetry(telemetry_context=telemetry_context, log_level="DEBUG")
 
