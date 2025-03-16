@@ -65,7 +65,7 @@ motor={ extras = ['snappy', 'zstd'], version = ">=3.5.1" }
 # dataclasses-json is needed for working with JSON data to read from and write to json
 dataclasses-json = ">=0.6.7"
 # helixcore provides common functionality for Helix projects
-helixcore = ">=1.0.10"
+helixcore = ">=1.0.12"
 # ====== For OpenTelemetry ======
 opentelemetry-api = ">=1.30.0"
 opentelemetry-sdk = ">=1.30.0"
