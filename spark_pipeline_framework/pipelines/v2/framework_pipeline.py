@@ -170,7 +170,7 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
 
         telemetry_span: TelemetrySpanWrapper
         async with telemetry_span_creator.create_telemetry_span(
-            name=self.name or "framework_pipeline",
+            name=self.name or self.__class__.__qualname__,
             attributes={
                 "run_id": self._run_id,
             }
