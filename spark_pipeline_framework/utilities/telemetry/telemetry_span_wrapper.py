@@ -71,6 +71,7 @@ class TelemetrySpanWrapper(ABC):
                 trace_id=child_telemetry_context.trace_id,
                 span_id=child_telemetry_context.span_id,
                 name=self.name,
+                attributes=self.attributes,
             )
             if child_telemetry_context
             and child_telemetry_context.trace_id

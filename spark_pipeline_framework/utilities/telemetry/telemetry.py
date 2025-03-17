@@ -121,6 +121,7 @@ class Telemetry(ABC):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryCounter:
         """
@@ -130,6 +131,7 @@ class Telemetry(ABC):
         :param unit: Unit of the counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         ...
@@ -141,6 +143,7 @@ class Telemetry(ABC):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryUpDownCounter:
         """
@@ -150,6 +153,7 @@ class Telemetry(ABC):
         :param unit: Unit of the up_down_counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         ...
@@ -161,6 +165,7 @@ class Telemetry(ABC):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryHistogram:
         """
@@ -170,6 +175,7 @@ class Telemetry(ABC):
         :param unit: Unit of the histograms
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         ...

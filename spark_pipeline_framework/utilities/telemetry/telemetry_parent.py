@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Any, Dict, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -13,3 +14,6 @@ class TelemetryParent(DataClassJsonMixin):
 
     span_id: str
     """ Span ID for the telemetry context """
+
+    attributes: Optional[Dict[str, Any]]
+    """ Attributes for the telemetry parent to inherit by children """

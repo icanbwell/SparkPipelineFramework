@@ -103,7 +103,10 @@ class ConsoleTelemetry(Telemetry):
         # if parent is still None then create a new trace_id and span_id
         if telemetry_parent is None:
             telemetry_parent = TelemetryParent(
-                trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), name=name
+                trace_id=str(uuid.uuid4()),
+                span_id=str(uuid.uuid4()),
+                name=name,
+                attributes=attributes,
             )
 
         token: Token[TelemetryParent | None] | None = (
@@ -149,7 +152,10 @@ class ConsoleTelemetry(Telemetry):
         # if parent is still None then create a new trace_id and span_id
         if telemetry_parent is None:
             telemetry_parent = TelemetryParent(
-                trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), name=name
+                trace_id=str(uuid.uuid4()),
+                span_id=str(uuid.uuid4()),
+                name=name,
+                attributes=attributes,
             )
 
         token: Token[TelemetryParent | None] | None = (
@@ -207,6 +213,7 @@ class ConsoleTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryCounter:
         """
@@ -216,6 +223,7 @@ class ConsoleTelemetry(Telemetry):
         :param unit: Unit of the counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryCounter(
@@ -224,7 +232,8 @@ class ConsoleTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
 
     @override
@@ -234,6 +243,7 @@ class ConsoleTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryUpDownCounter:
         """
@@ -243,6 +253,7 @@ class ConsoleTelemetry(Telemetry):
         :param unit: Unit of the up_down_counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryUpDownCounter(
@@ -251,7 +262,8 @@ class ConsoleTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
 
     @override
@@ -261,6 +273,7 @@ class ConsoleTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryHistogram:
         """
@@ -270,6 +283,7 @@ class ConsoleTelemetry(Telemetry):
         :param unit: Unit of the histograms
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryHistogram(
@@ -278,5 +292,6 @@ class ConsoleTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )

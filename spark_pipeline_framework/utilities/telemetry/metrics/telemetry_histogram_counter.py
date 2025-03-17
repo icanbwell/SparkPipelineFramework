@@ -3,6 +3,10 @@ from typing import Optional, Dict, Any, Union
 from opentelemetry.context import Context
 from opentelemetry.metrics import Histogram
 
+from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+    TelemetryParent,
+)
+
 
 class TelemetryHistogram:
     """
@@ -11,11 +15,16 @@ class TelemetryHistogram:
     """
 
     def __init__(
-        self, *, histogram: Histogram, attributes: Optional[Dict[str, Any]]
+        self,
+        *,
+        histogram: Histogram,
+        attributes: Optional[Dict[str, Any]],
+        telemetry_parent: Optional[TelemetryParent],
     ) -> None:
         assert histogram
         self._histogram: Histogram = histogram
         self._attributes: Optional[Dict[str, Any]] = attributes
+        self._telemetry_parent: Optional[TelemetryParent] = telemetry_parent
 
     def record(
         self,
@@ -23,7 +32,12 @@ class TelemetryHistogram:
         attributes: Optional[Dict[str, Any]] = None,
         context: Optional[Context] = None,
     ) -> None:
-        attributes = attributes or {}
-        attributes.update(self._attributes or {})
+        final_attributes = self._attributes or {}
+        if self._telemetry_parent and self._telemetry_parent.attributes:
+            final_attributes.update(self._telemetry_parent.attributes)
+        if attributes:
+            final_attributes.update(attributes)
 
-        self._histogram.record(amount=amount, attributes=attributes, context=context)
+        self._histogram.record(
+            amount=amount, attributes=final_attributes, context=context
+        )

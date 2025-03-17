@@ -94,6 +94,7 @@ class NullTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryCounter:
         """
@@ -103,6 +104,7 @@ class NullTelemetry(Telemetry):
         :param unit: Unit of the counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryCounter(
@@ -111,7 +113,8 @@ class NullTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
 
     @override
@@ -121,6 +124,7 @@ class NullTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryUpDownCounter:
         """
@@ -130,6 +134,7 @@ class NullTelemetry(Telemetry):
         :param unit: Unit of the up_down_counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryUpDownCounter(
@@ -138,7 +143,8 @@ class NullTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
 
     @override
@@ -148,6 +154,7 @@ class NullTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryHistogram:
         """
@@ -157,6 +164,7 @@ class NullTelemetry(Telemetry):
         :param unit: Unit of the histograms
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryHistogram(
@@ -165,5 +173,6 @@ class NullTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )

@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager, contextmanager
 from logging import Logger
 from typing import Optional, Dict, Any, AsyncGenerator, Generator
 
-
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_counter import (
     TelemetryCounter,
@@ -139,12 +138,13 @@ class TelemetrySpanCreator:
         if self.telemetry:
             await self.telemetry.flush_async()
 
-    def get_counter(
+    def get_telemetry_counter(
         self,
         *,
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryCounter:
         """
@@ -154,18 +154,24 @@ class TelemetrySpanCreator:
         :param unit: Unit of the counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return self.telemetry.get_counter(
-            name=name, unit=unit, description=description, attributes=attributes
+            name=name,
+            unit=unit,
+            description=description,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
 
-    def get_up_down_counter(
+    def get_telemetry_up_down_counter(
         self,
         *,
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryUpDownCounter:
         """
@@ -175,18 +181,24 @@ class TelemetrySpanCreator:
         :param unit: Unit of the up_down_counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return self.telemetry.get_up_down_counter(
-            name=name, unit=unit, description=description, attributes=attributes
+            name=name,
+            unit=unit,
+            description=description,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
 
-    def get_histogram(
+    def get_telemetry_histogram(
         self,
         *,
         name: str,
         unit: str,
         description: str,
+        telemetry_parent: Optional[TelemetryParent],
         attributes: Optional[Dict[str, Any]] = None,
     ) -> TelemetryHistogram:
         """
@@ -196,8 +208,13 @@ class TelemetrySpanCreator:
         :param unit: Unit of the histograms
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return self.telemetry.get_histogram(
-            name=name, unit=unit, description=description, attributes=attributes
+            name=name,
+            unit=unit,
+            description=description,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
