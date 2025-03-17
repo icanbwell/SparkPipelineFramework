@@ -1,9 +1,17 @@
 from abc import abstractmethod, ABC
 from contextlib import asynccontextmanager, contextmanager
-from opentelemetry.metrics import Counter, UpDownCounter, Histogram
 
 from typing import Optional, Dict, Any, AsyncIterator, Iterator
 
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_counter import (
+    TelemetryCounter,
+)
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_histogram_counter import (
+    TelemetryHistogram,
+)
+from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_counter import (
+    TelemetryUpDownCounter,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
 )
@@ -114,7 +122,7 @@ class Telemetry(ABC):
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> Counter:
+    ) -> TelemetryCounter:
         """
         Get a counter metric
 
@@ -134,9 +142,9 @@ class Telemetry(ABC):
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> UpDownCounter:
+    ) -> TelemetryUpDownCounter:
         """
-        Get a up_down_counter metric
+        Get an up_down_counter metric
 
         :param name: Name of the up_down_counter
         :param unit: Unit of the up_down_counter
@@ -154,7 +162,7 @@ class Telemetry(ABC):
         unit: str,
         description: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> Histogram:
+    ) -> TelemetryHistogram:
         """
         Get a histograms metric
 
