@@ -1,6 +1,9 @@
 from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
+from spark_pipeline_framework.mixins.loop_id_mixin import LoopIdMixin
+from spark_pipeline_framework.mixins.telemetry_parent_mixin import TelemetryParentMixin
+
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml import Transformer
@@ -10,11 +13,11 @@ from spark_pipeline_framework.progress_logger.progress_logger import ProgressLog
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
-)
 from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+    TelemetryParent,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
     TelemetrySpanCreator,
@@ -79,8 +82,7 @@ class FrameworkTransformerGroup(FrameworkTransformer):
         )
 
         telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
-            telemetry_context=self.telemetry_context
-            or TelemetryContext.get_null_context()
+            telemetry_parent=self.telemetry_parent or TelemetryParent.get_null_parent()
         ).create_telemetry_span_creator(log_level=environ.get("LOGLEVEL"))
 
         if (enable or enable is None) and enable_if_view_not_empty:
@@ -98,20 +100,18 @@ class FrameworkTransformerGroup(FrameworkTransformer):
                 async with telemetry_span_creator.create_telemetry_span(
                     name=stage_name,
                     attributes={},
+                    telemetry_parent=self.telemetry_parent,
                 ) as telemetry_span:
-                    child_telemetry_context = (
-                        telemetry_span.create_child_telemetry_context()
-                    )
-
                     if progress_logger is not None:
                         progress_logger.start_mlflow_run(
                             run_name=stage_name, is_nested=True
                         )
-                    if hasattr(stage, "set_loop_id"):
+
+                    if isinstance(stage, LoopIdMixin):
                         stage.set_loop_id(self.loop_id)
-                    if hasattr(stage, "set_telemetry_context"):
-                        stage.set_telemetry_context(
-                            telemetry_context=child_telemetry_context
+                    if isinstance(stage, TelemetryParentMixin):
+                        stage.set_telemetry_parent(
+                            telemetry_parent=telemetry_span.create_child_telemetry_parent()
                         )
 
                     try:

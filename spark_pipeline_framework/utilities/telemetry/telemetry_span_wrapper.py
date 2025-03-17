@@ -9,9 +9,6 @@ from typing import (
 from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
     TelemetryAttributeValue,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
-)
 
 from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
@@ -27,19 +24,16 @@ class TelemetrySpanWrapper(ABC):
         *,
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]],
-        telemetry_context: Optional[TelemetryContext],
         telemetry_parent: Optional[TelemetryParent],
     ) -> None:
         """
         Wrapper for telemetry span
 
         :param name:
-        :param telemetry_context:
         :param telemetry_parent:
         """
         self.name: str = name
         self.attributes: Optional[Mapping[str, TelemetryAttributeValue]] = attributes
-        self._telemetry_context: Optional[TelemetryContext] = telemetry_context
         self._telemetry_parent: Optional[TelemetryParent] = telemetry_parent
 
     @property
@@ -49,20 +43,6 @@ class TelemetrySpanWrapper(ABC):
     @property
     @abstractmethod
     def span_id(self) -> Optional[str]: ...
-
-    def create_child_telemetry_context(self) -> TelemetryContext:
-        """
-        Creates a copy of the telemetry context with the new trace and span ids
-
-
-        :return:
-        """
-        assert self._telemetry_context is not None
-
-        return self._telemetry_context.create_child_context(
-            trace_id=self.trace_id,
-            span_id=self.span_id,
-        )
 
     def create_child_telemetry_parent(
         self,
@@ -76,26 +56,16 @@ class TelemetrySpanWrapper(ABC):
 
         :return:
         """
-        child_telemetry_context = self.create_child_telemetry_context()
+        if not self._telemetry_parent:
+            return None
 
-        child_telemetry_parent: TelemetryParent | None = (
-            TelemetryParent(
-                trace_id=child_telemetry_context.trace_id,
-                span_id=child_telemetry_context.span_id,
-                name=self.name,
-                attributes=(
-                    append_mappings([self.attributes, attributes])
-                    if include_parent_attributes
-                    else attributes
-                ),
-            )
-            if child_telemetry_context
-            and child_telemetry_context.trace_id
-            and child_telemetry_context.span_id
-            else None
+        return self._telemetry_parent.create_child_telemetry_parent(
+            attributes=(
+                append_mappings([self.attributes, attributes])
+                if include_parent_attributes
+                else attributes
+            ),
         )
-
-        return child_telemetry_parent
 
     @abstractmethod
     def set_attributes(self, attributes: Dict[str, Any]) -> None: ...

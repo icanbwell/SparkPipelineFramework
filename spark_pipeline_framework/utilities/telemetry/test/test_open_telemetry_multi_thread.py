@@ -83,8 +83,6 @@ async def run_sub_operation(
     print(f"Running sub-operation: {trace_id}, {span_id}, {carrier}")
 
     telemetry_context = TelemetryContext(
-        trace_id=trace_id,
-        span_id=span_id,
         service_name=service_name,
         environment=environment,
         provider=TelemetryProvider.OPEN_TELEMETRY,

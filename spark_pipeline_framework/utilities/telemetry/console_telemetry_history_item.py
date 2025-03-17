@@ -37,9 +37,3 @@ class ConsoleTelemetryHistoryItem(DataClassJsonMixin):
             name=name,
             telemetry_parent=telemetry_parent,
         )
-
-    def matches(self, other: "TelemetryParent") -> bool:
-        return (
-            self.context.trace_id == other.trace_id
-            and self.context.span_id == other.span_id
-        )

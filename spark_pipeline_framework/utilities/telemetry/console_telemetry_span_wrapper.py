@@ -51,7 +51,6 @@ class ConsoleTelemetrySpanWrapper(TelemetrySpanWrapper):
         super().__init__(
             name=name,
             attributes=attributes,
-            telemetry_context=telemetry_context,
             telemetry_parent=telemetry_parent,
         )
 

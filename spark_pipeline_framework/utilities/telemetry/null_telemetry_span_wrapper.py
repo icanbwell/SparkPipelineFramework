@@ -9,9 +9,6 @@ from typing import (
 from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
     TelemetryAttributeValue,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
-)
 
 from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
@@ -43,13 +40,11 @@ class NullTelemetrySpanWrapper(TelemetrySpanWrapper):
         *,
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]],
-        telemetry_context: Optional[TelemetryContext],
         telemetry_parent: Optional[TelemetryParent],
     ) -> None:
         super().__init__(
             name=name,
             attributes=attributes,
-            telemetry_context=telemetry_context,
             telemetry_parent=telemetry_parent,
         )
 

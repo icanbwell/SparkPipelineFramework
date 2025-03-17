@@ -64,8 +64,9 @@ class TelemetrySpanCreator:
         self._logger.setLevel(log_level)
 
     def __getstate__(self) -> Dict[str, Any]:
-        # Exclude certain properties from being pickled otherwise they cause errors in pickling
-        return {k: v for k, v in self.__dict__.items() if k not in ["telemetry"]}
+        raise NotImplementedError(
+            "Serialization of TelemetrySpanCreator is not supported.  Did you accidentally try to send this object to a Spark worker?"
+        )
 
     @asynccontextmanager
     async def create_telemetry_span(
@@ -73,7 +74,7 @@ class TelemetrySpanCreator:
         *,
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]],
-        telemetry_parent: Optional[TelemetryParent] = None,
+        telemetry_parent: Optional[TelemetryParent],
     ) -> AsyncGenerator[TelemetrySpanWrapper, None]:
         """
         Create a telemetry span if telemetry is available else return a null context
@@ -106,7 +107,7 @@ class TelemetrySpanCreator:
         *,
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]],
-        telemetry_parent: Optional[TelemetryParent] = None,
+        telemetry_parent: Optional[TelemetryParent],
     ) -> Generator[TelemetrySpanWrapper, None, None]:
         """
         Create a telemetry span if telemetry is available else return a null context

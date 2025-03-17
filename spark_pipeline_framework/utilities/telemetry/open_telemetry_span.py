@@ -30,7 +30,6 @@ class OpenTelemetrySpanWrapper(TelemetrySpanWrapper):
         super().__init__(
             name=name,
             attributes=attributes,
-            telemetry_context=telemetry_context,
             telemetry_parent=telemetry_parent,
         )
         self._span: Span = span

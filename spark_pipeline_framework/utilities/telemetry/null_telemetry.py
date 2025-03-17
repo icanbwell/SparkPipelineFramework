@@ -70,7 +70,6 @@ class NullTelemetry(Telemetry):
         yield NullTelemetrySpanWrapper(
             name=name,
             attributes=attributes,
-            telemetry_context=self._telemetry_context,
             telemetry_parent=telemetry_parent,
         )
 
@@ -86,7 +85,6 @@ class NullTelemetry(Telemetry):
         yield NullTelemetrySpanWrapper(
             name=name,
             attributes=attributes,
-            telemetry_context=self._telemetry_context,
             telemetry_parent=telemetry_parent,
         )
 

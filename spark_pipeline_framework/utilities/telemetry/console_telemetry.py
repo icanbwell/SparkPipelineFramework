@@ -78,12 +78,6 @@ class ConsoleTelemetry(Telemetry):
     def add_telemetry_history_item(
         cls, *, parent: TelemetryParent | None, item: ConsoleTelemetryHistoryItem
     ) -> None:
-        if parent is not None:
-            # check if we have the parent in the history
-            for history_item in cls._telemetry_history:
-                if history_item.matches(parent):
-                    history_item.children.append(item)
-                    return
         # otherwise add it to the root
         cls._telemetry_history.append(item)
 
@@ -111,6 +105,7 @@ class ConsoleTelemetry(Telemetry):
                 span_id=str(uuid.uuid4()),
                 name=name,
                 attributes=attributes,
+                telemetry_context=self._telemetry_context,
             )
 
         token: Token[TelemetryParent | None] | None = (
@@ -160,6 +155,7 @@ class ConsoleTelemetry(Telemetry):
                 span_id=str(uuid.uuid4()),
                 name=name,
                 attributes=attributes,
+                telemetry_context=self._telemetry_context,
             )
 
         token: Token[TelemetryParent | None] | None = (
