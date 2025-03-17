@@ -16,6 +16,9 @@ from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
 from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
 )
+from spark_pipeline_framework.utilities.telemetry.utilities.mapping_appender import (
+    append_mappings,
+)
 
 
 class TelemetrySpanWrapper(ABC):
@@ -61,7 +64,12 @@ class TelemetrySpanWrapper(ABC):
             span_id=self.span_id,
         )
 
-    def create_child_telemetry_parent(self) -> TelemetryParent | None:
+    def create_child_telemetry_parent(
+        self,
+        *,
+        attributes: Mapping[str, TelemetryAttributeValue] | None = None,
+        include_parent_attributes: bool = True,
+    ) -> TelemetryParent | None:
         """
         Creates a copy of the telemetry parent with the new trace and span ids
 
@@ -75,7 +83,11 @@ class TelemetrySpanWrapper(ABC):
                 trace_id=child_telemetry_context.trace_id,
                 span_id=child_telemetry_context.span_id,
                 name=self.name,
-                attributes=self.attributes,
+                attributes=(
+                    append_mappings([self.attributes, attributes])
+                    if include_parent_attributes
+                    else attributes
+                ),
             )
             if child_telemetry_context
             and child_telemetry_context.trace_id
@@ -87,3 +99,9 @@ class TelemetrySpanWrapper(ABC):
 
     @abstractmethod
     def set_attributes(self, attributes: Dict[str, Any]) -> None: ...
+
+    """
+    This can be used AFTER a span is created to add attributes to it
+    
+    :param attributes: new attributes to add to the span
+    """

@@ -15,6 +15,7 @@ def append_mappings(
     :param mappings: List of mappings
     :return: Aggregated mappings
     """
+    assert mappings
 
     final_attributes: Dict[str, TelemetryAttributeValue] = {}
     for mapping in mappings:
