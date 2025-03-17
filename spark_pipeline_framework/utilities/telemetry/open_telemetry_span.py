@@ -1,6 +1,10 @@
-from typing import Optional, override, Any, Dict
+from typing import Optional, override, Any, Dict, Mapping
 
 from opentelemetry.trace import Span
+
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
@@ -18,7 +22,7 @@ class OpenTelemetrySpanWrapper(TelemetrySpanWrapper):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]],
         span: Span,
         telemetry_context: Optional[TelemetryContext],
         telemetry_parent: Optional[TelemetryParent],

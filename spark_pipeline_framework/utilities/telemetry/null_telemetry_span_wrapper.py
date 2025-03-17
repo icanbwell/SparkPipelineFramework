@@ -3,8 +3,12 @@ from typing import (
     Dict,
     Any,
     override,
+    Mapping,
 )
 
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
@@ -38,7 +42,7 @@ class NullTelemetrySpanWrapper(TelemetrySpanWrapper):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]],
         telemetry_context: Optional[TelemetryContext],
         telemetry_parent: Optional[TelemetryParent],
     ) -> None:

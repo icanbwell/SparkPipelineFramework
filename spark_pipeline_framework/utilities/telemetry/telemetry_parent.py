@@ -1,7 +1,11 @@
 import dataclasses
-from typing import Any, Dict, Optional
+from typing import Optional, Mapping
 
 from dataclasses_json import DataClassJsonMixin
+
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+)
 
 
 @dataclasses.dataclass
@@ -15,5 +19,5 @@ class TelemetryParent(DataClassJsonMixin):
     span_id: str
     """ Span ID for the telemetry context """
 
-    attributes: Optional[Dict[str, Any]]
+    attributes: Optional[Mapping[str, TelemetryAttributeValue]]
     """ Attributes for the telemetry parent to inherit by children """

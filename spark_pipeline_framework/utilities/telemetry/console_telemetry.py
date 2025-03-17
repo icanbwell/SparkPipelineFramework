@@ -11,6 +11,7 @@ from typing import (
     AsyncIterator,
     List,
     Union,
+    Mapping,
 )
 
 from opentelemetry.metrics import NoOpCounter, NoOpUpDownCounter, NoOpHistogram
@@ -33,6 +34,9 @@ from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_coun
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry import (
     Telemetry,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
@@ -89,7 +93,7 @@ class ConsoleTelemetry(Telemetry):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
     ) -> Iterator[TelemetrySpanWrapper]:
 
@@ -139,7 +143,7 @@ class ConsoleTelemetry(Telemetry):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         # read the current value of the context variable
@@ -214,7 +218,7 @@ class ConsoleTelemetry(Telemetry):
         unit: str,
         description: str,
         telemetry_parent: Optional[TelemetryParent],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryCounter:
         """
         Get a counter metric
@@ -244,7 +248,7 @@ class ConsoleTelemetry(Telemetry):
         unit: str,
         description: str,
         telemetry_parent: Optional[TelemetryParent],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryUpDownCounter:
         """
         Get an up_down_counter metric
@@ -274,7 +278,7 @@ class ConsoleTelemetry(Telemetry):
         unit: str,
         description: str,
         telemetry_parent: Optional[TelemetryParent],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryHistogram:
         """
         Get a histograms metric

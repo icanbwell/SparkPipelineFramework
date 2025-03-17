@@ -1,5 +1,5 @@
 from contextlib import contextmanager, asynccontextmanager
-from typing import Optional, Dict, Any, Iterator, AsyncIterator, override
+from typing import Optional, Dict, Any, Iterator, AsyncIterator, override, Mapping
 
 from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_counter import (
     TelemetryCounter,
@@ -9,6 +9,9 @@ from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_histogram_co
 )
 from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_counter import (
     TelemetryUpDownCounter,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
@@ -61,7 +64,7 @@ class NullTelemetry(Telemetry):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
     ) -> Iterator[TelemetrySpanWrapper]:
         yield NullTelemetrySpanWrapper(
@@ -77,7 +80,7 @@ class NullTelemetry(Telemetry):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         yield NullTelemetrySpanWrapper(
@@ -95,7 +98,7 @@ class NullTelemetry(Telemetry):
         unit: str,
         description: str,
         telemetry_parent: Optional[TelemetryParent],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryCounter:
         """
         Get a counter metric
@@ -125,7 +128,7 @@ class NullTelemetry(Telemetry):
         unit: str,
         description: str,
         telemetry_parent: Optional[TelemetryParent],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryUpDownCounter:
         """
         Get an up_down_counter metric
@@ -155,7 +158,7 @@ class NullTelemetry(Telemetry):
         unit: str,
         description: str,
         telemetry_parent: Optional[TelemetryParent],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryHistogram:
         """
         Get a histograms metric

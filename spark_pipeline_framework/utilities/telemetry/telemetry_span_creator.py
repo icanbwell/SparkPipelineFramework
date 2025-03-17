@@ -1,7 +1,7 @@
 import uuid
 from contextlib import asynccontextmanager, contextmanager
 from logging import Logger
-from typing import Optional, Dict, Any, AsyncGenerator, Generator
+from typing import Optional, Dict, Any, AsyncGenerator, Generator, Mapping
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_counter import (
@@ -12,6 +12,9 @@ from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_histogram_co
 )
 from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_counter import (
     TelemetryUpDownCounter,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
@@ -69,7 +72,7 @@ class TelemetrySpanCreator:
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]],
         telemetry_parent: Optional[TelemetryParent] = None,
     ) -> AsyncGenerator[TelemetrySpanWrapper, None]:
         """
@@ -102,7 +105,7 @@ class TelemetrySpanCreator:
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]],
         telemetry_parent: Optional[TelemetryParent] = None,
     ) -> Generator[TelemetrySpanWrapper, None, None]:
         """
@@ -145,7 +148,7 @@ class TelemetrySpanCreator:
         unit: str,
         description: str,
         telemetry_parent: Optional[TelemetryParent],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryCounter:
         """
         Get a counter metric
@@ -199,7 +202,7 @@ class TelemetrySpanCreator:
         unit: str,
         description: str,
         telemetry_parent: Optional[TelemetryParent],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryHistogram:
         """
         Get a histograms metric

@@ -1,8 +1,11 @@
 import dataclasses
-from typing import Optional, List, Any, Dict, Union
+from typing import Optional, List, Union, Mapping
 
 from dataclasses_json import DataClassJsonMixin
 
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
     TelemetryProvider,
 )
@@ -28,7 +31,7 @@ class TelemetryContext(DataClassJsonMixin):
     environment: str
     """ Environment for the telemetry context """
 
-    attributes: Optional[Dict[str, Any]]
+    attributes: Optional[Mapping[str, TelemetryAttributeValue]]
     """ Additional attributes to include in telemetry """
 
     log_level: Optional[Union[int, str]]

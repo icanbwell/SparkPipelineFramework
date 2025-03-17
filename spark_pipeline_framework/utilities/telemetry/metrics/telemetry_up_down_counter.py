@@ -1,10 +1,17 @@
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Union, Mapping
 
 from opentelemetry.context import Context
 from opentelemetry.metrics import UpDownCounter
 
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+    TelemetryAttributeValueWithoutNone,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
+)
+from spark_pipeline_framework.utilities.telemetry.utilities.mapping_appender import (
+    append_mappings,
 )
 
 
@@ -18,24 +25,31 @@ class TelemetryUpDownCounter:
         self,
         *,
         counter: UpDownCounter,
-        attributes: Optional[Dict[str, Any]],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]],
         telemetry_parent: Optional[TelemetryParent],
     ) -> None:
         assert counter
         self._counter: UpDownCounter = counter
-        self._attributes: Optional[Dict[str, Any]] = attributes
+        self._attributes: Optional[Mapping[str, TelemetryAttributeValue]] = attributes
         self._telemetry_parent: Optional[TelemetryParent] = telemetry_parent
 
     def add(
         self,
         amount: Union[int, float],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         context: Optional[Context] = None,
     ) -> None:
-        final_attributes = self._attributes or {}
-        if self._telemetry_parent and self._telemetry_parent.attributes:
-            final_attributes.update(self._telemetry_parent.attributes)
-        if attributes:
-            final_attributes.update(attributes)
 
-        self._counter.add(amount=amount, attributes=final_attributes, context=context)
+        combined_attributes: Mapping[str, TelemetryAttributeValueWithoutNone] = (
+            append_mappings(
+                [
+                    self._attributes,
+                    self._telemetry_parent.attributes if self._telemetry_parent else {},
+                    attributes,
+                ]
+            )
+        )
+
+        self._counter.add(
+            amount=amount, attributes=combined_attributes, context=context
+        )
