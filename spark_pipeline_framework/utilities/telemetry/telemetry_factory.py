@@ -72,7 +72,6 @@ class TelemetryFactory:
         """
         return TelemetrySpanCreator(
             telemetry=self.create(log_level=log_level),
-            telemetry_context=self.telemetry_parent.telemetry_context,
         )
 
     # noinspection PyTypeChecker

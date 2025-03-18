@@ -39,7 +39,6 @@ class TelemetrySpanCreator:
         self,
         *,
         telemetry: Optional[Telemetry],
-        telemetry_context: TelemetryContext,
         log_level: str = "DEBUG",
     ) -> None:
         """
@@ -52,9 +51,7 @@ class TelemetrySpanCreator:
         self._instance_id = str(uuid.uuid4())
 
         assert telemetry is not None
-        assert telemetry_context is not None
         self.telemetry = telemetry
-        self._current_telemetry_context = telemetry_context
 
         self._logger: Logger = get_logger(
             __name__,
