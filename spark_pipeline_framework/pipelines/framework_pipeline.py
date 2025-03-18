@@ -143,7 +143,7 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
         ).create_telemetry_span_creator(log_level=self.log_level)
 
         telemetry_span: TelemetrySpanWrapper
-        async with telemetry_span_creator.create_telemetry_span(
+        async with telemetry_span_creator.create_telemetry_span_async(
             name=self.name or self.__class__.__qualname__,
             attributes=self.attributes,
             telemetry_parent=self.telemetry_parent,
@@ -176,7 +176,7 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                     stage_name = transformer.__class__.__name__
 
                 transformer_span: TelemetrySpanWrapper
-                async with telemetry_span_creator.create_telemetry_span(
+                async with telemetry_span_creator.create_telemetry_span_async(
                     name=stage_name,
                     attributes={
                         "loop_id": self.loop_id,

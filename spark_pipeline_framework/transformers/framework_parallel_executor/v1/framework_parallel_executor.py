@@ -110,7 +110,7 @@ class FrameworkParallelExecutor(FrameworkTransformer):
                         self._process_async(df, stages, progress_logger=progress_logger)
                     )
                 else:
-                    self._process_sync(df, stages, progress_logger=progress_logger)
+                    self._process(df, stages, progress_logger=progress_logger)
         else:
             if progress_logger is not None:
                 progress_logger.write_to_log(
@@ -150,7 +150,7 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             )
 
             telemetry_span: TelemetrySpanWrapper
-            async with telemetry_span_creator.create_telemetry_span(
+            async with telemetry_span_creator.create_telemetry_span_async(
                 name=stage_name,
                 attributes={},
                 telemetry_parent=self.telemetry_parent,
@@ -174,7 +174,7 @@ class FrameworkParallelExecutor(FrameworkTransformer):
         df = create_empty_dataframe(df.sparkSession)
 
         async for name, _ in pipeline_executor.transform_async(df, df.sparkSession):
-            async with telemetry_span_creator.create_telemetry_span(
+            async with telemetry_span_creator.create_telemetry_span_async(
                 name=name,
                 attributes={},
                 telemetry_parent=telemetry_span.create_child_telemetry_parent(),
@@ -184,7 +184,7 @@ class FrameworkParallelExecutor(FrameworkTransformer):
 
         logger.info("Finished process_async")
 
-    def _process_sync(
+    def _process(
         self,
         df: DataFrame,
         stages: List[Transformer],

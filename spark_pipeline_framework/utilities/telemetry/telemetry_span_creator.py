@@ -66,7 +66,7 @@ class TelemetrySpanCreator:
         )
 
     @asynccontextmanager
-    async def create_telemetry_span(
+    async def create_telemetry_span_async(
         self,
         *,
         name: str,
@@ -102,7 +102,7 @@ class TelemetrySpanCreator:
             )
 
     @contextmanager
-    def create_telemetry_span_sync(
+    def create_telemetry_span(
         self,
         *,
         name: str,

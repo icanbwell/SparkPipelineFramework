@@ -128,7 +128,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     stage_name = stage.__class__.__name__
 
                 telemetry_span: TelemetrySpanWrapper
-                async with telemetry_span_creator.create_telemetry_span(
+                async with telemetry_span_creator.create_telemetry_span_async(
                     name=stage_name,
                     attributes={
                         "loop_id": str(current_run_number),
