@@ -72,6 +72,7 @@ class TelemetrySpanCreator:
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]],
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> AsyncGenerator[TelemetrySpanWrapper, None]:
         """
         Create a telemetry span if telemetry is available else return a null context
@@ -79,6 +80,7 @@ class TelemetrySpanCreator:
         :param name: name of the span
         :param attributes:  optional attributes to add to the span
         :param telemetry_parent: telemetry parent
+        :param start_time: start time
         :return: AsyncContextManager[Any]
         """
 
@@ -88,6 +90,7 @@ class TelemetrySpanCreator:
                 name=name,
                 attributes=attributes,
                 telemetry_parent=telemetry_parent,
+                start_time=start_time,
             ) as span:
                 yield span
         else:
@@ -105,6 +108,7 @@ class TelemetrySpanCreator:
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]],
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> Generator[TelemetrySpanWrapper, None, None]:
         """
         Create a telemetry span if telemetry is available else return a null context
@@ -112,6 +116,7 @@ class TelemetrySpanCreator:
         :param name: name of the span
         :param attributes:  optional attributes to add to the span
         :param telemetry_parent: telemetry parent
+        :param start_time: start time
         :return: AsyncContextManager[Any]
         """
         if self.telemetry is not None:
@@ -120,6 +125,7 @@ class TelemetrySpanCreator:
                 name=name,
                 attributes=attributes,
                 telemetry_parent=telemetry_parent,
+                start_time=start_time,
             ) as span:
                 yield span
         else:

@@ -301,6 +301,7 @@ class OpenTelemetry(Telemetry):
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> Iterator[TelemetrySpanWrapper]:
         """
         Create a traced context with optional parent trace linking
@@ -352,11 +353,13 @@ class OpenTelemetry(Telemetry):
             instrumenting_module_name=self._telemetry_context.service_name,
             tracer_provider=OpenTelemetry._trace_provider,
         )
-        with _tracer.start_as_current_span(
+        span = _tracer.start_span(
             name=name,
             attributes=combined_attributes,
             context=ctx,
-        ) as span:
+            start_time=start_time,
+        )
+        with trace.use_span(span=span, end_on_exit=True):
             yield OpenTelemetrySpanWrapper(
                 name=name,
                 attributes=combined_attributes,
@@ -373,9 +376,16 @@ class OpenTelemetry(Telemetry):
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         """
         Async version of trace with parent trace support
+
+        :param name: Name of the span
+        :param attributes: Attributes to add to the span
+        :param telemetry_parent: Parent telemetry context
+        :param start_time: (Optional) Start time of the span
+        :return: Async context manager
         """
         combined_attributes: Mapping[str, TelemetryAttributeValueWithoutNone] = (
             append_mappings(
@@ -424,11 +434,14 @@ class OpenTelemetry(Telemetry):
             instrumenting_module_name=self._telemetry_context.service_name,
             tracer_provider=OpenTelemetry._trace_provider,
         )
-        with _tracer.start_as_current_span(
+
+        span = _tracer.start_span(
             name=name,
             attributes=combined_attributes,
             context=ctx,
-        ) as span:
+            start_time=start_time,
+        )
+        with trace.use_span(span=span, end_on_exit=True):
             yield OpenTelemetrySpanWrapper(
                 name=name,
                 attributes=combined_attributes,

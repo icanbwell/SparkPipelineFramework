@@ -66,6 +66,7 @@ class NullTelemetry(Telemetry):
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> Iterator[TelemetrySpanWrapper]:
         yield NullTelemetrySpanWrapper(
             name=name,
@@ -81,6 +82,7 @@ class NullTelemetry(Telemetry):
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         yield NullTelemetrySpanWrapper(
             name=name,

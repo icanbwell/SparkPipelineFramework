@@ -41,6 +41,7 @@ class Telemetry(ABC):
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> Iterator[TelemetrySpanWrapper]:
         """
         Start a new span
@@ -48,6 +49,7 @@ class Telemetry(ABC):
         :param name:  name of the span
         :param attributes: optional attributes to add to the span
         :param telemetry_parent: parent span
+        :param start_time: start time
         :return: A context manager to use in a `with` statement
         """
         # This is never called but is here for mypy to understand this is a generator
@@ -67,6 +69,7 @@ class Telemetry(ABC):
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         """
         Start a new span
@@ -74,6 +77,7 @@ class Telemetry(ABC):
         :param name:  name of the span
         :param attributes: optional attributes to add to the span
         :param telemetry_parent: telemetry parent
+        :param start_time: start time
         :return: A context manager to use in a `with` statement
         """
         # This is never called but is here for mypy to understand this is a generator

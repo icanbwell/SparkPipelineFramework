@@ -89,6 +89,7 @@ class ConsoleTelemetry(Telemetry):
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> Iterator[TelemetrySpanWrapper]:
 
         # read the current value of the context variable
@@ -140,6 +141,7 @@ class ConsoleTelemetry(Telemetry):
         name: str,
         attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         # read the current value of the context variable
         current_value: TelemetryParent | None = self._current_context_variable.get()
