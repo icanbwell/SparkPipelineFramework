@@ -364,7 +364,6 @@ class OpenTelemetry(Telemetry):
                 name=name,
                 attributes=combined_attributes,
                 span=span,
-                telemetry_context=self._telemetry_context,
                 telemetry_parent=telemetry_parent,
             )
 
@@ -446,7 +445,6 @@ class OpenTelemetry(Telemetry):
                 name=name,
                 attributes=combined_attributes,
                 span=span,
-                telemetry_context=self._telemetry_context,
                 telemetry_parent=telemetry_parent,
             )
 

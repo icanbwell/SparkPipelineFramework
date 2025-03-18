@@ -75,3 +75,12 @@ class TelemetrySpanWrapper(ABC):
     
     :param attributes: new attributes to add to the span
     """
+
+    @abstractmethod
+    def end(self, *, end_time: int) -> None: ...
+
+    """
+    This can be used to manually end a span with a specific end time
+    
+    :param end_time: end time of the span
+    """

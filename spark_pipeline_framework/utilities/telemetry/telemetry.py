@@ -53,7 +53,6 @@ class Telemetry(ABC):
         :return: A context manager to use in a `with` statement
         """
         # This is never called but is here for mypy to understand this is a generator
-        # noinspection PyTypeChecker
         yield ConsoleTelemetrySpanWrapper(
             name=name,
             attributes=attributes,
@@ -81,7 +80,6 @@ class Telemetry(ABC):
         :return: A context manager to use in a `with` statement
         """
         # This is never called but is here for mypy to understand this is a generator
-        # noinspection PyTypeChecker
         yield ConsoleTelemetrySpanWrapper(
             name=name,
             attributes=attributes,

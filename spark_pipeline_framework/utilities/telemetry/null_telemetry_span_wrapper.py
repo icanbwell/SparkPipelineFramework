@@ -51,3 +51,7 @@ class NullTelemetrySpanWrapper(TelemetrySpanWrapper):
     @override
     def set_attributes(self, attributes: Dict[str, Any]) -> None:
         pass
+
+    @override
+    def end(self, *, end_time: int) -> None:
+        pass
