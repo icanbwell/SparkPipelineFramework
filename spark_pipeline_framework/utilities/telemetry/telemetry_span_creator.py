@@ -81,7 +81,7 @@ class TelemetrySpanCreator:
         :param attributes:  optional attributes to add to the span
         :param telemetry_parent: telemetry parent
         :param start_time: start time
-        :return: AsyncContextManager[Any]
+        :return: AsyncGenerator[TelemetrySpanWrapper, None]
         """
 
         if self.telemetry is not None:
@@ -117,7 +117,7 @@ class TelemetrySpanCreator:
         :param attributes:  optional attributes to add to the span
         :param telemetry_parent: telemetry parent
         :param start_time: start time
-        :return: AsyncContextManager[Any]
+        :return: Generator[TelemetrySpanWrapper, None, None]
         """
         if self.telemetry is not None:
             span: TelemetrySpanWrapper

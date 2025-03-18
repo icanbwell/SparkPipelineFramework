@@ -353,7 +353,7 @@ class OpenTelemetry(Telemetry):
             instrumenting_module_name=self._telemetry_context.service_name,
             tracer_provider=OpenTelemetry._trace_provider,
         )
-        span = _tracer.start_span(
+        span: Span = _tracer.start_span(
             name=name,
             attributes=combined_attributes,
             context=ctx,
@@ -434,7 +434,7 @@ class OpenTelemetry(Telemetry):
             tracer_provider=OpenTelemetry._trace_provider,
         )
 
-        span = _tracer.start_span(
+        span: Span = _tracer.start_span(
             name=name,
             attributes=combined_attributes,
             context=ctx,
