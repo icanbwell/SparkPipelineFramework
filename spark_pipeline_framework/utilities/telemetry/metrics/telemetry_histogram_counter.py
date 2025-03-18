@@ -1,7 +1,18 @@
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Union, Mapping
 
 from opentelemetry.context import Context
 from opentelemetry.metrics import Histogram
+
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+    TelemetryAttributeValueWithoutNone,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+    TelemetryParent,
+)
+from spark_pipeline_framework.utilities.telemetry.utilities.mapping_appender import (
+    append_mappings,
+)
 
 
 class TelemetryHistogram:
@@ -11,19 +22,33 @@ class TelemetryHistogram:
     """
 
     def __init__(
-        self, *, histogram: Histogram, attributes: Optional[Dict[str, Any]]
+        self,
+        *,
+        histogram: Histogram,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]],
+        telemetry_parent: Optional[TelemetryParent],
     ) -> None:
         assert histogram
         self._histogram: Histogram = histogram
-        self._attributes: Optional[Dict[str, Any]] = attributes
+        self._attributes: Optional[Mapping[str, TelemetryAttributeValue]] = attributes
+        self._telemetry_parent: Optional[TelemetryParent] = telemetry_parent
 
     def record(
         self,
         amount: Union[int, float],
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         context: Optional[Context] = None,
     ) -> None:
-        attributes = attributes or {}
-        attributes.update(self._attributes or {})
+        combined_attributes: Mapping[str, TelemetryAttributeValueWithoutNone] = (
+            append_mappings(
+                [
+                    self._attributes,
+                    self._telemetry_parent.attributes if self._telemetry_parent else {},
+                    attributes,
+                ]
+            )
+        )
 
-        self._histogram.record(amount=amount, attributes=attributes, context=context)
+        self._histogram.record(
+            amount=amount, attributes=combined_attributes, context=context
+        )

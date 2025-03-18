@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Mapping
 
 # noinspection PyPackageRequirements
 from mlflow.entities import RunStatus
@@ -8,6 +8,8 @@ from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
 from spark_pipeline_framework.logger.log_level import LogLevel
+from spark_pipeline_framework.mixins.loop_id_mixin import LoopIdMixin
+from spark_pipeline_framework.mixins.telemetry_parent_mixin import TelemetryParentMixin
 from spark_pipeline_framework.transformers.framework_csv_exporter.v1.framework_csv_exporter import (
     FrameworkCsvExporter,
 )
@@ -29,11 +31,17 @@ from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_list_catalog_table_names,
 )
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+    TelemetryParent,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
     TelemetryProvider,
@@ -46,7 +54,7 @@ from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import 
 )
 
 
-class FrameworkPipeline(Transformer):
+class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
     def __init__(
         self,
         parameters: Dict[str, Any],
@@ -60,7 +68,8 @@ class FrameworkPipeline(Transformer):
         telemetry_enable: Optional[bool] = None,
         telemetry_context: Optional[TelemetryContext] = None,
         name: Optional[str] = None,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
+        telemetry_parent: Optional[TelemetryParent] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -96,32 +105,46 @@ class FrameworkPipeline(Transformer):
             os.environ.get("TELEMETRY_ENABLE")
         )
 
-        self.telemetry_context: TelemetryContext = (
-            telemetry_context
-            or TelemetryContext(
-                provider=(
-                    TelemetryProvider.OPEN_TELEMETRY
-                    if self.telemetry_enable
-                    else TelemetryProvider.NULL
-                ),
-                trace_id=None,
-                span_id=None,
-                service_name=os.getenv("OTEL_SERVICE_NAME", "helix-pipelines"),
-                environment=os.getenv("ENV", "development"),
-                attributes=attributes,
-                log_level=log_level,
-                instance_name=os.getenv(
-                    "OTEL_INSTANCE_NAME",
-                    self.parameters.get("flow_run_name", "unknown"),
-                ),
-                service_namespace=os.getenv(
-                    "OTEL_SERVICE_NAMESPACE", "helix-pipelines"
-                ),
+        if telemetry_parent:
+            self.telemetry_parent = telemetry_parent
+        else:
+            self.set_telemetry_parent(
+                telemetry_parent=TelemetryParent(
+                    name=name or self.__class__.__qualname__,
+                    trace_id=None,
+                    span_id=None,
+                    telemetry_context=(
+                        telemetry_context
+                        or TelemetryContext(
+                            provider=(
+                                TelemetryProvider.OPEN_TELEMETRY
+                                if self.telemetry_enable
+                                else TelemetryProvider.NULL
+                            ),
+                            service_name=os.getenv(
+                                "OTEL_SERVICE_NAME", "helix-pipelines"
+                            ),
+                            environment=os.getenv("ENV", "development"),
+                            attributes=attributes,
+                            log_level=log_level,
+                            instance_name=os.getenv(
+                                "OTEL_INSTANCE_NAME",
+                                self.parameters.get("flow_run_name", "unknown"),
+                            ),
+                            service_namespace=os.getenv(
+                                "OTEL_SERVICE_NAMESPACE", "helix-pipelines"
+                            ),
+                        )
+                    ),
+                    attributes=attributes,
+                )
             )
-        )
 
         self.name: Optional[str] = name
-        self.attributes: Optional[Dict[str, Any]] = attributes
+        self.attributes: Mapping[str, TelemetryAttributeValue] = attributes or {}
+        self.attributes = {k: v for k, v in self.attributes.items()} | {
+            "run_id": self._run_id
+        }
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -151,22 +174,15 @@ class FrameworkPipeline(Transformer):
 
         """
         telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
-            telemetry_context=self.telemetry_context
+            telemetry_parent=self.telemetry_parent or TelemetryParent.get_null_parent()
         ).create_telemetry_span_creator(log_level=self.log_level)
 
         telemetry_span: TelemetrySpanWrapper
-        async with telemetry_span_creator.create_telemetry_span(
-            name=self.name or "framework_pipeline",
-            attributes={
-                "run_id": self._run_id,
-            }
-            | (self.attributes or {}),
+        async with telemetry_span_creator.create_telemetry_span_async(
+            name=self.name or self.__class__.__qualname__,
+            attributes=self.attributes,
+            telemetry_parent=self.telemetry_parent,
         ) as telemetry_span:
-            # set the trace and span ids in the telemetry context so even if Telemetry
-            # is done from multiple spark nodes they should all show up under the same span
-            child_telemetry_context: TelemetryContext = (
-                telemetry_span.create_child_telemetry_context()
-            )
             try:
                 # if steps are defined but not transformers then convert steps to transformers first
                 if len(self.steps) > 0 and len(self.transformers) == 0:
@@ -196,7 +212,7 @@ class FrameworkPipeline(Transformer):
                         stage_name = transformer.__class__.__name__
 
                     transformer_span: TelemetrySpanWrapper
-                    async with telemetry_span_creator.create_telemetry_span(
+                    async with telemetry_span_creator.create_telemetry_span_async(
                         name=stage_name,
                         attributes={
                             "loop_id": self.loop_id,
@@ -209,13 +225,13 @@ class FrameworkPipeline(Transformer):
                                 f"---- Running pipeline [{pipeline_name}] transformer [{stage_name}]  "
                                 f"({i} of {count_of_transformers}) ----"
                             )
-                            if hasattr(transformer, "set_loop_id"):
+                            if isinstance(transformer, LoopIdMixin):
                                 transformer.set_loop_id(self.loop_id)
-
-                            if hasattr(transformer, "set_telemetry_context"):
-                                transformer.set_telemetry_context(
-                                    telemetry_context=transformer_span.create_child_telemetry_context()
+                            if isinstance(transformer, TelemetryParentMixin):
+                                transformer.set_telemetry_parent(
+                                    telemetry_parent=transformer_span.create_child_telemetry_parent()
                                 )
+
                             self.progress_logger.start_mlflow_run(
                                 run_name=stage_name, is_nested=True
                             )

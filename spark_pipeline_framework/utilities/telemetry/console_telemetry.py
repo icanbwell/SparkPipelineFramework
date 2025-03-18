@@ -11,6 +11,7 @@ from typing import (
     AsyncIterator,
     List,
     Union,
+    Mapping,
 )
 
 from opentelemetry.metrics import NoOpCounter, NoOpUpDownCounter, NoOpHistogram
@@ -33,6 +34,9 @@ from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_coun
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry import (
     Telemetry,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
@@ -74,12 +78,6 @@ class ConsoleTelemetry(Telemetry):
     def add_telemetry_history_item(
         cls, *, parent: TelemetryParent | None, item: ConsoleTelemetryHistoryItem
     ) -> None:
-        if parent is not None:
-            # check if we have the parent in the history
-            for history_item in cls._telemetry_history:
-                if history_item.matches(parent):
-                    history_item.children.append(item)
-                    return
         # otherwise add it to the root
         cls._telemetry_history.append(item)
 
@@ -89,8 +87,9 @@ class ConsoleTelemetry(Telemetry):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> Iterator[TelemetrySpanWrapper]:
 
         # read the current value of the context variable
@@ -103,7 +102,11 @@ class ConsoleTelemetry(Telemetry):
         # if parent is still None then create a new trace_id and span_id
         if telemetry_parent is None:
             telemetry_parent = TelemetryParent(
-                trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), name=name
+                trace_id=str(uuid.uuid4()),
+                span_id=str(uuid.uuid4()),
+                name=name,
+                attributes=attributes,
+                telemetry_context=self._telemetry_context,
             )
 
         token: Token[TelemetryParent | None] | None = (
@@ -136,8 +139,9 @@ class ConsoleTelemetry(Telemetry):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         # read the current value of the context variable
         current_value: TelemetryParent | None = self._current_context_variable.get()
@@ -149,7 +153,11 @@ class ConsoleTelemetry(Telemetry):
         # if parent is still None then create a new trace_id and span_id
         if telemetry_parent is None:
             telemetry_parent = TelemetryParent(
-                trace_id=str(uuid.uuid4()), span_id=str(uuid.uuid4()), name=name
+                trace_id=str(uuid.uuid4()),
+                span_id=str(uuid.uuid4()),
+                name=name,
+                attributes=attributes,
+                telemetry_context=self._telemetry_context,
             )
 
         token: Token[TelemetryParent | None] | None = (
@@ -207,7 +215,8 @@ class ConsoleTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryCounter:
         """
         Get a counter metric
@@ -216,6 +225,7 @@ class ConsoleTelemetry(Telemetry):
         :param unit: Unit of the counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryCounter(
@@ -224,7 +234,8 @@ class ConsoleTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
 
     @override
@@ -234,7 +245,8 @@ class ConsoleTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryUpDownCounter:
         """
         Get an up_down_counter metric
@@ -243,6 +255,7 @@ class ConsoleTelemetry(Telemetry):
         :param unit: Unit of the up_down_counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryUpDownCounter(
@@ -251,7 +264,8 @@ class ConsoleTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )
 
     @override
@@ -261,7 +275,8 @@ class ConsoleTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryHistogram:
         """
         Get a histograms metric
@@ -270,6 +285,7 @@ class ConsoleTelemetry(Telemetry):
         :param unit: Unit of the histograms
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         return TelemetryHistogram(
@@ -278,5 +294,6 @@ class ConsoleTelemetry(Telemetry):
                 unit=unit,
                 description=description,
             ),
-            attributes=None,
+            attributes=attributes,
+            telemetry_parent=telemetry_parent,
         )

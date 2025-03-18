@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 from contextlib import asynccontextmanager, contextmanager
 
-from typing import Optional, Dict, Any, AsyncIterator, Iterator
+from typing import Optional, Dict, Any, AsyncIterator, Iterator, Mapping
 
 from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_counter import (
     TelemetryCounter,
@@ -11,6 +11,9 @@ from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_histogram_co
 )
 from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_counter import (
     TelemetryUpDownCounter,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
     TelemetryParent,
@@ -36,8 +39,9 @@ class Telemetry(ABC):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> Iterator[TelemetrySpanWrapper]:
         """
         Start a new span
@@ -45,10 +49,10 @@ class Telemetry(ABC):
         :param name:  name of the span
         :param attributes: optional attributes to add to the span
         :param telemetry_parent: parent span
+        :param start_time: start time
         :return: A context manager to use in a `with` statement
         """
         # This is never called but is here for mypy to understand this is a generator
-        # noinspection PyTypeChecker
         yield ConsoleTelemetrySpanWrapper(
             name=name,
             attributes=attributes,
@@ -62,8 +66,9 @@ class Telemetry(ABC):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         """
         Start a new span
@@ -71,10 +76,10 @@ class Telemetry(ABC):
         :param name:  name of the span
         :param attributes: optional attributes to add to the span
         :param telemetry_parent: telemetry parent
+        :param start_time: start time
         :return: A context manager to use in a `with` statement
         """
         # This is never called but is here for mypy to understand this is a generator
-        # noinspection PyTypeChecker
         yield ConsoleTelemetrySpanWrapper(
             name=name,
             attributes=attributes,
@@ -121,7 +126,8 @@ class Telemetry(ABC):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryCounter:
         """
         Get a counter metric
@@ -130,6 +136,7 @@ class Telemetry(ABC):
         :param unit: Unit of the counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         ...
@@ -141,7 +148,8 @@ class Telemetry(ABC):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryUpDownCounter:
         """
         Get an up_down_counter metric
@@ -150,6 +158,7 @@ class Telemetry(ABC):
         :param unit: Unit of the up_down_counter
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         ...
@@ -161,7 +170,8 @@ class Telemetry(ABC):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryHistogram:
         """
         Get a histograms metric
@@ -170,6 +180,7 @@ class Telemetry(ABC):
         :param unit: Unit of the histograms
         :param description: Description
         :param attributes: Optional attributes
+        :param telemetry_parent: telemetry parent
         :return: The Counter metric
         """
         ...

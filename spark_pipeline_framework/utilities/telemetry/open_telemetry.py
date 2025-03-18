@@ -14,6 +14,7 @@ from typing import (
     Union,
     ClassVar,
     List,
+    Mapping,
 )
 
 from opentelemetry import trace, metrics
@@ -48,6 +49,10 @@ from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_histogram_co
 from spark_pipeline_framework.utilities.telemetry.metrics.telemetry_up_down_counter import (
     TelemetryUpDownCounter,
 )
+from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+    TelemetryAttributeValueWithoutNone,
+)
 from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
     TelemetryContext,
 )
@@ -66,6 +71,10 @@ from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import 
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_tracers import (
     TelemetryTracer,
+)
+from spark_pipeline_framework.utilities.telemetry.utilities.mapping_appender import (
+    append_mappings,
+    remove_null_values,
 )
 
 
@@ -111,7 +120,7 @@ class OpenTelemetry(Telemetry):
 
         hostname: str = socket.gethostname()
 
-        self._metadata = {
+        self._metadata: Dict[str, TelemetryAttributeValue] = {
             "service.name": telemetry_context.service_name,
             "deployment.environment": telemetry_context.environment,
             "host.name": hostname,
@@ -120,7 +129,7 @@ class OpenTelemetry(Telemetry):
         }
 
         if telemetry_context.attributes:
-            self._metadata.update(telemetry_context.attributes)
+            self._metadata.update(remove_null_values(telemetry_context.attributes))
 
         # Create a resource with service details
         # from https://opentelemetry.io/docs/specs/semconv/resource/
@@ -290,15 +299,22 @@ class OpenTelemetry(Telemetry):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> Iterator[TelemetrySpanWrapper]:
         """
         Create a traced context with optional parent trace linking
         """
-        # Similar implementation to trace method
-        attributes = attributes or {}
-        attributes.update(self._metadata)
+        combined_attributes: Mapping[str, TelemetryAttributeValueWithoutNone] = (
+            append_mappings(
+                [
+                    self._metadata,
+                    telemetry_parent.attributes if telemetry_parent else {},
+                    attributes,
+                ]
+            )
+        )
 
         ctx: Optional[Context] = None
 
@@ -333,27 +349,21 @@ class OpenTelemetry(Telemetry):
                 f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name} without parent trace"
             )
 
-        # tracer cannot handle None attributes so ignore attributes that are None
-        attributes = {
-            k: v
-            for k, v in (attributes or {}).items()
-            if v is not None and type(v) in [bool, str, bytes, int, float]
-        }
-
         _tracer = trace.get_tracer(
             instrumenting_module_name=self._telemetry_context.service_name,
             tracer_provider=OpenTelemetry._trace_provider,
         )
-        with _tracer.start_as_current_span(
+        span: Span = _tracer.start_span(
             name=name,
-            attributes=attributes,
+            attributes=combined_attributes,
             context=ctx,
-        ) as span:
+            start_time=start_time,
+        )
+        with trace.use_span(span=span, end_on_exit=True):
             yield OpenTelemetrySpanWrapper(
                 name=name,
-                attributes=attributes,
+                attributes=combined_attributes,
                 span=span,
-                telemetry_context=self._telemetry_context,
                 telemetry_parent=telemetry_parent,
             )
 
@@ -363,15 +373,28 @@ class OpenTelemetry(Telemetry):
         self,
         *,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent],
+        start_time: int | None = None,
     ) -> AsyncIterator[TelemetrySpanWrapper]:
         """
         Async version of trace with parent trace support
+
+        :param name: Name of the span
+        :param attributes: Attributes to add to the span
+        :param telemetry_parent: Parent telemetry context
+        :param start_time: (Optional) Start time of the span
+        :return: Async context manager
         """
-        # Similar implementation to trace method
-        attributes = attributes or {}
-        attributes.update(self._metadata)
+        combined_attributes: Mapping[str, TelemetryAttributeValueWithoutNone] = (
+            append_mappings(
+                [
+                    self._metadata,
+                    telemetry_parent.attributes if telemetry_parent else {},
+                    attributes,
+                ]
+            )
+        )
 
         ctx: Optional[Context] = None
 
@@ -406,27 +429,22 @@ class OpenTelemetry(Telemetry):
                 f"OpenTelemetry {self._instance_id} trace_async created span wrapper for {name} without parent trace"
             )
 
-        # tracer cannot handle None attributes so ignore attributes that are None
-        attributes = {
-            k: v
-            for k, v in (attributes or {}).items()
-            if v is not None and type(v) in [bool, str, bytes, int, float]
-        }
-
         _tracer = trace.get_tracer(
             instrumenting_module_name=self._telemetry_context.service_name,
             tracer_provider=OpenTelemetry._trace_provider,
         )
-        with _tracer.start_as_current_span(
+
+        span: Span = _tracer.start_span(
             name=name,
-            attributes=attributes,
+            attributes=combined_attributes,
             context=ctx,
-        ) as span:
+            start_time=start_time,
+        )
+        with trace.use_span(span=span, end_on_exit=True):
             yield OpenTelemetrySpanWrapper(
                 name=name,
-                attributes=attributes,
+                attributes=combined_attributes,
                 span=span,
-                telemetry_context=self._telemetry_context,
                 telemetry_parent=telemetry_parent,
             )
 
@@ -461,7 +479,9 @@ class OpenTelemetry(Telemetry):
             current_span.record_exception(exception, attributes=additional_info or {})
 
     def add_event(
-        self, event_name: str, attributes: Optional[Dict[str, Any]] = None
+        self,
+        event_name: str,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> None:
         """
         Add a custom event to the current span
@@ -472,7 +492,10 @@ class OpenTelemetry(Telemetry):
         """
         current_span = trace.get_current_span()
         if current_span:
-            current_span.add_event(event_name, attributes=attributes or {})
+            current_span.add_event(
+                event_name,
+                attributes=remove_null_values(attributes) if attributes else {},
+            )
 
     async def shutdown_async(self) -> None:
         """
@@ -560,7 +583,8 @@ class OpenTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryCounter:
         """
         Get a counter metric
@@ -569,16 +593,24 @@ class OpenTelemetry(Telemetry):
         :param unit: Unit of the counter
         :param description: Description
         :param attributes: Additional attributes
+        :param telemetry_parent: Parent telemetry context
         :return: The Counter metric
         """
 
-        attributes = attributes or {}
-        attributes.update(self._metadata)
+        combined_attributes: Mapping[str, TelemetryAttributeValueWithoutNone] = (
+            append_mappings(
+                [
+                    self._metadata,
+                    telemetry_parent.attributes if telemetry_parent else {},
+                    attributes,
+                ]
+            )
+        )
 
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
-            attributes=attributes,
+            attributes=combined_attributes,
         )
 
         # check if we already have a counter for this name
@@ -593,7 +625,8 @@ class OpenTelemetry(Telemetry):
 
         counter_wrapper: TelemetryCounter = TelemetryCounter(
             counter=counter,
-            attributes=attributes,
+            attributes=combined_attributes,
+            telemetry_parent=telemetry_parent,
         )
         # add to the dictionary of counters
         OpenTelemetry._counters[name] = counter_wrapper
@@ -607,7 +640,8 @@ class OpenTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryUpDownCounter:
         """
         Get an up_down_counter metric
@@ -616,15 +650,23 @@ class OpenTelemetry(Telemetry):
         :param unit: Unit of the up_down_counter
         :param description: Description
         :param attributes: Additional attributes
+        :param telemetry_parent: Parent telemetry context
         :return: The Counter metric
         """
-        attributes = attributes or {}
-        attributes.update(self._metadata)
+        combined_attributes: Mapping[str, TelemetryAttributeValueWithoutNone] = (
+            append_mappings(
+                [
+                    self._metadata,
+                    telemetry_parent.attributes if telemetry_parent else {},
+                    attributes,
+                ]
+            )
+        )
 
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
-            attributes=attributes,
+            attributes=combined_attributes,
         )
 
         # check if we already have an up_down_counter for this name
@@ -639,7 +681,8 @@ class OpenTelemetry(Telemetry):
 
         up_down_counter_wrapper: TelemetryUpDownCounter = TelemetryUpDownCounter(
             counter=up_down_counter,
-            attributes=attributes,
+            attributes=combined_attributes,
+            telemetry_parent=telemetry_parent,
         )
         # add to the dictionary of counters
         OpenTelemetry._up_down_counters[name] = up_down_counter_wrapper
@@ -653,7 +696,8 @@ class OpenTelemetry(Telemetry):
         name: str,
         unit: str,
         description: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        telemetry_parent: Optional[TelemetryParent],
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
     ) -> TelemetryHistogram:
         """
         Get a histogram metric
@@ -662,15 +706,23 @@ class OpenTelemetry(Telemetry):
         :param unit: Unit of the histogram
         :param description: Description
         :param attributes: Additional attributes
+        :param telemetry_parent: Parent telemetry context
         :return: The Counter metric
         """
-        attributes = attributes or {}
-        attributes.update(self._metadata)
+        combined_attributes: Mapping[str, TelemetryAttributeValueWithoutNone] = (
+            append_mappings(
+                [
+                    self._metadata,
+                    telemetry_parent.attributes if telemetry_parent else {},
+                    attributes,
+                ]
+            )
+        )
 
         meter: Meter = metrics.get_meter(
             name=self._telemetry_context.service_name,
             meter_provider=OpenTelemetry._meter_provider,
-            attributes=attributes,
+            attributes=combined_attributes,
         )
 
         # check if we already have a histogram for this name
@@ -684,7 +736,9 @@ class OpenTelemetry(Telemetry):
         )
 
         histogram_wrapper: TelemetryHistogram = TelemetryHistogram(
-            histogram=histogram, attributes=attributes
+            histogram=histogram,
+            attributes=combined_attributes,
+            telemetry_parent=telemetry_parent,
         )
         # add to the dictionary of counters
         OpenTelemetry._histograms[name] = histogram_wrapper

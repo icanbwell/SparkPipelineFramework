@@ -2,6 +2,8 @@ import json
 from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
+from spark_pipeline_framework.mixins.loop_id_mixin import LoopIdMixin
+from spark_pipeline_framework.mixins.telemetry_parent_mixin import TelemetryParentMixin
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 
 # noinspection PyProtectedMember
@@ -19,11 +21,11 @@ from spark_pipeline_framework.utilities.parallel_pipeline_executor.v1.parallel_p
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
 )
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
-)
 from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
     TelemetryFactory,
+)
+from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+    TelemetryParent,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
     TelemetrySpanCreator,
@@ -108,7 +110,7 @@ class FrameworkParallelExecutor(FrameworkTransformer):
                         self._process_async(df, stages, progress_logger=progress_logger)
                     )
                 else:
-                    self._process_sync(df, stages, progress_logger=progress_logger)
+                    self._process(df, stages, progress_logger=progress_logger)
         else:
             if progress_logger is not None:
                 progress_logger.write_to_log(
@@ -139,8 +141,7 @@ class FrameworkParallelExecutor(FrameworkTransformer):
         )
 
         telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
-            telemetry_context=self.telemetry_context
-            or TelemetryContext.get_null_context()
+            telemetry_parent=self.telemetry_parent or TelemetryParent.get_null_parent()
         ).create_telemetry_span_creator(log_level=environ.get("LOGLEVEL"))
 
         for stage in stages:
@@ -149,16 +150,17 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             )
 
             telemetry_span: TelemetrySpanWrapper
-            async with telemetry_span_creator.create_telemetry_span(
+            async with telemetry_span_creator.create_telemetry_span_async(
                 name=stage_name,
                 attributes={},
+                telemetry_parent=self.telemetry_parent,
             ) as telemetry_span:
 
-                if hasattr(stage, "set_loop_id"):
+                if isinstance(stage, LoopIdMixin):
                     stage.set_loop_id(self.loop_id)
-                if hasattr(stage, "set_telemetry_context"):
-                    stage.set_telemetry_context(
-                        telemetry_context=telemetry_span.create_child_telemetry_context()
+                if isinstance(stage, TelemetryParentMixin):
+                    stage.set_telemetry_parent(
+                        telemetry_parent=telemetry_span.create_child_telemetry_parent()
                     )
 
                 assert (
@@ -172,16 +174,17 @@ class FrameworkParallelExecutor(FrameworkTransformer):
         df = create_empty_dataframe(df.sparkSession)
 
         async for name, _ in pipeline_executor.transform_async(df, df.sparkSession):
-            async with telemetry_span_creator.create_telemetry_span(
+            async with telemetry_span_creator.create_telemetry_span_async(
                 name=name,
                 attributes={},
+                telemetry_parent=telemetry_span.create_child_telemetry_parent(),
             ) as telemetry_span:
                 if name:
                     logger.info(f"Finished running parallel stage {name}")
 
         logger.info("Finished process_async")
 
-    def _process_sync(
+    def _process(
         self,
         df: DataFrame,
         stages: List[Transformer],
@@ -200,11 +203,10 @@ class FrameworkParallelExecutor(FrameworkTransformer):
             stage_name: str = (
                 stage.getName() if hasattr(stage, "getName") else "Unknown Transformer"
             )
-            if hasattr(stage, "set_loop_id"):
+            if isinstance(stage, LoopIdMixin):
                 stage.set_loop_id(self.loop_id)
-            if hasattr(stage, "set_telemetry_context"):
-                stage.set_telemetry_context(telemetry_context=self.telemetry_context)
-
+            if isinstance(stage, TelemetryParentMixin):
+                stage.set_telemetry_parent(telemetry_parent=self.telemetry_parent)
             assert (
                 stage_name
             ), f"name must be set on every transformer in FrameworkParallelExecutor: f{json.dumps(stage, default=str)}"

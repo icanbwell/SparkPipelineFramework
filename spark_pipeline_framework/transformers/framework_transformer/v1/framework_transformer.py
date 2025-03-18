@@ -12,11 +12,13 @@ from pyspark.sql.dataframe import DataFrame
 from typing_extensions import final
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.mixins.loop_id_mixin import LoopIdMixin
+from spark_pipeline_framework.mixins.telemetry_parent_mixin import TelemetryParentMixin
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
+from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+    TelemetryParent,
 )
 
 
@@ -24,6 +26,8 @@ class FrameworkTransformer(
     Transformer,
     DefaultParamsReadable,  # type: ignore
     DefaultParamsWritable,
+    LoopIdMixin,
+    TelemetryParentMixin,
 ):
     def __init__(
         self,
@@ -51,7 +55,7 @@ class FrameworkTransformer(
 
         self.loop_id: Optional[str] = None
 
-        self.telemetry_context: Optional[TelemetryContext] = None
+        self.telemetry_parent: Optional[TelemetryParent] = None
 
         self.parameters: Optional[Dict[str, Any]] = parameters
 
@@ -146,17 +150,6 @@ class FrameworkTransformer(
             for key, value in dictionary.items():
                 setattr(self, key, value)
         return self
-
-    def set_loop_id(self, loop_id: str) -> None:
-        """
-        Set when running inside a FrameworkLoopTransformer
-
-        :param loop_id: loop id
-        """
-        self.loop_id = loop_id
-
-    def set_telemetry_context(self, telemetry_context: TelemetryContext) -> None:
-        self.telemetry_context = telemetry_context
 
     async def transform_async(self, df: DataFrame) -> DataFrame:
         """

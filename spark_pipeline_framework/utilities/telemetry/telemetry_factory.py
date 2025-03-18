@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional
 
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
+from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
+    TelemetryParent,
 )
 from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
     TelemetryProvider,
@@ -24,14 +24,14 @@ from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import 
 
 
 class TelemetryFactory:
-    def __init__(self, *, telemetry_context: TelemetryContext) -> None:
+    def __init__(self, *, telemetry_parent: TelemetryParent) -> None:
         """
         Telemetry factory used to create telemetry instances based on the telemetry context
 
 
-        :param telemetry_context: telemetry context
+        :param telemetry_parent: telemetry parent
         """
-        self.telemetry_context = telemetry_context
+        self.telemetry_parent = telemetry_parent
 
     def create(self, *, log_level: Optional[str | int]) -> Telemetry:
         """
@@ -39,20 +39,26 @@ class TelemetryFactory:
 
         :return: telemetry instance
         """
-        if not self.telemetry_context:
-            return NullTelemetry(telemetry_context=self.telemetry_context)
+        if not self.telemetry_parent.telemetry_context:
+            return NullTelemetry(
+                telemetry_context=self.telemetry_parent.telemetry_context
+            )
 
-        match self.telemetry_context.provider:
+        match self.telemetry_parent.telemetry_context.provider:
             case TelemetryProvider.CONSOLE:
                 return ConsoleTelemetry(
-                    telemetry_context=self.telemetry_context, log_level=log_level
+                    telemetry_context=self.telemetry_parent.telemetry_context,
+                    log_level=log_level,
                 )
             case TelemetryProvider.OPEN_TELEMETRY:
                 return OpenTelemetry(
-                    telemetry_context=self.telemetry_context, log_level=log_level
+                    telemetry_context=self.telemetry_parent.telemetry_context,
+                    log_level=log_level,
                 )
             case TelemetryProvider.NULL:
-                return NullTelemetry(telemetry_context=self.telemetry_context)
+                return NullTelemetry(
+                    telemetry_context=self.telemetry_parent.telemetry_context
+                )
             case _:
                 raise ValueError("Invalid telemetry provider")
 
@@ -66,13 +72,10 @@ class TelemetryFactory:
         """
         return TelemetrySpanCreator(
             telemetry=self.create(log_level=log_level),
-            telemetry_context=self.telemetry_context,
         )
 
+    # noinspection PyTypeChecker
     def __getstate__(self) -> Dict[str, Any]:
-        # Exclude certain properties from being pickled otherwise they cause errors in pickling
-        return {
-            k: v
-            for k, v in self.__dict__.items()
-            if k not in ["_telemetry_factory", "_telemetry"]
-        }
+        raise NotImplementedError(
+            "Serialization of TelemetrySpanCreator is not supported.  Did you accidentally try to send this object to a Spark worker?"
+        )
