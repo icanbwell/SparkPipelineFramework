@@ -53,6 +53,7 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
         telemetry_context: Optional[TelemetryContext] = None,
         name: Optional[str] = None,
         attributes: Optional[Dict[str, TelemetryAttributeValue]] = None,
+        telemetry_parent: Optional[TelemetryParent] = None,
     ) -> None:
         """
         Base class for all pipelines
@@ -73,35 +74,40 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
             os.environ.get("TELEMETRY_ENABLE")
         )
 
-        self.set_telemetry_parent(
-            telemetry_parent=TelemetryParent(
-                name=name or self.__class__.__qualname__,
-                trace_id=None,
-                span_id=None,
-                telemetry_context=(
-                    telemetry_context
-                    or TelemetryContext(
-                        provider=(
-                            TelemetryProvider.OPEN_TELEMETRY
-                            if self.telemetry_enable
-                            else TelemetryProvider.NULL
-                        ),
-                        service_name=os.getenv("OTEL_SERVICE_NAME", "helix-pipelines"),
-                        environment=os.getenv("ENV", "development"),
-                        attributes=attributes,
-                        log_level=log_level,
-                        instance_name=os.getenv(
-                            "OTEL_INSTANCE_NAME",
-                            self.parameters.get("flow_run_name", "unknown"),
-                        ),
-                        service_namespace=os.getenv(
-                            "OTEL_SERVICE_NAMESPACE", "helix-pipelines"
-                        ),
-                    )
-                ),
-                attributes=attributes,
+        if telemetry_parent:
+            self.telemetry_parent = telemetry_parent
+        else:
+            self.set_telemetry_parent(
+                telemetry_parent=TelemetryParent(
+                    name=name or self.__class__.__qualname__,
+                    trace_id=None,
+                    span_id=None,
+                    telemetry_context=(
+                        telemetry_context
+                        or TelemetryContext(
+                            provider=(
+                                TelemetryProvider.OPEN_TELEMETRY
+                                if self.telemetry_enable
+                                else TelemetryProvider.NULL
+                            ),
+                            service_name=os.getenv(
+                                "OTEL_SERVICE_NAME", "helix-pipelines"
+                            ),
+                            environment=os.getenv("ENV", "development"),
+                            attributes=attributes,
+                            log_level=log_level,
+                            instance_name=os.getenv(
+                                "OTEL_INSTANCE_NAME",
+                                self.parameters.get("flow_run_name", "unknown"),
+                            ),
+                            service_namespace=os.getenv(
+                                "OTEL_SERVICE_NAMESPACE", "helix-pipelines"
+                            ),
+                        )
+                    ),
+                    attributes=attributes,
+                )
             )
-        )
 
         self.name: Optional[str] = name
         self.attributes: Optional[Dict[str, Any]] = attributes
