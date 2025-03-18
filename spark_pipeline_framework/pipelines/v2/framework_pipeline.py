@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Mapping
 
 # noinspection PyPackageRequirements
 from mlflow.entities import RunStatus
@@ -68,7 +68,7 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
         telemetry_enable: Optional[bool] = None,
         telemetry_context: Optional[TelemetryContext] = None,
         name: Optional[str] = None,
-        attributes: Optional[Dict[str, TelemetryAttributeValue]] = None,
+        attributes: Optional[Mapping[str, TelemetryAttributeValue]] = None,
         telemetry_parent: Optional[TelemetryParent] = None,
     ) -> None:
         """
@@ -141,7 +141,10 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
             )
 
         self.name: Optional[str] = name
-        self.attributes: Optional[Dict[str, Any]] = attributes
+        self.attributes: Mapping[str, TelemetryAttributeValue] = attributes or {}
+        self.attributes = {k: v for k, v in self.attributes.items()} | {
+            "run_id": self._run_id
+        }
 
     @property
     def parameters(self) -> Dict[str, Any]:
@@ -177,14 +180,9 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
         telemetry_span: TelemetrySpanWrapper
         async with telemetry_span_creator.create_telemetry_span(
             name=self.name or self.__class__.__qualname__,
-            attributes={
-                "run_id": self._run_id,
-            }
-            | (self.attributes or {}),
+            attributes=self.attributes,
             telemetry_parent=self.telemetry_parent,
         ) as telemetry_span:
-            # set the trace and span ids in the telemetry context so even if Telemetry
-            # is done from multiple spark nodes they should all show up under the same span
             try:
                 # if steps are defined but not transformers then convert steps to transformers first
                 if len(self.steps) > 0 and len(self.transformers) == 0:
