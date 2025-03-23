@@ -1,10 +1,12 @@
 import traceback
+from datetime import datetime
 from typing import Any, Dict, Optional
 from unittest.mock import AsyncMock
 
 import pytest
 from aioresponses import aioresponses
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
+from helix_fhir_client_sdk.function_types import RefreshTokenResult
 
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
     FhirReceiverProcessor,
@@ -259,12 +261,21 @@ async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -
         )
         m.get("http://fhir-server/Patient?id:above=1", payload=[])
 
-        def show_call_stack() -> Optional[str]:
+        # noinspection PyUnusedLocal
+        async def my_refresh_token_function(
+            url: Optional[str],
+            status_code: Optional[int],
+            current_token: Optional[str],
+            expiry_date: Optional[datetime],
+            retry_count: Optional[int],
+        ) -> RefreshTokenResult:
             print("Call stack:")
             traceback.print_stack()
-            return "new_token"
+            return RefreshTokenResult(
+                access_token="new_token", expiry_date=None, abort_request=False
+            )
 
-        mock_refresh_token_function = AsyncMock(side_effect=show_call_stack)
+        mock_refresh_token_function = AsyncMock(side_effect=my_refresh_token_function)
 
         parameters.refresh_token_function = mock_refresh_token_function
         parameters.auth_access_token = "old_token"
