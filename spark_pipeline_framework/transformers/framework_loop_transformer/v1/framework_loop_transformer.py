@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime, UTC
 from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
@@ -176,7 +176,7 @@ class FrameworkLoopTransformer(FrameworkTransformer):
                     not self.max_time_in_seconds
                     or time_elapsed < self.max_time_in_seconds
                 )
-                and (self.run_until is None or datetime.utcnow() < self.run_until)
+                and (self.run_until is None or datetime.now(UTC) < self.run_until)
                 and (not max_number_of_runs or current_run_number < max_number_of_runs)
             ):
                 time.sleep(self.sleep_interval_in_seconds)

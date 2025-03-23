@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from logging import getLogger
 from typing import Any, Optional
 
@@ -58,7 +58,7 @@ class SlackClientNative(BaseSlackClient):
 
         if (
             self.wait_till_datetime is not None
-            and self.wait_till_datetime > datetime.utcnow()
+            and self.wait_till_datetime > datetime.now(UTC)
         ):
             return None
 

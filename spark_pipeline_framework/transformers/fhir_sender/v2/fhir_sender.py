@@ -646,6 +646,7 @@ class FhirSender(FrameworkTransformer):
                                     [], schema=FhirMergeResponseItemSchema.get_schema()
                                 ).createOrReplaceTempView(error_view)
                     except PythonException as e:
+                        # noinspection PyUnresolvedReferences
                         if (
                             hasattr(e, "desc")
                             and "pyarrow.lib.ArrowTypeError" in e.desc
