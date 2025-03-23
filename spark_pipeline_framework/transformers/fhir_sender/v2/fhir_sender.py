@@ -6,6 +6,9 @@ from typing import Any, Dict, List, Optional, Union, Callable
 from helix_fhir_client_sdk.responses.fhir_delete_response import FhirDeleteResponse
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
 from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
+from helix_fhir_client_sdk.structures.get_access_token_result import (
+    GetAccessTokenResult,
+)
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -414,17 +417,20 @@ class FhirSender(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id:
-            auth_access_token = await fhir_get_access_token_async(
-                logger=self.logger,
-                server_url=server_url,
-                auth_server_url=auth_server_url,
-                auth_client_id=auth_client_id,
-                auth_client_secret=auth_client_secret,
-                auth_login_token=auth_login_token,
-                auth_scopes=auth_scopes,
-                log_level=log_level,
-                auth_well_known_url=auth_well_known_url,
+            auth_access_token_result: GetAccessTokenResult = (
+                await fhir_get_access_token_async(
+                    logger=self.logger,
+                    server_url=server_url,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_scopes=auth_scopes,
+                    log_level=log_level,
+                    auth_well_known_url=auth_well_known_url,
+                )
             )
+            auth_access_token = auth_access_token_result.access_token
 
         self.logger.info(
             f"Calling {server_url}/{resource_name} with client_id={auth_client_id} and scopes={auth_scopes}"

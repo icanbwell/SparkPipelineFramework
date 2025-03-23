@@ -5,6 +5,9 @@ from os import environ
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Callable, Collection
 
+from helix_fhir_client_sdk.structures.get_access_token_result import (
+    GetAccessTokenResult,
+)
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.rdd import RDD
@@ -374,7 +377,7 @@ class FhirSender(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id:
-            auth_access_token = fhir_get_access_token(
+            auth_access_token_result: GetAccessTokenResult = fhir_get_access_token(
                 logger=self.logger,
                 server_url=server_url,
                 auth_server_url=auth_server_url,
@@ -385,6 +388,7 @@ class FhirSender(FrameworkTransformer):
                 log_level=log_level,
                 auth_well_known_url=auth_well_known_url,
             )
+            auth_access_token = auth_access_token_result.access_token
 
         self.logger.info(
             f"Calling {server_url}/{resource_name} with client_id={auth_client_id} and scopes={auth_scopes}"

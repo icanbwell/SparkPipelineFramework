@@ -30,6 +30,7 @@ async def test_read_resources_and_errors_from_response_success() -> None:
         resource_type="Patient",
         id_=None,
         response_headers=None,
+        results_by_url=[],
     )
 
     # Call the method
@@ -73,6 +74,7 @@ async def test_read_resources_and_errors_from_response_with_errors() -> None:
         resource_type="Patient",
         id_=None,
         response_headers=None,
+        results_by_url=[],
     )
 
     # Call the method
@@ -116,6 +118,7 @@ async def test_read_resources_and_errors_from_response_empty() -> None:
         resource_type="Patient",
         id_=None,
         response_headers=None,
+        results_by_url=[],
     )
 
     # Call the method

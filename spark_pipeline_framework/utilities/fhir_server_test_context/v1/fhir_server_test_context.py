@@ -3,6 +3,9 @@ from os import environ
 from typing import Optional, List, Dict, Any, Type, Union
 
 from helix_fhir_client_sdk.fhir_client import FhirClient
+from helix_fhir_client_sdk.structures.get_access_token_result import (
+    GetAccessTokenResult,
+)
 from helix_fhir_client_sdk.utilities.fhir_server_helpers import FhirServerHelpers
 
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_access_token import (
@@ -122,10 +125,14 @@ class FhirServerTestContext:
             client_id=self.auth_client_id, client_secret=self.auth_client_secret
         )
         fhir_client = fhir_client.auth_wellknown_url(self.auth_well_known_url)
-        fhir_client = fhir_client.set_access_token(await self.get_access_token_async())
+        access_token_result: GetAccessTokenResult = await self.get_access_token_async()
+        fhir_client = fhir_client.set_access_token(access_token_result.access_token)
+        fhir_client = fhir_client.set_access_token_expiry_date(
+            access_token_result.expiry_date
+        )
         return fhir_client
 
-    async def get_access_token_async(self) -> Optional[str]:
+    async def get_access_token_async(self) -> GetAccessTokenResult:
         """
         Get the access token.
 

@@ -2,8 +2,12 @@ from logging import Logger
 from typing import Optional, List
 
 from helix_fhir_client_sdk.fhir_client import FhirClient
+from helix_fhir_client_sdk.structures.get_access_token_result import (
+    GetAccessTokenResult,
+)
 
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
+
 from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
     get_fhir_client,
 )
@@ -20,7 +24,7 @@ def fhir_get_access_token(
     auth_access_token: Optional[str] = None,
     auth_scopes: Optional[List[str]] = None,
     auth_well_known_url: Optional[str] = None,
-) -> Optional[str]:
+) -> GetAccessTokenResult:
     fhir_client: FhirClient = get_fhir_client(
         logger=logger,
         server_url=server_url,
@@ -51,7 +55,7 @@ async def fhir_get_access_token_async(
     auth_access_token: Optional[str] = None,
     auth_scopes: Optional[List[str]] = None,
     auth_well_known_url: Optional[str] = None,
-) -> Optional[str]:
+) -> GetAccessTokenResult:
     fhir_client: FhirClient = get_fhir_client(
         logger=logger,
         server_url=server_url,

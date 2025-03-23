@@ -10,6 +10,9 @@ from typing import Any, Dict, List, Optional, Union, Callable, cast
 import pyspark.sql.functions as F
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
+from helix_fhir_client_sdk.structures.get_access_token_result import (
+    GetAccessTokenResult,
+)
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.rdd import RDD
@@ -507,7 +510,7 @@ class FhirReceiver(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
-            auth_access_token = fhir_get_access_token(
+            auth_access_token_result: GetAccessTokenResult = fhir_get_access_token(
                 logger=self.logger,
                 server_url=server_url,
                 auth_server_url=auth_server_url,
@@ -517,6 +520,7 @@ class FhirReceiver(FrameworkTransformer):
                 auth_scopes=auth_scopes,
                 log_level=log_level,
             )
+            auth_access_token = auth_access_token_result.access_token
 
         with ProgressLogMetric(
             name=f"{name}_fhir_receiver", progress_logger=progress_logger
