@@ -5,6 +5,9 @@ from typing import Any, Dict, List, Optional, Union, Callable
 
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
+from helix_fhir_client_sdk.structures.get_access_token_result import (
+    GetAccessTokenResult,
+)
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -559,17 +562,20 @@ class FhirReceiver(FrameworkTransformer):
 
         # get access token first so we can reuse it
         if auth_client_id and server_url:
-            auth_access_token = await fhir_get_access_token_async(
-                logger=self.logger,
-                server_url=server_url,
-                auth_server_url=auth_server_url,
-                auth_client_id=auth_client_id,
-                auth_client_secret=auth_client_secret,
-                auth_login_token=auth_login_token,
-                auth_scopes=auth_scopes,
-                log_level=log_level,
-                auth_well_known_url=auth_well_known_url,
+            auth_access_token_result: GetAccessTokenResult = (
+                await fhir_get_access_token_async(
+                    logger=self.logger,
+                    server_url=server_url,
+                    auth_server_url=auth_server_url,
+                    auth_client_id=auth_client_id,
+                    auth_client_secret=auth_client_secret,
+                    auth_login_token=auth_login_token,
+                    auth_scopes=auth_scopes,
+                    log_level=log_level,
+                    auth_well_known_url=auth_well_known_url,
+                )
             )
+            auth_access_token = auth_access_token_result.access_token
 
         with ProgressLogMetric(
             name=f"{name}_fhir_receiver", progress_logger=progress_logger

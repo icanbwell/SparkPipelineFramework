@@ -6,6 +6,9 @@ from typing import Optional
 
 import pytest
 from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeResponse
+from helix_fhir_client_sdk.structures.get_access_token_result import (
+    GetAccessTokenResult,
+)
 from helix_fhir_client_sdk.utilities.fhir_helper import FhirHelper
 from pyspark.sql import DataFrame, SparkSession
 from spark_fhir_schemas.r4.resources.patient import PatientSchema
@@ -73,7 +76,10 @@ async def test_async_real_fhir_server_get_patients_by_id_large(
 
         logger = get_logger(__name__)
 
-        access_token = await fhir_server_test_context.get_access_token_async()
+        access_token_result: GetAccessTokenResult = (
+            await fhir_server_test_context.get_access_token_async()
+        )
+        access_token: Optional[str] = access_token_result.access_token
         print(f"Found access token in test: {access_token}")
         assert access_token is not None
         assert isinstance(access_token, str)

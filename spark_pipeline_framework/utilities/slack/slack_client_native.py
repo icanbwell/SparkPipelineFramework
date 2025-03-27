@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from logging import getLogger
 from typing import Any, Optional
 
@@ -58,7 +58,7 @@ class SlackClientNative(BaseSlackClient):
 
         if (
             self.wait_till_datetime is not None
-            and self.wait_till_datetime > datetime.utcnow()
+            and self.wait_till_datetime > datetime.now(UTC)
         ):
             return None
 
@@ -90,7 +90,7 @@ class SlackClientNative(BaseSlackClient):
                 # The `Retry-After` header will tell you how long to wait before retrying
                 delay_in_seconds: int = int(e.response.headers["Retry-After"])
                 logger.warning(f"Rate limited. Retrying in {delay_in_seconds} seconds")
-                self.wait_till_datetime = datetime.utcnow() + timedelta(
+                self.wait_till_datetime = datetime.now(UTC) + timedelta(
                     seconds=delay_in_seconds
                 )
             return None
