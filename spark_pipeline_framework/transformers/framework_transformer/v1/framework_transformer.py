@@ -2,6 +2,7 @@ import asyncio
 import json
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
+from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
 from pyspark.ml.base import Transformer
 
 from pyspark.ml.param import Param
@@ -17,9 +18,6 @@ from spark_pipeline_framework.mixins.telemetry_parent_mixin import TelemetryPare
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
-from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
-    TelemetryParent,
-)
 
 
 class FrameworkTransformer(

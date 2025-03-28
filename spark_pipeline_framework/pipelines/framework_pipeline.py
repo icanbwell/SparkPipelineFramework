@@ -2,6 +2,16 @@ import json
 import os
 from typing import Any, Dict, List, Union, Optional, Mapping
 
+from helixtelemetry.telemetry.context.telemetry_context import TelemetryContext
+from helixtelemetry.telemetry.factory.telemetry_factory import TelemetryFactory
+from helixtelemetry.telemetry.providers.null_telemetry import NullTelemetry
+from helixtelemetry.telemetry.providers.open_telemetry import OpenTelemetry
+from helixtelemetry.telemetry.spans.telemetry_span_creator import TelemetrySpanCreator
+from helixtelemetry.telemetry.spans.telemetry_span_wrapper import TelemetrySpanWrapper
+from helixtelemetry.telemetry.structures.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+)
+from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
@@ -19,27 +29,6 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
-from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
-    TelemetryAttributeValue,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
-    TelemetryFactory,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
-    TelemetryParent,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
-    TelemetryProvider,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
-    TelemetrySpanCreator,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
-    TelemetrySpanWrapper,
-)
 
 
 class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
@@ -86,9 +75,9 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                         telemetry_context
                         or TelemetryContext(
                             provider=(
-                                TelemetryProvider.OPEN_TELEMETRY
+                                OpenTelemetry.telemetry_provider
                                 if self.telemetry_enable
-                                else TelemetryProvider.NULL
+                                else NullTelemetry.telemetry_provider
                             ),
                             service_name=os.getenv(
                                 "OTEL_SERVICE_NAME", "helix-pipelines"

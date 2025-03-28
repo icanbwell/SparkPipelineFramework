@@ -1,8 +1,6 @@
 from typing import Optional
 
-from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
-    TelemetryParent,
-)
+from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
 
 
 class TelemetryParentMixin:
