@@ -1,10 +1,14 @@
 from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
+from helixtelemetry.telemetry.factory.telemetry_factory import TelemetryFactory
+from helixtelemetry.telemetry.spans.telemetry_span_creator import TelemetrySpanCreator
+from helixtelemetry.telemetry.spans.telemetry_span_wrapper import TelemetrySpanWrapper
+from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
+
 from spark_pipeline_framework.mixins.loop_id_mixin import LoopIdMixin
 from spark_pipeline_framework.mixins.telemetry_parent_mixin import TelemetryParentMixin
 
-# noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -12,18 +16,6 @@ from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
     FrameworkTransformer,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
-    TelemetryFactory,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
-    TelemetryParent,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
-    TelemetrySpanCreator,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
-    TelemetrySpanWrapper,
 )
 
 

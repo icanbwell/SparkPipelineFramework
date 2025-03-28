@@ -41,7 +41,7 @@ bounded-pool-executor = ">=0.0.3"
 # fastjsonschema is needed for validating JSON
 fastjsonschema= ">=2.18.0"
 # helix.fhir.client.sdk is needed for interacting with FHIR servers
-"helix.fhir.client.sdk" = ">=3.0.38"
+"helix.fhir.client.sdk" = ">=3.0.39"
 # opensearch-py is needed for interacting with OpenSearch
 opensearch-py= { extras = ['async'], version = ">=2.6.0" }
 # pyathena is needed for interacting with Athena in AWS
@@ -66,23 +66,13 @@ pydantic=">=2.8.2"
 motor={ extras = ['snappy', 'zstd'], version = ">=3.5.1" }
 # dataclasses-json is needed for working with JSON data to read from and write to json
 dataclasses-json = ">=0.6.7"
+# helixtelemetry is needed for sending telemetry data
+helixtelemetry= ">=1.0.0"
 # ====== For OpenTelemetry ======
 opentelemetry-api = ">=1.30.0"
 opentelemetry-sdk = ">=1.30.0"
 opentelemetry-exporter-otlp = ">=1.30.0"
-opentelemetry-instrumentation-system-metrics = ">=0.51b0"
-opentelemetry-instrumentation-logging = ">=0.51b0"
-opentelemetry-instrumentation-pymysql = ">=0.51b0"
-opentelemetry-instrumentation-pymongo = ">=0.51b0"
-opentelemetry-instrumentation-elasticsearch = ">=0.51b0"
-opentelemetry-instrumentation-boto = ">=0.51b0"
-opentelemetry-instrumentation-botocore = ">=0.51b0"
-opentelemetry-instrumentation-httpx = ">=0.51b0"
-opentelemetry-instrumentation-asyncio = ">=0.51b0"
 opentelemetry-instrumentation-aiohttp-client = ">=0.51b0"
-opentelemetry-instrumentation-confluent-kafka = ">=0.51b0"
-opentelemetry-instrumentation-requests = ">=0.51b0"
-#opentelemetry-exporter-richconsole = ">=0.51b0"
 # ====== End OpenTelemetry ======
 
 

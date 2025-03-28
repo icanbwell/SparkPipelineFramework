@@ -3,6 +3,11 @@ from datetime import datetime, UTC
 from os import environ
 from typing import Dict, Any, Optional, Union, List, Callable
 
+from helixtelemetry.telemetry.factory.telemetry_factory import TelemetryFactory
+from helixtelemetry.telemetry.spans.telemetry_span_creator import TelemetrySpanCreator
+from helixtelemetry.telemetry.spans.telemetry_span_wrapper import TelemetrySpanWrapper
+from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
+
 from spark_pipeline_framework.mixins.loop_id_mixin import LoopIdMixin
 from spark_pipeline_framework.mixins.telemetry_parent_mixin import TelemetryParentMixin
 
@@ -18,18 +23,6 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     create_empty_dataframe,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
-    TelemetryFactory,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
-    TelemetryParent,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
-    TelemetrySpanCreator,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
-    TelemetrySpanWrapper,
 )
 
 
