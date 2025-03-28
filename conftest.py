@@ -50,6 +50,8 @@ def run_before_each_test() -> Generator[None, Any, None]:
     # print("Setting up something before each test")
     # You can do setup operations here
     # For example, initializing databases, clearing caches, etc.
+    print("Setting up before each test")
+
     register()
 
     # Optional: You can yield if you want to do tear down after the test

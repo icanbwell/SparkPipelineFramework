@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3f585d3e2420184faa55c3c3697798e6811b019e9e0985a11fa9b3125b6e7dff"
+            "sha256": "0b3630103f5b8b89d6f512194deeb49d479227f1206749fac93fe1fd21d33248"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -775,12 +775,12 @@
         },
         "helixtelemetry": {
             "hashes": [
-                "sha256:a5682c96fa3fc0be421c4b9dfc5e4ea5c2669b18263f3c79fc55f1216a24ab08",
-                "sha256:cb23457a399dcd9ba441e8db666e894455cfd66e1455e1cfd60c457e5df7767a"
+                "sha256:401527db6f41d9d4bbf1bf3e2218b05b3e3778f36463a1945e5a92f86df6d5fb",
+                "sha256:94f7639c27ee25a36ab5f9f069ac6695fb0a602d56b2e59f40325e129e3d1f23"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.10'",
-            "version": "==1.0.1"
+            "version": "==1.0.2"
         },
         "idna": {
             "hashes": [
@@ -1944,7 +1944,7 @@
                 "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df",
                 "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.9'",
             "version": "==2.3.0"
         },
         "usaddress": {
@@ -4685,7 +4685,7 @@
                 "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df",
                 "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.9'",
             "version": "==2.3.0"
         },
         "virtualenv": {
@@ -5201,7 +5201,7 @@
                 "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df",
                 "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.9'",
             "version": "==2.3.0"
         },
         "vistir": {

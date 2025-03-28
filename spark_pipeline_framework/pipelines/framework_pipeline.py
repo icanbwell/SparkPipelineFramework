@@ -4,13 +4,14 @@ from typing import Any, Dict, List, Union, Optional, Mapping
 
 from helixtelemetry.telemetry.context.telemetry_context import TelemetryContext
 from helixtelemetry.telemetry.factory.telemetry_factory import TelemetryFactory
+from helixtelemetry.telemetry.providers.null_telemetry import NullTelemetry
+from helixtelemetry.telemetry.providers.open_telemetry import OpenTelemetry
 from helixtelemetry.telemetry.spans.telemetry_span_creator import TelemetrySpanCreator
 from helixtelemetry.telemetry.spans.telemetry_span_wrapper import TelemetrySpanWrapper
 from helixtelemetry.telemetry.structures.telemetry_attribute_value import (
     TelemetryAttributeValue,
 )
 from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
-from helixtelemetry.telemetry.structures.telemetry_provider import TelemetryProvider
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
@@ -74,9 +75,9 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                         telemetry_context
                         or TelemetryContext(
                             provider=(
-                                TelemetryProvider.OPEN_TELEMETRY
+                                OpenTelemetry.telemetry_provider
                                 if self.telemetry_enable
-                                else TelemetryProvider.NULL
+                                else NullTelemetry.telemetry_provider
                             ),
                             service_name=os.getenv(
                                 "OTEL_SERVICE_NAME", "helix-pipelines"
