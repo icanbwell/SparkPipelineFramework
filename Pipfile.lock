@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "0b3630103f5b8b89d6f512194deeb49d479227f1206749fac93fe1fd21d33248"
+            "sha256": "f569bc85c6225bc09f415de998cbf4c3b187515459fe15bd728851421b4a7695"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -775,12 +775,12 @@
         },
         "helixtelemetry": {
             "hashes": [
-                "sha256:401527db6f41d9d4bbf1bf3e2218b05b3e3778f36463a1945e5a92f86df6d5fb",
-                "sha256:94f7639c27ee25a36ab5f9f069ac6695fb0a602d56b2e59f40325e129e3d1f23"
+                "sha256:627654631ca5f17de18d114ade543562d8f61d7cb9b742fd02af8cdbe9650b09",
+                "sha256:fb572214c3bc39cd15004353e7c06e101e34a69be3b23c78ed687a2cca29d95d"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.10'",
-            "version": "==1.0.2"
+            "version": "==1.0.3"
         },
         "idna": {
             "hashes": [
@@ -1005,7 +1005,7 @@
                 "sha256:f486038e44caa08dbd97275a9a35a283a8f1d2f0ee60ac260a1790e76660833c",
                 "sha256:f7de08cbe5551911886d1ab60de58448c6df0f67d9feb7d1fb21e9875ef95e91"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.12'",
             "version": "==2.2.4"
         },
         "opensearch-py": {
@@ -3483,7 +3483,7 @@
                 "sha256:f486038e44caa08dbd97275a9a35a283a8f1d2f0ee60ac260a1790e76660833c",
                 "sha256:f7de08cbe5551911886d1ab60de58448c6df0f67d9feb7d1fb21e9875ef95e91"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.12'",
             "version": "==2.2.4"
         },
         "openapi-schema-validator": {
