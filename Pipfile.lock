@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "488ee7c2e8d7e61f4916a16729954657be91a86ea0f03b014cd779c22c24d8de"
+            "sha256": "3f585d3e2420184faa55c3c3697798e6811b019e9e0985a11fa9b3125b6e7dff"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -406,11 +406,11 @@
         },
         "databricks-sdk": {
             "hashes": [
-                "sha256:e7e634c31ad4df9157084a3d40732e9195f9b72bff5e6cdfb08bfa22aa31cf38",
-                "sha256:ef4a9253e8b1662ca596d09bfe97f27de44204fe2520e1a06bd4f947963794d8"
+                "sha256:9c8fee9d80c586a87257231f5340771d8fe3e9c027e010651a264ad93caeb85c",
+                "sha256:c7171f3703196720d6cf85adea1bc9701ca64e7ef8a3d356ca53e6e3536c628e"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==0.48.0"
+            "version": "==0.49.0"
         },
         "dataclasses-json": {
             "hashes": [
@@ -775,12 +775,12 @@
         },
         "helixtelemetry": {
             "hashes": [
-                "sha256:5286d2fd272ea5bb07b48bcd29ae6801473aa3be8536763983ba0ac0c1ddcf22",
-                "sha256:7f8374b8caa781a006f3d6733f257b40276181259f36cb3b8895183bd5550cba"
+                "sha256:a5682c96fa3fc0be421c4b9dfc5e4ea5c2669b18263f3c79fc55f1216a24ab08",
+                "sha256:cb23457a399dcd9ba441e8db666e894455cfd66e1455e1cfd60c457e5df7767a"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.10'",
-            "version": "==1.0.0"
+            "version": "==1.0.1"
         },
         "idna": {
             "hashes": [
@@ -1005,7 +1005,7 @@
                 "sha256:f486038e44caa08dbd97275a9a35a283a8f1d2f0ee60ac260a1790e76660833c",
                 "sha256:f7de08cbe5551911886d1ab60de58448c6df0f67d9feb7d1fb21e9875ef95e91"
             ],
-            "markers": "python_version >= '3.12'",
+            "markers": "python_version >= '3.10'",
             "version": "==2.2.4"
         },
         "opensearch-py": {
@@ -3483,7 +3483,7 @@
                 "sha256:f486038e44caa08dbd97275a9a35a283a8f1d2f0ee60ac260a1790e76660833c",
                 "sha256:f7de08cbe5551911886d1ab60de58448c6df0f67d9feb7d1fb21e9875ef95e91"
             ],
-            "markers": "python_version >= '3.12'",
+            "markers": "python_version >= '3.10'",
             "version": "==2.2.4"
         },
         "openapi-schema-validator": {
