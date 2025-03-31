@@ -1,5 +1,6 @@
 import asyncio
 import json
+from collections import deque
 from datetime import datetime
 from json import JSONDecodeError
 from logging import Logger
@@ -1088,7 +1089,9 @@ class FhirReceiverHelpers:
                 if len(result.get_resources()) > 0:
                     # get id of last resource
                     json_resources: Deque[FhirResource] = result.get_resources()
-                    if isinstance(json_resources, list):  # normal response
+                    if result.status == 200 and isinstance(
+                        json_resources, deque
+                    ):  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
                             if result.next_url:
@@ -1124,7 +1127,7 @@ class FhirReceiverHelpers:
                             else:
                                 server_page_number += 1
                             resources = resources + [
-                                json.dumps(r) for r in result.get_resources()
+                                json.dumps(r.to_dict()) for r in result.get_resources()
                             ]
                         page_number += 1
                         if limit and 0 < limit <= len(resources):
@@ -1134,7 +1137,7 @@ class FhirReceiverHelpers:
                         if result.status == 404 and loop_number > 1:
                             # 404 (not found) is fine since it just means we ran out of data while paging
                             pass
-                        if result.status not in ignore_status_codes:
+                        elif result.status not in ignore_status_codes:
                             raise FhirReceiverException(
                                 url=result.url,
                                 json_data=result.get_response_text(),
