@@ -15,6 +15,7 @@ services:
 #        PYTHONMALLOC: debug
         PYTHONASYNCIODEBUG: 1
 #        PYTHONTRACEMALLOC: 1
+        LOGLEVEL: DEBUG
         # These environment variables are used to configure the spark pipeline framework
         FHIR_SERVER_URL: 'http://fhir:3000/4_0_0/'
         AUTH_CONFIGURATION_URI: 'http://keycloak:8080/realms/bwell-realm/.well-known/openid-configuration'
@@ -23,8 +24,8 @@ services:
         ELASTICSEARCH_HOST: https://elasticsearch:9200
     volumes:
       - ./:/SparkpipelineFramework/
-#      - ../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.10/dist-packages/helix_fhir_client_sdk
-#      - ../mockserver_client/mockserver_client:/usr/local/lib/python3.10/dist-packages/mockserver_client
+#      - ../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.12/dist-packages/helix_fhir_client_sdk
+#      - ../mockserver_client/mockserver_client:/usr/local/lib/python3.12/dist-packages/mockserver_client
     container_name: spf_dev
     working_dir: /SparkpipelineFramework
 

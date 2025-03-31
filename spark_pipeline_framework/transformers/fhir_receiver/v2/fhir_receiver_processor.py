@@ -755,7 +755,7 @@ class FhirReceiverProcessor:
                     json_resources: List[Dict[str, Any]] = [
                         json.loads(r) for r in result_response
                     ]
-                    if isinstance(json_resources, list):
+                    if result.status == 200 and isinstance(json_resources, list):
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
                             id_of_last_resource = None
