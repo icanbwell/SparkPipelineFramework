@@ -13,6 +13,7 @@ from typing import (
     cast,
     NamedTuple,
     Coroutine,
+    Deque,
 )
 
 from furl import furl
@@ -1086,7 +1087,7 @@ class FhirReceiverHelpers:
                 auth_access_token = result.access_token
                 if len(result.get_resources()) > 0:
                     # get id of last resource
-                    json_resources: List[FhirResource] = result.get_resources()
+                    json_resources: Deque[FhirResource] = result.get_resources()
                     if isinstance(json_resources, list):  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
@@ -1136,8 +1137,8 @@ class FhirReceiverHelpers:
                         if result.status not in ignore_status_codes:
                             raise FhirReceiverException(
                                 url=result.url,
-                                json_data=result.responses,
-                                response_text=result.responses,
+                                json_data=result.get_response_text(),
+                                response_text=result.get_response_text(),
                                 response_status_code=result.status,
                                 message="Error from FHIR server",
                                 request_id=result.request_id,

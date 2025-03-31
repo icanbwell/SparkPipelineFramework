@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from json import JSONDecodeError
 from logging import Logger
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast, Deque
 from typing import (
     Iterable,
     AsyncGenerator,
@@ -813,7 +813,7 @@ class FhirReceiverProcessor:
     def read_resources_and_errors_from_response(
         response: FhirGetResponse,
     ) -> GetBatchResult:
-        all_resources: List[FhirResource] = response.get_resources()
+        all_resources: Deque[FhirResource] = response.get_resources()
         resources_except_operation_outcomes: List[FhirResource] = [
             r for r in all_resources if r.get("resourceType") != "OperationOutcome"
         ]
