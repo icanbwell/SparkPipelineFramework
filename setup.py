@@ -63,7 +63,7 @@ setup(
         "sqlparse>=0.5.3",
         "bounded-pool-executor>=0.0.3",
         "fastjsonschema>=2.18.0",
-        "helix.fhir.client.sdk>=3.0.39",
+        "helix.fhir.client.sdk>=3.0.42",
         "opensearch-py[async]>=2.6.0",
         "pyathena>2.14.0",
         "spark-nlp>=4.2.3",
@@ -81,6 +81,7 @@ setup(
         "opentelemetry-sdk>=1.30.0",
         "opentelemetry-exporter-otlp>=1.30.0",
         "opentelemetry-instrumentation-aiohttp-client>=0.51b0",
+        "msgpack>=1.1.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -13,6 +13,7 @@ from typing import (
 # noinspection PyPep8Naming
 from furl import furl
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
+from helix_fhir_client_sdk.fhir.fhir_resource import FhirResource
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
@@ -240,7 +241,7 @@ class FhirReceiverProcessor:
                         raise FhirParserException(
                             url=response.url,
                             message="Parsing result as json failed",
-                            json_data=response.responses,
+                            json_data=response.get_response_text(),
                             response_status_code=response.status,
                             request_id=response.request_id,
                         ) from e2
@@ -323,7 +324,7 @@ class FhirReceiverProcessor:
                     raise FhirParserException(
                         url=response.url,
                         message="Parsing result as json failed",
-                        json_data=response.responses,
+                        json_data=response.get_response_text(),
                         response_status_code=response.status,
                         request_id=response.request_id,
                     ) from e1
@@ -587,7 +588,7 @@ class FhirReceiverProcessor:
                             GetBatchError(
                                 url=result.url,
                                 status_code=result.status,
-                                error_text=str(e) + " : " + result.responses,
+                                error_text=str(e) + " : " + result.get_response_text(),
                                 request_id=result.request_id,
                             )
                         )
@@ -595,7 +596,7 @@ class FhirReceiverProcessor:
                         raise FhirParserException(
                             url=result.url,
                             message="Parsing result as json failed",
-                            json_data=result.responses,
+                            json_data=result.get_response_text(),
                             response_status_code=result.status,
                             request_id=result.request_id,
                         ) from e
@@ -658,8 +659,8 @@ class FhirReceiverProcessor:
                     elif result.status not in parameters.ignore_status_codes:
                         raise FhirReceiverException(
                             url=result.url,
-                            json_data=result.responses,
-                            response_text=result.responses,
+                            json_data=result.get_response_text(),
+                            response_text=result.get_response_text(),
                             response_status_code=result.status,
                             message=(
                                 "Error received from server"
@@ -735,7 +736,7 @@ class FhirReceiverProcessor:
                             GetBatchError(
                                 url=result.url,
                                 status_code=result.status,
-                                error_text=str(e) + " : " + result.responses,
+                                error_text=str(e) + " : " + result.get_response_text(),
                                 request_id=result.request_id,
                             )
                         )
@@ -743,7 +744,7 @@ class FhirReceiverProcessor:
                         raise FhirParserException(
                             url=result.url,
                             message="Parsing result as json failed",
-                            json_data=result.responses,
+                            json_data=result.get_response_text(),
                             response_status_code=result.status,
                             request_id=result.request_id,
                         ) from e
@@ -792,8 +793,8 @@ class FhirReceiverProcessor:
                     elif result.status not in parameters.ignore_status_codes:
                         raise FhirReceiverException(
                             url=result.url,
-                            json_data=result.responses,
-                            response_text=result.responses,
+                            json_data=result.get_response_text(),
+                            response_text=result.get_response_text(),
                             response_status_code=result.status,
                             message=(
                                 "Error received from server"
@@ -812,11 +813,11 @@ class FhirReceiverProcessor:
     def read_resources_and_errors_from_response(
         response: FhirGetResponse,
     ) -> GetBatchResult:
-        all_resources: List[Dict[str, Any]] = response.get_resources()
-        resources_except_operation_outcomes: List[Dict[str, Any]] = [
+        all_resources: List[FhirResource] = response.get_resources()
+        resources_except_operation_outcomes: List[FhirResource] = [
             r for r in all_resources if r.get("resourceType") != "OperationOutcome"
         ]
-        operation_outcomes: List[Dict[str, Any]] = [
+        operation_outcomes: List[FhirResource] = [
             r for r in all_resources if r.get("resourceType") == "OperationOutcome"
         ]
 

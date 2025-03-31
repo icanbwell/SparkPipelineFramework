@@ -1,7 +1,12 @@
 import json
 
 import pytest
-from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
+from helix_fhir_client_sdk.responses.get_responses.fhir_get_bundle_response import (
+    FhirGetBundleResponse,
+)
+from helix_fhir_client_sdk.utilities.compressed_dict.v1.compressed_dict_storage_mode import (
+    CompressedDictStorageMode,
+)
 
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
     FhirReceiverProcessor,
@@ -13,8 +18,8 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch
 
 async def test_read_resources_and_errors_from_response_success() -> None:
     # Mock FHIR server response
-    response = FhirGetResponse(
-        responses=json.dumps(
+    response = FhirGetBundleResponse(
+        response_text=json.dumps(
             [
                 {"resourceType": "Patient", "id": "1"},
                 {"resourceType": "Patient", "id": "2"},
@@ -31,6 +36,7 @@ async def test_read_resources_and_errors_from_response_success() -> None:
         id_=None,
         response_headers=None,
         results_by_url=[],
+        storage_mode=CompressedDictStorageMode(),
     )
 
     # Call the method
@@ -48,8 +54,8 @@ async def test_read_resources_and_errors_from_response_success() -> None:
 @pytest.mark.asyncio
 async def test_read_resources_and_errors_from_response_with_errors() -> None:
     # Mock FHIR server response with an error
-    response = FhirGetResponse(
-        responses=json.dumps(
+    response = FhirGetBundleResponse(
+        response_text=json.dumps(
             [
                 {"resourceType": "Patient", "id": "1"},
                 {
@@ -75,6 +81,7 @@ async def test_read_resources_and_errors_from_response_with_errors() -> None:
         id_=None,
         response_headers=None,
         results_by_url=[],
+        storage_mode=CompressedDictStorageMode(),
     )
 
     # Call the method
@@ -106,8 +113,8 @@ async def test_read_resources_and_errors_from_response_with_errors() -> None:
 @pytest.mark.asyncio
 async def test_read_resources_and_errors_from_response_empty() -> None:
     # Mock FHIR server response with no resources
-    response = FhirGetResponse(
-        responses="",
+    response = FhirGetBundleResponse(
+        response_text="",
         status=200,
         request_id="test_request_id",
         url="http://fhir-server",
@@ -119,6 +126,7 @@ async def test_read_resources_and_errors_from_response_empty() -> None:
         id_=None,
         response_headers=None,
         results_by_url=[],
+        storage_mode=CompressedDictStorageMode(),
     )
 
     # Call the method

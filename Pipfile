@@ -41,7 +41,7 @@ bounded-pool-executor = ">=0.0.3"
 # fastjsonschema is needed for validating JSON
 fastjsonschema= ">=2.18.0"
 # helix.fhir.client.sdk is needed for interacting with FHIR servers
-"helix.fhir.client.sdk" = ">=3.0.39"
+"helix.fhir.client.sdk" = ">=3.0.42"
 # opensearch-py is needed for interacting with OpenSearch
 opensearch-py= { extras = ['async'], version = ">=2.6.0" }
 # pyathena is needed for interacting with Athena in AWS
@@ -74,7 +74,8 @@ opentelemetry-sdk = ">=1.30.0"
 opentelemetry-exporter-otlp = ">=1.30.0"
 opentelemetry-instrumentation-aiohttp-client = ">=0.51b0"
 # ====== End OpenTelemetry ======
-
+# msgpack is needed for serializing and deserializing data
+msgpack = ">=1.1.0"
 
 
 [dev-packages]
@@ -157,6 +158,10 @@ types-Pygments="*"
 types-jsonschema="*"
 types-cffi="*"
 types-pyOpenSSL="*"
+# msgpack-types provides type hints for msgpack
+msgpack-types = { version = ">=0.5.0" }
+# objsize is needed for getting the size of objects in bytes
+objsize = ">=0.7.1"
 
 # These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
 # only when running pipenv-setup

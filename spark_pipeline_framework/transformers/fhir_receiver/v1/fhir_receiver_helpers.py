@@ -18,6 +18,7 @@ from typing import (
 from furl import furl
 
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
+from helix_fhir_client_sdk.fhir.fhir_resource import FhirResource
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
@@ -506,7 +507,7 @@ class FhirReceiverHelpers:
                     refresh_token_function=refresh_token_function,
                 )
             )
-            resp_result: str = result1.responses.replace("\n", "")
+            resp_result: str = result1.get_response_text().replace("\n", "")
             try:
                 responses_from_fhir = FhirReceiverHelpers.json_str_to_list_str(
                     resp_result
@@ -518,7 +519,7 @@ class FhirReceiverHelpers:
                     raise FhirParserException(
                         url=result1.url,
                         message="Parsing result as json failed",
-                        json_data=result1.responses,
+                        json_data=result1.get_response_text(),
                         response_status_code=result1.status,
                         request_id=result1.request_id,
                     ) from e2
@@ -533,6 +534,7 @@ class FhirReceiverHelpers:
             error_text = str(e1)
             status_code = e1.response_status_code or 0
             request_url = e1.url
+
         result = [
             FhirGetResponseWriter.create_row(
                 partition_index=partition_index,
@@ -624,7 +626,7 @@ class FhirReceiverHelpers:
                 refresh_token_function=refresh_token_function,
             )
         )
-        resp_result: str = result1.responses.replace("\n", "")
+        resp_result: str = result1.get_response_text().replace("\n", "")
         responses_from_fhir = []
         try:
             responses_from_fhir = FhirReceiverHelpers.json_str_to_list_str(resp_result)
@@ -635,7 +637,7 @@ class FhirReceiverHelpers:
                 raise FhirParserException(
                     url=result1.url,
                     message="Parsing result as json failed",
-                    json_data=result1.responses,
+                    json_data=result1.get_response_text(),
                     response_status_code=result1.status,
                     request_id=result1.request_id,
                 ) from e1
@@ -1014,7 +1016,9 @@ class FhirReceiverHelpers:
                 )
             )
             try:
-                resources = FhirReceiverHelpers.json_str_to_list_str(result.responses)
+                resources = FhirReceiverHelpers.json_str_to_list_str(
+                    result.get_response_text()
+                )
             except JSONDecodeError as e:
                 if error_view:
                     errors.append(
@@ -1022,7 +1026,9 @@ class FhirReceiverHelpers:
                             {
                                 "url": result.url,
                                 "status_code": result.status,
-                                "error_text": str(e) + " : " + result.responses,
+                                "error_text": str(e)
+                                + " : "
+                                + result.get_response_text(),
                             },
                             default=str,
                         )
@@ -1031,7 +1037,7 @@ class FhirReceiverHelpers:
                     raise FhirParserException(
                         url=result.url,
                         message="Parsing result as json failed",
-                        json_data=result.responses,
+                        json_data=result.get_response_text(),
                         response_status_code=result.status,
                         request_id=result.request_id,
                     ) from e
@@ -1080,7 +1086,7 @@ class FhirReceiverHelpers:
                 auth_access_token = result.access_token
                 if len(result.get_resources()) > 0:
                     # get id of last resource
-                    json_resources: List[Dict[str, Any]] = result.get_resources()
+                    json_resources: List[FhirResource] = result.get_resources()
                     if isinstance(json_resources, list):  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
