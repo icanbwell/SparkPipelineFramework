@@ -31,7 +31,9 @@ async def test_send_fhir_request_async() -> None:
             parameters=parameters,
         ):
             assert isinstance(result, FhirGetResponse)
-            assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
+            assert list(result.get_resources()) == [
+                {"resourceType": "Patient", "id": "1"}
+            ]
 
 
 @pytest.mark.asyncio
@@ -53,4 +55,6 @@ async def test_send_simple_fhir_request_async() -> None:
             parameters=parameters,
         ):
             assert isinstance(result, FhirGetResponse)
-            assert result.get_resources() == [{"resourceType": "Patient", "id": "1"}]
+            assert list(result.get_resources()) == [
+                {"resourceType": "Patient", "id": "1"}
+            ]

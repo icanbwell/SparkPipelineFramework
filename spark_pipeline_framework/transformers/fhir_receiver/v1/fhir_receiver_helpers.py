@@ -528,7 +528,7 @@ class FhirReceiverHelpers:
 
             error_text = result1.error
             status_code = result1.status
-            request_url = result1.url
+            request_url: Optional[str] = result1.url
             request_id = result1.request_id
             extra_context_to_return = result1.extra_context_to_return
             access_token = result1.access_token

@@ -1,8 +1,8 @@
 import json
 
 import pytest
-from helix_fhir_client_sdk.responses.get_responses.fhir_get_bundle_response import (
-    FhirGetBundleResponse,
+from helix_fhir_client_sdk.responses.get_responses.fhir_get_list_response import (
+    FhirGetListResponse,
 )
 from helix_fhir_client_sdk.utilities.compressed_dict.v1.compressed_dict_storage_mode import (
     CompressedDictStorageMode,
@@ -18,7 +18,7 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch
 
 async def test_read_resources_and_errors_from_response_success() -> None:
     # Mock FHIR server response
-    response = FhirGetBundleResponse(
+    response = FhirGetListResponse(
         response_text=json.dumps(
             [
                 {"resourceType": "Patient", "id": "1"},
@@ -54,7 +54,7 @@ async def test_read_resources_and_errors_from_response_success() -> None:
 @pytest.mark.asyncio
 async def test_read_resources_and_errors_from_response_with_errors() -> None:
     # Mock FHIR server response with an error
-    response = FhirGetBundleResponse(
+    response = FhirGetListResponse(
         response_text=json.dumps(
             [
                 {"resourceType": "Patient", "id": "1"},
@@ -113,7 +113,7 @@ async def test_read_resources_and_errors_from_response_with_errors() -> None:
 @pytest.mark.asyncio
 async def test_read_resources_and_errors_from_response_empty() -> None:
     # Mock FHIR server response with no resources
-    response = FhirGetBundleResponse(
+    response = FhirGetListResponse(
         response_text="",
         status=200,
         request_id="test_request_id",

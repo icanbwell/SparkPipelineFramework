@@ -250,7 +250,7 @@ class FhirReceiverProcessor:
                     "\n".join([e.error_text for e in errors]) if errors else None
                 )
                 status_code = response.status
-                request_url = response.url
+                request_url: Optional[str] = response.url
                 request_id = response.request_id
                 extra_context_to_return = response.extra_context_to_return
                 access_token = response.access_token

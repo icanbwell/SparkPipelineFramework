@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "2edd9c98e3ba80b7f84cbe14ea2d5f6e45c17cfb5065f2434012372d10780790"
+            "sha256": "5b4fc8b501c7f9a8113d1eed3efdf0c70a2e09aa5164c058293b5bd68cb06c3d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -767,11 +767,11 @@
         },
         "helix.fhir.client.sdk": {
             "hashes": [
-                "sha256:626d7cbe4ab55e53c84fb8597efa4cef9a82087bb5e852dd59bc5b81b7ae43a7",
-                "sha256:e68848ba044667fecc3acd5206811ec51132ded14facbbc1ccf05cca48951090"
+                "sha256:1cd6284e84b5406ba14f9d9c65bb7ff58e953f3c83ffcf03b1677623aad7e155",
+                "sha256:3928c64d716d90f3d0fddc5685972faf8b754a63cf1b75ff297857c955d0b6d2"
             ],
             "markers": "python_version >= '3.10'",
-            "version": "==3.0.43"
+            "version": "==3.0.44"
         },
         "helixtelemetry": {
             "hashes": [
@@ -1076,7 +1076,7 @@
                 "sha256:f486038e44caa08dbd97275a9a35a283a8f1d2f0ee60ac260a1790e76660833c",
                 "sha256:f7de08cbe5551911886d1ab60de58448c6df0f67d9feb7d1fb21e9875ef95e91"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.12'",
             "version": "==2.2.4"
         },
         "opensearch-py": {
@@ -2089,7 +2089,7 @@
                 "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df",
                 "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d"
             ],
-            "markers": "python_version >= '3.9'",
+            "markers": "python_version >= '3.10'",
             "version": "==2.3.0"
         },
         "usaddress": {
@@ -3707,7 +3707,7 @@
                 "sha256:f486038e44caa08dbd97275a9a35a283a8f1d2f0ee60ac260a1790e76660833c",
                 "sha256:f7de08cbe5551911886d1ab60de58448c6df0f67d9feb7d1fb21e9875ef95e91"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.12'",
             "version": "==2.2.4"
         },
         "objsize": {
@@ -4918,7 +4918,7 @@
                 "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df",
                 "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d"
             ],
-            "markers": "python_version >= '3.9'",
+            "markers": "python_version >= '3.10'",
             "version": "==2.3.0"
         },
         "virtualenv": {
@@ -5434,7 +5434,7 @@
                 "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df",
                 "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d"
             ],
-            "markers": "python_version >= '3.9'",
+            "markers": "python_version >= '3.10'",
             "version": "==2.3.0"
         },
         "vistir": {
