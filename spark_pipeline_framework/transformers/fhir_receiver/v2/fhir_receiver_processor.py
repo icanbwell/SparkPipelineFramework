@@ -787,6 +787,7 @@ class FhirReceiverProcessor:
                     has_next_page = False
                 else:
                     if result.status == 404:
+                        # noinspection PyTypeChecker
                         yield dataclasses.asdict(
                             GetBatchResult(resources=[], errors=[])
                         )
@@ -805,6 +806,7 @@ class FhirReceiverProcessor:
                         )
                     has_next_page = False
 
+                # noinspection PyTypeChecker
                 yield dataclasses.asdict(
                     GetBatchResult(resources=resources, errors=errors)
                 )
@@ -826,11 +828,13 @@ class FhirReceiverProcessor:
                 request_id=response.request_id,
                 url=response.url,
                 status_code=response.status,
-                error_text=json.dumps(o, indent=2),
+                error_text=json.dumps(o.to_dict(), indent=2),
             )
             for o in operation_outcomes
         ]
         return GetBatchResult(
-            resources=[json.dumps(r) for r in resources_except_operation_outcomes],
+            resources=[
+                json.dumps(r.to_dict()) for r in resources_except_operation_outcomes
+            ],
             errors=errors,
         )
