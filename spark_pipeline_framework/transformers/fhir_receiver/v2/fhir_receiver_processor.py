@@ -825,10 +825,34 @@ class FhirReceiverProcessor:
         :param include_errors_from_resource_map: if True then include errors from resource map
         :return: GetBatchResult
         """
-        all_resources: FhirResourceList | FhirResourceMap = response.get_resources()
-        operation_outcomes: FhirResourceList
-        errors: List[GetBatchError]
-        if isinstance(all_resources, FhirResourceList):
+        if response.has_resource_map:
+            resource_map: FhirResourceMap = response.get_resource_map()
+            operation_outcomes: FhirResourceList = (
+                resource_map.get(resource_type="OperationOutcome") or FhirResourceList()
+            )
+            # now remove the operation outcomes from the resources
+            if "OperationOutcome" in resource_map:
+                del resource_map["OperationOutcome"]
+            errors = (
+                [
+                    GetBatchError(
+                        request_id=response.request_id,
+                        url=response.url,
+                        status_code=response.status,
+                        error_text=o.to_json(),
+                    )
+                    for o in operation_outcomes
+                ]
+                if include_errors_from_resource_map
+                else []
+            )
+            return GetBatchResult(
+                resources=[resource_map.to_json()],
+                errors=errors,
+            )
+
+        else:
+            all_resources: FhirResourceList = response.get_resources()
             resources_except_operation_outcomes: FhirResourceList = (
                 all_resources.get_resources_except_operation_outcomes()
             )
@@ -846,30 +870,3 @@ class FhirReceiverProcessor:
                 resources=[r.to_json() for r in resources_except_operation_outcomes],
                 errors=errors,
             )
-        elif isinstance(all_resources, FhirResourceMap):
-            operation_outcomes = (
-                all_resources.get(resource_type="OperationOutcome")
-                or FhirResourceList()
-            )
-            # now remove the operation outcomes from the resources
-            if "OperationOutcome" in all_resources:
-                del all_resources["OperationOutcome"]
-            errors = (
-                [
-                    GetBatchError(
-                        request_id=response.request_id,
-                        url=response.url,
-                        status_code=response.status,
-                        error_text=o.to_json(),
-                    )
-                    for o in operation_outcomes
-                ]
-                if include_errors_from_resource_map
-                else []
-            )
-            return GetBatchResult(
-                resources=[all_resources.to_json()],
-                errors=errors,
-            )
-        else:
-            raise Exception(f"Unknown type of FhirResourceList: {type(all_resources)}")
