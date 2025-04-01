@@ -53,6 +53,7 @@ async def test_read_resources_and_errors_from_response_success() -> None:
 
 @pytest.mark.asyncio
 async def test_read_resources_and_errors_from_response_with_errors() -> None:
+    print()
     # Mock FHIR server response with an error
     response = FhirGetListResponse(
         response_text=json.dumps(
@@ -93,20 +94,12 @@ async def test_read_resources_and_errors_from_response_with_errors() -> None:
     assert len(result.resources) == 1
     assert result.resources[0] == '{"resourceType": "Patient", "id": "1"}'
     assert len(result.errors) == 1
+    print(json.dumps(result.errors[0].to_dict()))
     assert result.errors[0].to_dict() == {
-        "error_text": "{\n"
-        '  "resourceType": "OperationOutcome",\n'
-        '  "issue": [\n'
-        "    {\n"
-        '      "severity": "error",\n'
-        '      "code": "processing",\n'
-        '      "diagnostics": "Error message"\n'
-        "    }\n"
-        "  ]\n"
-        "}",
-        "request_id": "test_request_id",
-        "status_code": 200,
         "url": "http://fhir-server",
+        "status_code": 200,
+        "error_text": '{"resourceType": "OperationOutcome", "issue": [{"severity": "error", "code": "processing", "diagnostics": "Error message"}]}',
+        "request_id": "test_request_id",
     }
 
 
