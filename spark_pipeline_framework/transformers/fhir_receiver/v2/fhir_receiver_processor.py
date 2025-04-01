@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from json import JSONDecodeError
 from logging import Logger
-from typing import Any, Dict, List, Optional, Union, cast, Deque
+from typing import Any, Dict, List, Optional, Union, cast
 from typing import (
     Iterable,
     AsyncGenerator,
@@ -14,6 +14,7 @@ from typing import (
 from furl import furl
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
 from helix_fhir_client_sdk.fhir.fhir_resource import FhirResource
+from helix_fhir_client_sdk.fhir.fhir_resource_list import FhirResourceList
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
@@ -815,7 +816,7 @@ class FhirReceiverProcessor:
     def read_resources_and_errors_from_response(
         response: FhirGetResponse,
     ) -> GetBatchResult:
-        all_resources: Deque[FhirResource] = response.get_resources()
+        all_resources: FhirResourceList = response.get_resources().get_resources()
         resources_except_operation_outcomes: List[FhirResource] = [
             r for r in all_resources if r.get("resourceType") != "OperationOutcome"
         ]

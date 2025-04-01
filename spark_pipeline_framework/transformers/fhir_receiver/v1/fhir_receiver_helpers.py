@@ -1,6 +1,5 @@
 import asyncio
 import json
-from collections import deque
 from datetime import datetime
 from json import JSONDecodeError
 from logging import Logger
@@ -14,16 +13,16 @@ from typing import (
     cast,
     NamedTuple,
     Coroutine,
-    Deque,
 )
 
 from furl import furl
 
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
-from helix_fhir_client_sdk.fhir.fhir_resource import FhirResource
+from helix_fhir_client_sdk.fhir.fhir_resource_list import FhirResourceList
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
+from helix_fhir_client_sdk.utilities.fhir_json_encoder import FhirJSONEncoder
 from pyspark.sql.types import (
     Row,
 )
@@ -1086,12 +1085,11 @@ class FhirReceiverHelpers:
                 )
 
                 auth_access_token = result.access_token
-                if len(result.get_resources()) > 0:
+                get_resources: FhirResourceList = result.get_resources().get_resources()
+                if len(get_resources) > 0:
                     # get id of last resource
-                    json_resources: Deque[FhirResource] = result.get_resources()
-                    if result.status == 200 and isinstance(
-                        json_resources, deque
-                    ):  # normal response
+                    json_resources: FhirResourceList = get_resources
+                    if result.status == 200:  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
                             if result.next_url:
@@ -1127,7 +1125,8 @@ class FhirReceiverHelpers:
                             else:
                                 server_page_number += 1
                             resources = resources + [
-                                json.dumps(r.to_dict()) for r in result.get_resources()
+                                json.dumps(r.to_dict(), cls=FhirJSONEncoder)
+                                for r in get_resources
                             ]
                         page_number += 1
                         if limit and 0 < limit <= len(resources):

@@ -2,6 +2,7 @@ import logging
 
 import pytest
 from aioresponses import aioresponses
+from helix_fhir_client_sdk.fhir.fhir_resource_list import FhirResourceList
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
@@ -31,9 +32,9 @@ async def test_send_fhir_request_async() -> None:
             parameters=parameters,
         ):
             assert isinstance(result, FhirGetResponse)
-            assert list(result.get_resources()) == [
-                {"resourceType": "Patient", "id": "1"}
-            ]
+            resources = result.get_resources()
+            assert isinstance(resources, FhirResourceList)
+            assert list(resources) == [{"resourceType": "Patient", "id": "1"}]
 
 
 @pytest.mark.asyncio
@@ -55,6 +56,6 @@ async def test_send_simple_fhir_request_async() -> None:
             parameters=parameters,
         ):
             assert isinstance(result, FhirGetResponse)
-            assert list(result.get_resources()) == [
-                {"resourceType": "Patient", "id": "1"}
-            ]
+            resources = result.get_resources()
+            assert isinstance(resources, FhirResourceList)
+            assert list(resources) == [{"resourceType": "Patient", "id": "1"}]
