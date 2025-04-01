@@ -62,7 +62,7 @@ setup(
         "sqlparse>=0.5.3",
         "bounded-pool-executor>=0.0.3",
         "fastjsonschema>=2.18.0",
-        "helix.fhir.client.sdk>=4.0.3",
+        "helix.fhir.client.sdk>=4.0.4",
         "opensearch-py[async]>=2.6.0",
         "pyathena>2.14.0",
         "spark-nlp>=4.2.3",

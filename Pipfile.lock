@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d02a5f7b6afdfcf2fbd83c52ad2b2f4fc43c614e82c0c0c9733f6be4189d7973"
+            "sha256": "701ec2ac46ec817b7923c3e0afe4e39dc3b675dc3d34ea9545efb1c660554110"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -719,11 +719,11 @@
         },
         "helix.fhir.client.sdk": {
             "hashes": [
-                "sha256:3bcc84823098aa5cd21dfc617a4e521c433cd9466aadc22bb29276bf4df3905d",
-                "sha256:3be039502e6dc0e1d6f1fe79d3682d3aced833d586a92fe47133c0031cd70d57"
+                "sha256:14a8bb5281f1ba4cd328461b2475a421dbb6a979d4c5527204264bdf2925e6e6",
+                "sha256:6394fd1e4b7b77595a6a0075714b2b5ef4babaa5aca3b4b71bb70f01013398c0"
             ],
             "markers": "python_version >= '3.10'",
-            "version": "==4.0.3"
+            "version": "==4.0.4"
         },
         "helixtelemetry": {
             "hashes": [
@@ -1019,7 +1019,7 @@
                 "sha256:f486038e44caa08dbd97275a9a35a283a8f1d2f0ee60ac260a1790e76660833c",
                 "sha256:f7de08cbe5551911886d1ab60de58448c6df0f67d9feb7d1fb21e9875ef95e91"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.12'",
             "version": "==2.2.4"
         },
         "opensearch-py": {
@@ -3618,7 +3618,7 @@
                 "sha256:f486038e44caa08dbd97275a9a35a283a8f1d2f0ee60ac260a1790e76660833c",
                 "sha256:f7de08cbe5551911886d1ab60de58448c6df0f67d9feb7d1fb21e9875ef95e91"
             ],
-            "markers": "python_version >= '3.10'",
+            "markers": "python_version >= '3.12'",
             "version": "==2.2.4"
         },
         "objsize": {
