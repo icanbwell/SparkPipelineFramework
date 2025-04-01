@@ -13,8 +13,6 @@ from helixtelemetry.telemetry.structures.telemetry_attribute_value import (
 )
 from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
 
-# noinspection PyPackageRequirements
-from mlflow.entities import RunStatus
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
@@ -222,10 +220,6 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                                     telemetry_parent=transformer_span.create_child_telemetry_parent()
                                 )
 
-                            self.progress_logger.start_mlflow_run(
-                                run_name=stage_name, is_nested=True
-                            )
-
                             with ProgressLogMetric(
                                 progress_logger=self.progress_logger,
                                 name=str(stage_name) or "unknown",
@@ -243,7 +237,6 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                                     pipeline_name,
                                     event_text=f"Finished pipeline step {stage_name}",
                                 )
-                            self.progress_logger.end_mlflow_run()
                         except Exception as e:
                             logger.error(
                                 f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer "
@@ -275,8 +268,6 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                                 event_text=str(e),
                                 ex=e,
                             )
-                            self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
-
                             raise e
 
                 self.progress_logger.log_event(

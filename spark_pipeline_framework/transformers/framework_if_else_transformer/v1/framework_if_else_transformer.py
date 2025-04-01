@@ -136,10 +136,6 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
                 name=stage_name, attributes={}, telemetry_parent=self.telemetry_parent
             ) as telemetry_span:
 
-                if progress_logger is not None:
-                    progress_logger.start_mlflow_run(
-                        run_name=stage_name, is_nested=True
-                    )
                 if isinstance(stage, LoopIdMixin):
                     stage.set_loop_id(self.loop_id)
                 if isinstance(stage, TelemetryParentMixin):
@@ -157,9 +153,6 @@ class FrameworkIfElseTransformer(FrameworkTransformer):
                         # e.args = (e.args[0] + f" in stage {stage_name}") + e.args[1:]
                         e.args = (f"In Stage ({stage_name})", *e.args)
                     raise e
-
-            if progress_logger is not None:
-                progress_logger.end_mlflow_run()
         return df
 
     def as_dict(self) -> Dict[str, Any]:

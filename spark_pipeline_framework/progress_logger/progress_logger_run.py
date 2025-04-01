@@ -28,8 +28,6 @@ class ProgressLoggerRun:
         :return:
         """
         self.start_time = datetime.now()
-        if self.progress_logger:
-            self.progress_logger.start_mlflow_run(self.name)
         return self
 
     def stop(self) -> None:
@@ -41,5 +39,4 @@ class ProgressLoggerRun:
             # time_diff_in_minutes: float = (
             #     end_time - self.start_time
             # ).total_seconds() // 60
-            if self.progress_logger:
-                self.progress_logger.end_mlflow_run()
+            pass

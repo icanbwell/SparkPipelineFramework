@@ -58,7 +58,6 @@ setup(
         "chardet",
         "slack-sdk>=3.22.0",
         "smart-open[s3]>=6.3.0",
-        "mlflow-skinny==2.17.2",
         "sqlalchemy>=1.4.37",
         "sqlparse>=0.5.3",
         "bounded-pool-executor>=0.0.3",
