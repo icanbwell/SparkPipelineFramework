@@ -838,14 +838,12 @@ class FhirReceiverProcessor:
                     request_id=response.request_id,
                     url=response.url,
                     status_code=response.status,
-                    error_text=json.dumps(o.to_dict(), indent=2),
+                    error_text=o.to_json(),
                 )
                 for o in operation_outcomes
             ]
             return GetBatchResult(
-                resources=[
-                    json.dumps(r.to_dict()) for r in resources_except_operation_outcomes
-                ],
+                resources=[r.to_json() for r in resources_except_operation_outcomes],
                 errors=errors,
             )
         elif isinstance(all_resources, FhirResourceMap):
@@ -854,14 +852,15 @@ class FhirReceiverProcessor:
                 or FhirResourceList()
             )
             # now remove the operation outcomes from the resources
-            del all_resources._resource_map["OperationOutcome"]
+            if "OperationOutcome" in all_resources:
+                del all_resources["OperationOutcome"]
             errors = (
                 [
                     GetBatchError(
                         request_id=response.request_id,
                         url=response.url,
                         status_code=response.status,
-                        error_text=json.dumps(o.to_dict(), indent=2),
+                        error_text=o.to_json(),
                     )
                     for o in operation_outcomes
                 ]
