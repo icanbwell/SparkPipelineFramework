@@ -9,12 +9,11 @@ from typing import (
     AsyncGenerator,
 )
 
-
-# noinspection PyPep8Naming
 from furl import furl
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
-from helix_fhir_client_sdk.fhir.fhir_resource import FhirResource
+
 from helix_fhir_client_sdk.fhir.fhir_resource_list import FhirResourceList
+from helix_fhir_client_sdk.fhir.fhir_resource_map import FhirResourceMap
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
@@ -814,28 +813,64 @@ class FhirReceiverProcessor:
 
     @staticmethod
     def read_resources_and_errors_from_response(
+        *,
         response: FhirGetResponse,
+        include_errors_from_resource_map: bool = False,
     ) -> GetBatchResult:
-        all_resources: FhirResourceList = response.get_resources().get_resources()
-        resources_except_operation_outcomes: List[FhirResource] = [
-            r for r in all_resources if r.get("resourceType") != "OperationOutcome"
-        ]
-        operation_outcomes: List[FhirResource] = [
-            r for r in all_resources if r.get("resourceType") == "OperationOutcome"
-        ]
+        """
+        Reads the resources and errors from the response.  This is used for both batch and streaming
+        It can handle both FhirResourceList and FhirResourceMap
 
-        errors: List[GetBatchError] = [
-            GetBatchError(
-                request_id=response.request_id,
-                url=response.url,
-                status_code=response.status,
-                error_text=json.dumps(o.to_dict(), indent=2),
+        :param response: FhirGetResponse
+        :param include_errors_from_resource_map: if True then include errors from resource map
+        :return: GetBatchResult
+        """
+        all_resources: FhirResourceList | FhirResourceMap = response.get_resources()
+        operation_outcomes: FhirResourceList
+        errors: List[GetBatchError]
+        if isinstance(all_resources, FhirResourceList):
+            resources_except_operation_outcomes: FhirResourceList = (
+                all_resources.get_resources_except_operation_outcomes()
             )
-            for o in operation_outcomes
-        ]
-        return GetBatchResult(
-            resources=[
-                json.dumps(r.to_dict()) for r in resources_except_operation_outcomes
-            ],
-            errors=errors,
-        )
+            operation_outcomes = all_resources.get_operation_outcomes()
+            errors = [
+                GetBatchError(
+                    request_id=response.request_id,
+                    url=response.url,
+                    status_code=response.status,
+                    error_text=json.dumps(o.to_dict(), indent=2),
+                )
+                for o in operation_outcomes
+            ]
+            return GetBatchResult(
+                resources=[
+                    json.dumps(r.to_dict()) for r in resources_except_operation_outcomes
+                ],
+                errors=errors,
+            )
+        elif isinstance(all_resources, FhirResourceMap):
+            operation_outcomes = (
+                all_resources.get(resource_type="OperationOutcome")
+                or FhirResourceList()
+            )
+            # now remove the operation outcomes from the resources
+            del all_resources._resource_map["OperationOutcome"]
+            errors = (
+                [
+                    GetBatchError(
+                        request_id=response.request_id,
+                        url=response.url,
+                        status_code=response.status,
+                        error_text=json.dumps(o.to_dict(), indent=2),
+                    )
+                    for o in operation_outcomes
+                ]
+                if include_errors_from_resource_map
+                else []
+            )
+            return GetBatchResult(
+                resources=[all_resources.to_json()],
+                errors=errors,
+            )
+        else:
+            raise Exception(f"Unknown type of FhirResourceList: {type(all_resources)}")

@@ -41,7 +41,7 @@ async def test_read_resources_and_errors_from_response_success() -> None:
 
     # Call the method
     result: GetBatchResult = (
-        FhirReceiverProcessor.read_resources_and_errors_from_response(response)
+        FhirReceiverProcessor.read_resources_and_errors_from_response(response=response)
     )
 
     # Assert the results
@@ -86,7 +86,7 @@ async def test_read_resources_and_errors_from_response_with_errors() -> None:
 
     # Call the method
     result: GetBatchResult = (
-        FhirReceiverProcessor.read_resources_and_errors_from_response(response)
+        FhirReceiverProcessor.read_resources_and_errors_from_response(response=response)
     )
 
     # Assert the results
@@ -131,7 +131,7 @@ async def test_read_resources_and_errors_from_response_empty() -> None:
 
     # Call the method
     result: GetBatchResult = (
-        FhirReceiverProcessor.read_resources_and_errors_from_response(response)
+        FhirReceiverProcessor.read_resources_and_errors_from_response(response=response)
     )
 
     # Assert the results
