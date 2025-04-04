@@ -28,6 +28,7 @@ from pyspark.sql.types import (
 from spark_pipeline_framework.logger.log_level import LogLevel
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_parameters import (
     FhirReceiverParameters,
 )
@@ -93,6 +94,7 @@ class FhirReceiverProcessorSpark:
         :param additional_parameters: additional parameters
         :return: output values
         """
+        register()
         assert parameters
         logger: Logger = get_logger(
             __name__,

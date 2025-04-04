@@ -5,6 +5,7 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from pyspark.sql.types import Row
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_sender_operation import (
     FhirSenderOperation,
 )
@@ -52,6 +53,8 @@ class FhirSenderProcessor:
 
 
         """
+        register()
+
         json_data_list: List[Row] = list(rows)
         logger = get_logger(__name__)
         assert server_url

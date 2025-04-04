@@ -19,6 +19,7 @@ from helix_fhir_client_sdk.responses.fhir_merge_response import FhirMergeRespons
 from helix_fhir_client_sdk.responses.fhir_update_response import FhirUpdateResponse
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.transformers.fhir_sender.v2.fhir_sender_parameters import (
     FhirSenderParameters,
 )
@@ -66,6 +67,7 @@ class FhirSenderProcessor:
         :param additional_parameters: additional parameters
         :return: output values
         """
+        register()
         assert parameters
         logger: Logger = get_logger(
             __name__,

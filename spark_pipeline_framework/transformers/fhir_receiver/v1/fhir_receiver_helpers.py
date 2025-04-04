@@ -29,6 +29,7 @@ from pyspark.sql.types import (
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_writer import (
     FhirGetResponseWriter,
@@ -135,6 +136,7 @@ class FhirReceiverHelpers:
         :param refresh_token_function: function to refresh token
         :return: rows
         """
+        register()
         resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
             (
                 {

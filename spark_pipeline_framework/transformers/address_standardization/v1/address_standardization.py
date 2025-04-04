@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict, Iterable, List, Optional, Callable
 
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
@@ -152,6 +153,8 @@ class AddressStandardization(FrameworkTransformer):
 
             def standardize(rows: Iterable[Row]) -> List[Dict[str, str]]:
                 try:
+                    register()
+
                     raw_addresses: List[Dict[str, str]] = [
                         json.loads(r["raw_address"]) for r in rows
                     ]
