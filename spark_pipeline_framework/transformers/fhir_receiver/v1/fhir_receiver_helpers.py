@@ -1085,7 +1085,7 @@ class FhirReceiverHelpers:
                 )
 
                 auth_access_token = result.access_token
-                get_resources: FhirResourceList = result.get_resources().get_resources()
+                get_resources: FhirResourceList = result.get_resources()
                 if len(get_resources) > 0:
                     # get id of last resource
                     json_resources: FhirResourceList = get_resources
