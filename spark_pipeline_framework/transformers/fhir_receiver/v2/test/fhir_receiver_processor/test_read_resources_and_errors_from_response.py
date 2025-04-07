@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from helix_fhir_client_sdk.responses.get_responses.fhir_get_list_response import (
+from helix_fhir_client_sdk.responses.get.fhir_get_list_response import (
     FhirGetListResponse,
 )
 from helix_fhir_client_sdk.utilities.compressed_dict.v1.compressed_dict_storage_mode import (

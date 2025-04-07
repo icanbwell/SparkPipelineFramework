@@ -1127,7 +1127,7 @@ class FhirReceiverHelpers:
                             else:
                                 server_page_number += 1
                             resources = resources + [
-                                json.dumps(r.to_dict(), cls=FhirJSONEncoder)
+                                json.dumps(r.dict(), cls=FhirJSONEncoder)
                                 for r in get_resources
                             ]
                         page_number += 1

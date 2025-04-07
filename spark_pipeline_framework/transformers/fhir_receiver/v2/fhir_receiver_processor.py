@@ -839,7 +839,7 @@ class FhirReceiverProcessor:
                         request_id=response.request_id,
                         url=response.url,
                         status_code=response.status,
-                        error_text=o.to_json(),
+                        error_text=o.json(),
                     )
                     for o in operation_outcomes
                 ]
@@ -847,7 +847,7 @@ class FhirReceiverProcessor:
                 else []
             )
             return GetBatchResult(
-                resources=[resource_map.to_json()],
+                resources=[resource_map.json()],
                 errors=errors,
             )
 
@@ -862,11 +862,11 @@ class FhirReceiverProcessor:
                     request_id=response.request_id,
                     url=response.url,
                     status_code=response.status,
-                    error_text=o.to_json(),
+                    error_text=o.json(),
                 )
                 for o in operation_outcomes
             ]
             return GetBatchResult(
-                resources=[r.to_json() for r in resources_except_operation_outcomes],
+                resources=[r.json() for r in resources_except_operation_outcomes],
                 errors=errors,
             )

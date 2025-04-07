@@ -34,7 +34,7 @@ async def test_send_fhir_request_async() -> None:
             assert isinstance(result, FhirGetResponse)
             resources = result.get_resources()
             assert isinstance(resources, FhirResourceList)
-            assert [r.to_dict() for r in resources] == [
+            assert [r.dict() for r in resources] == [
                 {"resourceType": "Patient", "id": "1"}
             ]
 
@@ -60,6 +60,6 @@ async def test_send_simple_fhir_request_async() -> None:
             assert isinstance(result, FhirGetResponse)
             resources = result.get_resources()
             assert isinstance(resources, FhirResourceList)
-            assert [r.to_dict() for r in resources] == [
+            assert [r.dict() for r in resources] == [
                 {"resourceType": "Patient", "id": "1"}
             ]
