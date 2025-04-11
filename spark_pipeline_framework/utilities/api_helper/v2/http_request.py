@@ -1,6 +1,7 @@
 import json
 from enum import Enum
 from os import environ
+from copy import deepcopy
 from typing import (
     Optional,
     Dict,
@@ -161,14 +162,14 @@ class HelixHttpRequest:
         """
         session: ClientSession
         async with self._get_session() as session:
-            arguments = {"headers": self.headers}
+            arguments: Dict[str, Any] = {"headers": self.headers}
             request_function = None
             if self.request_type == RequestType.GET:
                 arguments["params"] = self.payload
                 request_function = session.get
             elif self.request_type == RequestType.POST:
                 arguments["data"] = (
-                    json.dumps(self.payload)  # type: ignore
+                    json.dumps(self.payload)
                     if self.post_as_json_formatted_string
                     else self.payload
                 )
@@ -178,10 +179,15 @@ class HelixHttpRequest:
 
             arguments = {k: v for k, v in arguments.items() if v is not None}
 
+            # Hide sensitive tokens to protect against unauthorized access
+            filtered_arguments = deepcopy(arguments)
+            headers = filtered_arguments.get("headers")
+            if isinstance(headers, dict) and headers.get("Authorization"):
+                filtered_arguments["headers"]["Authorization"] = "[FILTERED]"
             response = await self._send_request_async(request_function, arguments)  # type: ignore[arg-type]
             if self.raise_error:
                 if response.status >= 400:
-                    error_text = f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {response.status}: {await response.text()}."
+                    error_text = f"Request to {self.url} with arguments {json.dumps(filtered_arguments)} failed with {response.status}: {await response.text()}."
                     if self.logger:
                         self.logger.error(error_text)
                     raise ClientResponseError(
