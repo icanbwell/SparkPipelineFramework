@@ -8,6 +8,9 @@ ENV CLASSPATH=/SparkpipelineFramework/jars:$CLASSPATH
 # remove the older version of entrypoints with apt-get because that is how it was installed
 RUN apt-get remove python3-entrypoints -y
 
+# remove python3.10 stuff
+RUN rm -rf /usr/local/lib/python3.10
+
 COPY Pipfile* /SparkpipelineFramework/
 WORKDIR /SparkpipelineFramework
 

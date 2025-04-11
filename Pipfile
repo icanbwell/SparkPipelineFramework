@@ -30,8 +30,6 @@ chardet="*"
 slack_sdk = ">=3.22.0"
 # smart_open is needed for reading and writing files
 smart_open = { extras = ['s3'], version = ">=6.3.0" }
-# mlflow is needed for tracking experiments in MLFlow
-mlflow-skinny = "==2.17.2"
 # sqlalchemy is needed for interacting with databases
 SQLAlchemy = ">=1.4.37"
 # sqlparse is needed for parsing SQL
@@ -41,7 +39,7 @@ bounded-pool-executor = ">=0.0.3"
 # fastjsonschema is needed for validating JSON
 fastjsonschema= ">=2.18.0"
 # helix.fhir.client.sdk is needed for interacting with FHIR servers
-"helix.fhir.client.sdk" = ">=3.0.38"
+"helix.fhir.client.sdk" = ">=4.1.0"
 # opensearch-py is needed for interacting with OpenSearch
 opensearch-py= { extras = ['async'], version = ">=2.6.0" }
 # pyathena is needed for interacting with Athena in AWS
@@ -66,25 +64,16 @@ pydantic=">=2.8.2"
 motor={ extras = ['snappy', 'zstd'], version = ">=3.5.1" }
 # dataclasses-json is needed for working with JSON data to read from and write to json
 dataclasses-json = ">=0.6.7"
+# helixtelemetry is needed for sending telemetry data
+helixtelemetry= ">=1.0.3"
 # ====== For OpenTelemetry ======
 opentelemetry-api = ">=1.30.0"
 opentelemetry-sdk = ">=1.30.0"
 opentelemetry-exporter-otlp = ">=1.30.0"
-opentelemetry-instrumentation-system-metrics = ">=0.51b0"
-opentelemetry-instrumentation-logging = ">=0.51b0"
-opentelemetry-instrumentation-pymysql = ">=0.51b0"
-opentelemetry-instrumentation-pymongo = ">=0.51b0"
-opentelemetry-instrumentation-elasticsearch = ">=0.51b0"
-opentelemetry-instrumentation-boto = ">=0.51b0"
-opentelemetry-instrumentation-botocore = ">=0.51b0"
-opentelemetry-instrumentation-httpx = ">=0.51b0"
-opentelemetry-instrumentation-asyncio = ">=0.51b0"
 opentelemetry-instrumentation-aiohttp-client = ">=0.51b0"
-opentelemetry-instrumentation-confluent-kafka = ">=0.51b0"
-opentelemetry-instrumentation-requests = ">=0.51b0"
-#opentelemetry-exporter-richconsole = ">=0.51b0"
 # ====== End OpenTelemetry ======
-
+# msgpack is needed for serializing and deserializing data
+msgpack = ">=1.1.0"
 
 
 [dev-packages]
@@ -167,6 +156,10 @@ types-Pygments="*"
 types-jsonschema="*"
 types-cffi="*"
 types-pyOpenSSL="*"
+# msgpack-types provides type hints for msgpack
+msgpack-types = { version = ">=0.5.0" }
+# objsize is needed for getting the size of objects in bytes
+objsize = ">=0.7.1"
 
 # These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
 # only when running pipenv-setup

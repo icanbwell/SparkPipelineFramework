@@ -1,5 +1,5 @@
 import json
-from os import path, makedirs
+from os import path, makedirs, environ
 from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urljoin
@@ -25,6 +25,9 @@ import requests
 async def test_send_delete(
     spark_session: SparkSession, run_synchronously: bool
 ) -> None:
+
+    environ["LOGLEVEL"] = "DEBUG"
+
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
     temp_folder = data_dir.joinpath("./temp")

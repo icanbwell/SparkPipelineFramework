@@ -18,15 +18,18 @@ from typing import (
 from furl import furl
 
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
+from compressedfhir.fhir.fhir_resource_list import FhirResourceList
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
+from compressedfhir.utilities.fhir_json_encoder import FhirJSONEncoder
 from pyspark.sql.types import (
     Row,
 )
 from helix_fhir_client_sdk.function_types import RefreshTokenFunction
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.utilities.async_helper.v1.async_helper import AsyncHelper
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_get_response_writer import (
     FhirGetResponseWriter,
@@ -133,6 +136,7 @@ class FhirReceiverHelpers:
         :param refresh_token_function: function to refresh token
         :return: rows
         """
+        register()
         resource_id_with_token_list: List[Dict[str, Optional[str]]] = [
             (
                 {
@@ -506,7 +510,7 @@ class FhirReceiverHelpers:
                     refresh_token_function=refresh_token_function,
                 )
             )
-            resp_result: str = result1.responses.replace("\n", "")
+            resp_result: str = result1.get_response_text().replace("\n", "")
             try:
                 responses_from_fhir = FhirReceiverHelpers.json_str_to_list_str(
                     resp_result
@@ -518,14 +522,14 @@ class FhirReceiverHelpers:
                     raise FhirParserException(
                         url=result1.url,
                         message="Parsing result as json failed",
-                        json_data=result1.responses,
+                        json_data=result1.get_response_text(),
                         response_status_code=result1.status,
                         request_id=result1.request_id,
                     ) from e2
 
             error_text = result1.error
             status_code = result1.status
-            request_url = result1.url
+            request_url: Optional[str] = result1.url
             request_id = result1.request_id
             extra_context_to_return = result1.extra_context_to_return
             access_token = result1.access_token
@@ -533,6 +537,7 @@ class FhirReceiverHelpers:
             error_text = str(e1)
             status_code = e1.response_status_code or 0
             request_url = e1.url
+
         result = [
             FhirGetResponseWriter.create_row(
                 partition_index=partition_index,
@@ -624,7 +629,7 @@ class FhirReceiverHelpers:
                 refresh_token_function=refresh_token_function,
             )
         )
-        resp_result: str = result1.responses.replace("\n", "")
+        resp_result: str = result1.get_response_text().replace("\n", "")
         responses_from_fhir = []
         try:
             responses_from_fhir = FhirReceiverHelpers.json_str_to_list_str(resp_result)
@@ -635,7 +640,7 @@ class FhirReceiverHelpers:
                 raise FhirParserException(
                     url=result1.url,
                     message="Parsing result as json failed",
-                    json_data=result1.responses,
+                    json_data=result1.get_response_text(),
                     response_status_code=result1.status,
                     request_id=result1.request_id,
                 ) from e1
@@ -1014,7 +1019,9 @@ class FhirReceiverHelpers:
                 )
             )
             try:
-                resources = FhirReceiverHelpers.json_str_to_list_str(result.responses)
+                resources = FhirReceiverHelpers.json_str_to_list_str(
+                    result.get_response_text()
+                )
             except JSONDecodeError as e:
                 if error_view:
                     errors.append(
@@ -1022,7 +1029,9 @@ class FhirReceiverHelpers:
                             {
                                 "url": result.url,
                                 "status_code": result.status,
-                                "error_text": str(e) + " : " + result.responses,
+                                "error_text": str(e)
+                                + " : "
+                                + result.get_response_text(),
                             },
                             default=str,
                         )
@@ -1031,7 +1040,7 @@ class FhirReceiverHelpers:
                     raise FhirParserException(
                         url=result.url,
                         message="Parsing result as json failed",
-                        json_data=result.responses,
+                        json_data=result.get_response_text(),
                         response_status_code=result.status,
                         request_id=result.request_id,
                     ) from e
@@ -1078,10 +1087,11 @@ class FhirReceiverHelpers:
                 )
 
                 auth_access_token = result.access_token
-                if len(result.get_resources()) > 0:
+                resources1: FhirResourceList = result.get_resources()
+                if len(resources1) > 0:
                     # get id of last resource
-                    json_resources: List[Dict[str, Any]] = result.get_resources()
-                    if isinstance(json_resources, list):  # normal response
+                    json_resources: FhirResourceList = resources1
+                    if result.status == 200:  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
                             if result.next_url:
@@ -1117,7 +1127,8 @@ class FhirReceiverHelpers:
                             else:
                                 server_page_number += 1
                             resources = resources + [
-                                json.dumps(r) for r in result.get_resources()
+                                json.dumps(r.dict(), cls=FhirJSONEncoder)
+                                for r in resources1
                             ]
                         page_number += 1
                         if limit and 0 < limit <= len(resources):
@@ -1127,11 +1138,11 @@ class FhirReceiverHelpers:
                         if result.status == 404 and loop_number > 1:
                             # 404 (not found) is fine since it just means we ran out of data while paging
                             pass
-                        if result.status not in ignore_status_codes:
+                        elif result.status not in ignore_status_codes:
                             raise FhirReceiverException(
                                 url=result.url,
-                                json_data=result.responses,
-                                response_text=result.responses,
+                                json_data=result.get_response_text(),
+                                response_text=result.get_response_text(),
                                 response_status_code=result.status,
                                 message="Error from FHIR server",
                                 request_id=result.request_id,

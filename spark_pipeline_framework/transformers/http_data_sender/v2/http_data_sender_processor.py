@@ -6,6 +6,7 @@ from pyspark import SparkFiles
 from requests import exceptions, status_codes
 from pyspark.sql.types import Row
 
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
@@ -131,6 +132,7 @@ class HttpDataSenderProcessor:
         This has to be a static function to avoid creating a closure around a class
         https://spark.apache.org/docs/latest/rdd-programming-guide.html#passing-functions-to-spark
         """
+        register()
         oauth_enabled = bool(client_id and auth_url and client_secret)
 
         json_data_list: List[Dict[str, Any]] = [r.asDict(recursive=True) for r in rows]

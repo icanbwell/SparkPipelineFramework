@@ -92,7 +92,6 @@ class FrameworkBaseExporter(FrameworkTransformer):
                 for k, v in self.getOptions().items():
                     writer.option(k, v)
 
-                # log options to mlflow as params
                 if progress_logger:
                     progress_logger.log_params(self.getOptions())
 

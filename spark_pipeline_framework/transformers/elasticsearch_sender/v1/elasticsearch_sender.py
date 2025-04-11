@@ -3,6 +3,7 @@ import math
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
 
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.transformers.elasticsearch_sender.v1.elasticsearch_helpers import (
     send_json_bundle_to_elasticsearch,
 )
@@ -150,6 +151,8 @@ class ElasticSearchSender(FrameworkTransformer):
                 def send_partition_to_server(
                     partition_index: int, rows: Iterable[Row]
                 ) -> Iterable[Optional[ElasticSearchResult]]:
+                    register()
+
                     json_data_list: List[str] = [r["value"] for r in rows]
 
                     if len(json_data_list) > 0:

@@ -258,3 +258,20 @@ This will install Java, Scala, Spark and other packages
 
 # Asynchronous Processing
 [Asynchronous Processing](asynchronous.md)
+
+# Using local packages
+If you're making changes in packages (e.g., SparkPipelineFramework), you can point your docker to read from those instead of the packages from Pipfile.
+1. Uncomment the line in docker-compose.yml for the package you want to run from your local machine
+2. (Optional) For debugging into these, you need to tell PyCharm to look into that folder also.  You do this by creating path mappings in PyCharm Debug dialog. [https://www.jetbrains.com/help/pycharm/edit-project-path-mappings-dialog.html](https://www.jetbrains.com/help/pycharm/edit-project-path-mappings-dialog.html)
+
+
+For example:
+(These paths have to absolute so replace with the absolute path on your machine.)
+|  Local Path                                                                              |  Remote Path                                   |
+|------------------------------------------------------------------------------------------|------------------------------------------------|
+|`/Users/imranqureshi/git/helix.fhir.client.sdk/helix_fhir_client_sdk/`                    |`/usr/local/lib/python3.12/dist-packages/helix_fhir_client_sdk/`           |
+
+
+NOTE: If you're setting breakpoints, make sure to open the file from the local path to set them.  Otherwise PyCharm opens the version from Pipfile which will never hit your breakpints.
+
+NOTE: Remember to undo your docker-compose.yml change and these path mappings when you're done and switch back to using the package from Pipfile.

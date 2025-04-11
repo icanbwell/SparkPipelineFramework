@@ -83,7 +83,9 @@ async def send_json_bundle_to_fhir_async(
         ):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("----------- Response from FHIR -------")
-                logger.debug(f"{json.dumps(response.__dict__)}")
+                logger.debug(f"{response.status} {response.url}")
+                logger.debug(f"{response.error}")
+                logger.debug(f"{response.data}")
                 logger.debug("----------- End response from FHIR -------")
             yield response
     except AssertionError as e:

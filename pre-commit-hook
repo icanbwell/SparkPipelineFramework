@@ -2,4 +2,8 @@
 
 GIT_PROJECT_ROOT=$(git rev-parse --show-toplevel)
 cd "$($GIT_PROJECT_ROOT "$0")"
+
+echo "To use local package, mount the package directory as a volume.  Example:"
+echo "-v \${PWD}/../helix.fhir.client.sdk/helix_fhir_client_sdk:/usr/local/lib/python3.12/site-packages/helix_fhir_client_sdk \\"
+
 docker build -f ./pre-commit.Dockerfile -t pre-commit-spf . && docker run --rm --name pre-commit-spf-run -v $(pwd)/:/sourcecode pre-commit-spf

@@ -1,7 +1,12 @@
 import json
 
 import pytest
-from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
+from helix_fhir_client_sdk.responses.get.fhir_get_list_response import (
+    FhirGetListResponse,
+)
+from compressedfhir.utilities.compressed_dict.v1.compressed_dict_storage_mode import (
+    CompressedDictStorageMode,
+)
 
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (
     FhirReceiverProcessor,
@@ -13,8 +18,8 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch
 
 async def test_read_resources_and_errors_from_response_success() -> None:
     # Mock FHIR server response
-    response = FhirGetResponse(
-        responses=json.dumps(
+    response = FhirGetListResponse(
+        response_text=json.dumps(
             [
                 {"resourceType": "Patient", "id": "1"},
                 {"resourceType": "Patient", "id": "2"},
@@ -31,11 +36,12 @@ async def test_read_resources_and_errors_from_response_success() -> None:
         id_=None,
         response_headers=None,
         results_by_url=[],
+        storage_mode=CompressedDictStorageMode(),
     )
 
     # Call the method
     result: GetBatchResult = (
-        FhirReceiverProcessor.read_resources_and_errors_from_response(response)
+        FhirReceiverProcessor.read_resources_and_errors_from_response(response=response)
     )
 
     # Assert the results
@@ -47,9 +53,10 @@ async def test_read_resources_and_errors_from_response_success() -> None:
 
 @pytest.mark.asyncio
 async def test_read_resources_and_errors_from_response_with_errors() -> None:
+    print()
     # Mock FHIR server response with an error
-    response = FhirGetResponse(
-        responses=json.dumps(
+    response = FhirGetListResponse(
+        response_text=json.dumps(
             [
                 {"resourceType": "Patient", "id": "1"},
                 {
@@ -75,39 +82,32 @@ async def test_read_resources_and_errors_from_response_with_errors() -> None:
         id_=None,
         response_headers=None,
         results_by_url=[],
+        storage_mode=CompressedDictStorageMode(),
     )
 
     # Call the method
     result: GetBatchResult = (
-        FhirReceiverProcessor.read_resources_and_errors_from_response(response)
+        FhirReceiverProcessor.read_resources_and_errors_from_response(response=response)
     )
 
     # Assert the results
     assert len(result.resources) == 1
     assert result.resources[0] == '{"resourceType": "Patient", "id": "1"}'
     assert len(result.errors) == 1
+    print(json.dumps(result.errors[0].to_dict()))
     assert result.errors[0].to_dict() == {
-        "error_text": "{\n"
-        '  "resourceType": "OperationOutcome",\n'
-        '  "issue": [\n'
-        "    {\n"
-        '      "severity": "error",\n'
-        '      "code": "processing",\n'
-        '      "diagnostics": "Error message"\n'
-        "    }\n"
-        "  ]\n"
-        "}",
-        "request_id": "test_request_id",
-        "status_code": 200,
         "url": "http://fhir-server",
+        "status_code": 200,
+        "error_text": '{"resourceType": "OperationOutcome", "issue": [{"severity": "error", "code": "processing", "diagnostics": "Error message"}]}',
+        "request_id": "test_request_id",
     }
 
 
 @pytest.mark.asyncio
 async def test_read_resources_and_errors_from_response_empty() -> None:
     # Mock FHIR server response with no resources
-    response = FhirGetResponse(
-        responses="",
+    response = FhirGetListResponse(
+        response_text="",
         status=200,
         request_id="test_request_id",
         url="http://fhir-server",
@@ -119,11 +119,12 @@ async def test_read_resources_and_errors_from_response_empty() -> None:
         id_=None,
         response_headers=None,
         results_by_url=[],
+        storage_mode=CompressedDictStorageMode(),
     )
 
     # Call the method
     result: GetBatchResult = (
-        FhirReceiverProcessor.read_resources_and_errors_from_response(response)
+        FhirReceiverProcessor.read_resources_and_errors_from_response(response=response)
     )
 
     # Assert the results

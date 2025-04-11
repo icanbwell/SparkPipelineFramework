@@ -28,7 +28,7 @@ class FhirMergeResponseItem:
         error: Optional[str] = None,
         token: Optional[str] = None,
         resource_json: Optional[str] = None,
-        status: Optional[int] = 200
+        status: Optional[int] = 200,
     ) -> None:
         self.created: Optional[bool] = created
         self.updated: Optional[bool] = updated
@@ -142,7 +142,7 @@ class FhirMergeResponseItem:
     def from_responses(
         cls,
         *,
-        responses: List[FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse]
+        responses: List[FhirMergeResponse | FhirUpdateResponse | FhirDeleteResponse],
     ) -> List["FhirMergeResponseItem"]:
         result: List[FhirMergeResponseItem] = []
         for response in responses:
@@ -153,3 +153,6 @@ class FhirMergeResponseItem:
             elif isinstance(response, FhirDeleteResponse):
                 result.append(cls.from_delete_response(delete_response=response))
         return result
+
+    def __repr__(self) -> str:
+        return f"FhirMergeResponseItem({self.resourceType}/{self.id})"

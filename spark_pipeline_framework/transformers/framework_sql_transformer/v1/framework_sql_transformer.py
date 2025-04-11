@@ -131,7 +131,6 @@ class FrameworkSqlTransformer(FrameworkTransformer):
             name=name or view or "", progress_logger=progress_logger
         ):
             if progress_logger and name:
-                # mlflow opens .txt files inline so we use that extension
                 progress_logger.log_artifact(key=f"{name}.sql.txt", contents=sql_text)
                 progress_logger.write_to_log(name=name, message=sql_text)
             try:

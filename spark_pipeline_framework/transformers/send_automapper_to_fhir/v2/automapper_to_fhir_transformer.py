@@ -254,10 +254,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                         stage_name = t.__class__.__name__
                 else:
                     stage_name = t.__class__.__name__
-                if progress_logger is not None:
-                    progress_logger.start_mlflow_run(
-                        run_name=stage_name, is_nested=True
-                    )
+
                 await t.transform_async(df)  # run the automapper
                 views: List[str] = t.getViews()
                 view: str
@@ -265,10 +262,6 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                     self.logger.info(
                         f"---- Started processing for view: {view} --------"
                     )
-                    if progress_logger is not None:
-                        progress_logger.start_mlflow_run(
-                            run_name=f"Exporting view {view}", is_nested=True
-                        )
                     # get resource name
                     result_df: DataFrame = df.sparkSession.table(view)
                     # True if sort_data field exists and view name is present as dict key
@@ -358,10 +351,6 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             operation=operation,
                             log_level=log_level,
                         ).transform_async(df)
-                    if progress_logger is not None:
-                        progress_logger.end_mlflow_run()
-                if progress_logger is not None:
-                    progress_logger.end_mlflow_run()
         return df
 
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring

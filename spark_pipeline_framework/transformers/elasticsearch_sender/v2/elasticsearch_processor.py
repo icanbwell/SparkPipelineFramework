@@ -15,6 +15,7 @@ from typing import (
 import pandas as pd
 
 from spark_pipeline_framework.logger.yarn_logger import get_logger
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.transformers.elasticsearch_sender.v2.elasticsearch_helpers import (
     ElasticSearchHelpers,
 )
@@ -55,6 +56,7 @@ class ElasticSearchProcessor:
         :param additional_parameters: additional parameters
         :return: output values
         """
+        register()
         assert parameters
         logger: Logger = get_logger(
             __name__,

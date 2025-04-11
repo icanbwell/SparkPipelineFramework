@@ -2,8 +2,17 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Union, Mapping
 
-# noinspection PyPackageRequirements
-from mlflow.entities import RunStatus
+from helixtelemetry.telemetry.context.telemetry_context import TelemetryContext
+from helixtelemetry.telemetry.factory.telemetry_factory import TelemetryFactory
+from helixtelemetry.telemetry.providers.null_telemetry import NullTelemetry
+from helixtelemetry.telemetry.providers.open_telemetry import OpenTelemetry
+from helixtelemetry.telemetry.spans.telemetry_span_creator import TelemetrySpanCreator
+from helixtelemetry.telemetry.spans.telemetry_span_wrapper import TelemetrySpanWrapper
+from helixtelemetry.telemetry.structures.telemetry_attribute_value import (
+    TelemetryAttributeValue,
+)
+from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
+
 from pyspark.ml.base import Transformer
 from pyspark.sql.dataframe import DataFrame
 
@@ -30,27 +39,6 @@ from spark_pipeline_framework.utilities.class_helpers import ClassHelpers
 from spark_pipeline_framework.utilities.pipeline_helper import create_steps
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import (
     spark_list_catalog_table_names,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_attribute_value import (
-    TelemetryAttributeValue,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_context import (
-    TelemetryContext,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_factory import (
-    TelemetryFactory,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_parent import (
-    TelemetryParent,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_provider import (
-    TelemetryProvider,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_creator import (
-    TelemetrySpanCreator,
-)
-from spark_pipeline_framework.utilities.telemetry.telemetry_span_wrapper import (
-    TelemetrySpanWrapper,
 )
 
 
@@ -117,9 +105,9 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                         telemetry_context
                         or TelemetryContext(
                             provider=(
-                                TelemetryProvider.OPEN_TELEMETRY
+                                OpenTelemetry.telemetry_provider
                                 if self.telemetry_enable
-                                else TelemetryProvider.NULL
+                                else NullTelemetry.telemetry_provider
                             ),
                             service_name=os.getenv(
                                 "OTEL_SERVICE_NAME", "helix-pipelines"
@@ -232,10 +220,6 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                                     telemetry_parent=transformer_span.create_child_telemetry_parent()
                                 )
 
-                            self.progress_logger.start_mlflow_run(
-                                run_name=stage_name, is_nested=True
-                            )
-
                             with ProgressLogMetric(
                                 progress_logger=self.progress_logger,
                                 name=str(stage_name) or "unknown",
@@ -253,7 +237,6 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                                     pipeline_name,
                                     event_text=f"Finished pipeline step {stage_name}",
                                 )
-                            self.progress_logger.end_mlflow_run()
                         except Exception as e:
                             logger.error(
                                 f"!!!!!!!!!!!!! pipeline [{pipeline_name}] transformer "
@@ -285,8 +268,6 @@ class FrameworkPipeline(Transformer, LoopIdMixin, TelemetryParentMixin):
                                 event_text=str(e),
                                 ex=e,
                             )
-                            self.progress_logger.end_mlflow_run(status=RunStatus.FAILED)  # type: ignore
-
                             raise e
 
                 self.progress_logger.log_event(

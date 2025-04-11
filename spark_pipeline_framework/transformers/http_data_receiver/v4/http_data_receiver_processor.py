@@ -17,6 +17,7 @@ from pyspark import SparkFiles
 from requests import status_codes, Response
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.utilities.api_helper.http_request import (
     HelixHttpRequest,
     RequestType,
@@ -73,6 +74,8 @@ class HttpDataReceiverProcessor:
         cert: Optional[Union[str, Tuple[str, str]]] = None,
         verify: Optional[Union[bool, str]] = None,
     ) -> List[Row]:
+        register()
+
         result: List[Row] = []
         headers = {}
 

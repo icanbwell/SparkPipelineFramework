@@ -16,6 +16,7 @@ from aiohttp import ClientResponse
 # noinspection PyPackageRequirements
 from pyspark import SparkFiles
 
+from spark_pipeline_framework.register import register
 from spark_pipeline_framework.transformers.http_data_receiver.v5.common import (
     RESPONSE_PROCESSOR_TYPE,
 )
@@ -58,7 +59,7 @@ class HttpDataReceiverProcessor:
         :param additional_parameters: additional parameters
         :return: rows
         """
-
+        register()
         row: List[Dict[str, Any]]
         async for row in HttpDataReceiverProcessor.process_rows_async(
             partition_index=run_context.partition_index,
