@@ -18,11 +18,11 @@ from typing import (
 from furl import furl
 
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
-from helix_fhir_client_sdk.fhir.fhir_resource_list import FhirResourceList
+from compressedfhir.fhir.fhir_resource_list import FhirResourceList
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.filters.sort_field import SortField
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
-from helix_fhir_client_sdk.utilities.fhir_json_encoder import FhirJSONEncoder
+from compressedfhir.utilities.fhir_json_encoder import FhirJSONEncoder
 from pyspark.sql.types import (
     Row,
 )
@@ -1087,10 +1087,10 @@ class FhirReceiverHelpers:
                 )
 
                 auth_access_token = result.access_token
-                get_resources: FhirResourceList = result.get_resources()
-                if len(get_resources) > 0:
+                resources1: FhirResourceList = result.get_resources()
+                if len(resources1) > 0:
                     # get id of last resource
-                    json_resources: FhirResourceList = get_resources
+                    json_resources: FhirResourceList = resources1
                     if result.status == 200:  # normal response
                         if len(json_resources) > 0:  # received any resources back
                             last_json_resource = json_resources[-1]
@@ -1128,7 +1128,7 @@ class FhirReceiverHelpers:
                                 server_page_number += 1
                             resources = resources + [
                                 json.dumps(r.dict(), cls=FhirJSONEncoder)
-                                for r in get_resources
+                                for r in resources1
                             ]
                         page_number += 1
                         if limit and 0 < limit <= len(resources):

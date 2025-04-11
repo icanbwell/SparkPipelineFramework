@@ -12,8 +12,8 @@ from typing import (
 from furl import furl
 from helix_fhir_client_sdk.exceptions.fhir_sender_exception import FhirSenderException
 
-from helix_fhir_client_sdk.fhir.fhir_resource_list import FhirResourceList
-from helix_fhir_client_sdk.fhir.fhir_resource_map import FhirResourceMap
+from compressedfhir.fhir.fhir_resource_list import FhirResourceList
+from compressedfhir.fhir.fhir_resource_map import FhirResourceMap
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.function_types import HandleStreamingChunkFunction
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse

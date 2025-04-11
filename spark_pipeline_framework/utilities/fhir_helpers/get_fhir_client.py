@@ -38,7 +38,6 @@ def get_fhir_client(
         fhir_client = fhir_client.auth_scopes(auth_scopes)
 
     if logger:
-        # noinspection PyTypeChecker
-        fhir_client = fhir_client.logger(logger)  # type: ignore
+        fhir_client = fhir_client.logger(logger)
 
     return fhir_client

@@ -2,7 +2,7 @@ import logging
 
 import pytest
 from aioresponses import aioresponses
-from helix_fhir_client_sdk.fhir.fhir_resource_list import FhirResourceList
+from compressedfhir.fhir.fhir_resource_list import FhirResourceList
 from helix_fhir_client_sdk.responses.fhir_get_response import FhirGetResponse
 
 from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_processor import (

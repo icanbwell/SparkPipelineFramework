@@ -4,7 +4,7 @@ import pytest
 from helix_fhir_client_sdk.responses.get.fhir_get_list_response import (
     FhirGetListResponse,
 )
-from helix_fhir_client_sdk.utilities.compressed_dict.v1.compressed_dict_storage_mode import (
+from compressedfhir.utilities.compressed_dict.v1.compressed_dict_storage_mode import (
     CompressedDictStorageMode,
 )
 
