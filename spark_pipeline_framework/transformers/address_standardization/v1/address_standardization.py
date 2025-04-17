@@ -212,9 +212,11 @@ class AddressStandardization(FrameworkTransformer):
                 result_df = address_df.rdd.mapPartitions(standardize).toDF(
                     schema=self.get_standardization_df_schema(geolocation_column_prefix)
                 )
+                # Remove duplicate rows based on the "address_id" column
+                result_df = result_df.dropDuplicates(["address_id"])
                 combined_df = (
                     address_df.drop("raw_address")
-                    .join(result_df, on="address_id")
+                    .join(result_df, on="address_id", how="left")
                     .drop("address_id")
                 )
                 if func_get_response_path:
