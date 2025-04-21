@@ -547,7 +547,7 @@ class AsyncBasePandasUDF[
             asyncio.set_event_loop(loop)
 
         async_iter: AsyncIterator[TOutputDataSource] = self.process_partition_async(
-            chunk_iter
+            chunk_iter, loop=loop
         )
         async_gen = loop.run_until_complete(self.collect_async_iterator(async_iter))
         return iter(async_gen)
