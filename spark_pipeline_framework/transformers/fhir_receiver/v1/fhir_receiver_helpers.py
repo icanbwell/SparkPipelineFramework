@@ -995,6 +995,7 @@ class FhirReceiverHelpers:
                     resource_id=None,
                     server_url=server_url,
                     include_only_properties=include_only_properties,
+                    limit=limit,
                     last_updated_after=last_updated_after,
                     last_updated_before=last_updated_before,
                     sort_fields=sort_fields,
@@ -1061,6 +1062,7 @@ class FhirReceiverHelpers:
                         include_only_properties=include_only_properties,
                         page_number=server_page_number,  # since we're setting id:above we can leave this as 0
                         page_size=page_size,
+                        limit=limit,
                         last_updated_after=last_updated_after,
                         last_updated_before=last_updated_before,
                         sort_fields=sort_fields,
