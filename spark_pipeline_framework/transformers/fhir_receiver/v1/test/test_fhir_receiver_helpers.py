@@ -11,21 +11,21 @@ def test_get_batch_results_paging(spark_session: SparkSession) -> None:
     with aioresponses() as m:
         # Mock the FHIR server response
         m.get(
-            "http://fhir-server/Patient?_count=5&_getpagesoffset=0",
+            "http://fhir-server/Patient?_count=10&_getpagesoffset=0",
             payload={
                 "resourceType": "Bundle",
                 "entry": [{"resource": {"id": "1", "resourceType": "Patient"}}],
             },
         )
         m.get(
-            "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=1",
+            "http://fhir-server/Patient?_count=10&_getpagesoffset=0&id%253Aabove=1",
             payload={
                 "resourceType": "Bundle",
                 "entry": [{"resource": {"id": "2", "resourceType": "Patient"}}],
             },
         )
         m.get(
-            "http://fhir-server/Patient?_count=5&_getpagesoffset=0&id%253Aabove=2",
+            "http://fhir-server/Patient?_count=10&_getpagesoffset=0&id%253Aabove=2",
             status=404,
         )
 
