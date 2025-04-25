@@ -225,7 +225,7 @@ class HelixHttpRequest:
 
     def _get_session(self) -> ClientSession:
         timeout = aiohttp.ClientTimeout(
-            total=self.retry_count * self.backoff_factor * self.timeout_seconds
+            total=self.timeout_seconds + (self.retry_count * self.backoff_factor * self.timeout_seconds)
         )
         connector = aiohttp.TCPConnector(ssl=bool(self.verify))
         session = (
