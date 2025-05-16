@@ -94,14 +94,12 @@ class AsyncBasePandasUDF[
         ] = async_func
         self.parameters: Optional[TParameters] = parameters
         self.pandas_udf_parameters: AsyncPandasUdfParameters = pandas_udf_parameters
-        self.logger: Logger = get_logger(
-            __name__,
-            level=(
-                pandas_udf_parameters.log_level
-                if pandas_udf_parameters.log_level
-                else "INFO"
-            ),
+        self.log_level = (
+            pandas_udf_parameters.log_level
+            if pandas_udf_parameters.log_level
+            else "INFO"
         )
+        self.logger: Logger = get_logger(__name__, self.log_level)
         self._on_partition_start_event_handler: OnPartitionStartEventHandler | None = (
             None
         )
@@ -540,6 +538,7 @@ class AsyncBasePandasUDF[
         :param chunk_iter: Iterable[pd.DataFrame | pd.Series]
         :return: Iterable[pd.DataFrame | pd.Series]
         """
+        self.logger.setLevel(self.log_level)
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
