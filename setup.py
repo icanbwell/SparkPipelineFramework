@@ -47,10 +47,10 @@ setup(
     ),
     install_requires=[
         "protobuf>=3",
-        "pyspark==3.5.5",
+        "pyspark==3.5.1",
         "pyarrow>=17.0.0",
         "delta-spark==3.2.0",
-        "sparkautomapper==3.0.3",
+        "sparkautomapper>=3.0.1",
         "pymysql>=1.1.1",
         "furl>=2.1.3",
         "requests>=2.32.3",
