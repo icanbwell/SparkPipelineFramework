@@ -17,27 +17,26 @@ from spark_pipeline_framework.utilities.fhir_helpers.get_fhir_client import (
 
 
 async def send_json_bundle_to_fhir_async(
-        *,
-        id_: Optional[str],
-        json_data_list: List[str],
-        server_url: str,
-        validation_server_url: Optional[str],
-        resource: str,
-        logger: Logger,
-        auth_server_url: Optional[str],
-        auth_client_id: Optional[str],
-        auth_client_secret: Optional[str],
-        auth_login_token: Optional[str],
-        auth_scopes: Optional[List[str]],
-        auth_access_token: Optional[str],
-        auth_well_known_url: Optional[str],
-        log_level: Optional[str],
-        retry_count: Optional[int] = None,
-        exclude_status_codes_from_retry: Optional[List[int]] = None,
-        additional_request_headers: Optional[Dict[str, str]] = None,
-        batch_size: Optional[int] = None,
-        smart_merge: Optional[bool] = None
-
+    *,
+    id_: Optional[str],
+    json_data_list: List[str],
+    server_url: str,
+    validation_server_url: Optional[str],
+    resource: str,
+    logger: Logger,
+    auth_server_url: Optional[str],
+    auth_client_id: Optional[str],
+    auth_client_secret: Optional[str],
+    auth_login_token: Optional[str],
+    auth_scopes: Optional[List[str]],
+    auth_access_token: Optional[str],
+    auth_well_known_url: Optional[str],
+    log_level: Optional[str],
+    retry_count: Optional[int] = None,
+    exclude_status_codes_from_retry: Optional[List[int]] = None,
+    additional_request_headers: Optional[Dict[str, str]] = None,
+    batch_size: Optional[int] = None,
+    smart_merge: Optional[bool] = None,
 ) -> AsyncGenerator[FhirMergeResponse, None]:
     """
     Send a JSON bundle to FHIR server
@@ -83,7 +82,7 @@ async def send_json_bundle_to_fhir_async(
             logger.debug("----------- End sending data to FHIR -------")
         response: FhirMergeResponse
         async for response in fhir_client.merge_async(
-                id_=id_, json_data_list=json_data_list, batch_size=batch_size
+            id_=id_, json_data_list=json_data_list, batch_size=batch_size
         ):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("----------- Response from FHIR -------")
@@ -110,19 +109,19 @@ async def send_json_bundle_to_fhir_async(
 
 
 async def send_fhir_delete_async(
-        obj_id: str,
-        server_url: str,
-        resource: str,
-        logger: Logger,
-        auth_server_url: Optional[str],
-        auth_client_id: Optional[str],
-        auth_client_secret: Optional[str],
-        auth_login_token: Optional[str],
-        auth_scopes: Optional[List[str]],
-        auth_access_token: Optional[str],
-        auth_well_known_url: Optional[str],
-        log_level: Optional[str],
-        additional_request_headers: Optional[Dict[str, str]] = None,
+    obj_id: str,
+    server_url: str,
+    resource: str,
+    logger: Logger,
+    auth_server_url: Optional[str],
+    auth_client_id: Optional[str],
+    auth_client_secret: Optional[str],
+    auth_login_token: Optional[str],
+    auth_scopes: Optional[List[str]],
+    auth_access_token: Optional[str],
+    auth_well_known_url: Optional[str],
+    log_level: Optional[str],
+    additional_request_headers: Optional[Dict[str, str]] = None,
 ) -> AsyncGenerator[FhirDeleteResponse, None]:
     fhir_client: FhirClient = get_fhir_client(
         logger=logger,
@@ -163,25 +162,25 @@ async def send_fhir_delete_async(
 
 
 async def update_json_bundle_to_fhir_async(
-        *,
-        obj_id: str,
-        json_data: str,
-        server_url: str,
-        operation: FhirSenderOperation | str,
-        validation_server_url: Optional[str],
-        resource: str,
-        logger: Logger,
-        auth_server_url: Optional[str],
-        auth_client_id: Optional[str],
-        auth_client_secret: Optional[str],
-        auth_login_token: Optional[str],
-        auth_scopes: Optional[List[str]],
-        auth_access_token: Optional[str],
-        auth_well_known_url: Optional[str],
-        log_level: Optional[str],
-        retry_count: Optional[int] = None,
-        exclude_status_codes_from_retry: Optional[List[int]] = None,
-        additional_request_headers: Optional[Dict[str, str]] = None,
+    *,
+    obj_id: str,
+    json_data: str,
+    server_url: str,
+    operation: FhirSenderOperation | str,
+    validation_server_url: Optional[str],
+    resource: str,
+    logger: Logger,
+    auth_server_url: Optional[str],
+    auth_client_id: Optional[str],
+    auth_client_secret: Optional[str],
+    auth_login_token: Optional[str],
+    auth_scopes: Optional[List[str]],
+    auth_access_token: Optional[str],
+    auth_well_known_url: Optional[str],
+    log_level: Optional[str],
+    retry_count: Optional[int] = None,
+    exclude_status_codes_from_retry: Optional[List[int]] = None,
+    additional_request_headers: Optional[Dict[str, str]] = None,
 ) -> AsyncGenerator[FhirUpdateResponse, None]:
     assert obj_id, f"{json_data!r}"
     fhir_client: FhirClient = get_fhir_client(
@@ -221,7 +220,7 @@ async def update_json_bundle_to_fhir_async(
         logger.debug("----------- End sending data to FHIR -------")
         response: FhirUpdateResponse
         if FhirSenderOperation.operation_equals(
-                operation, FhirSenderOperation.FHIR_OPERATION_PATCH
+            operation, FhirSenderOperation.FHIR_OPERATION_PATCH
         ):
             response = await fhir_client.send_patch_request_async(data=json_data)
             yield response

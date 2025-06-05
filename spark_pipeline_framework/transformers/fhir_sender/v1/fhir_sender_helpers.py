@@ -33,7 +33,7 @@ def send_json_bundle_to_fhir(
     retry_count: Optional[int] = None,
     exclude_status_codes_from_retry: Optional[List[int]] = None,
     additional_request_headers: Optional[Dict[str, str]] = None,
-    smart_merge: Optional[bool] = None
+    smart_merge: Optional[bool] = None,
 ) -> Optional[FhirMergeResponse]:
     assert id_, f"{json_data_list!r}"
     fhir_client: FhirClient = get_fhir_client(
@@ -48,7 +48,7 @@ def send_json_bundle_to_fhir(
         log_level=log_level,
     )
     if smart_merge is False:
-     fhir_client.smart_merge(False)
+        fhir_client.smart_merge(False)
 
     fhir_client = fhir_client.resource(resource)
     if validation_server_url:

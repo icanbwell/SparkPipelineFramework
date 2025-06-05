@@ -104,7 +104,7 @@ class FhirSender(FrameworkTransformer):
         max_chunk_size: int = 100,
         process_chunks_in_parallel: Optional[bool] = True,
         maximum_concurrent_tasks: int = 100,
-        smart_merge: Optional[bool] = None
+        smart_merge: Optional[bool] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -311,7 +311,6 @@ class FhirSender(FrameworkTransformer):
 
         self.smart_merge: Param[Optional[bool]] = Param(self, "smart_merge", "")
         self._setDefault(smart_merge=None)
-
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -539,7 +538,7 @@ class FhirSender(FrameworkTransformer):
                         process_chunks_in_parallel=process_chunks_in_parallel,
                         maximum_concurrent_tasks=maximum_concurrent_tasks,
                     ),
-                    smart_merge=smart_merge
+                    smart_merge=smart_merge,
                 )
                 if run_synchronously:
                     rows_to_send: List[Dict[str, Any]] = [
