@@ -24,26 +24,27 @@ class FhirSenderProcessor:
     @staticmethod
     # function that is called for each partition
     def send_partition_to_server(
-        *,
-        partition_index: int,
-        rows: Iterable[Row],
-        desired_partitions: int,
-        operation: Union[FhirSenderOperation, str],
-        server_url: str,
-        resource_name: str,
-        name: Optional[str],
-        auth_server_url: Optional[str],
-        auth_client_id: Optional[str],
-        auth_client_secret: Optional[str],
-        auth_login_token: Optional[str],
-        auth_scopes: Optional[List[str]],
-        auth_access_token: Optional[str],
-        additional_request_headers: Optional[Dict[str, str]],
-        log_level: Optional[str],
-        batch_size: Optional[int],
-        validation_server_url: Optional[str],
-        retry_count: Optional[int],
-        exclude_status_codes_from_retry: Optional[List[int]],
+            *,
+            partition_index: int,
+            rows: Iterable[Row],
+            desired_partitions: int,
+            operation: Union[FhirSenderOperation, str],
+            server_url: str,
+            resource_name: str,
+            name: Optional[str],
+            auth_server_url: Optional[str],
+            auth_client_id: Optional[str],
+            auth_client_secret: Optional[str],
+            auth_login_token: Optional[str],
+            auth_scopes: Optional[List[str]],
+            auth_access_token: Optional[str],
+            additional_request_headers: Optional[Dict[str, str]],
+            log_level: Optional[str],
+            batch_size: Optional[int],
+            validation_server_url: Optional[str],
+            retry_count: Optional[int],
+            exclude_status_codes_from_retry: Optional[List[int]],
+            smart_merge: Optional[bool] = None
     ) -> Generator[List[Dict[str, Any]], None, None]:
         """
         This function processes a partition
@@ -70,7 +71,7 @@ class FhirSenderProcessor:
         request_id_list: List[str] = []
         responses: List[Dict[str, Any]] = []
         if FhirSenderOperation.operation_equals(
-            operation, FhirSenderOperation.FHIR_OPERATION_PATCH
+                operation, FhirSenderOperation.FHIR_OPERATION_PATCH
         ):
             for item in json_data_list:
                 item_value = json.loads(item["value"])
@@ -98,7 +99,7 @@ class FhirSenderProcessor:
                 if patch_result:
                     responses.append(patch_result)
         elif FhirSenderOperation.operation_equals(
-            operation, FhirSenderOperation.FHIR_OPERATION_PUT
+                operation, FhirSenderOperation.FHIR_OPERATION_PUT
         ):
             for item in json_data_list:
                 item_value = json.loads(item["value"])
@@ -122,7 +123,7 @@ class FhirSenderProcessor:
                 if put_result:
                     responses.append(put_result)
         elif FhirSenderOperation.operation_equals(
-            operation, FhirSenderOperation.FHIR_OPERATION_DELETE
+                operation, FhirSenderOperation.FHIR_OPERATION_DELETE
         ):
             # FHIR doesn't support bulk deletes, so we have to send one at a time
             responses = [
@@ -145,7 +146,7 @@ class FhirSenderProcessor:
                 for item in json_data_list
             ]
         elif FhirSenderOperation.operation_equals(
-            operation, FhirSenderOperation.FHIR_OPERATION_MERGE
+                operation, FhirSenderOperation.FHIR_OPERATION_MERGE
         ):
             if batch_size == 1:
                 # ensure we call one at a time. Partitioning does not guarantee that each
@@ -191,6 +192,7 @@ class FhirSenderProcessor:
                             log_level=log_level,
                             retry_count=retry_count,
                             exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                            smart_merge = smart_merge
                         )
                         if result:
                             auth_access_token1 = result.access_token
