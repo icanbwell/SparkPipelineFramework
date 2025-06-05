@@ -30,3 +30,4 @@ class FhirSenderParameters:
     retry_count: Optional[int]
     exclude_status_codes_from_retry: Optional[List[int]]
     pandas_udf_parameters: AsyncPandasUdfParameters
+    smart_merge: Optional[bool]

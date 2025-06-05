@@ -92,6 +92,7 @@ class FhirSender(FrameworkTransformer):
         drop_fields_from_json: Optional[List[str]] = None,
         partition_by_column_name: Optional[str] = None,
         enable_repartitioning: bool = True,
+        smart_merge: Optional[bool] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -274,6 +275,10 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(enable_repartitioning=enable_repartitioning)
 
+        self.smart_merge: Param[Optional[bool]] = Param(self, "smart_merge", "")
+
+        self._setDefault(smart_merge=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -317,6 +322,7 @@ class FhirSender(FrameworkTransformer):
         partition_by_column_name: Optional[str] = self.getOrDefault(
             self.partition_by_column_name
         )
+        smart_merge: Optional[bool] = self.getOrDefault(self.smart_merge)
 
         if not batch_size or batch_size == 0:
             batch_size = 30
@@ -487,6 +493,7 @@ class FhirSender(FrameworkTransformer):
                             validation_server_url=validation_server_url,
                             retry_count=retry_count,
                             exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                            smart_merge=smart_merge,
                         )
                     )
                     result_rows: List[Dict[str, Any]] = flatten(result_rows_list)
@@ -522,6 +529,7 @@ class FhirSender(FrameworkTransformer):
                             validation_server_url=validation_server_url,
                             retry_count=retry_count,
                             exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                            smart_merge=smart_merge,
                         )
                     )
                     rdd = (

@@ -73,6 +73,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         operation: Union[
             FhirSenderOperation, str
         ] = FhirSenderOperation.FHIR_OPERATION_MERGE.value,
+        smart_merge: Optional[bool] = None,
     ):
         """
         Runs the auto-mappers, saves the result to Athena db and then sends the results to fhir server
@@ -97,6 +98,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                         }
         :param enable_repartitioning: Enable repartitioning or not, default True
         :param operation: The API operation to perform, such as merge, put, delete etc
+        :param smart_merge: (Optional) Enable smart merge functionality
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -190,6 +192,9 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         self._setDefault(operation=operation)
 
+        self.smart_merge: Param[Optional[bool]] = Param(self, "smart_merge", "")
+        self._setDefault(smart_merge=smart_merge)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -214,6 +219,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
         )
         enable_repartitioning: bool = self.getOrDefault(self.enable_repartitioning)
         operation: Union[FhirSenderOperation, str] = self.getOrDefault(self.operation)
+        smart_merge: Optional[bool] = self.getSmartMerge()
 
         assert parameters
         progress_logger = self.getProgressLogger()
@@ -347,6 +353,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
                             ),
                             enable_repartitioning=enable_repartitioning,
                             operation=operation,
+                            smart_merge=smart_merge,
                         ).transform(df)
         return df
 
@@ -409,3 +416,7 @@ class AutoMapperToFhirTransformer(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getAdditionalRequestHeaders(self) -> Optional[Dict[str, str]]:
         return self.getOrDefault(self.additional_request_headers)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getSmartMerge(self) -> Optional[bool]:
+        return self.getOrDefault(self.smart_merge)
