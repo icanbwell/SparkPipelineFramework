@@ -402,6 +402,7 @@ class FhirSenderProcessor:
                             log_level=parameters.log_level,
                             retry_count=parameters.retry_count,
                             exclude_status_codes_from_retry=parameters.exclude_status_codes_from_retry,
+                            smart_merge=parameters.smart_merge,
                         ):
                             if result and result.request_id:
                                 request_id_list.append(result.request_id)
