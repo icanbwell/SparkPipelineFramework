@@ -36,6 +36,7 @@ async def send_json_bundle_to_fhir_async(
     exclude_status_codes_from_retry: Optional[List[int]] = None,
     additional_request_headers: Optional[Dict[str, str]] = None,
     batch_size: Optional[int] = None,
+    smart_merge: Optional[bool] = None,
 ) -> AsyncGenerator[FhirMergeResponse, None]:
     """
     Send a JSON bundle to FHIR server
@@ -54,6 +55,8 @@ async def send_json_bundle_to_fhir_async(
         log_level=log_level,
         auth_well_known_url=auth_well_known_url,
     )
+    if smart_merge is False:
+        fhir_client.smart_merge(False)
 
     fhir_client = fhir_client.resource(resource)
     if validation_server_url:

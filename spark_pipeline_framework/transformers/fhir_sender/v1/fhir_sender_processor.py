@@ -44,6 +44,7 @@ class FhirSenderProcessor:
         validation_server_url: Optional[str],
         retry_count: Optional[int],
         exclude_status_codes_from_retry: Optional[List[int]],
+        smart_merge: Optional[bool] = None,
     ) -> Generator[List[Dict[str, Any]], None, None]:
         """
         This function processes a partition
@@ -191,6 +192,7 @@ class FhirSenderProcessor:
                             log_level=log_level,
                             retry_count=retry_count,
                             exclude_status_codes_from_retry=exclude_status_codes_from_retry,
+                            smart_merge=smart_merge,
                         )
                         if result:
                             auth_access_token1 = result.access_token

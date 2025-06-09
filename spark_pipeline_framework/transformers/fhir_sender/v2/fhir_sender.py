@@ -104,6 +104,7 @@ class FhirSender(FrameworkTransformer):
         max_chunk_size: int = 100,
         process_chunks_in_parallel: Optional[bool] = True,
         maximum_concurrent_tasks: int = 100,
+        smart_merge: Optional[bool] = None,
     ):
         """
         Sends FHIR json stored in a folder to a FHIR server
@@ -139,6 +140,7 @@ class FhirSender(FrameworkTransformer):
         :param max_chunk_size: (Optional) max chunk size
         :param process_chunks_in_parallel: (Optional) process chunks in parallel
         :param maximum_concurrent_tasks: (Optional) maximum concurrent tasks
+        :param smart_merge: (Optional) whether to use smart merge or not
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -307,6 +309,9 @@ class FhirSender(FrameworkTransformer):
         )
         self._setDefault(maximum_concurrent_tasks=maximum_concurrent_tasks)
 
+        self.smart_merge: Param[Optional[bool]] = Param(self, "smart_merge", "")
+        self._setDefault(smart_merge=None)
+
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
@@ -393,6 +398,8 @@ class FhirSender(FrameworkTransformer):
             self.process_chunks_in_parallel
         )
         maximum_concurrent_tasks: int = self.getOrDefault(self.maximum_concurrent_tasks)
+
+        smart_merge: Optional[bool] = self.getOrDefault(self.smart_merge)
 
         if parameters and parameters.get("flow_name"):
             user_agent_value = (
@@ -531,6 +538,7 @@ class FhirSender(FrameworkTransformer):
                         process_chunks_in_parallel=process_chunks_in_parallel,
                         maximum_concurrent_tasks=maximum_concurrent_tasks,
                     ),
+                    smart_merge=smart_merge,
                 )
                 if run_synchronously:
                     rows_to_send: List[Dict[str, Any]] = [
