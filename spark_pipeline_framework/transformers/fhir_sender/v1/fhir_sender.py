@@ -361,23 +361,14 @@ class FhirSender(FrameworkTransformer):
             assert (partition_by_column_name or num_partitions) is None
 
         if parameters and parameters.get("flow_name"):
-            user_agent_value = (
-                f"{parameters['team_name']}:helix.pipelines:{parameters['flow_name']}".replace(
-                    " ", ""
-                )
-                if parameters.get("team_name")
-                else str(parameters["flow_name"])
-            )
             if additional_request_headers:
                 additional_request_headers.update(
                     {
-                        "User-Agent": user_agent_value,
                         "Origin-Service": f"helix.pipelines:{parameters['flow_name']}",
                     }
                 )
             else:
                 additional_request_headers = {
-                    "User-Agent": user_agent_value,
                     "Origin-Service": f"helix.pipelines:{parameters['flow_name']}",
                 }
 
