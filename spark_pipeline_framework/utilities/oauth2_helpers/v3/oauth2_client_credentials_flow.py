@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, asdict
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.utilities.api_helper.v2.http_request import (
@@ -89,3 +89,23 @@ class OAuth2ClientCredentialsFlow:
             )
         token = response.result.get("access_token")
         return token
+
+    async def get_token_response_async(self) -> Dict[str, Any]:
+        http_request = HelixHttpRequest(
+            url=self.auth_url,
+            payload=asdict(
+                self.auth_credentials,
+                dict_factory=lambda x: {k: v for (k, v) in x if v is not None},
+            ),
+            request_type=RequestType.POST,
+            retry_count=self.retry_count,
+            backoff_factor=self.backoff_factor,
+            timeout_seconds=self.timeout_seconds,
+        )
+
+        response = await http_request.get_result_async()
+        if self.progress_logger:
+            self.progress_logger.write_to_log(
+                f"Received from {self.auth_url}: {json.dumps(response.result)}"
+            )
+        return response.result
