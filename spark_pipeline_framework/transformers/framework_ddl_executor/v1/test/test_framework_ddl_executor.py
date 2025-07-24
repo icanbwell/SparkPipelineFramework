@@ -2,8 +2,8 @@ import pytest
 from pyspark.sql import SparkSession
 from unittest.mock import MagicMock, patch
 
-from spark_pipeline_framework.transformers.framework_databricks_ddl_executor.v1.framework_databricks_ddl_executor import (
-    FrameworkDatabricksDDLExecutor,
+from spark_pipeline_framework.transformers.framework_ddl_executor.v1.framework_ddl_executor import (
+    FrameworkDDLExecutor,
 )
 
 
@@ -29,7 +29,7 @@ def test_framework_databricks_ddl_executor_executes_ddl(spark: SparkSession) -> 
         mock_jvm.java.sql.DriverManager.getConnection.return_value = mock_conn
         mock_conn.createStatement.return_value = mock_stmt
 
-        transformer = FrameworkDatabricksDDLExecutor(ddl=ddl, jdbc_url=jdbc_url)
+        transformer = FrameworkDDLExecutor(ddl=ddl, jdbc_url=jdbc_url)
         result_df = transformer.transform(df)
 
         mock_jvm.java.sql.DriverManager.getConnection.assert_called_once_with(jdbc_url)

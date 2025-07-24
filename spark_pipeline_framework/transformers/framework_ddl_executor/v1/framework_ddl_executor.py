@@ -6,9 +6,9 @@ from spark_pipeline_framework.transformers.framework_transformer.v1.framework_tr
 )
 
 
-class FrameworkDatabricksDDLExecutor(FrameworkTransformer):
+class FrameworkDDLExecutor(FrameworkTransformer):
     """
-    Executes a Data Definition Language (DDL) statement on a Databricks database using a JDBC connection.
+    Executes a Data Definition Language (DDL) statement on a database using a JDBC connection.
     This transformer is designed to execute DDL statements (e.g., CREATE, DROP, ALTER) on a database
     connected via JDBC. It is intended to be used within a Spark pipeline.
     Parameters:
@@ -54,4 +54,5 @@ class FrameworkDatabricksDDLExecutor(FrameworkTransformer):
                     conn.close()
                 except Exception as close_conn_exc:
                     self.logger.error(f"Error closing connection: {close_conn_exc}")
+        self.logger.info(f"DDL Executed successfully")
         return df
