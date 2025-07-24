@@ -1,15 +1,9 @@
-import pytest
 from pyspark.sql import SparkSession
 from unittest.mock import MagicMock, patch
 
 from spark_pipeline_framework.transformers.framework_ddl_executor.v1.framework_ddl_executor import (
     FrameworkDDLExecutor,
 )
-
-
-@pytest.fixture
-def spark() -> SparkSession:
-    return SparkSession.builder.master("local[1]").appName("test").getOrCreate()
 
 
 def test_framework_databricks_ddl_executor_executes_ddl(spark: SparkSession) -> None:
