@@ -6,8 +6,10 @@ from spark_pipeline_framework.transformers.framework_ddl_executor.v1.framework_d
 )
 
 
-def test_framework_databricks_ddl_executor_executes_ddl(spark: SparkSession) -> None:
-    df = spark.createDataFrame([(1, "Alice")], ["id", "name"])
+def test_framework_databricks_ddl_executor_executes_ddl(
+    spark_session: SparkSession,
+) -> None:
+    df = spark_session.createDataFrame([(1, "Alice")], ["id", "name"])
     ddl = """
     CREATE TABLE IF NOT EXISTS test_catalog.test_schema.test_table (
         id INT,
