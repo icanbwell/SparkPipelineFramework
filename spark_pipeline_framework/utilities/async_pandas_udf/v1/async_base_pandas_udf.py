@@ -545,6 +545,8 @@ class AsyncBasePandasUDF[
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
+        print("LOOP POLICY CHECK", loop, id(asyncio))
+
         async_iter: AsyncIterator[TOutputDataSource] = self.process_partition_async(
             chunk_iter, loop=loop
         )
