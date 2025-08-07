@@ -1,5 +1,13 @@
+from os import environ
 from typing import Dict, Any, Optional, Type, Union, List, Callable
 
+from helixtelemetry.telemetry.factory.telemetry_factory import TelemetryFactory
+from helixtelemetry.telemetry.spans.telemetry_span_creator import TelemetrySpanCreator
+from helixtelemetry.telemetry.spans.telemetry_span_wrapper import TelemetrySpanWrapper
+from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
+
+from spark_pipeline_framework.mixins.loop_id_mixin import LoopIdMixin
+from spark_pipeline_framework.mixins.telemetry_parent_mixin import TelemetryParentMixin
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml import Transformer
 from pyspark.sql.dataframe import DataFrame
@@ -16,13 +24,13 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
     def __init__(
         self,
         *,
-        raise_on_exception: Optional[Union[bool, Callable[[DataFrame], bool]]] = True,
-        error_exception: Type[BaseException] = BaseException,
+        name: Optional[str] = None,
         stages: Union[List[Transformer], Callable[[], List[Transformer]]],
         exception_stages: Optional[
             Union[List[Transformer], Callable[[], List[Transformer]]]
         ] = None,
-        name: Optional[str] = None,
+        raise_on_exception: Optional[Union[bool, Callable[[DataFrame], bool]]] = True,
+        handled_exceptions: Optional[List[Type[BaseException]]] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
     ):
@@ -30,11 +38,11 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
         Executes a sequence of stages (transformers) and, in case of an exception, executes a separate
         sequence of exception-handling stages.
 
-        :param: raise_on_exception: Determines whether to raise exceptions when errors occur.
-        :param: error_exception: The exception type to catch.
+        :param: name: Name of the transformer.
         :param: stages: The primary sequence of transformers to execute.
         :param: exception_stages: Stages to execute if an error occurs.
-        :param: name: Name of the transformer.
+        :param: raise_on_exception: Determines whether to raise exceptions when errors occur.
+        :param: handled_exceptions: List of exception types to catch. Defaults to [BaseException]
         :param: parameters: Additional parameters.
         :param: progress_logger: Logger instance for tracking execution.
 
@@ -49,7 +57,9 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
             raise_on_exception
         )
 
-        self.error_exception: Type[BaseException] = error_exception
+        self.handled_exceptions: List[Type[BaseException]] = handled_exceptions or [
+            BaseException
+        ]
         self.stages: Union[List[Transformer], Callable[[], List[Transformer]]] = stages
         self.exception_stages: Union[
             List[Transformer], Callable[[], List[Transformer]]
@@ -76,56 +86,104 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
             else self.raise_on_exception(df)
         )
 
-        async def run_pipeline(
+        async def run_stages(
             df: DataFrame,
             stages: Union[List[Transformer], Callable[[], List[Transformer]]],
-            progress_logger: Optional[ProgressLogger],
-        ) -> None:
+            progress_logger: Optional[ProgressLogger] = None,
+        ) -> DataFrame:
             stages = stages if not callable(stages) else stages()
             nonlocal stage_name
 
+            telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
+                telemetry_parent=self.telemetry_parent
+                or TelemetryParent.get_null_parent()
+            ).create_telemetry_span_creator(log_level=environ.get("LOGLEVEL"))
+
             for stage in stages:
-                stage_name = (
-                    stage.getName()
-                    if hasattr(stage, "getName")
-                    else stage.__class__.__name__
-                )
-                if progress_logger:
-                    progress_logger.start_mlflow_run(
-                        run_name=stage_name, is_nested=True
-                    )
-                if hasattr(stage, "set_loop_id"):
-                    stage.set_loop_id(self.loop_id)
-                df = (
-                    await stage.transform_async(df)
-                    if hasattr(stage, "transform_async")
-                    else stage.transform(df)
-                )
-                if progress_logger:
-                    progress_logger.end_mlflow_run()
+                if hasattr(stage, "getName"):
+                    # noinspection Mypy
+                    stage_name = stage.getName()
+                    if stage_name is not None:
+                        stage_name = f"{stage_name} ({stage.__class__.__name__})"
+                    else:
+                        stage_name = stage.__class__.__name__
+                else:
+                    stage_name = stage.__class__.__name__
+
+                telemetry_span: TelemetrySpanWrapper
+                async with telemetry_span_creator.create_telemetry_span_async(
+                    name=stage_name,
+                    attributes={},
+                    telemetry_parent=self.telemetry_parent,
+                ) as telemetry_span:
+
+                    if isinstance(stage, LoopIdMixin):
+                        stage.set_loop_id(self.loop_id)
+                    if isinstance(stage, TelemetryParentMixin):
+                        stage.set_telemetry_parent(
+                            telemetry_parent=telemetry_span.create_child_telemetry_parent()
+                        )
+
+                    try:
+                        if hasattr(stage, "transform_async"):
+                            df = await stage.transform_async(df)
+                        else:
+                            df = stage.transform(df)
+                    except Exception as e:
+                        if len(e.args) >= 1:
+                            e.args = (f"In Stage ({stage_name})", *e.args)
+                        raise e
+
+            return df
+
+        def is_handled_exception(exception: Exception) -> bool:
+            """Check if exception is one of the handled exception types"""
+            return any(
+                isinstance(exception, exception_class)
+                for exception_class in self.handled_exceptions
+            )
 
         try:
-            await run_pipeline(df, self.stages, progress_logger)
+            df = await run_stages(df, self.stages, progress_logger)
         except Exception as e:
+            is_exception_handled = is_handled_exception(e)
+
             if progress_logger:
                 progress_logger.write_to_log(
                     self.getName() or "FrameworkExceptionHandlerTransformer",
-                    f"Failed while running steps in stage: {stage_name}. Run execution steps: {isinstance(e, self.error_exception)}",
+                    f"Exception occurred in stage: {stage_name}. "
+                    f"Exception type: {type(e).__name__}. "
+                    f"Is handled exception: {is_exception_handled}.",
                 )
-            # Assigning it to new variable as stage_name will be updated when running exception stages
+
+            # Store the failed stage name before it potentially gets updated in exception stages
             failed_stage_name = stage_name
 
-            try:
-                if isinstance(e, self.error_exception):
-                    await run_pipeline(df, self.exception_stages, progress_logger)
-            except Exception as err:
-                err.args = (f"In Exception Stage ({stage_name})", *err.args)
-                raise err
+            # Run exception stages if the exception is handled and exception stages are defined
+            if is_exception_handled and self.exception_stages:
+                try:
+                    df = await run_stages(df, self.exception_stages, progress_logger)
+                except Exception as err:
+                    err.args = (f"In Exception Stage ({stage_name})", *err.args)
+                    if progress_logger:
+                        progress_logger.write_to_log(
+                            self.getName() or "FrameworkExceptionHandlerTransformer",
+                            f"Exception occurred in exception handling stage: {stage_name}. "
+                            f"Exception: {type(err).__name__}: {str(err)}",
+                        )
+                    raise err
 
-            # Raise error if `raise_on_exception` is True or if an exception other than `self.error_exception` is thrown.
-            if raise_on_exception or not isinstance(e, self.error_exception):
+            # Decide whether to re-raise the original exception
+            if raise_on_exception or not is_exception_handled:
                 e.args = (f"In Stage ({failed_stage_name})", *e.args)
                 raise e
+            else:
+                if progress_logger:
+                    progress_logger.write_to_log(
+                        self.getName() or "FrameworkExceptionHandlerTransformer",
+                        f"Suppressing exception from stage: {failed_stage_name}. "
+                        f"Exception was handled and raise_on_exception=False",
+                    )
 
         return df
 
