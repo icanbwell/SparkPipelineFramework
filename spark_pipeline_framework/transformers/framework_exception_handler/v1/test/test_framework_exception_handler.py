@@ -41,6 +41,7 @@ def test_framework_exception_handler(spark_session: SparkSession) -> None:
                     clean_column_names=False,
                 )
             ],
+            retry_count=2,
             raise_on_exception=False,
             progress_logger=progress_logger,
         ).transform(df)

@@ -3,7 +3,6 @@ from typing import Dict, Any, Optional, Type, Union, List, Callable
 
 from helixtelemetry.telemetry.factory.telemetry_factory import TelemetryFactory
 from helixtelemetry.telemetry.spans.telemetry_span_creator import TelemetrySpanCreator
-from helixtelemetry.telemetry.spans.telemetry_span_wrapper import TelemetrySpanWrapper
 from helixtelemetry.telemetry.structures.telemetry_parent import TelemetryParent
 
 from spark_pipeline_framework.mixins.loop_id_mixin import LoopIdMixin
@@ -31,6 +30,7 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
         ] = None,
         raise_on_exception: Optional[Union[bool, Callable[[DataFrame], bool]]] = True,
         handled_exceptions: Optional[List[Type[BaseException]]] = None,
+        retry_count: Optional[int] = 0,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
     ):
@@ -43,6 +43,7 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
         :param: exception_stages: Stages to execute if an error occurs.
         :param: raise_on_exception: Determines whether to raise exceptions when errors occur.
         :param: handled_exceptions: List of exception types to catch. Defaults to [BaseException]
+        :param: retry_count: Number of times to retry a failed stage before running exception stages or raising exception.
         :param: parameters: Additional parameters.
         :param: progress_logger: Logger instance for tracking execution.
 
@@ -56,6 +57,8 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
         self.raise_on_exception: Optional[Union[bool, Callable[[DataFrame], bool]]] = (
             raise_on_exception
         )
+
+        self.retry_count: int = retry_count or 0
 
         self.handled_exceptions: List[Type[BaseException]] = handled_exceptions or [
             BaseException
@@ -72,10 +75,10 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
 
     async def _transform_async(self, df: DataFrame) -> DataFrame:
         """
-        Executes the transformation pipeline asynchronously.
+        Executes the transformation pipeline asynchronously with retry logic.
 
-        - Runs `stages` normally.
-        - If an exception occurs, logs the error and executes `exception_stages` if provided.
+        - Runs `stages` normally with retry logic.
+        - If an exception occurs and retries are exhausted, executes `exception_stages` if provided.
         - Optionally raises exceptions based on `raise_on_exception`.
         """
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
@@ -86,12 +89,38 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
             else self.raise_on_exception(df)
         )
 
-        async def run_stages(
+        async def run_single_stage(
+            df: DataFrame,
+            stage: Transformer,
+            stage_name: str,
+            telemetry_span_creator: TelemetrySpanCreator,
+        ) -> DataFrame:
+            async with telemetry_span_creator.create_telemetry_span_async(
+                name=stage_name,
+                attributes={},
+                telemetry_parent=self.telemetry_parent,
+            ) as telemetry_span:
+
+                if isinstance(stage, LoopIdMixin):
+                    stage.set_loop_id(self.loop_id)
+                if isinstance(stage, TelemetryParentMixin):
+                    stage.set_telemetry_parent(
+                        telemetry_parent=telemetry_span.create_child_telemetry_parent()
+                    )
+
+                if hasattr(stage, "transform_async"):
+                    return await stage.transform_async(df)  # type: ignore
+                else:
+                    return stage.transform(df)
+
+        async def run_stages_with_retry(
             df: DataFrame,
             stages: Union[List[Transformer], Callable[[], List[Transformer]]],
-            progress_logger: Optional[ProgressLogger] = None,
+            retry_count: int,
+            stage_type: str = "stage",
         ) -> DataFrame:
-            stages = stages if not callable(stages) else stages()
+            """Run stages with retry logic."""
+            stages_list = stages if not callable(stages) else stages()
             nonlocal stage_name
 
             telemetry_span_creator: TelemetrySpanCreator = TelemetryFactory(
@@ -99,40 +128,43 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
                 or TelemetryParent.get_null_parent()
             ).create_telemetry_span_creator(log_level=environ.get("LOGLEVEL"))
 
-            for stage in stages:
+            for stage in stages_list:
                 if hasattr(stage, "getName"):
-                    # noinspection Mypy
                     stage_name = stage.getName()
                     if stage_name is not None:
                         stage_name = f"{stage_name} ({stage.__class__.__name__})"
-                    else:
-                        stage_name = stage.__class__.__name__
-                else:
                     stage_name = stage.__class__.__name__
+                attempt = 0
 
-                telemetry_span: TelemetrySpanWrapper
-                async with telemetry_span_creator.create_telemetry_span_async(
-                    name=stage_name,
-                    attributes={},
-                    telemetry_parent=self.telemetry_parent,
-                ) as telemetry_span:
-
-                    if isinstance(stage, LoopIdMixin):
-                        stage.set_loop_id(self.loop_id)
-                    if isinstance(stage, TelemetryParentMixin):
-                        stage.set_telemetry_parent(
-                            telemetry_parent=telemetry_span.create_child_telemetry_parent()
-                        )
-
+                while attempt <= retry_count:
                     try:
-                        if hasattr(stage, "transform_async"):
-                            df = await stage.transform_async(df)
-                        else:
-                            df = stage.transform(df)
+                        if progress_logger and attempt > 0:
+                            progress_logger.write_to_log(
+                                self.getName()
+                                or "FrameworkExceptionHandlerTransformer",
+                                f"Retrying {stage_type} {stage_name} (attempt {attempt + 1}/{retry_count + 1})",
+                            )
+
+                        df = await run_single_stage(
+                            df, stage, stage_name, telemetry_span_creator
+                        )
+                        break  # Stage succeeded, exit retry loop
+
                     except Exception as e:
                         if len(e.args) >= 1:
                             e.args = (f"In Stage ({stage_name})", *e.args)
-                        raise e
+
+                        if progress_logger:
+                            progress_logger.write_to_log(
+                                self.getName()
+                                or "FrameworkExceptionHandlerTransformer",
+                                f"{stage_name} failed on attempt {attempt + 1}/{retry_count + 1}. "
+                                f"Exception: {type(e).__name__}: {str(e)}",
+                            )
+
+                        attempt += 1
+                        if attempt > retry_count:  # Exhausted retries
+                            raise e
 
             return df
 
@@ -144,14 +176,14 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
             )
 
         try:
-            df = await run_stages(df, self.stages, progress_logger)
+            df = await run_stages_with_retry(df, self.stages, self.retry_count, "stage")
         except Exception as e:
             is_exception_handled = is_handled_exception(e)
 
             if progress_logger:
                 progress_logger.write_to_log(
                     self.getName() or "FrameworkExceptionHandlerTransformer",
-                    f"Exception occurred in stage: {stage_name}. "
+                    f"Exception occurred in stage: {stage_name} after {self.retry_count + 1} attempts. "
                     f"Exception type: {type(e).__name__}. "
                     f"Is handled exception: {is_exception_handled}.",
                 )
@@ -162,9 +194,10 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
             # Run exception stages if the exception is handled and exception stages are defined
             if is_exception_handled and self.exception_stages:
                 try:
-                    df = await run_stages(df, self.exception_stages, progress_logger)
+                    df = await run_stages_with_retry(
+                        df, self.exception_stages, self.retry_count, "exception stage"
+                    )
                 except Exception as err:
-                    err.args = (f"In Exception Stage ({stage_name})", *err.args)
                     if progress_logger:
                         progress_logger.write_to_log(
                             self.getName() or "FrameworkExceptionHandlerTransformer",
@@ -192,6 +225,7 @@ class FrameworkExceptionHandlerTransformer(FrameworkTransformer):
         return {
             **(super().as_dict()),
             "raise_on_exception": self.raise_on_exception,
+            "retry_count": self.retry_count,
             "stages": (
                 [s.as_dict() for s in self.stages]  # type: ignore
                 if not callable(self.stages)
