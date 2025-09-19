@@ -1101,7 +1101,7 @@ class FhirReceiverHelpers:
                                 next_url: Optional[str] = result.next_url
                                 next_uri: furl = furl(next_url)
                                 additional_parameters = [
-                                    f"{k}={v}" for k, v in next_uri.args.items()
+                                    f"{k}={v}" for k, v in next_uri.args.allitems()
                                 ]
                                 # remove any entry for id:above
                                 additional_parameters = list(
