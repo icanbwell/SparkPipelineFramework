@@ -1,5 +1,6 @@
 from logging import Logger
 from typing import Optional, List
+import os
 
 from helix_fhir_client_sdk.fhir_client import FhirClient
 from helix_fhir_client_sdk.structures.get_access_token_result import (
@@ -39,8 +40,19 @@ def fhir_get_access_token(
     )
 
     # print(f"Getting access token for {server_url}")
-    access_token = AsyncHelper.run(fhir_client.get_access_token_async())
-    # print(f"Access token: {access_token}")
+    try:
+        access_token = AsyncHelper.run(fhir_client.get_access_token_async())
+    except Exception as exc:
+        logger.error(f"Exception while getting access token: {exc}")
+        auth_url = os.environ.get("FHIR_SERVER_AUTH_SERVER_URL")
+        if auth_url:
+            logger.info(
+                f"Retrying with environment auth url: {auth_url}",
+            )
+            fhir_client = fhir_client.auth_server_url(auth_url)
+            access_token = AsyncHelper.run(fhir_client.get_access_token_async())
+        else:
+            raise Exception("Unable to get access token")
     return access_token
 
 
