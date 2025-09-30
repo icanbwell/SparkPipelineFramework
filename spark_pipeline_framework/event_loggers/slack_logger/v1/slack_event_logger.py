@@ -114,7 +114,7 @@ class SlackEventLogger(EventLogger):
         self.slack_client.post_message_to_slack(event_text)
         if not self.has_sent_log_url:
             if self.log_placeholder_url:
-                log_url = self.get_grafana_url()
+                log_url = self.get_log_url()
                 if log_url:
                     self.slack_client.post_message_to_slack(log_url)
             self.has_sent_log_url = True
@@ -127,7 +127,7 @@ class SlackEventLogger(EventLogger):
             f"*Flow Run Name:* {self.flow_run_name}\n"
             f"*Deployment Name:* {event_name}\n"
             f"*Run ID:* {self.id_}\n"
-            f"*Grafana URL:* <{self.get_grafana_url()}|View Logs>"
+            f"*Logs URL:* <{self.get_log_url()}|View Logs>"
         )
         response = self.slack_client.post_message_to_slack(message)
         thread_ts = response.data.get("ts") if response else None
@@ -150,14 +150,14 @@ class SlackEventLogger(EventLogger):
                     slack_thread=thread_ts,
                 )
 
-    def get_grafana_url(self) -> Optional[str]:
+    def get_log_url(self) -> Optional[str]:
         if not self.log_placeholder_url:
             return None
 
-        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
-        from_time = int(
-            (datetime.now(timezone.utc) - timedelta(days=1)).timestamp() * 1000
-        )
+        current_time = datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        from_time = (
+            datetime.now(timezone.utc) - timedelta(days=1)
+        ).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
 
         return self.log_placeholder_url.format(
             flow_run_name=f"{self.flow_run_name}",
