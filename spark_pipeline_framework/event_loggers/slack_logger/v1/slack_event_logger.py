@@ -33,9 +33,7 @@ class SlackEventLogger(EventLogger):
         :param slack_error_channel: channel to post error message into
         :param bot_user_name: user name to use when posting messages
         :param log_placeholder_url: url to logs with a placeholder for flow_run_name to be replaced by id
-                e.g., https://grafana.services.icanbwell.com/explore?orgId=1&left=%5B%22now-1h%22,%22
-                        now%22,%22loki.staging.icanbwell.com%22,%7B%22expr%22:%22%7Bflow_run_name%3D%5C%22
-                        {flow_run_name}%5C%22%7D%22%7D%5D
+                e.g., https://app.groundcover.com/logs?backendId=groundcover&filters=%255B%2522k8s.pod.label.flow_run_name%253A{flow_run_name}%2522%255D&src_cluster=spark-prod-ue1&start={from_time}&end={to_time}
         :param backoff: whether to backoff sending too many messages to slack
         :param flow_run_name: flow run name to set in log_placeholder_url
         :param use_native_slack_client: whether to use the native slack client or use plain HTTP post
@@ -114,7 +112,7 @@ class SlackEventLogger(EventLogger):
         self.slack_client.post_message_to_slack(event_text)
         if not self.has_sent_log_url:
             if self.log_placeholder_url:
-                log_url = self.get_grafana_url()
+                log_url = self.get_log_url()
                 if log_url:
                     self.slack_client.post_message_to_slack(log_url)
             self.has_sent_log_url = True
@@ -127,7 +125,7 @@ class SlackEventLogger(EventLogger):
             f"*Flow Run Name:* {self.flow_run_name}\n"
             f"*Deployment Name:* {event_name}\n"
             f"*Run ID:* {self.id_}\n"
-            f"*Grafana URL:* <{self.get_grafana_url()}|View Logs>"
+            f"*Logs URL:* <{self.get_log_url()}|View Logs>"
         )
         response = self.slack_client.post_message_to_slack(message)
         thread_ts = response.data.get("ts") if response else None
@@ -150,13 +148,19 @@ class SlackEventLogger(EventLogger):
                     slack_thread=thread_ts,
                 )
 
-    def get_grafana_url(self) -> Optional[str]:
+    def get_log_url(self) -> Optional[str]:
         if not self.log_placeholder_url:
             return None
 
-        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
-        from_time = int(
-            (datetime.now(timezone.utc) - timedelta(days=1)).timestamp() * 1000
+        current_time = (
+            datetime.now(timezone.utc)
+            .isoformat(timespec="milliseconds")
+            .replace("+00:00", "Z")
+        )
+        from_time = (
+            (datetime.now(timezone.utc) - timedelta(days=1))
+            .isoformat(timespec="milliseconds")
+            .replace("+00:00", "Z")
         )
 
         return self.log_placeholder_url.format(
