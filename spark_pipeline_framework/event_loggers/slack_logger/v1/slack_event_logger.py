@@ -153,7 +153,7 @@ class SlackEventLogger(EventLogger):
             return None
 
         current_time = (
-            datetime.now(timezone.utc)
+            (datetime.now(timezone.utc) + timedelta(days=1))
             .isoformat(timespec="milliseconds")
             .replace("+00:00", "Z")
         )
