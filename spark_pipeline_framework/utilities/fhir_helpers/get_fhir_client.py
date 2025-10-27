@@ -1,3 +1,4 @@
+import os
 from logging import Logger
 from typing import Optional, List
 
@@ -24,6 +25,7 @@ def get_fhir_client(
     if log_level:
         fhir_client = fhir_client.log_level(log_level)
 
+    auth_server_url = auth_server_url or os.environ.get("FHIR_AUTH_SERVER_URL")
     if auth_server_url:
         fhir_client = fhir_client.auth_server_url(auth_server_url)
     if auth_well_known_url:
