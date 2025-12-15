@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass, asdict
 from typing import Optional, Dict, Any
 
@@ -62,9 +61,7 @@ class OAuth2ClientCredentialsFlow:
 
         response = AsyncHelper.run(http_request.get_result_async())
         if self.progress_logger:
-            self.progress_logger.write_to_log(
-                f"Received from {self.auth_url}: {json.dumps(response.result)}"
-            )
+            self.progress_logger.write_to_log(f"Received from {self.auth_url}")
         token = response.result.get("access_token")
 
         return token
@@ -84,9 +81,7 @@ class OAuth2ClientCredentialsFlow:
 
         response = await http_request.get_result_async()
         if self.progress_logger:
-            self.progress_logger.write_to_log(
-                f"Received from {self.auth_url}: {json.dumps(response.result)}"
-            )
+            self.progress_logger.write_to_log(f"Received from {self.auth_url}")
         token = response.result.get("access_token")
         return token
 
@@ -105,7 +100,5 @@ class OAuth2ClientCredentialsFlow:
 
         response = await http_request.get_result_async()
         if self.progress_logger:
-            self.progress_logger.write_to_log(
-                f"Received from {self.auth_url}: {json.dumps(response.result)}"
-            )
+            self.progress_logger.write_to_log(f"Received from {self.auth_url}")
         return response.result
