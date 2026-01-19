@@ -57,6 +57,7 @@ class AddressStandardization(FrameworkTransformer):
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         batch_size: int = 100,
+        enable_row_count_check: bool = True,
     ):
         """
         Standardize and geocode addresses in a view using the specified standardizing vendor. Address columns in the view
@@ -116,6 +117,9 @@ class AddressStandardization(FrameworkTransformer):
 
         self.batch_size: Param[int] = Param(self, "batch_size", "")
         self._setDefault(batch_size=batch_size)
+
+        self.enable_row_count_check: Param[bool] = Param(self, "enable_row_count_check", "")
+        self._setDefault(enable_row_count_check=enable_row_count_check)
 
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
@@ -198,9 +202,17 @@ class AddressStandardization(FrameworkTransformer):
                     col(f"standardized_address.{geolocation_column_prefix}longitude"),
                 ).drop("standardized_address")
 
-                assert (
-                    incoming_row_count == combined_df.count()
-                ), "Address Standardization should not increase the row count"
+                output_row_count: int = combined_df.count()
+                if self.getEnableRowCountCheck():
+                    assert (
+                        incoming_row_count == output_row_count
+                    ), "Address Standardization should not increase the row count"
+                elif incoming_row_count != output_row_count:
+                    self.logger.warning(
+                        f"[AddressStandardization] Row count mismatch: "
+                        f"expected={incoming_row_count}, actual={output_row_count}, "
+                        f"difference={output_row_count - incoming_row_count}"
+                    )
 
                 if func_get_response_path:
                     response_path: str = func_get_response_path(view)
@@ -269,3 +281,7 @@ class AddressStandardization(FrameworkTransformer):
     # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
     def getFuncGetResponsePath(self) -> Callable[[str], str] | None:
         return self.getOrDefault(self.func_get_response_path)
+
+    # noinspection PyPep8Naming,PyMissingOrEmptyDocstring
+    def getEnableRowCountCheck(self) -> bool:
+        return self.getOrDefault(self.enable_row_count_check)
