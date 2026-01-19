@@ -6,6 +6,8 @@ import aiohttp
 from aiohttp import ClientTimeout
 from helix_fhir_client_sdk.utilities.list_chunker import ListChunker
 
+from spark_pipeline_framework.logger.yarn_logger import get_logger
+
 from spark_pipeline_framework.utilities.helix_geolocation.v2.utilities.address_parser import (
     AddressParser,
 )
@@ -52,6 +54,7 @@ class CensusStandardizingVendor(
         # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
         self._batch_request_max_size: Optional[int] = batch_request_max_size or 9000
         self._timeout: int = timeout
+        self.logger = get_logger(__file__)
 
     @classmethod
     def get_vendor_name(cls) -> str:
@@ -151,15 +154,26 @@ class CensusStandardizingVendor(
         form_data.add_field("addressFile", file_contents, filename="localfile.csv")
         form_data.add_field("benchmark", "4")
 
+        self.logger.info(
+            f"Census bulk API call initiated for {len(valid_raw_addresses)} addresses"
+        )
+
         async with aiohttp.ClientSession() as session:
             timeout = ClientTimeout(total=self._timeout)
             async with session.post(url, data=form_data, timeout=timeout) as response:
                 response_text: str = await response.text()
+                if response.status != 200:
+                    self.logger.error(
+                        f"Census bulk API call failed with status {response.status}: {response_text[:500]}"
+                    )
                 assert (
                     response.status == 200
                 ), f"Error in the Census API call. Response code: {response.status}: {response_text}"
                 # Check if the request was successful
                 if response.status == 200:
+                    self.logger.info(
+                        f"Census bulk API call successful, processing {len(valid_raw_addresses)} addresses"
+                    )
                     # Use StringIO to treat the response text as a file-like object
                     f = StringIO(response_text)
 
@@ -197,6 +211,9 @@ class CensusStandardizingVendor(
                         if r.get_internal_id() not in [r.address_id for r in responses]
                     ]
                     if missing_raw_addresses:
+                        self.logger.warning(
+                            f"Census bulk API response missing {len(missing_raw_addresses)} addresses"
+                        )
                         responses.extend(
                             [
                                 CensusStandardizingVendorApiResponse.from_standardized_address(
@@ -363,9 +380,16 @@ class CensusStandardizingVendor(
         # https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
         # ex: "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=9000%20Franklin%20Square%20Dr.%2C%20Baltimore%2C%20MD%2021237&benchmark=Public_AR_Current&format=json"
         url = f"https://geocoding.geo.census.gov/geocoder/locations/onelineaddress"
+        self.logger.info(
+            f"Census single API call initiated for address: {one_line_address[:100]}"
+        )
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as response:
                 response_text = await response.text()
+                if response.status != 200:
+                    self.logger.error(
+                        f"Census single API call failed with status {response.status}: {response_text[:500]}"
+                    )
                 assert (
                     response.status == 200
                 ), f"Error in the Census API call. Response code: {response.status}: {response_text}"
@@ -383,6 +407,9 @@ class CensusStandardizingVendor(
                 #
                 response_json: Dict[str, Any] = await response.json()
                 if "result" not in response_json:
+                    self.logger.warning(
+                        f"Census single API response missing 'result' field for address: {one_line_address[:100]}"
+                    )
                     yield CensusStandardizingVendorApiResponse.from_standardized_address(
                         StandardizedAddress.from_raw_address(
                             raw_address, vendor_name=self.get_vendor_name()
