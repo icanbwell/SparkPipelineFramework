@@ -73,6 +73,10 @@ class DocumentDBCacheHandler(CacheHandler):
 
     async def check_cache(self, raw_addresses: List[RawAddress]) -> CacheResult:
         unique_address_hashes: Set[str] = set([a.to_hash() for a in raw_addresses])
+        logger.info(
+            "check_cache: Unique hashes",
+            unique_hashes=len(unique_address_hashes),
+        )
         query = {"address_hash": {"$in": list(unique_address_hashes)}}
         collection: AsyncIOMotorCollection[Any] = await self._collection
         cursor: AsyncIOMotorCursor[Any] = collection.find(query)
@@ -106,6 +110,10 @@ class DocumentDBCacheHandler(CacheHandler):
                 ]
             )
 
+        logger.info(
+            "check_cache: Cached vendor responses retrieved",
+            vendor_responses_count=len(found_vendor_response),
+        )
         found_std_addr: List[StandardizedAddress]
         found_ids: List[str]
         found_std_addr, found_ids = self._convert_to_std_address(found_vendor_response)
@@ -152,6 +160,7 @@ class DocumentDBCacheHandler(CacheHandler):
     ) -> Tuple[List[StandardizedAddress], List[str]]:
         std_addresses: List[StandardizedAddress] = []
         found_ids: List[str] = []
+        none_count = 0
         vr: VendorResponse[BaseVendorApiResponse]
         for vr in vendor_responses:
             if vr.related_raw_address and vr.related_raw_address.get_id():
@@ -160,8 +169,20 @@ class DocumentDBCacheHandler(CacheHandler):
                 )
                 if standardized_address:
                     std_addresses.append(standardized_address)
+                else:
+                    none_count += 1
+
                 if vr.related_raw_address:
                     address_id: Optional[str] = vr.related_raw_address.get_id()
                     assert address_id is not None
                     found_ids.append(address_id)
+
+        logger.info(
+            "_convert_to_std_address: conversion summary",
+            vendor_responses=len(vendor_responses),
+            std_addresses=len(std_addresses),
+            found_ids=len(found_ids),
+            none_standardized_address=none_count,
+        )
+
         return std_addresses, found_ids
