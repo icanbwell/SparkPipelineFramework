@@ -82,6 +82,7 @@ class AddressStandardization(FrameworkTransformer):
         :param parameters: additional parameters
         :param progress_logger: progress logger
         :param batch_size: batch size for standardization
+        :param enable_row_count_check: if True, asserts that input and output row counts match; if False, logs a warning on mismatch
         """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
@@ -118,7 +119,9 @@ class AddressStandardization(FrameworkTransformer):
         self.batch_size: Param[int] = Param(self, "batch_size", "")
         self._setDefault(batch_size=batch_size)
 
-        self.enable_row_count_check: Param[bool] = Param(self, "enable_row_count_check", "")
+        self.enable_row_count_check: Param[bool] = Param(
+            self, "enable_row_count_check", ""
+        )
         self._setDefault(enable_row_count_check=enable_row_count_check)
 
         kwargs = self._input_kwargs
