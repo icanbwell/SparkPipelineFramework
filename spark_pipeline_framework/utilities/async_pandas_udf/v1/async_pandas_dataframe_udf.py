@@ -48,7 +48,7 @@ class AsyncPandasDataFrameUDF[TParameters: AcceptedParametersType](
     async def get_input_values_from_chunk(
         self, batch: pd.DataFrame
     ) -> List[Dict[str, Any]]:
-        pdf_json: str = batch.to_json(orient="records", date_unit='s')
+        pdf_json: str = batch.to_json(orient="records", date_unit="s")
         input_values: List[Dict[str, Any]] = json.loads(pdf_json)
         return input_values
 
