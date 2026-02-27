@@ -164,7 +164,7 @@ objsize = ">=0.7.1"
 # These dependencies are required for pipenv-setup.  They conflict with ones above, so we install these
 # only when running pipenv-setup
 [pipenvsetup]
-# setuptools > 81 has a breaking change that causes pipenv-setup to fail, so we need to pin it to a version < 80.9.0
+# setuptools versions >=81.0.0 have a breaking change that causes pipenv-setup to fail, so we pin it to <=80.9.0
 setuptools=">=60.9.3, <=80.9.0"
 # vistr is needed for visualizing the dependency graph
 vistir=">=0.6.1, <0.7.0" # https://github.com/Madoshakalaka/pipenv-setup/issues/138
