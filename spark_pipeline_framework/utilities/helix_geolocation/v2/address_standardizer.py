@@ -45,6 +45,7 @@ class AddressStandardizer:
             raw_addresses
         )
         self.logger.info(
+            f"Total records to standardize: {len(raw_addresses)} -- "
             f"cache lookup result -- not found records: {len(cache_lookup_result.not_found)}"
             f" -- found records: {(len(cache_lookup_result.found))}"
             f" using {cache_handler_obj.__class__.__name__}"
