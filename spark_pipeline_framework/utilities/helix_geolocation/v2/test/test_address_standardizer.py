@@ -413,6 +413,11 @@ async def test_standardize_stress_test() -> None:
     )
     # assert
     assert len(r) == address_population_count
+    # verify output order matches input order
+    for i, (raw, std) in enumerate(zip(raw_addr_objs, r)):
+        assert (
+            std.get_id() == raw.get_id()
+        ), f"Output order mismatch at index {i}: expected id={raw.get_id()}, got id={std.get_id()}"
     assert (
         pymongo.MongoClient(mongo_address)
         .get_database(mongo_collection_name)

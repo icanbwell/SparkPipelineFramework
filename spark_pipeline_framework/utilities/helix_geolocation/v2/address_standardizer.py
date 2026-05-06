@@ -75,11 +75,11 @@ class AddressStandardizer:
             # save new address to cache
             await cache_handler_obj.save_to_cache(vendor_responses_batch)
 
-        # combine and return
-        assert len(cache_lookup_result.found) + len(new_std_addresses) == len(
-            raw_addresses
-        ), (
+        # combine and reorder to match original input order
+        all_std_addresses = cache_lookup_result.found + new_std_addresses
+        assert len(all_std_addresses) == len(raw_addresses), (
             f"{len(cache_lookup_result.found)} + {len(new_std_addresses)} != {len(raw_addresses)},"
             f" vendor={type(vendor_obj)}, not_found={len(cache_lookup_result.not_found)}"
         )
-        return cache_lookup_result.found + new_std_addresses
+        id_to_std_map = {addr.address_id: addr for addr in all_std_addresses}
+        return [id_to_std_map[raw.get_id()] for raw in raw_addresses]
