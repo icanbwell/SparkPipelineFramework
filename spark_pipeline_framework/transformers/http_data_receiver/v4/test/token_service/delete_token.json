@@ -1,0 +1,11 @@
+ {
+  "request_parameters": {
+    "method": "DELETE",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer access_token"
+    }
+  },
+  "request_result": {
+  }
+}
