@@ -3,6 +3,7 @@ helper functions to abstract http requests so we have less repetitive boilerplat
 """
 
 import json
+from copy import deepcopy
 from enum import Enum
 from os import environ
 from typing import Optional, Dict, Any, List, Callable, Union, NamedTuple, Tuple
@@ -152,7 +153,7 @@ class HelixHttpRequest:
             self.cert,
             self.verify,
         )
-        arguments = {"headers": self.headers}
+        arguments: Dict[str, Any] = {"headers": self.headers}
         request_function = None
         if self.request_type == RequestType.GET:
             arguments["params"] = self.payload
@@ -160,7 +161,7 @@ class HelixHttpRequest:
         elif self.request_type == RequestType.POST:
             # https://requests.readthedocs.io/en/master/user/quickstart/#more-complicated-post-requests
             arguments["data"] = (
-                json.dumps(self.payload)  # type: ignore
+                json.dumps(self.payload)
                 if self.post_as_json_formatted_string
                 else self.payload
             )
@@ -171,13 +172,18 @@ class HelixHttpRequest:
         # remove None arguments
         arguments = {k: v for k, v in arguments.items() if v is not None}
 
+        # Hide sensitive tokens to protect against unauthorized access
+        filtered_arguments = deepcopy(arguments)
+        headers = filtered_arguments.get("headers")
+        if isinstance(headers, dict) and headers.get("Authorization"):
+            filtered_arguments["headers"]["Authorization"] = "[FILTERED]"
         response = self._send_request(request_function, arguments=arguments)
         if self.raise_error:
             try:
                 response.raise_for_status()
             except HTTPError as e:
                 if self.logger:
-                    error_text = f"Request to {self.url} with arguments {json.dumps(arguments)} failed"
+                    error_text = f"Request to {self.url} with arguments {json.dumps(filtered_arguments)} failed"
                     if e.response:
                         error_text += (
                             f" with {e.response.status_code}: {e.response.content!r}."
