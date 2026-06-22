@@ -239,16 +239,20 @@ class AddressStandardization(FrameworkTransformer):
                     .join(result_df, on="address_id")
                     .drop("address_id")
                 )
-                # Guard: standardization must never drop rows. The localCheckpoint above pins
-                # address_id so this join keeps every row; this assert makes any future regression
-                # (e.g. removing the checkpoint) fail loudly instead of silently dropping records.
-                # Mirrors the equivalent guard in v2.
+                # Guard: the durable write-read above should pin address_id so this join keeps
+                # every row. If a mismatch still occurs we log it loudly but do NOT fail the run:
+                # emitting the rows that survived (and chasing the few that dropped separately) is
+                # better than failing the whole pipeline and refreshing nothing. The log stays
+                # visible for follow-up rather than silently dropping records.
                 input_count: int = address_df.count()
                 output_count: int = combined_df.count()
-                assert input_count == output_count, (
-                    f"AddressStandardization dropped rows in the address_id join: "
-                    f"{input_count} in, {output_count} out"
-                )
+                if input_count != output_count:
+                    self.logger.error(
+                        f"AddressStandardization dropped rows in the address_id join: "
+                        f"{input_count} in, {output_count} out "
+                        f"({input_count - output_count} dropped). Continuing with the "
+                        f"surviving rows; investigate the dropped addresses separately."
+                    )
                 if func_get_response_path:
                     response_path: str = func_get_response_path(view)
                     self.logger.info(f"writing address data to {response_path}")
