@@ -149,14 +149,27 @@ class AddressStandardization(FrameworkTransformer):
                 )
             )
 
-            # Pin address_id by materializing address_df once.
-            # monotonically_increasing_id() above is NOT stable across re-evaluation: address_df is
-            # referenced twice below (the mapPartitions geocoding pass that builds result_df, and the
-            # inner join back onto result_df). Under Spark AQE partition coalescing those two lazy
-            # evaluations can produce different id values, so the inner join silently drops the rows
-            # whose ids no longer line up. localCheckpoint(eager=True) computes the ids exactly once
-            # and truncates lineage, so both references see identical values and the join keeps every row.
-            address_df = address_df.localCheckpoint(eager=True)
+            # Pin address_id durably before address_df is consumed twice below: the mapPartitions
+            # geocoding pass that builds result_df, and the inner join back onto result_df.
+            # monotonically_increasing_id() is (partitionId << 33) + rowIndex, so it is NOT stable
+            # across re-evaluation -- any recompute under a different partition layout re-assigns the
+            # ids. Both the top-level address_id column AND the address_id embedded in the raw_address
+            # JSON come from that single call, so a recompute desyncs them and the inner join drops the
+            # rows whose ids no longer line up. localCheckpoint(eager=True) is insufficient here: it
+            # stores to unreliable executor-local storage, so on a spot/preemptible cluster a lost
+            # executor forces a recompute (observed via RDD.computeOrReadCheckpoint), re-running the id
+            # expression and dropping rows. Writing address_df to durable storage and reading it back
+            # freezes the ids as stored data that cannot be recomputed, so the join keeps every row
+            # even when executors are evicted.
+            if func_get_response_path:
+                address_input_path: str = (
+                    func_get_response_path(view) + "_address_input"
+                )
+                address_df.write.mode("overwrite").parquet(address_input_path)
+                address_df = df.sql_ctx.read.parquet(address_input_path)
+            else:
+                # No durable path available -- fall back to a local checkpoint (best effort).
+                address_df = address_df.localCheckpoint(eager=True)
 
             df.sql_ctx.dropTempTable(view)
 
