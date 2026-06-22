@@ -149,6 +149,15 @@ class AddressStandardization(FrameworkTransformer):
                 )
             )
 
+            # Pin address_id by materializing address_df once.
+            # monotonically_increasing_id() above is NOT stable across re-evaluation: address_df is
+            # referenced twice below (the mapPartitions geocoding pass that builds result_df, and the
+            # inner join back onto result_df). Under Spark AQE partition coalescing those two lazy
+            # evaluations can produce different id values, so the inner join silently drops the rows
+            # whose ids no longer line up. localCheckpoint(eager=True) computes the ids exactly once
+            # and truncates lineage, so both references see identical values and the join keeps every row.
+            address_df = address_df.localCheckpoint(eager=True)
+
             df.sql_ctx.dropTempTable(view)
 
             def standardize(rows: Iterable[Row]) -> List[Dict[str, str]]:
@@ -216,6 +225,16 @@ class AddressStandardization(FrameworkTransformer):
                     address_df.drop("raw_address")
                     .join(result_df, on="address_id")
                     .drop("address_id")
+                )
+                # Guard: standardization must never drop rows. The localCheckpoint above pins
+                # address_id so this join keeps every row; this assert makes any future regression
+                # (e.g. removing the checkpoint) fail loudly instead of silently dropping records.
+                # Mirrors the equivalent guard in v2.
+                input_count: int = address_df.count()
+                output_count: int = combined_df.count()
+                assert input_count == output_count, (
+                    f"AddressStandardization dropped rows in the address_id join: "
+                    f"{input_count} in, {output_count} out"
                 )
                 if func_get_response_path:
                     response_path: str = func_get_response_path(view)
