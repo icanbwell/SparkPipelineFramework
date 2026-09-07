@@ -2,6 +2,23 @@ LANG=en_US.utf-8
 
 export LANG
 
+# The helix.spark base images used by spark.Dockerfile and pre-commit.Dockerfile live in
+# the private services ECR (CIE-8032), so docker must be logged in before any build.
+# AWS_SERVICES_PROFILE is empty by default so that CI can use the ambient credentials
+# supplied by aws-actions/configure-aws-credentials.  Local developers should run
+# `aws sso login --profile services` and then `make AWS_SERVICES_PROFILE=services <target>`
+# (or simply `export AWS_PROFILE=services`).
+AWS_SERVICES_PROFILE ?=
+AWS_SERVICES_REGION ?= us-east-1
+AWS_SERVICES_REGISTRY ?= 856965016623.dkr.ecr.us-east-1.amazonaws.com
+
+## Logs docker in to the private ECR repo hosting the helix.spark base image.
+.PHONY: ecr-login
+ecr-login:
+	aws ecr get-login-password --region $(AWS_SERVICES_REGION) \
+	  $(if $(AWS_SERVICES_PROFILE),--profile $(AWS_SERVICES_PROFILE),) \
+	  | docker login --username AWS --password-stdin $(AWS_SERVICES_REGISTRY)
+
 .PHONY: Pipfile.lock
 Pipfile.lock: build
 	docker compose run --rm --name spftest dev /bin/bash -c "rm -f Pipfile.lock && pipenv lock --dev"
@@ -11,7 +28,7 @@ install_types:
 	docker compose run --rm --name spark_pipeline_framework dev pipenv run mypy --install-types --non-interactive
 
 .PHONY:devdocker
-devdocker: ## Builds the docker for dev
+devdocker: ecr-login ## Builds the docker for dev
 	docker compose build
 
 .PHONY:shell
@@ -22,7 +39,7 @@ shell:devdocker ## Brings up the bash shell in dev docker
 init: devdocker up setup-pre-commit  ## Initializes the local developer environment
 
 .PHONY: up
-up:
+up: ecr-login
 	docker compose up --build -d --remove-orphans && \
 	echo "\nwaiting for Mongo server to become healthy" && \
 	while [ "`docker inspect --format {{.State.Health.Status}} sparkpipelineframework-mongo-1`" != "healthy" ] && [ "`docker inspect --format {{.State.Health.Status}} sparkpipelineframework-mongo-1`" != "unhealthy" ] && [ "`docker inspect --format {{.State.Status}} sparkpipelineframework-mongo-1`" != "restarting" ]; do printf "." && sleep 2; done && \
@@ -50,7 +67,7 @@ setup-pre-commit:
 	cp ./pre-commit-hook ./.git/hooks/pre-commit
 
 .PHONY:run-pre-commit
-run-pre-commit: setup-pre-commit
+run-pre-commit: ecr-login setup-pre-commit
 	./.git/hooks/pre-commit
 
 .PHONY:update
@@ -92,7 +109,7 @@ show_dependency_graph:
 	docker compose run --rm --name spark_pipeline_framework dev sh -c "pipenv install -d && pipenv graph"
 
 .PHONY:build
-build: ## Builds the docker for dev
+build: ecr-login ## Builds the docker for dev
 	docker compose build --progress=plain --parallel
 
 .PHONY:clean
