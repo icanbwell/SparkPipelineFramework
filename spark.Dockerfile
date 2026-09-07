@@ -1,5 +1,9 @@
-FROM imranq2/helix.spark:3.5.1.11-slim
+FROM 856965016623.dkr.ecr.us-east-1.amazonaws.com/helix.spark:3.5.1.11-slim
 # https://github.com/icanbwell/helix.spark
+# Pulled from the private services ECR per CIE-8032 (the icanbwell/helix.spark Docker Hub
+# repo is now private).  Registry only - the tag is unchanged and is dictated by the
+# pyspark==3.5.1 pin in Pipfile, so the image is byte-identical to what was used before.
+# Building/pulling requires `make ecr-login` locally (see Makefile).
 USER root
 
 ENV PYTHONPATH=/SparkpipelineFramework
