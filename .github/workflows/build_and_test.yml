@@ -21,6 +21,10 @@ jobs:
     steps:
       # Checks-out your repository
       - uses: actions/checkout@v4
+        with:
+          # This job only builds and tests; it never pushes commits back to the repo,
+          # so the checkout token must not be left behind in .git/config.
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

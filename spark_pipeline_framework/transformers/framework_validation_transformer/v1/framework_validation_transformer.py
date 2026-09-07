@@ -106,8 +106,13 @@ class FrameworkValidationTransformer(FrameworkTransformer):
             with smart_open(path, "r") as query_file:
                 self.logger.info(f"Executing validation query: {path}")
                 query_text = query_file.read()
+                # `path` is embedded as a SQL string literal below.  Spark SQL honours
+                # backslash escapes inside single-quoted literals by default, so both
+                # backslashes and single quotes have to be escaped or a path containing
+                # either could terminate the literal and alter the query.
+                escaped_path = path.replace("\\", "\\\\").replace("'", "\\'")
                 query_text = query_text.upper().replace(
-                    "SELECT", f"SELECT '{path}' as query,\n"
+                    "SELECT", f"SELECT '{escaped_path}' as query,\n"
                 )
                 if validation_df:
                     validation_df = validation_df.union(df.sparkSession.sql(query_text))
