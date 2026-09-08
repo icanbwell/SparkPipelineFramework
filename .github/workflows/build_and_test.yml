@@ -9,9 +9,23 @@ on:
     branches: [ master ]
 
 jobs:
+  # Full build and test.
+  #
+  # The Dockerfiles pull helix.spark from the private services ECR, and ECR
+  # Private has no anonymous access path: a pull needs a token from
+  # ecr:GetAuthorizationToken, a SigV4-signed AWS API call. A GitHub-hosted
+  # runner has no AWS identity, so it cannot even request one.
+  #
+  # This job therefore runs on "main" -- the in-house Actions Runner Controller
+  # scale set on the services-ue1 EKS cluster (see
+  # cie-base-eks/config/arc-runner-set/values.yaml). Those runner pods use the
+  # arc-runner-set Kubernetes service account, IRSA-mapped to an AWS role, which
+  # gives the job an ambient identity it can use to assume the services role
+  # below. Same mechanism helix.pipelines uses to pull this exact image.
   build_and_test:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    # Never run for pull requests from forks -- see fork_pr_checks below.
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
+    runs-on: main
 
     steps:
       # Checks-out your repository
@@ -23,6 +37,33 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      # The ARC runner image is a bare ghcr.io/actions/actions-runner:latest and
+      # ships without make or a compiler, so the make targets below would fail
+      # with "command not found" without this step.
+      - name: install required packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends make build-essential
+          sudo apt-get clean
+
+      # No aws-access-key-id on purpose: with only role-to-assume set, the action
+      # uses the runner pod's ambient IRSA identity to assume this role. Nothing
+      # is stored in repository secrets.
+      - name: AWS Credentials (services account, for helix.spark base image pull)
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::856965016623:role/services-k8s-service-account-github-actions-runner
+          role-session-name: ${{ github.run_id }}-services
+          role-duration-seconds: 3600
+
+      # skip-logout: this runner pool is shared with other jobs, so logging out
+      # here would break a concurrently running one.
+      - name: Login to Amazon ECR (services)
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+        with:
+          skip-logout: true
 
       - name: Permission setup for non root user
         run: sudo chown -R 1001:1001 ${{ github.workspace }}
@@ -88,3 +129,38 @@ jobs:
           ls -la ./
           sudo rm -rf ${{ github.workspace }}/*
           ls -la ./
+
+  # Pull requests from forks run code nobody here has reviewed, so they must
+  # never execute on the in-house runner: those pods hold an AWS identity that
+  # can read every SSM parameter in the services account and push images to ECR.
+  # GitHub withholds secrets from fork PRs, but that does not help -- the risk is
+  # the pod's ambient identity, which the job can reach directly.
+  #
+  # The Docker images here come from the private ECR, so a fork PR cannot build
+  # or test at all. It gets a native formatting check instead, and a maintainer
+  # runs the full suite from a branch in this repository.
+  fork_pr_checks:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: install formatter
+        run: pip install --no-cache-dir 'black==25.11.0'
+
+      # .idea holds IntelliJ file templates containing $Placeholder syntax that
+      # is not valid Python; .pre-commit-config.yaml excludes them the same way.
+      - name: black
+        run: black --check --diff --extend-exclude '/\.idea/' .
+
+      - name: explain what was skipped
+        run: |
+          echo "::notice::Build and tests are skipped for pull requests from forks."
+          echo "::notice::This repo's Docker images come from b.well's private ECR, which fork pull requests cannot authenticate to."
+          echo "::notice::A maintainer must re-run the full suite from a branch in this repository before merging."
