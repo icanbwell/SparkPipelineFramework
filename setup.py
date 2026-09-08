@@ -73,7 +73,7 @@ setup(
         "structlog>=23.1.0",
         "usaddress>=0.5.10",
         "usaddress-scourgify>=0.6.0",
-        "aiohttp>=3.14.3",
+        "aiohttp>=3.13.5,<3.14",
         "pydantic>=2.8.2",
         "motor[snappy,zstd]>=3.5.1",
         "dataclasses-json>=0.6.7",
