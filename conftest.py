@@ -1,7 +1,9 @@
+import inspect
 import os
 
 from typing import Any, Generator
 
+import aioresponses.core
 import boto3
 import pytest
 from _pytest.fixtures import FixtureFunctionMarker
@@ -11,6 +13,84 @@ from moto import mock_aws
 
 from create_spark_session import create_spark_session
 from spark_pipeline_framework.register import register
+
+
+class _StubStreamWriter:
+    """Minimal stand-in for aiohttp's StreamWriter, for mocked responses only.
+
+    aiohttp reads `output_size` off the stream writer for transfer accounting.
+    A mocked response never writes anything, so a zero-size no-op is enough.
+    """
+
+    output_size = 0
+    length = 0
+
+    def enable_compression(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    def enable_chunking(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    async def write(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    async def write_eof(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    async def drain(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+
+def _patch_aioresponses_for_aiohttp_314() -> None:
+    """Let `aioresponses` work with aiohttp >= 3.14.
+
+    aiohttp 3.14.0 made `stream_writer` a required keyword-only argument of
+    `ClientResponse.__init__`. `aioresponses` constructs `ClientResponse`
+    directly (`core.py` `_build_response`, `resp = response_class(method, url,
+    **kwargs)`) and does not pass it, so every test using `aioresponses` dies
+    with:
+
+        TypeError: ClientResponse.__init__() missing 1 required
+                   keyword-only argument: 'stream_writer'
+
+    No released `aioresponses` supports aiohttp 3.14 -- 0.7.9, the latest, still
+    fails. The upstream fix (pnuckowski/aioresponses#288) has been open since
+    2026-06, and the project has an open "Project maintenance status" issue
+    (#281), so waiting for a release is not a plan. Without this shim, aiohttp
+    must stay pinned below 3.14, which leaves 18 aiohttp CVEs unpatched --
+    15 of them medium or high severity.
+
+    `_build_response` resolves `ClientResponse` from its own module globals at
+    call time, so replacing `aioresponses.core.ClientResponse` reaches every
+    call site without touching any test.
+
+    This is TEST-ONLY. Production code uses aiohttp directly and never goes
+    near this. The patch is also conditional on the installed aiohttp actually
+    wanting the argument, so it stays inert on aiohttp < 3.14 and disables
+    itself automatically once aioresponses is fixed upstream or aiohttp drops
+    the argument again.
+    """
+    base = aioresponses.core.ClientResponse
+    try:
+        accepts_stream_writer = (
+            "stream_writer" in inspect.signature(base.__init__).parameters
+        )
+    except (TypeError, ValueError):
+        return
+    if not accepts_stream_writer:
+        return
+
+    class _CompatClientResponse(base):  # type: ignore[misc,valid-type]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            if "stream_writer" not in kwargs:
+                kwargs["stream_writer"] = _StubStreamWriter()
+            super().__init__(*args, **kwargs)
+
+    aioresponses.core.ClientResponse = _CompatClientResponse
+
+
+# Applied at import so it is in place before any test module is collected.
+_patch_aioresponses_for_aiohttp_314()
 
 
 @pytest.fixture(scope="session")
