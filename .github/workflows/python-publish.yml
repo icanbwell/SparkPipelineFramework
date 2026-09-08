@@ -10,13 +10,7 @@ on:
 jobs:
   deploy:
 
-    # This job runs `docker compose build`, and the Dockerfiles pull helix.spark
-    # from the private services ECR, which a GitHub-hosted runner cannot
-    # authenticate to. So it runs on "main" -- the in-house ARC runner, whose pod
-    # identity can assume the services role below. Safe unconditionally here
-    # because the trigger is `release: created`, which only someone with write
-    # access can do; a fork pull request can never reach this workflow.
-    runs-on: main
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -31,33 +25,9 @@ jobs:
       with:
         python-version: '3.12'
 
-    # The ARC runner image is a bare ghcr.io/actions/actions-runner:latest, so it
-    # has no compiler for any package that needs to build from source.
-    - name: install required packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends make build-essential
-        sudo apt-get clean
-
     - name: Set release tag in VERSION
       run: |
         echo "${{ github.event.release.tag_name }}" > VERSION
-
-    # No aws-access-key-id on purpose: with only role-to-assume set, the action
-    # uses the runner pod's ambient IRSA identity to assume this role.
-    - name: AWS Credentials (services account, for helix.spark base image pull)
-      uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
-      with:
-        aws-region: us-east-1
-        role-to-assume: arn:aws:iam::856965016623:role/services-k8s-service-account-github-actions-runner
-        role-session-name: ${{ github.run_id }}-services
-        role-duration-seconds: 3600
-
-    # skip-logout: this runner pool is shared with other jobs.
-    - name: Login to Amazon ECR (services)
-      uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
-      with:
-        skip-logout: true
 
     - name: build docker
       run: docker compose build --parallel
