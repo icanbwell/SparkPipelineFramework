@@ -14,6 +14,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        # The release is published to PyPI with twine; nothing is pushed back to git
+        # (the VERSION write below stays local to the build), so the checkout token
+        # must not be left behind in .git/config.
+        persist-credentials: false
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -24,7 +29,6 @@ jobs:
       run: |
         echo "${{ github.event.release.tag_name }}" > VERSION
 
-      # setup and install everything and run tests
     - name: build docker
       run: docker compose build --parallel
 
