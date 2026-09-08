@@ -82,6 +82,9 @@ opentelemetry-instrumentation-aiohttp-client = ">=0.51b0"
 msgpack = ">=1.1.0"
 
 
+# numpy is transitive (pandas/pyspark); pinned explicitly to force a patched version
+numpy = ">=2.5.2"  # AIKIDO-2026-125890
+
 [dev-packages]
 # setuptools is needed for building the package
 setuptools=">=72.1.0"
