@@ -7,6 +7,7 @@ import aioresponses.core
 import boto3
 import pytest
 from _pytest.fixtures import FixtureFunctionMarker
+from aiohttp import ClientResponse
 from botocore.client import BaseClient
 from pyspark.sql import SparkSession
 from moto import mock_aws
@@ -41,6 +42,23 @@ class _StubStreamWriter:
         pass
 
 
+class _CompatClientResponse(ClientResponse):
+    """ClientResponse that tolerates aioresponses not passing `stream_writer`.
+
+    Subclasses `aiohttp.ClientResponse` directly rather than
+    `aioresponses.core.ClientResponse`: they are the same object (aioresponses
+    imports it from aiohttp), but aioresponses does not re-export it, so reading
+    it as a module attribute fails `mypy --strict` with
+    `Module "aioresponses.core" does not explicitly export attribute
+    "ClientResponse"  [attr-defined]`.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        if "stream_writer" not in kwargs:
+            kwargs["stream_writer"] = _StubStreamWriter()
+        super().__init__(*args, **kwargs)
+
+
 def _patch_aioresponses_for_aiohttp_314() -> None:
     """Let `aioresponses` work with aiohttp >= 3.14.
 
@@ -70,23 +88,15 @@ def _patch_aioresponses_for_aiohttp_314() -> None:
     itself automatically once aioresponses is fixed upstream or aiohttp drops
     the argument again.
     """
-    base = aioresponses.core.ClientResponse
     try:
-        accepts_stream_writer = (
-            "stream_writer" in inspect.signature(base.__init__).parameters
-        )
+        parameters = inspect.signature(ClientResponse.__init__).parameters
     except (TypeError, ValueError):
         return
-    if not accepts_stream_writer:
+    if "stream_writer" not in parameters:
         return
-
-    class _CompatClientResponse(base):  # type: ignore[misc,valid-type]
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            if "stream_writer" not in kwargs:
-                kwargs["stream_writer"] = _StubStreamWriter()
-            super().__init__(*args, **kwargs)
-
-    aioresponses.core.ClientResponse = _CompatClientResponse
+    # setattr rather than plain attribute assignment, for the mypy reason
+    # documented on _CompatClientResponse.
+    setattr(aioresponses.core, "ClientResponse", _CompatClientResponse)
 
 
 # Applied at import so it is in place before any test module is collected.
