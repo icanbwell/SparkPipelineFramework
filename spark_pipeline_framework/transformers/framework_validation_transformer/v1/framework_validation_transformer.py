@@ -106,19 +106,30 @@ class FrameworkValidationTransformer(FrameworkTransformer):
             with smart_open(path, "r") as query_file:
                 self.logger.info(f"Executing validation query: {path}")
                 query_text = query_file.read()
-                # `path` is embedded as a SQL string literal below.  Spark SQL honours
-                # backslash escapes inside single-quoted literals by default, so both
-                # backslashes and single quotes have to be escaped or a path containing
-                # either could terminate the literal and alter the query.
-                escaped_path = path.replace("\\", "\\\\").replace("'", "\\'")
+                # `path` is bound as a named parameter rather than interpolated into the
+                # SQL text.  Spark substitutes it as a literal value, so a path containing
+                # a quote or backslash cannot terminate the literal and alter the query.
+                #
+                # `.upper()` runs BEFORE the marker is inserted, so `:query_path` stays
+                # lower-case (Spark's parameter markers are case-sensitive) while the
+                # query body -- including any CONCAT message literals that downstream
+                # queries rely on -- is still upper-cased exactly as before.
+                #
+                # The replace inserts the marker at every `SELECT`, including nested
+                # sub-queries.  A *named* parameter may be referenced any number of
+                # times, so one `args` entry serves them all; a positional `?` marker
+                # would not.
                 query_text = query_text.upper().replace(
-                    "SELECT", f"SELECT '{escaped_path}' as query,\n"
+                    "SELECT", "SELECT :query_path as query,\n"
                 )
+                query_args = {"query_path": path}
                 if validation_df:
-                    validation_df = validation_df.union(df.sparkSession.sql(query_text))
+                    validation_df = validation_df.union(
+                        df.sparkSession.sql(query_text, args=query_args)
+                    )
                     validation_df.createOrReplaceTempView(pipeline_validation_df_name)
                 else:
-                    validation_df = df.sparkSession.sql(query_text)
+                    validation_df = df.sparkSession.sql(query_text, args=query_args)
                     validation_df.createOrReplaceTempView(pipeline_validation_df_name)
         else:
             self.logger.info(f"Path: {path} is a directory, getting paths")
