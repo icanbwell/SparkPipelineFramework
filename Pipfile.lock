@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "9d1c5a4bab3ca76f38aad21c047c001b080fa677d036f19b27798ecf5e4e7f80"
+            "sha256": "8659d76d9378d06b14472dd0df573e3d72756a6d9788d9b4a384fa9848008526"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -2724,11 +2724,11 @@
         },
         "aioresponses": {
             "hashes": [
-                "sha256:1dcfa28938fc006f046a98383a7c07ac180be7a492c1ed557f5cd7b0805357d3",
-                "sha256:94f9617f841c5bd7ee088ed783284f2cf4e6acc85d3933d92fc2fc7bd572a1b0"
+                "sha256:b73bd4400d978855e55004b23a3a84cb0f018183bcf066a85ad392800b5b9a94",
+                "sha256:b861cdfe5dc58f3b8afac7b0a6973d5d7b2cb608dd0f6253d16b8ee8eaf6df11"
             ],
             "index": "pypi",
-            "version": "==0.7.9"
+            "version": "==0.7.8"
         },
         "aiosignal": {
             "hashes": [

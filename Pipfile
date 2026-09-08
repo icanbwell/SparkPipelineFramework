@@ -155,7 +155,7 @@ pandas-stubs=">=2.2.2"
 # types-pytz is needed for type hints for pytz
 types-pytz=">=2024.1.0"
 # aioresponses is needed for mocking HTTP requests
-aioresponses=">=0.7.9"
+aioresponses=">=0.7.6"
 types-xmltodict="*"
 types-tabulate="*"
 types-six="*"
