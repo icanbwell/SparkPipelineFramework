@@ -1,4 +1,5 @@
-FROM imranq2/helix.spark:3.5.1.11-precommit-slim
+FROM icanbwell/helix.spark:3.5.1.11-precommit-slim
+# https://github.com/icanbwell/helix.spark
 
 RUN apt-get update && \
     apt-get install -y git && \
