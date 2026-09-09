@@ -155,12 +155,29 @@ pandas-stubs=">=2.2.2"
 # types-pytz is needed for type hints for pytz
 types-pytz=">=2024.1.0"
 # aioresponses is needed for mocking HTTP requests
-# Capped below 0.7.9: that release routes the mocked response's request headers
-# through a new `_prepare_request_headers` (core.py:142, :182), which breaks the
-# fhir_receiver tests with `ClientConnectionError` at core.py:566 -- i.e. 'no
-# mock matched the URL'. Neither 0.7.8 nor 0.7.9 passes aiohttp's required
-# `stream_writer`, so the conftest.py shim is needed either way and there is no
-# upside to taking 0.7.9. Lift once pnuckowski/aioresponses#288 ships.
+# Capped below 0.7.9: that release broke 7 fhir_receiver tests with
+# `ClientConnectionError` at core.py:566, which is the 'Connection refused'
+# raised when NO registered mock matched the URL.
+#
+# The likely cause is 0.7.9's rewrite of `normalize_url` in compat.py, which is
+# applied both when registering a mock (core.py, RequestMatch.__init__) and when
+# looking one up (_request_mock):
+#     0.7.8: url.with_query(urlencode(sorted(parse_qsl(url.query_string))))
+#     0.7.9: url.with_query(sorted(url.query.items()))
+# `parse_qsl` drops blank values and percent-encodes differently, so query
+# strings normalise differently on the two sides -- and this repo registers
+# colon-keyed and double-encoded paging URLs (e.g. `?id:above=1`) that are
+# exactly the shape affected. Not pinned to a specific test, so treat this as
+# the leading candidate rather than a proven root cause.
+#
+# NB an earlier version of this comment blamed 0.7.9's new
+# `_prepare_request_headers`. That is mechanically impossible: it runs only from
+# `_build_response`, reached only after `matcher.match()` already succeeded, so
+# it cannot produce a "no mock matched" error.
+#
+# Neither 0.7.8 nor 0.7.9 passes aiohttp's required `stream_writer`, so the
+# conftest.py shim is needed either way and there is no upside to taking 0.7.9.
+# Lift once pnuckowski/aioresponses#288 ships.
 aioresponses=">=0.7.6,<0.7.9"
 types-xmltodict="*"
 types-tabulate="*"

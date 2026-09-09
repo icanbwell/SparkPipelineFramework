@@ -24,14 +24,17 @@ class _StubStreamWriter:
     `ClientResponse.__init__` takes its `if writer is None` branch: that reads
     `stream_writer.output_size` once and never assigns `self._stream_writer`.
     The attribute therefore keeps its `None` class default, and every later use
-    of it in aiohttp is guarded by `if self._stream_writer is not None`, so this
-    object is unreachable the moment `__init__` returns. A mocked response
-    writes nothing, so zero is correct.
+    of it in aiohttp is behind a None test that never dereferences it
+    (`client_reqrep.py:357`, `:389`, `:687` test `is not None`; `:401` tests
+    `is None`), so this object is unreachable the moment `__init__` returns. A
+    mocked response writes nothing, so zero is correct.
 
     Upstream pnuckowski/aioresponses#288 uses `Mock(output_size=0)` -- the same
     surface. Do not "complete" this class with write/drain/enable_* methods:
     they were measured to be unreachable, and aiohttp performs no isinstance or
-    ABC check (`stream_writer: AbstractStreamWriter` is annotation-only).
+    ABC check (`stream_writer: AbstractStreamWriter` is annotation-only). Note
+    the stub could not satisfy `AbstractStreamWriter` anyway -- that ABC also
+    declares `write_headers`, which this never had.
     """
 
     output_size = 0
@@ -88,9 +91,18 @@ def _patch_aioresponses_missing_stream_writer() -> None:
     This is TEST-ONLY: it lives in `conftest.py`, which is not packaged, so
     production code never goes near it. Scope of the guard, precisely -- it
     stays fully inert on any aiohttp that does not declare the argument, but it
-    does NOT uninstall itself if `aioresponses` is fixed upstream: the subclass
-    stays in place and simply stops injecting, because `_CompatClientResponse`
-    only fills in `stream_writer` when the caller omitted it.
+    does NOT uninstall itself once `aioresponses` is fixed upstream. Nothing
+    here inspects aioresponses, so `setattr` still runs and the subclass stays
+    installed.
+
+    It also keeps injecting, rather than deferring to a fixed aioresponses:
+    #288 decides by probing `inspect.signature(response_class).parameters`, and
+    with this shim installed `response_class` IS `_CompatClientResponse`, whose
+    `__init__(*args, **kwargs)` reports only `('args', 'kwargs')`. So the probe
+    does not see `stream_writer`, aioresponses omits it, and this class fills it
+    in as before. Harmless -- #288 would have supplied `Mock(output_size=0)` and
+    this supplies `_StubStreamWriter`, which is the same surface -- but delete
+    this shim when #288 lands rather than assuming it stands down on its own.
     """
     try:
         parameters = inspect.signature(ClientResponse.__init__).parameters

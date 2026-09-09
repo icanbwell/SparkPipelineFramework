@@ -23,12 +23,25 @@ _ALLOWED_URL_SCHEMES = frozenset({"http", "https"})
 # document and an OAuth2 token endpoint are both terminal resources, so a
 # redirect here is never something we want to follow silently.
 #
+# What this does and does not buy, per call site:
+#   * The discovery GET is the one that gains real protection.  `requests` does
+#     nothing for it (no credentials are attached), and its response body picks
+#     `token_endpoint`, which then receives the client credentials -- so whoever
+#     answers that request chooses where the credentials go.
+#   * The token POST gains no *credential* protection: `requests` already strips
+#     `Authorization` on every cross-host redirect (Session.rebuild_auth), and
+#     301/302/303 drop the body too.  What it gains is blocking a read
+#     primitive -- `get_oauth_token` raises
+#     f"Failed to get token: {status_code}, {response.text}", so a followed
+#     redirect would copy the redirect target's body into the Spark logs.
+#
 # Deliberately NOT applied, because both would break this repo rather than
 # secure it -- Aikido's generic remediation text suggests them, but:
 #   * "block requests to private IP addresses" -- the auth server IS on a
-#     private address in every environment this code runs in.  The test compose
-#     stack points AUTH_CONFIGURATION_URI at `http://keycloak:8080/...`, and
-#     deployed pipelines reach cluster-internal auth services the same way.
+#     private address in the environments this code runs in.  The test compose
+#     stack points AUTH_CONFIGURATION_URI at `http://keycloak:8080/...`, which
+#     resolves to an RFC1918 address, so this would fail closed on our own
+#     stack.
 #   * "only allow requests to allowlisted domains" -- this is a library whose
 #     callers legitimately point it at per-customer FHIR/auth hosts, so there
 #     is no allowlist this module could hardcode.  A caller that wants to
