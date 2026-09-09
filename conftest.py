@@ -19,27 +19,22 @@ from spark_pipeline_framework.register import register
 class _StubStreamWriter:
     """Minimal stand-in for aiohttp's StreamWriter, for mocked responses only.
 
-    aiohttp reads `output_size` off the stream writer for transfer accounting.
-    A mocked response never writes anything, so a zero-size no-op is enough.
+    `output_size` is the only member that can ever be read. aioresponses always
+    passes `writer=None` (`core.py` `_build_response`), so aiohttp's
+    `ClientResponse.__init__` takes its `if writer is None` branch: that reads
+    `stream_writer.output_size` once and never assigns `self._stream_writer`.
+    The attribute therefore keeps its `None` class default, and every later use
+    of it in aiohttp is guarded by `if self._stream_writer is not None`, so this
+    object is unreachable the moment `__init__` returns. A mocked response
+    writes nothing, so zero is correct.
+
+    Upstream pnuckowski/aioresponses#288 uses `Mock(output_size=0)` -- the same
+    surface. Do not "complete" this class with write/drain/enable_* methods:
+    they were measured to be unreachable, and aiohttp performs no isinstance or
+    ABC check (`stream_writer: AbstractStreamWriter` is annotation-only).
     """
 
     output_size = 0
-    length = 0
-
-    def enable_compression(self, *args: Any, **kwargs: Any) -> None:
-        pass
-
-    def enable_chunking(self, *args: Any, **kwargs: Any) -> None:
-        pass
-
-    async def write(self, *args: Any, **kwargs: Any) -> None:
-        pass
-
-    async def write_eof(self, *args: Any, **kwargs: Any) -> None:
-        pass
-
-    async def drain(self, *args: Any, **kwargs: Any) -> None:
-        pass
 
 
 class _CompatClientResponse(ClientResponse):
@@ -59,8 +54,14 @@ class _CompatClientResponse(ClientResponse):
         super().__init__(*args, **kwargs)
 
 
-def _patch_aioresponses_for_aiohttp_314() -> None:
-    """Let `aioresponses` work with aiohttp >= 3.14.
+def _patch_aioresponses_missing_stream_writer() -> None:
+    """Let `aioresponses` construct aiohttp's `ClientResponse`.
+
+    Named for the condition, not for a version: the check below keys on whether
+    the installed aiohttp *declares* `stream_writer`, so this applies to every
+    aiohttp that requires it -- 3.14.0 introduced it, but 3.15+ and 4.x are
+    equally covered. Do not delete this on the assumption that it only concerns
+    an old 3.14.
 
     aiohttp 3.14.0 made `stream_writer` a required keyword-only argument of
     `ClientResponse.__init__`. `aioresponses` constructs `ClientResponse`
@@ -80,13 +81,16 @@ def _patch_aioresponses_for_aiohttp_314() -> None:
 
     `_build_response` resolves `ClientResponse` from its own module globals at
     call time, so replacing `aioresponses.core.ClientResponse` reaches every
-    call site without touching any test.
+    call site that does not pass an explicit `response_class=` (no test in this
+    repo does; `core.py` only falls back to the module global when
+    `response_class is None`).
 
-    This is TEST-ONLY. Production code uses aiohttp directly and never goes
-    near this. The patch is also conditional on the installed aiohttp actually
-    wanting the argument, so it stays inert on aiohttp < 3.14 and disables
-    itself automatically once aioresponses is fixed upstream or aiohttp drops
-    the argument again.
+    This is TEST-ONLY: it lives in `conftest.py`, which is not packaged, so
+    production code never goes near it. Scope of the guard, precisely -- it
+    stays fully inert on any aiohttp that does not declare the argument, but it
+    does NOT uninstall itself if `aioresponses` is fixed upstream: the subclass
+    stays in place and simply stops injecting, because `_CompatClientResponse`
+    only fills in `stream_writer` when the caller omitted it.
     """
     try:
         parameters = inspect.signature(ClientResponse.__init__).parameters
@@ -100,7 +104,7 @@ def _patch_aioresponses_for_aiohttp_314() -> None:
 
 
 # Applied at import so it is in place before any test module is collected.
-_patch_aioresponses_for_aiohttp_314()
+_patch_aioresponses_missing_stream_writer()
 
 
 @pytest.fixture(scope="session")
