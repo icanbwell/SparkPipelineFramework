@@ -1,6 +1,7 @@
 import inspect
 import os
 
+from types import SimpleNamespace
 from typing import Any, Generator
 
 import aioresponses.core
@@ -16,93 +17,51 @@ from create_spark_session import create_spark_session
 from spark_pipeline_framework.register import register
 
 
-class _StubStreamWriter:
-    """Minimal stand-in for aiohttp's StreamWriter, for mocked responses only.
-
-    `output_size` is the only member that can ever be read. aioresponses always
-    passes `writer=None` (`core.py` `_build_response`), so aiohttp's
-    `ClientResponse.__init__` takes its `if writer is None` branch: that reads
-    `stream_writer.output_size` once and never assigns `self._stream_writer`.
-    The attribute therefore keeps its `None` class default, and every later use
-    of it in aiohttp is behind a None test that never dereferences it
-    (`client_reqrep.py:357`, `:389`, `:687` test `is not None`; `:401` tests
-    `is None`), so this object is unreachable the moment `__init__` returns. A
-    mocked response writes nothing, so zero is correct.
-
-    Upstream pnuckowski/aioresponses#288 uses `Mock(output_size=0)` -- the same
-    surface. Do not "complete" this class with write/drain/enable_* methods:
-    they were measured to be unreachable, and aiohttp performs no isinstance or
-    ABC check (`stream_writer: AbstractStreamWriter` is annotation-only). Note
-    the stub could not satisfy `AbstractStreamWriter` anyway -- that ABC also
-    declares `write_headers`, which this never had.
-    """
-
-    output_size = 0
-
-
 class _CompatClientResponse(ClientResponse):
     """ClientResponse that tolerates aioresponses not passing `stream_writer`.
 
-    Subclasses `aiohttp.ClientResponse` directly rather than
-    `aioresponses.core.ClientResponse`: they are the same object (aioresponses
-    imports it from aiohttp), but aioresponses does not re-export it, so reading
-    it as a module attribute fails `mypy --strict` with
-    `Module "aioresponses.core" does not explicitly export attribute
-    "ClientResponse"  [attr-defined]`.
+    `output_size` is the only member aiohttp can read: aioresponses always
+    passes `writer=None`, so `ClientResponse.__init__` takes its
+    `if writer is None` branch, reads `stream_writer.output_size` once, and
+    never assigns `self._stream_writer` -- which stays `None`, so every later
+    use short-circuits. A mocked response writes nothing, so zero is correct.
+    `SimpleNamespace` rather than upstream #288's `Mock` so an unexpected
+    attribute raises instead of silently yielding a Mock.
+
+    Subclasses `aiohttp.ClientResponse`, not `aioresponses.core.ClientResponse`
+    -- same object, but aioresponses does not re-export it, so reading it as a
+    module attribute fails `mypy --strict` with `[attr-defined]`.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if "stream_writer" not in kwargs:
-            kwargs["stream_writer"] = _StubStreamWriter()
+            kwargs["stream_writer"] = SimpleNamespace(output_size=0)
         super().__init__(*args, **kwargs)
 
 
 def _patch_aioresponses_missing_stream_writer() -> None:
     """Let `aioresponses` construct aiohttp's `ClientResponse`.
 
-    Named for the condition, not for a version: the check below keys on whether
-    the installed aiohttp *declares* `stream_writer`, so this applies to every
-    aiohttp that requires it -- 3.14.0 introduced it, but 3.15+ and 4.x are
-    equally covered. Do not delete this on the assumption that it only concerns
-    an old 3.14.
-
     aiohttp 3.14.0 made `stream_writer` a required keyword-only argument of
-    `ClientResponse.__init__`. `aioresponses` constructs `ClientResponse`
-    directly (`core.py` `_build_response`, `resp = response_class(method, url,
-    **kwargs)`) and does not pass it, so every test using `aioresponses` dies
-    with:
+    `ClientResponse.__init__`; `aioresponses` constructs `ClientResponse`
+    directly and never passes it, so every test using it raises `TypeError`. No
+    released aioresponses fixes this (0.7.9, the latest, does not mention
+    `stream_writer`), and upstream #288 has been open since 2026-06 on a project
+    with an open maintenance-status issue. Without this, aiohttp stays pinned
+    below 3.14 and 18 CVEs stay unpatched.
 
-        TypeError: ClientResponse.__init__() missing 1 required
-                   keyword-only argument: 'stream_writer'
+    `_build_response` resolves `ClientResponse` from its module globals at call
+    time, so replacing it reaches every call site that does not pass an explicit
+    `response_class=` (no test here does).
 
-    No released `aioresponses` supports aiohttp 3.14 -- 0.7.9, the latest, still
-    fails. The upstream fix (pnuckowski/aioresponses#288) has been open since
-    2026-06, and the project has an open "Project maintenance status" issue
-    (#281), so waiting for a release is not a plan. Without this shim, aiohttp
-    must stay pinned below 3.14, which leaves 18 aiohttp CVEs unpatched --
-    15 of them medium or high severity.
+    TEST-ONLY: `conftest.py` is not packaged. Keyed on the argument's presence,
+    not a version, so it covers 3.14 *and later* -- do not delete it on a newer
+    aiohttp assuming it is stale.
 
-    `_build_response` resolves `ClientResponse` from its own module globals at
-    call time, so replacing `aioresponses.core.ClientResponse` reaches every
-    call site that does not pass an explicit `response_class=` (no test in this
-    repo does; `core.py` only falls back to the module global when
-    `response_class is None`).
-
-    This is TEST-ONLY: it lives in `conftest.py`, which is not packaged, so
-    production code never goes near it. Scope of the guard, precisely -- it
-    stays fully inert on any aiohttp that does not declare the argument, but it
-    does NOT uninstall itself once `aioresponses` is fixed upstream. Nothing
-    here inspects aioresponses, so `setattr` still runs and the subclass stays
-    installed.
-
-    It also keeps injecting, rather than deferring to a fixed aioresponses:
-    #288 decides by probing `inspect.signature(response_class).parameters`, and
-    with this shim installed `response_class` IS `_CompatClientResponse`, whose
-    `__init__(*args, **kwargs)` reports only `('args', 'kwargs')`. So the probe
-    does not see `stream_writer`, aioresponses omits it, and this class fills it
-    in as before. Harmless -- #288 would have supplied `Mock(output_size=0)` and
-    this supplies `_StubStreamWriter`, which is the same surface -- but delete
-    this shim when #288 lands rather than assuming it stands down on its own.
+    It does NOT stand down once #288 lands: nothing here inspects aioresponses,
+    and #288 probes `inspect.signature(response_class)`, which for this subclass
+    reports only `(*args, **kwargs)`. So it keeps injecting. Harmless (same
+    surface), but delete this shim when #288 ships.
     """
     try:
         parameters = inspect.signature(ClientResponse.__init__).parameters

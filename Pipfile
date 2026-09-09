@@ -63,14 +63,10 @@ structlog = ">=23.1.0"
 # usaddress-scourgify is needed for normalizing addresses
 "usaddress-scourgify"=">=0.6.0" # for normalizing addresses
 # aiohttp is needed for making HTTP requests asynchronously
-# The previous `<3.14` cap existed because aiohttp 3.14 made `stream_writer` a
-# required kwarg of ClientResponse.__init__, which no released aioresponses
-# passes (upstream fix pnuckowski/aioresponses#288 is still open). That cap is
-# lifted: `conftest.py` now shims aioresponses, which unblocks the 18 aiohttp
-# CVEs that are only patched in 3.14.x. See
-# _patch_aioresponses_missing_stream_writer for why that is safe and test-only.
-# `<4` because 4.0.0a0/a1 already exist on PyPI and 4.x is a breaking major;
-# this constraint is published to consumers via setup.py install_requires.
+# The old `<3.14` cap (aiohttp 3.14 requires a `stream_writer` kwarg that no
+# released aioresponses passes) is lifted -- conftest.py's
+# _patch_aioresponses_missing_stream_writer shims it, unblocking 18 CVEs.
+# `<4` because 4.0.0a0/a1 exist on PyPI and setup.py publishes this to consumers.
 aiohttp = ">=3.14.3,<4"
 # pydantic is needed for data class loading
 pydantic=">=2.8.2"
@@ -155,29 +151,12 @@ pandas-stubs=">=2.2.2"
 # types-pytz is needed for type hints for pytz
 types-pytz=">=2024.1.0"
 # aioresponses is needed for mocking HTTP requests
-# Capped below 0.7.9: that release broke 7 fhir_receiver tests with
-# `ClientConnectionError` at core.py:566, which is the 'Connection refused'
-# raised when NO registered mock matched the URL.
-#
-# The likely cause is 0.7.9's rewrite of `normalize_url` in compat.py, which is
-# applied both when registering a mock (core.py, RequestMatch.__init__) and when
-# looking one up (_request_mock):
-#     0.7.8: url.with_query(urlencode(sorted(parse_qsl(url.query_string))))
-#     0.7.9: url.with_query(sorted(url.query.items()))
-# `parse_qsl` drops blank values and percent-encodes differently, so query
-# strings normalise differently on the two sides -- and this repo registers
-# colon-keyed and double-encoded paging URLs (e.g. `?id:above=1`) that are
-# exactly the shape affected. Not pinned to a specific test, so treat this as
-# the leading candidate rather than a proven root cause.
-#
-# NB an earlier version of this comment blamed 0.7.9's new
-# `_prepare_request_headers`. That is mechanically impossible: it runs only from
-# `_build_response`, reached only after `matcher.match()` already succeeded, so
-# it cannot produce a "no mock matched" error.
-#
-# Neither 0.7.8 nor 0.7.9 passes aiohttp's required `stream_writer`, so the
-# conftest.py shim is needed either way and there is no upside to taking 0.7.9.
-# Lift once pnuckowski/aioresponses#288 ships.
+# Capped below 0.7.9: it broke 7 fhir_receiver tests with "no mock matched"
+# (core.py:566). Likely cause is 0.7.9's `normalize_url` rewrite in compat.py --
+# used on both the register and lookup sides, and `parse_qsl` no longer drops
+# blank values -- which fits the colon-keyed paging URLs we register
+# (`?id:above=1`). Candidate, not a proven root cause. 0.7.9 also still needs
+# the conftest.py shim, so there is no upside. Lift once aioresponses#288 ships.
 aioresponses=">=0.7.6,<0.7.9"
 types-xmltodict="*"
 types-tabulate="*"
