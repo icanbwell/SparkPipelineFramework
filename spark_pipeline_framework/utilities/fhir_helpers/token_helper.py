@@ -42,11 +42,18 @@ _ALLOWED_URL_SCHEMES = frozenset({"http", "https"})
 #     stack points AUTH_CONFIGURATION_URI at `http://keycloak:8080/...`, which
 #     resolves to an RFC1918 address, so this would fail closed on our own
 #     stack.
-#   * "only allow requests to allowlisted domains" -- this is a library whose
-#     callers legitimately point it at per-customer FHIR/auth hosts, so there
-#     is no allowlist this module could hardcode.  A caller that wants to
-#     restrict destinations has to do it where the config is produced.
+#   * "only allow requests to allowlisted domains" -- not as a *static* list:
+#     this is a library whose callers legitimately point it at per-customer
+#     FHIR/auth hosts, so there is no allowlist this module could hardcode.
+#     What it does instead is derive the constraint from the configuration --
+#     see `require_same_origin_token_endpoint`, which pins the discovered
+#     token_endpoint to the origin of the discovery URL the caller supplied.
+#     That is the destination restriction that actually matters here, because
+#     token_endpoint is what receives the client credentials.
 _FOLLOW_REDIRECTS = False
+
+
+_DEFAULT_PORTS = {"http": 80, "https": 443}
 
 
 def _validate_url_scheme(url: str, *, parameter_name: str) -> None:
@@ -63,6 +70,24 @@ def _validate_url_scheme(url: str, *, parameter_name: str) -> None:
         )
 
 
+def _origin(url: str) -> Optional[tuple[str, str, int]]:
+    """(scheme, host, port) for `url`, or None if it is not an absolute HTTP URL.
+
+    Ports are normalised so `https://h` and `https://h:443` compare equal.
+    """
+    parts = urlparse(url)
+    scheme = parts.scheme.lower()
+    if scheme not in _ALLOWED_URL_SCHEMES or not parts.hostname:
+        return None
+    return scheme, parts.hostname.lower(), parts.port or _DEFAULT_PORTS[scheme]
+
+
+def _same_origin(a: str, b: str) -> bool:
+    """True when both are absolute HTTP(S) URLs sharing scheme, host and port."""
+    origin_a = _origin(a)
+    return origin_a is not None and origin_a == _origin(b)
+
+
 class TokenHelper:
     @staticmethod
     def get_oauth_token(
@@ -72,6 +97,7 @@ class TokenHelper:
         token_url: str,
         scope: Optional[str],
         timeout_seconds: float = DEFAULT_AUTH_TIMEOUT_SECONDS,
+        allow_redirects: bool = _FOLLOW_REDIRECTS,
     ) -> Optional[str]:
         # `token_url` arrives from configuration.  Validate it before attaching
         # the client credentials, so a malformed or hostile value cannot cause
@@ -95,7 +121,7 @@ class TokenHelper:
             data=data,
             auth=HTTPBasicAuth(client_id, client_secret),
             timeout=timeout_seconds,
-            allow_redirects=_FOLLOW_REDIRECTS,
+            allow_redirects=allow_redirects,
         )
 
         # Check if the request was successful
@@ -115,6 +141,7 @@ class TokenHelper:
         token_url: str,
         scope: Optional[str],
         timeout_seconds: float = DEFAULT_AUTH_TIMEOUT_SECONDS,
+        allow_redirects: bool = _FOLLOW_REDIRECTS,
     ) -> Dict[str, Any]:
         access_token: Optional[str] = TokenHelper.get_oauth_token(
             client_id=client_id,
@@ -122,6 +149,7 @@ class TokenHelper:
             token_url=token_url,
             scope=scope,
             timeout_seconds=timeout_seconds,
+            allow_redirects=allow_redirects,
         )
         assert access_token
         return {"Authorization": f"Bearer {access_token}"}
@@ -131,33 +159,76 @@ class TokenHelper:
         *,
         well_known_url: str,
         timeout_seconds: float = DEFAULT_AUTH_TIMEOUT_SECONDS,
+        allow_redirects: bool = _FOLLOW_REDIRECTS,
+        require_same_origin_token_endpoint: bool = True,
     ) -> Optional[str]:
+        """Resolve `token_endpoint` from an OIDC discovery document.
+
+        Returns None on any failure -- callers treat that as "no well-known
+        endpoint configured" -- but every such path now logs why, which is the
+        only way to tell an absent discovery URL from a broken one.
+
+        `require_same_origin_token_endpoint` is the real SSRF control here.  The
+        returned `token_endpoint` is handed to get_oauth_token(), which sends
+        the client credentials to it, so whoever answers this request otherwise
+        chooses where those credentials go.  Requiring it to share the discovery
+        URL's origin bounds that to the host the configuration actually named.
+        Pass False only if your provider legitimately serves its token endpoint
+        from another origin; RFC 8414 permits it, though it is unusual.
+        """
+        # Logger is fetched inside the function rather than at module scope
+        # because get_logger() installs a handler as a side effect; the repo
+        # does the same in fhir_parse_bundles.py.
+        logger = get_logger(__name__)
         try:
             _validate_url_scheme(well_known_url, parameter_name="well_known_url")
             well_known_response = requests.get(
                 well_known_url,
                 timeout=timeout_seconds,
-                allow_redirects=_FOLLOW_REDIRECTS,
+                allow_redirects=allow_redirects,
             )
-            # Get token endpoint.  Note `token_endpoint` is read straight out of
-            # this response body and is later handed to get_oauth_token(), which
-            # sends the client credentials to it.  So the host answering here
-            # effectively chooses where those credentials go -- which is why the
-            # response must come from the configured URL itself and not from
-            # wherever a redirect pointed.
+            if well_known_response.status_code != 200:
+                # Named explicitly rather than left to .json() to fail, because
+                # a 3xx *with* a JSON body would otherwise parse fine, yield no
+                # token_endpoint and return None with nothing logged.
+                redirect_hint = (
+                    f" (unfollowed redirect to"
+                    f" {well_known_response.headers.get('Location')!r})"
+                    if well_known_response.is_redirect
+                    else ""
+                )
+                logger.warning(
+                    f"well_known_url {well_known_url!r} returned HTTP"
+                    f" {well_known_response.status_code}{redirect_hint};"
+                    " cannot resolve token_endpoint"
+                )
+                return None
+
             well_known_info = well_known_response.json()
             token_url: Optional[str] = well_known_info.get("token_endpoint")
+            if not token_url:
+                logger.warning(
+                    f"well_known_url {well_known_url!r} returned a document with"
+                    " no 'token_endpoint'"
+                )
+                return None
+
+            if require_same_origin_token_endpoint and not _same_origin(
+                well_known_url, token_url
+            ):
+                logger.warning(
+                    f"Refusing token_endpoint {token_url!r} from well_known_url"
+                    f" {well_known_url!r}: different origin. The client"
+                    " credentials would be sent to a host the configuration did"
+                    " not name. Pass"
+                    " require_same_origin_token_endpoint=False if this provider"
+                    " legitimately uses a separate origin."
+                )
+                return None
+
             return token_url
         except Exception as e:
-            # This deliberately stays non-fatal (callers treat None as "no
-            # well-known endpoint configured"), but log it: without this, a
-            # redirecting or unreachable discovery URL is indistinguishable
-            # from one that is simply absent.
-            #
-            # Logger is fetched here rather than at module scope because
-            # get_logger() installs a handler as a side effect; the repo does
-            # the same in fhir_parse_bundles.py.
-            get_logger(__name__).warning(
+            logger.warning(
                 "Could not read token_endpoint from well_known_url"
                 f" {well_known_url!r}: {type(e).__name__}: {e}"
             )
