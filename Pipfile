@@ -63,15 +63,8 @@ structlog = ">=23.1.0"
 # usaddress-scourgify is needed for normalizing addresses
 "usaddress-scourgify"=">=0.6.0" # for normalizing addresses
 # aiohttp is needed for making HTTP requests asynchronously
-# Capped below 3.14: aiohttp 3.14.0 made `stream_writer` a required keyword-only
-# argument of ClientResponse.__init__, and aioresponses constructs ClientResponse
-# directly, so every test using it fails with
-#   TypeError: ClientResponse.__init__() missing 1 required keyword-only argument
-# No released aioresponses supports 3.14 (0.7.9, the latest, still fails); the
-# upstream fix is pnuckowski/aioresponses#288, still open. 3.13.5 is the highest
-# version that works. Raise this cap once aioresponses ships 3.14 support --
-# doing so closes 18 further aiohttp CVEs (see PR notes).
-aiohttp = ">=3.13.5,<3.14"
+# conftest.py shims the `stream_writer` kwarg aioresponses doesn't pass; <4 since 4.0.0a0/a1 exist on PyPI.
+aiohttp = ">=3.14.3,<4"
 # pydantic is needed for data class loading
 pydantic=">=2.8.2"
 # motor is needed for interacting with MongoDB asynchronously
@@ -155,7 +148,8 @@ pandas-stubs=">=2.2.2"
 # types-pytz is needed for type hints for pytz
 types-pytz=">=2024.1.0"
 # aioresponses is needed for mocking HTTP requests
-aioresponses=">=0.7.6"
+# <0.7.9: broke 7 fhir_receiver tests ("no mock matched"), likely its normalize_url rewrite. Lift once #288 ships.
+aioresponses=">=0.7.6,<0.7.9"
 types-xmltodict="*"
 types-tabulate="*"
 types-six="*"
