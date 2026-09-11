@@ -63,10 +63,7 @@ structlog = ">=23.1.0"
 # usaddress-scourgify is needed for normalizing addresses
 "usaddress-scourgify"=">=0.6.0" # for normalizing addresses
 # aiohttp is needed for making HTTP requests asynchronously
-# The old `<3.14` cap (aiohttp 3.14 requires a `stream_writer` kwarg that no
-# released aioresponses passes) is lifted -- conftest.py's
-# _patch_aioresponses_missing_stream_writer shims it, unblocking 18 CVEs.
-# `<4` because 4.0.0a0/a1 exist on PyPI and setup.py publishes this to consumers.
+# conftest.py shims the `stream_writer` kwarg aioresponses doesn't pass; <4 since 4.0.0a0/a1 exist on PyPI.
 aiohttp = ">=3.14.3,<4"
 # pydantic is needed for data class loading
 pydantic=">=2.8.2"
@@ -151,12 +148,7 @@ pandas-stubs=">=2.2.2"
 # types-pytz is needed for type hints for pytz
 types-pytz=">=2024.1.0"
 # aioresponses is needed for mocking HTTP requests
-# Capped below 0.7.9: it broke 7 fhir_receiver tests with "no mock matched"
-# (core.py:566). Likely cause is 0.7.9's `normalize_url` rewrite in compat.py --
-# used on both the register and lookup sides, and `parse_qsl` no longer drops
-# blank values -- which fits the colon-keyed paging URLs we register
-# (`?id:above=1`). Candidate, not a proven root cause. 0.7.9 also still needs
-# the conftest.py shim, so there is no upside. Lift once aioresponses#288 ships.
+# <0.7.9: broke 7 fhir_receiver tests ("no mock matched"), likely its normalize_url rewrite. Lift once #288 ships.
 aioresponses=">=0.7.6,<0.7.9"
 types-xmltodict="*"
 types-tabulate="*"

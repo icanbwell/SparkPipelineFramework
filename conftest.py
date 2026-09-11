@@ -18,20 +18,7 @@ from spark_pipeline_framework.register import register
 
 
 class _CompatClientResponse(ClientResponse):
-    """ClientResponse that tolerates aioresponses not passing `stream_writer`.
-
-    `output_size` is the only member aiohttp can read: aioresponses always
-    passes `writer=None`, so `ClientResponse.__init__` takes its
-    `if writer is None` branch, reads `stream_writer.output_size` once, and
-    never assigns `self._stream_writer` -- which stays `None`, so every later
-    use short-circuits. A mocked response writes nothing, so zero is correct.
-    `SimpleNamespace` rather than upstream #288's `Mock` so an unexpected
-    attribute raises instead of silently yielding a Mock.
-
-    Subclasses `aiohttp.ClientResponse`, not `aioresponses.core.ClientResponse`
-    -- same object, but aioresponses does not re-export it, so reading it as a
-    module attribute fails `mypy --strict` with `[attr-defined]`.
-    """
+    """Supplies the `stream_writer` kwarg aioresponses omits; subclasses aiohttp's class directly since aioresponses doesn't re-export it (mypy [attr-defined])."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if "stream_writer" not in kwargs:
@@ -40,37 +27,14 @@ class _CompatClientResponse(ClientResponse):
 
 
 def _patch_aioresponses_missing_stream_writer() -> None:
-    """Let `aioresponses` construct aiohttp's `ClientResponse`.
-
-    aiohttp 3.14.0 made `stream_writer` a required keyword-only argument of
-    `ClientResponse.__init__`; `aioresponses` constructs `ClientResponse`
-    directly and never passes it, so every test using it raises `TypeError`. No
-    released aioresponses fixes this (0.7.9, the latest, does not mention
-    `stream_writer`), and upstream #288 has been open since 2026-06 on a project
-    with an open maintenance-status issue. Without this, aiohttp stays pinned
-    below 3.14 and 18 CVEs stay unpatched.
-
-    `_build_response` resolves `ClientResponse` from its module globals at call
-    time, so replacing it reaches every call site that does not pass an explicit
-    `response_class=` (no test here does).
-
-    TEST-ONLY: `conftest.py` is not packaged. Keyed on the argument's presence,
-    not a version, so it covers 3.14 *and later* -- do not delete it on a newer
-    aiohttp assuming it is stale.
-
-    It does NOT stand down once #288 lands: nothing here inspects aioresponses,
-    and #288 probes `inspect.signature(response_class)`, which for this subclass
-    reports only `(*args, **kwargs)`. So it keeps injecting. Harmless (same
-    surface), but delete this shim when #288 ships.
-    """
+    """TEST-ONLY shim: aiohttp>=3.14 requires `stream_writer`, no aioresponses release passes it (upstream #288 open); keyed on the arg's presence so don't delete this on a newer aiohttp."""
     try:
         parameters = inspect.signature(ClientResponse.__init__).parameters
     except (TypeError, ValueError):
         return
     if "stream_writer" not in parameters:
         return
-    # setattr rather than plain attribute assignment, for the mypy reason
-    # documented on _CompatClientResponse.
+    # setattr, not plain assignment, avoids the same mypy [attr-defined] noted above.
     setattr(aioresponses.core, "ClientResponse", _CompatClientResponse)
 
 
