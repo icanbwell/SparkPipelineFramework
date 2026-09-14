@@ -129,7 +129,7 @@ types-boto3 = ">=1.0.2"
 # moto is needed for mocking AWS services
 moto = { extras = ['all'], version = ">=5.0.12" }
 # binary wheels for Python 3.12.  We need to pin the version so it matches the version in Dockerfile
-python-crfsuite="==0.9.10"
+python-crfsuite="==0.9.12"
 # types-requests is needed for type hints for requests
 types-requests=">=2.31.0"
 # types-PyMySQL is needed for type hints for PyMySQL
