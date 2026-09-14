@@ -95,8 +95,7 @@ def spark_table_exists(session: SparkSession, view: str) -> bool:
 
 
 def sc(df: DataFrame) -> SparkContext:
-    # noinspection PyProtectedMember
-    return df._sc
+    return df.sparkSession.sparkContext
 
 
 def add_metadata_to_column(df: DataFrame, column: str, metadata: Any) -> DataFrame:

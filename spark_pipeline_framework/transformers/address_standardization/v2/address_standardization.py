@@ -144,7 +144,7 @@ class AddressStandardization(FrameworkTransformer):
             geolocation_column_prefix: Optional[str] = self.getGeolocationColumnPrefix()
 
             # Load view into a dataframe
-            address_df: DataFrame = df.sql_ctx.table(view)
+            address_df: DataFrame = df.sparkSession.table(view)
 
             # see if we need to partition the incoming dataframe
             total_partitions: int = address_df.rdd.getNumPartitions()
@@ -208,7 +208,7 @@ class AddressStandardization(FrameworkTransformer):
                     # kill the lineage by writing and reading back the data to avoid
                     # calling the standardize function more than once
                     combined_df.write.parquet(response_path)
-                    standardized_df = df.sql_ctx.read.parquet(str(response_path))
+                    standardized_df = df.sparkSession.read.parquet(str(response_path))
                     standardized_df.createOrReplaceTempView(view)
                 else:
                     # if no response path function is provided, just cache the results

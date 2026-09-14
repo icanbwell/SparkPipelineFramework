@@ -51,7 +51,7 @@ class FrameworkDDLExecutor(FrameworkTransformer):
 
     def _transform(self, df: DataFrame) -> DataFrame:
         progress_logger: Optional[ProgressLogger] = self.getProgressLogger()
-        sc = df.sql_ctx.sparkSession.sparkContext
+        sc = df.sparkSession.sparkContext
         jvm = sc._jvm
         conn = None
         stmt = None

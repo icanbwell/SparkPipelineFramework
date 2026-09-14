@@ -65,7 +65,7 @@ setup(
         "helix.fhir.client.sdk>=4.1.11",
         "opensearch-py[async]>=2.6.0",
         "pyathena>=3.35.4",
-        "spark-nlp>=4.2.3",
+        "spark-nlp>=5.5.0",
         "pymongo>=4.16.0",
         "pandas>=2,<3",
         "structlog>=23.1.0",

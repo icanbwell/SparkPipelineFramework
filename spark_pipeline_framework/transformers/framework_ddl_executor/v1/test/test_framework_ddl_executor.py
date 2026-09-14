@@ -19,7 +19,7 @@ def test_framework_databricks_ddl_executor_executes_ddl(
     jdbc_url = "jdbc:databricks://dummy-url"
 
     # Patch JVM and JDBC connection
-    with patch.object(df.sql_ctx.sparkSession.sparkContext, "_jvm") as mock_jvm:
+    with patch.object(df.sparkSession.sparkContext, "_jvm") as mock_jvm:
         mock_conn = MagicMock()
         mock_stmt = MagicMock()
         mock_jvm.java.sql.DriverManager.getConnection.return_value = mock_conn
