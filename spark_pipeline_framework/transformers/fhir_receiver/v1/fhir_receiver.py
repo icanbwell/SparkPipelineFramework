@@ -1010,7 +1010,7 @@ class FhirReceiver(FrameworkTransformer):
                 if view:
                     list_df.createOrReplaceTempView(view)
                 if error_view:
-                    errors_df = sc(df).parallelize(errors).toDF()  # type: ignore[call-arg].cache()
+                    errors_df = sc(df).parallelize(errors).toDF().cache()  # type: ignore[call-arg]
                     errors_df.createOrReplaceTempView(error_view)
                     if progress_logger and not spark_is_data_frame_empty(errors_df):
                         progress_logger.log_event(
