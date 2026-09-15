@@ -14,7 +14,6 @@ from slack_sdk.errors import SlackApiError
 
 from spark_pipeline_framework.utilities.slack.base_slack_client import BaseSlackClient
 
-
 logger = getLogger(__name__)
 
 

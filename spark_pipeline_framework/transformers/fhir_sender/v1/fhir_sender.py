@@ -531,7 +531,9 @@ class FhirSender(FrameworkTransformer):
 
                     # turn list of list of string to list of strings
                     rdd_type = Union[Dict[str, Any], List[Dict[str, Any]]]
-                    rdd_flat: RDD[rdd_type] = rdd.flatMap(lambda a: a).filter(lambda x: True)
+                    rdd_flat: RDD[rdd_type] = rdd.flatMap(lambda a: a).filter(
+                        lambda x: True
+                    )
 
                     # check if RDD contains a list.  If so, flatMap it
                     rdd_first_row_obj = rdd_flat.take(1)

@@ -87,7 +87,7 @@ class AsyncPandasStructColumnToScalarColumnUDF[TParameters: AcceptedParametersTy
         """
         return cast(
             Callable[[Column], Column],
-            pandas_udf(  # type:ignore[call-overload]
+            pandas_udf(  # type: ignore[call-overload]
                 self.my_apply_process_batch_udf,
                 returnType=return_type,
             ),

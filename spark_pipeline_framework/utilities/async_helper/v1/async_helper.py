@@ -7,7 +7,6 @@ from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType
 from concurrent.futures import ThreadPoolExecutor
 
-
 T = TypeVar("T")
 
 

@@ -236,10 +236,8 @@ class ElasticSearchSender(FrameworkTransformer):
                         for r in result_rows
                         if r is not None
                     ]
-                    result_df = (
-                        df.sparkSession.createDataFrame(
-                            result_dicts, schema=ElasticSearchResult.get_schema()
-                        )
+                    result_df = df.sparkSession.createDataFrame(
+                        result_dicts, schema=ElasticSearchResult.get_schema()
                     )
                 else:
                     # use mapInPandas

@@ -1015,9 +1015,7 @@ class FhirReceiverProcessorSpark:
             )
         )
         response_schema = FhirGetResponseSchema.get_schema()
-        result_with_counts_and_responses = (
-            df.sparkSession.createDataFrame(
-                result_rows, schema=response_schema
-            )
+        result_with_counts_and_responses = df.sparkSession.createDataFrame(
+            result_rows, schema=response_schema
         )
         return result_with_counts_and_responses

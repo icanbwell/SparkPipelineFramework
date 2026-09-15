@@ -13,7 +13,6 @@ from spark_pipeline_framework.progress_logger.progress_logger import (
 )
 from spark_pipeline_framework.progress_logger.test.simple_pipeline import SimplePipeline
 
-
 WAREHOUSE_CONNECTION_STRING = "jdbc:mysql://root:root_password@warehouse:3306/fhir_rpt/schema?rewriteBatchedStatements=true"
 
 

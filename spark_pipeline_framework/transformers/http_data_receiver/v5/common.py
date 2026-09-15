@@ -15,7 +15,6 @@ from spark_pipeline_framework.utilities.api_helper.v2.http_request import (
     HelixHttpRequest,
 )
 
-
 RESPONSE_PROCESSOR_TYPE = Callable[
     [ClientResponse, Any],
     Awaitable[Tuple[Any, bool]],

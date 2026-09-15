@@ -25,7 +25,7 @@ class StandardizingVendorFactory:
         sub_classes: List[
             Type[StandardizingVendor[BaseVendorApiResponse]]
         ] = DynamicClassLoader[StandardizingVendor[BaseVendorApiResponse]](
-            StandardizingVendor, standardizing_vendor_path  # type:ignore[type-abstract]
+            StandardizingVendor, standardizing_vendor_path  # type: ignore[type-abstract]
         ).find_subclasses()
 
         for sub_class in sub_classes:
