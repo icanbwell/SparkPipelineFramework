@@ -1,4 +1,4 @@
-FROM icanbwell/helix.spark:3.5.1.11-precommit-slim
+FROM icanbwell/helix.spark:4.2.0.0-precommit-slim
 # https://github.com/icanbwell/helix.spark
 
 RUN apt-get update && \

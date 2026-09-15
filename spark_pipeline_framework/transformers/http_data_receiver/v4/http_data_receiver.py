@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, cast, Union, Tuple
 from more_itertools import chunked
 from pyspark import StorageLevel
 from pyspark.sql.types import Row
-from pyspark.rdd import RDD
+from pyspark.rdd import RDD  # type: ignore[import-not-found]
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.types import (
     StructField,
@@ -260,10 +260,8 @@ class HttpDataReceiver(FrameworkTransformer):
 
                 # Create success view
                 success = filter(lambda row: not row["is_error"], result_rows)
-                df_success: DataFrame = (
-                    df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                        [s.asDict(recursive=True) for s in success], schema=row_schema
-                    )
+                df_success: DataFrame = df.sparkSession.createDataFrame(
+                    [s.asDict(recursive=True) for s in success], schema=row_schema
                 )
                 json_schema = self.infer_schema_json_string_column(
                     df_success, "success_data"
@@ -274,10 +272,8 @@ class HttpDataReceiver(FrameworkTransformer):
 
                 # Create error view
                 error = filter(lambda row: row["is_error"], result_rows)
-                df_errors: DataFrame = (
-                    df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                        [e.asDict(recursive=True) for e in error], schema=row_schema
-                    )
+                df_errors: DataFrame = df.sparkSession.createDataFrame(
+                    [e.asDict(recursive=True) for e in error], schema=row_schema
                 )
                 json_schema = self.infer_schema_json_string_column(
                     df_errors, "error_data"

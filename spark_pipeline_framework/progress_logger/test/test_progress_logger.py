@@ -16,7 +16,6 @@ from spark_pipeline_framework.progress_logger.progress_logger import (
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType
 
-
 WAREHOUSE_CONNECTION_STRING = "jdbc:mysql://root:root_password@warehouse:3306/fhir_rpt/schema?rewriteBatchedStatements=true"
 
 

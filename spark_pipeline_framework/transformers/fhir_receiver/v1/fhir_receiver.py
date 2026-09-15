@@ -15,7 +15,7 @@ from helix_fhir_client_sdk.structures.get_access_token_result import (
 )
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
-from pyspark.rdd import RDD
+from pyspark.rdd import RDD  # type: ignore[import-not-found]
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.functions import explode
@@ -1010,7 +1010,7 @@ class FhirReceiver(FrameworkTransformer):
                 if view:
                     list_df.createOrReplaceTempView(view)
                 if error_view:
-                    errors_df = sc(df).parallelize(errors).toDF().cache()
+                    errors_df = sc(df).parallelize(errors).toDF().cache()  # type: ignore[call-arg]
                     errors_df.createOrReplaceTempView(error_view)
                     if progress_logger and not spark_is_data_frame_empty(errors_df):
                         progress_logger.log_event(

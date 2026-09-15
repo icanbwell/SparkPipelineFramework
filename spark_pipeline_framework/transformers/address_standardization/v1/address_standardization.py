@@ -127,7 +127,7 @@ class AddressStandardization(FrameworkTransformer):
             cache_handler: CacheHandler = self.getCacheHandler()
             geolocation_column_prefix: Optional[str] = self.getGeolocationColumnPrefix()
             address_df: DataFrame = (
-                df.sql_ctx.table(view)
+                df.sparkSession.table(view)
                 .withColumn(
                     # create an id column so we can join back to it once we are done standardizing
                     "address_id",
@@ -149,7 +149,7 @@ class AddressStandardization(FrameworkTransformer):
                 )
             )
 
-            df.sql_ctx.dropTempTable(view)
+            df.sparkSession.catalog.dropTempView(view)
 
             def standardize(rows: Iterable[Row]) -> List[Dict[str, str]]:
                 try:
@@ -222,7 +222,7 @@ class AddressStandardization(FrameworkTransformer):
                     self.logger.info(f"writing address data to {response_path}")
                     # kill the lineage by writing and reading back the data to avoid calling the standardize function more than once
                     combined_df.write.parquet(response_path)
-                    standardized_df = df.sql_ctx.read.parquet(str(response_path))
+                    standardized_df = df.sparkSession.read.parquet(str(response_path))
                     standardized_df.createOrReplaceTempView(view)
                 else:
                     # if no response path function is provided, just cache the results

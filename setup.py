@@ -47,9 +47,7 @@ setup(
     ),
     install_requires=[
         "protobuf>=3",
-        "pyspark==3.5.1",
         "pyarrow>=17.0.0",
-        "delta-spark==3.2.0",
         "sparkautomapper>=3.0.1",
         "pymysql>=1.1.3",
         "furl>=2.1.3",
@@ -67,7 +65,7 @@ setup(
         "helix.fhir.client.sdk>=4.1.11",
         "opensearch-py[async]>=2.6.0",
         "pyathena>=3.35.4",
-        "spark-nlp>=4.2.3",
+        "spark-nlp>=5.5.0",
         "pymongo>=4.16.0",
         "pandas>=2,<3",
         "structlog>=23.1.0",
@@ -84,6 +82,12 @@ setup(
         "opentelemetry-instrumentation-aiohttp-client>=0.51b0",
         "msgpack>=1.1.0",
     ],
+    extras_require={
+        "spark": [
+            "pyspark==4.2.0",
+            "delta-spark==4.4.0",
+        ]
+    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",

@@ -50,7 +50,7 @@ async def test_automapper_to_fhir_transformer_async(
 
     # create the input dataframe
     patients_df: DataFrame = spark_session.createDataFrame(
-        [  # type: ignore
+        [
             {
                 "member_id": "1",
                 "last_name": "Doe",

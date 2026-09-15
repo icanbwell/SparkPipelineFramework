@@ -68,7 +68,7 @@ def test_address_standardization_with_checkpointing(
         cache_handler=MockCacheHandler(),
         func_get_response_path=get_address_response_path,
     ).transform(df)
-    final_df: DataFrame = df.sql_ctx.table(view_name)
+    final_df: DataFrame = df.sparkSession.table(view_name)
     # assert that we have long and lat columns on the dataframe
     assert 3 == final_df.count()
     assert "latitude" in final_df.columns

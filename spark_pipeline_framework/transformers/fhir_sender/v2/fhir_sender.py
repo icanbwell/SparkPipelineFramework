@@ -548,11 +548,9 @@ class FhirSender(FrameworkTransformer):
                     merge_items: List[FhirMergeResponseItem] = (
                         FhirMergeResponseItem.from_responses(responses=result_rows)
                     )
-                    result_df = (
-                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
-                            merge_items,
-                            schema=FhirMergeResponseItemSchema.get_schema(),
-                        )
+                    result_df = df.sparkSession.createDataFrame(
+                        merge_items,
+                        schema=FhirMergeResponseItemSchema.get_schema(),
                     )
                 else:
                     # use mapInPandas

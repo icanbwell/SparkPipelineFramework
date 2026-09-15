@@ -10,7 +10,7 @@ from helix_fhir_client_sdk.structures.get_access_token_result import (
 )
 from pyspark import StorageLevel
 from pyspark.ml.param import Param
-from pyspark.rdd import RDD
+from pyspark.rdd import RDD  # type: ignore[import-not-found]
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col, get_json_object
 from pyspark.sql.types import Row
@@ -488,7 +488,7 @@ class FhirSender(FrameworkTransformer):
                         )
                     )
                     result_rows: List[Dict[str, Any]] = flatten(result_rows_list)
-                    result_df = df.sparkSession.createDataFrame(  # type: ignore[type-var]
+                    result_df = df.sparkSession.createDataFrame(
                         result_rows, schema=FhirMergeResponseItemSchema.get_schema()
                     )
                 else:
@@ -531,7 +531,9 @@ class FhirSender(FrameworkTransformer):
 
                     # turn list of list of string to list of strings
                     rdd_type = Union[Dict[str, Any], List[Dict[str, Any]]]
-                    rdd_flat: RDD[rdd_type] = rdd.flatMap(lambda a: a).filter(lambda x: True)  # type: ignore
+                    rdd_flat: RDD[rdd_type] = rdd.flatMap(lambda a: a).filter(
+                        lambda x: True
+                    )
 
                     # check if RDD contains a list.  If so, flatMap it
                     rdd_first_row_obj = rdd_flat.take(1)
@@ -542,7 +544,7 @@ class FhirSender(FrameworkTransformer):
                         if isinstance(rdd_first_row, list):
                             rdd1 = rdd_flat.flatMap(lambda a: a).filter(lambda x: True)
                         else:
-                            rdd1 = rdd_flat  # type: ignore
+                            rdd1 = rdd_flat
 
                         result_df = rdd1.toDF(
                             schema=FhirMergeResponseItemSchema.get_schema()

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 # noinspection PyProtectedMember
 from pyspark import SparkContext
-from pyspark.rdd import RDD
+from pyspark.rdd import RDD  # type: ignore[import-not-found]
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, Row
 
@@ -95,8 +95,7 @@ def spark_table_exists(session: SparkSession, view: str) -> bool:
 
 
 def sc(df: DataFrame) -> SparkContext:
-    # noinspection PyProtectedMember
-    return df._sc
+    return df.sparkSession.sparkContext
 
 
 def add_metadata_to_column(df: DataFrame, column: str, metadata: Any) -> DataFrame:

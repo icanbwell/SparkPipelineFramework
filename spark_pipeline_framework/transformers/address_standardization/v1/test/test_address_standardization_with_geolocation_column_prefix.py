@@ -55,7 +55,7 @@ def test_address_standardization_with_geolocation_column_prefix(
         cache_handler=MockCacheHandler(),
         geolocation_column_prefix="geo_",
     ).transform(df)
-    final_df: DataFrame = df.sql_ctx.table(view_name)
+    final_df: DataFrame = df.sparkSession.table(view_name)
     # assert that we have long and lat columns on the dataframe
     assert 2 == final_df.count()
     assert "geo_latitude" in final_df.columns

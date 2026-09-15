@@ -93,14 +93,14 @@ class FileDownloader:
         local_file_protocol_length: int = len("file://")
         download_to_path = self.download_to_path[local_file_protocol_length:]
         prefix = (filename or download_to_path or "") + ".."
-        (fd, tmpfile) = tempfile.mkstemp(".tmp", prefix=prefix, dir=".")
+        fd, tmpfile = tempfile.mkstemp(".tmp", prefix=prefix, dir=".")
         os.close(fd)
         os.unlink(tmpfile)
 
         # Define callbacks in this code block
         # callback = None
 
-        (tmpfile, headers) = ThrowOnErrorOpener().retrieve(self.url, tmpfile)
+        tmpfile, headers = ThrowOnErrorOpener().retrieve(self.url, tmpfile)
 
         if os.path.isdir(download_to_path):
             file_path = filename

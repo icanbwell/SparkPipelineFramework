@@ -7,13 +7,13 @@ name = "pypi"
 # protobuf is needed for serializing data
 protobuf=">=3"
 # PySpark has to match the version of Spark we use for testing
-pyspark = "==3.5.1"
+pyspark = "==4.2.0"
 # pyarrow is needed for Pandas UDF and mapInPandas
 # https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html#recommended-pandas-and-pyarrow-versions
 # https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
 pyarrow=">=17.0.0"
 # delta-spark is needed for Delta Lake
-delta-spark="==3.2.0"
+delta-spark="==4.4.0"
 # sparkautomapper is needed for mapping data in Spark
 sparkautomapper = ">=3.0.1"
 # pymysql is needed for connecting to MySQL
@@ -46,15 +46,13 @@ fastjsonschema= ">=2.22.2"
 opensearch-py= { extras = ['async'], version = ">=2.6.0" }
 # pyathena is needed for interacting with Athena in AWS
 pyathena = ">=3.35.4"
-# spark-nlp is needed for natural language processing
-spark-nlp = ">=4.2.3"
+# spark-nlp is needed for natural language processing (>=5.5.0 for Spark 4.x)
+spark-nlp = ">=5.5.0"
 # pymongo is needed for interacting with MongoDB
 pymongo=">=4.16.0"
 # pandas is needed for Pandas UDF and mapInPandas
-# Capped below 3.0: pyspark is pinned to ==3.5.1 and its Arrow<->pandas conversion layer
-# (used by this repo's async_pandas_udf subsystem) is written against the pandas 2.x API.
-# pandas-stubs in [dev-packages] also tracks the 2.x series. Lifting this cap requires
-# bumping pyspark, which is blocked cross-repo (helix.pipelines pins pyspark==3.5.1).
+# Capped below 3.0: PySpark 4.x officially supports pandas 2.x; pandas 3.x support is
+# still in progress upstream. pandas-stubs in [dev-packages] also tracks the 2.x series.
 pandas = { version = ">=2,<3" }
 # structlog is needed for structured logging
 structlog = ">=23.1.0"
@@ -114,10 +112,8 @@ sphinx-rtd-theme="==2.0.0"
 myst-parser="==3.0.1"
 # recodoc is needed for generating documentation
 recommonmark="==0.7.1"
-# py4j is needed for connecting to the JVM from Spark
-py4j = "==0.10.9.7" # https://spark.apache.org/docs/latest/api/python/getting_started/install.html#dependencies
-# pyspark is needed for running Spark jobs
-pyspark="==3.5.1"  # should match the version of spark we use for testing
+# pyspark is needed for running Spark jobs (py4j is bundled with pyspark since 4.x)
+pyspark="==4.2.0"  # should match the version of spark we use for testing
 # Deprecated is needed for marking deprecated functions
 Deprecated = ">=1.2.13"
 # sparkdataframecomparer is needed for comparing Spark DataFrames
@@ -133,7 +129,7 @@ types-boto3 = ">=1.0.2"
 # moto is needed for mocking AWS services
 moto = { extras = ['all'], version = ">=5.0.12" }
 # binary wheels for Python 3.12.  We need to pin the version so it matches the version in Dockerfile
-python-crfsuite="==0.9.10"
+python-crfsuite="==0.9.12"
 # types-requests is needed for type hints for requests
 types-requests=">=2.31.0"
 # types-PyMySQL is needed for type hints for PyMySQL
