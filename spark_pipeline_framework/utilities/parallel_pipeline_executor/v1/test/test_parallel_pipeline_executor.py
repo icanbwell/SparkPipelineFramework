@@ -68,7 +68,7 @@ async def test_can_run_pipelines_in_parallel(spark_session: SparkSession) -> Non
     actual_count = 0
     async for name, result_df in executor.transform_async(df, spark_session):
         actual_count += 1
-        assert type(result_df) == DataFrame
+        assert isinstance(result_df, DataFrame)
         result_df.show()
 
     assert actual_count == expected_count

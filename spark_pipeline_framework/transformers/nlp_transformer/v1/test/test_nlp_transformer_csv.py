@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Dict, Any
 
+import pyspark
+import pytest
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import StructType
@@ -16,6 +18,12 @@ from spark_pipeline_framework.pipelines.framework_pipeline import FrameworkPipel
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_csv_loader.v1.framework_csv_loader import (
     FrameworkCsvLoader,
+)
+
+_spark_major = int(pyspark.__version__.split(".")[0])
+_skip_spark4 = pytest.mark.skipif(
+    _spark_major >= 4,
+    reason="spark-nlp DocumentAssembler is incompatible with PySpark 4.x",
 )
 
 
@@ -41,6 +49,7 @@ class MyPipeline(FrameworkPipeline):
         )
 
 
+@_skip_spark4
 def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
@@ -79,6 +88,7 @@ def test_can_run_framework_pipeline(spark_session: SparkSession) -> None:
     assert result_df.count() > 0
 
 
+@_skip_spark4
 def test_can_run_framework_solo_transformer(spark_session: SparkSession) -> None:
     # Arrange
     data_dir: Path = Path(__file__).parent.joinpath("./")
