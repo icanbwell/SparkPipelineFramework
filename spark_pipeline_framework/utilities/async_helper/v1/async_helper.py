@@ -71,7 +71,7 @@ class AsyncHelper:
             async for chunk in AsyncHelper.collect_async_data(
                 async_gen=async_gen, chunk_size=results_per_batch
             ):
-                df_chunk = df.sparkSession.createDataFrame(chunk, schema)  # type: ignore[type-var]
+                df_chunk = df.sparkSession.createDataFrame(chunk, schema)
                 collected_data_frames.append(df_chunk)
 
             # Combine all chunks into a single DataFrame
@@ -89,7 +89,7 @@ class AsyncHelper:
             collected_data: List[T] = []
             async for item in async_gen:
                 collected_data.append(item)
-            return df.sparkSession.createDataFrame(collected_data, schema)  # type: ignore[type-var]
+            return df.sparkSession.createDataFrame(collected_data, schema)
 
     @staticmethod
     def run(fn: Coroutine[Any, Any, T], timeout: Optional[float] = None) -> T:
