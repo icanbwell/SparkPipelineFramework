@@ -328,7 +328,7 @@ class HttpDataReceiver(FrameworkTransformer):
                 success: List[Dict[str, Any]] = [
                     r for r in result_rows if not r["is_error"]
                 ]
-                df_success: DataFrame = df.sparkSession.createDataFrame(  # type: ignore[type-var]
+                df_success: DataFrame = df.sparkSession.createDataFrame(
                     success, schema=row_schema
                 )
                 json_schema = self.infer_schema_json_string_column(
@@ -340,7 +340,7 @@ class HttpDataReceiver(FrameworkTransformer):
 
                 # Create error view
                 error = [e for e in result_rows if e["is_error"]]
-                df_errors: DataFrame = df.sparkSession.createDataFrame(  # type: ignore[type-var]
+                df_errors: DataFrame = df.sparkSession.createDataFrame(
                     error, schema=row_schema
                 )
                 json_schema = self.infer_schema_json_string_column(

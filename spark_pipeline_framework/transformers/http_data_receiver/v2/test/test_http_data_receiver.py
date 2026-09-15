@@ -46,7 +46,7 @@ def test_http_data_receiver(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
     result: List[Dict[str, Dict[str, List[int]]]] = (
-        result_df.toJSON()
+        result_df.toJSON()  # type: ignore[operator]
         .map(lambda j: cast(Dict[str, Dict[str, List[int]]], json.loads(j)))
         .collect()
     )
@@ -100,7 +100,7 @@ def test_http_paging(spark_session: SparkSession) -> None:
     result_df.printSchema()
     result_df.show(truncate=False)
     result = (
-        result_df.toJSON().map(lambda j: cast(Dict[str, Any], json.loads(j))).collect()
+        result_df.toJSON()  # type: ignore[operator].map(lambda j: cast(Dict[str, Any], json.loads(j))).collect()
     )
     assert result[0].get("result") == {"page": 1, "total": 2}
     assert result[1].get("result") == {"page": 2, "total": 2}

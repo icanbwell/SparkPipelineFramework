@@ -23,7 +23,7 @@ async def test_transform_async(spark_session: SparkSession) -> None:
                 StructField("name", StringType()),
             ]
         )
-        df = spark_session.createDataFrame(data, schema=schema)  # type: ignore[type-var]
+        df = spark_session.createDataFrame(data, schema=schema)
         df.createOrReplaceTempView("test_view")
         sender = ElasticSearchSender(
             index="test_index",
@@ -89,7 +89,7 @@ async def test_transform_async_with_errors(spark_session: SparkSession) -> None:
                 StructField("name", StringType()),
             ]
         )
-        df = spark_session.createDataFrame(data, schema=schema)  # type: ignore[type-var]
+        df = spark_session.createDataFrame(data, schema=schema)
         df.createOrReplaceTempView("test_view")
         sender = ElasticSearchSender(
             index="test_index",

@@ -1,6 +1,6 @@
 import os
 
-from smart_open import open as smart_open  # type: ignore
+from smart_open import open as smart_open
 from typing import Optional, Dict, Any, List
 
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters

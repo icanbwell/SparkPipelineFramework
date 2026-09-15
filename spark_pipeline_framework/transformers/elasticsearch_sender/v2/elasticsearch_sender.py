@@ -237,7 +237,7 @@ class ElasticSearchSender(FrameworkTransformer):
                         if r is not None
                     ]
                     result_df = (
-                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                        df.sparkSession.createDataFrame(
                             result_dicts, schema=ElasticSearchResult.get_schema()
                         )
                     )

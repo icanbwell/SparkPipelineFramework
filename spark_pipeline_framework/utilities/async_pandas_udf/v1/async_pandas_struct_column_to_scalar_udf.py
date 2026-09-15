@@ -33,8 +33,8 @@ MyColumnDataType = int | float | str | bool
 class AsyncPandasStructColumnToScalarColumnUDF[TParameters: AcceptedParametersType](
     AsyncBasePandasUDF[
         TParameters,
-        pd.Series,  # type:ignore[type-arg]
-        pd.Series,  # type:ignore[type-arg]
+        pd.Series,
+        pd.Series,
         Dict[str, Any],
         MyColumnDataType,
     ]
@@ -62,19 +62,19 @@ class AsyncPandasStructColumnToScalarColumnUDF[TParameters: AcceptedParametersTy
         )
 
     async def get_input_values_from_chunk(
-        self, batch: pd.Series  # type:ignore[type-arg]
+        self, batch: pd.Series
     ) -> List[Dict[str, Any]]:
         input_values: List[Dict[str, Any]] = batch.apply(json.loads).tolist()
         return input_values
 
     async def create_output_from_dict(
         self, output_values: List[MyColumnDataType]
-    ) -> pd.Series:  # type:ignore[type-arg]
+    ) -> pd.Series:
         return pd.Series(output_values)
 
     def my_apply_process_batch_udf(
-        self, batch_iter: Iterator[pd.Series]  # type:ignore[type-arg]
-    ) -> Iterator[pd.Series]:  # type:ignore[type-arg]
+        self, batch_iter: Iterator[pd.Series]
+    ) -> Iterator[pd.Series]:
         # Need this so pandas_udf can use type hints on batch_iter
         return super().apply_process_partition_udf(batch_iter)
 

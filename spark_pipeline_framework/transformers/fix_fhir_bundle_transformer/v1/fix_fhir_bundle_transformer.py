@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional, List, Tuple, Iterable
 # noinspection PyProtectedMember
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
-from pyspark.rdd import RDD
+from pyspark.rdd import RDD  # type: ignore[import-not-found]
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import col
 from pyspark.sql.session import SparkSession

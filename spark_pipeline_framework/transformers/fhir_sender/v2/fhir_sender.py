@@ -549,7 +549,7 @@ class FhirSender(FrameworkTransformer):
                         FhirMergeResponseItem.from_responses(responses=result_rows)
                     )
                     result_df = (
-                        df.sparkSession.createDataFrame(  # type:ignore[type-var]
+                        df.sparkSession.createDataFrame(
                             merge_items,
                             schema=FhirMergeResponseItemSchema.get_schema(),
                         )

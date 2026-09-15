@@ -32,7 +32,7 @@ MyColumnDataType = int | float | str | bool
 class AsyncPandasScalarColumnToStructColumnUDF[TParameters: AcceptedParametersType](
     AsyncBasePandasUDF[
         TParameters,
-        pd.Series,  # type:ignore[type-arg]
+        pd.Series,
         pd.DataFrame,
         MyColumnDataType,
         Dict[str, Any],
@@ -61,7 +61,7 @@ class AsyncPandasScalarColumnToStructColumnUDF[TParameters: AcceptedParametersTy
         )
 
     async def get_input_values_from_chunk(
-        self, batch: pd.Series  # type:ignore[type-arg]
+        self, batch: pd.Series
     ) -> List[MyColumnDataType]:
         input_values: List[MyColumnDataType] = batch.tolist()
         return input_values
@@ -72,7 +72,7 @@ class AsyncPandasScalarColumnToStructColumnUDF[TParameters: AcceptedParametersTy
         return pd.DataFrame(output_values)
 
     def my_apply_process_batch_udf(
-        self, batch_iter: Iterator[pd.Series]  # type:ignore[type-arg]
+        self, batch_iter: Iterator[pd.Series]
     ) -> Iterator[pd.DataFrame]:
         # Need this so pandas_udf can use type hints on batch_iter
         return super().apply_process_partition_udf(batch_iter)

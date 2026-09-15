@@ -381,7 +381,7 @@ class FhirReceiverProcessorSpark:
                 break
         list_df = df.sparkSession.createDataFrame(resources, schema=StringType())
         errors_df = (
-            df.sparkSession.createDataFrame(  # type:ignore[type-var]
+            df.sparkSession.createDataFrame(
                 [e.to_dict() for e in errors],
                 schema=GetBatchError.get_schema(),
             )
@@ -1016,7 +1016,7 @@ class FhirReceiverProcessorSpark:
         )
         response_schema = FhirGetResponseSchema.get_schema()
         result_with_counts_and_responses = (
-            df.sparkSession.createDataFrame(  # type:ignore[type-var]
+            df.sparkSession.createDataFrame(
                 result_rows, schema=response_schema
             )
         )

@@ -1,7 +1,7 @@
 import os
 import boto3
 from botocore.exceptions import ClientError
-from smart_open import s3  # type: ignore
+from smart_open import s3
 from pathlib import Path
 from typing import Union, List
 

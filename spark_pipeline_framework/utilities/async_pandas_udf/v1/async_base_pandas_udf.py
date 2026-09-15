@@ -49,7 +49,7 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.partition_context im
     PartitionContext,
 )
 
-AcceptedDataSourceType = pd.DataFrame | pd.Series  # type:ignore[type-arg]
+AcceptedDataSourceType = pd.DataFrame | pd.Series
 
 
 class AsyncBasePandasUDF[
