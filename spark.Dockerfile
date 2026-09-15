@@ -6,10 +6,11 @@ ENV PYTHONPATH=/SparkpipelineFramework
 ENV CLASSPATH=/SparkpipelineFramework/jars:$CLASSPATH
 
 # remove the older version of entrypoints with apt-get because that is how it was installed
-RUN apt-get remove python3-entrypoints -y
+# (skip if package not present — helix.spark 4.x images no longer include it)
+RUN apt-get remove python3-entrypoints -y 2>/dev/null || true
 
-# remove python3.10 stuff
-RUN rm -rf /usr/local/lib/python3.10
+# remove python3.10 stuff if present (not in helix.spark 4.x images)
+RUN rm -rf /usr/local/lib/python3.10 2>/dev/null || true
 
 COPY Pipfile* /SparkpipelineFramework/
 WORKDIR /SparkpipelineFramework
