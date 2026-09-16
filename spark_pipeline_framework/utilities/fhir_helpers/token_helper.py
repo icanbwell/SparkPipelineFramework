@@ -53,8 +53,7 @@ def _is_safe_public_host(hostname: str) -> bool:
     except socket.gaierror:
         return False
     return all(
-        ipaddress.ip_address(sockaddr[0]).is_global
-        for *_, sockaddr in addr_infos
+        ipaddress.ip_address(sockaddr[0]).is_global for *_, sockaddr in addr_infos
     )
 
 
