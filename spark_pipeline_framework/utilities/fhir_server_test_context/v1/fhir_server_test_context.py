@@ -83,7 +83,10 @@ class FhirServerTestContext:
         :return: The authorization header.
         """
         token_url: Optional[str] = TokenHelper.get_auth_server_url_from_well_known_url(
-            well_known_url=self.auth_well_known_url
+            well_known_url=self.auth_well_known_url,
+            # This talks to the docker-compose keycloak service, an internal test
+            # fixture, not a public/production identity provider.
+            require_public_host=False,
         )
         assert token_url
         return TokenHelper.get_authorization_header(
@@ -102,7 +105,10 @@ class FhirServerTestContext:
         :return: The authorization server URL.
         """
         return TokenHelper.get_auth_server_url_from_well_known_url(
-            well_known_url=self.auth_well_known_url
+            well_known_url=self.auth_well_known_url,
+            # This talks to the docker-compose keycloak service, an internal test
+            # fixture, not a public/production identity provider.
+            require_public_host=False,
         )
 
     def get_token_url(self) -> Optional[str]:
