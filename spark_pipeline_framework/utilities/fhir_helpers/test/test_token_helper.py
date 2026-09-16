@@ -158,7 +158,9 @@ def test_resolves_same_origin_token_endpoint(servers: Tuple[str, str]) -> None:
     _TOKEN_ENDPOINT = f"{auth_base}/token"
     assert (
         TokenHelper.get_auth_server_url_from_well_known_url(
-            well_known_url=f"{auth_base}/.well-known", timeout_seconds=5
+            well_known_url=f"{auth_base}/.well-known",
+            timeout_seconds=5,
+            require_public_host=False,
         )
         == _TOKEN_ENDPOINT
     )
@@ -171,7 +173,9 @@ def test_rejects_cross_origin_token_endpoint(servers: Tuple[str, str]) -> None:
     _TOKEN_ENDPOINT = f"{sink_base}/token"
     assert (
         TokenHelper.get_auth_server_url_from_well_known_url(
-            well_known_url=f"{auth_base}/.well-known", timeout_seconds=5
+            well_known_url=f"{auth_base}/.well-known",
+            timeout_seconds=5,
+            require_public_host=False,
         )
         is None
     )
@@ -188,6 +192,7 @@ def test_cross_origin_token_endpoint_allowed_when_opted_out(
             well_known_url=f"{auth_base}/.well-known",
             timeout_seconds=5,
             require_same_origin_token_endpoint=False,
+            require_public_host=False,
         )
         == _TOKEN_ENDPOINT
     )
@@ -197,7 +202,9 @@ def test_discovery_redirect_is_not_followed(servers: Tuple[str, str]) -> None:
     auth_base, _ = servers
     assert (
         TokenHelper.get_auth_server_url_from_well_known_url(
-            well_known_url=f"{auth_base}/.well-known-redirect", timeout_seconds=5
+            well_known_url=f"{auth_base}/.well-known-redirect",
+            timeout_seconds=5,
+            require_public_host=False,
         )
         is None
     )
@@ -213,6 +220,7 @@ def test_discovery_redirect_with_json_body_is_not_followed(
         TokenHelper.get_auth_server_url_from_well_known_url(
             well_known_url=f"{auth_base}/.well-known-redirect-with-body",
             timeout_seconds=5,
+            require_public_host=False,
         )
         is None
     )
@@ -223,7 +231,9 @@ def test_discovery_missing_token_endpoint(servers: Tuple[str, str]) -> None:
     auth_base, _ = servers
     assert (
         TokenHelper.get_auth_server_url_from_well_known_url(
-            well_known_url=f"{auth_base}/.well-known-no-endpoint", timeout_seconds=5
+            well_known_url=f"{auth_base}/.well-known-no-endpoint",
+            timeout_seconds=5,
+            require_public_host=False,
         )
         is None
     )
@@ -233,10 +243,45 @@ def test_discovery_server_error(servers: Tuple[str, str]) -> None:
     auth_base, _ = servers
     assert (
         TokenHelper.get_auth_server_url_from_well_known_url(
-            well_known_url=f"{auth_base}/.well-known-500", timeout_seconds=5
+            well_known_url=f"{auth_base}/.well-known-500",
+            timeout_seconds=5,
+            require_public_host=False,
         )
         is None
     )
+
+
+# --------------------------------------------------------------------------
+# SSRF: well_known_url must resolve to a public address
+# --------------------------------------------------------------------------
+
+
+def test_discovery_rejects_loopback_well_known_url_by_default(
+    servers: Tuple[str, str],
+) -> None:
+    """Without the opt-out, a well_known_url on a private/loopback address is refused."""
+    global _TOKEN_ENDPOINT
+    auth_base, _ = servers
+    _TOKEN_ENDPOINT = f"{auth_base}/token"
+    assert (
+        TokenHelper.get_auth_server_url_from_well_known_url(
+            well_known_url=f"{auth_base}/.well-known", timeout_seconds=5
+        )
+        is None
+    )
+
+
+def test_is_safe_public_host() -> None:
+    from spark_pipeline_framework.utilities.fhir_helpers.token_helper import (
+        _is_safe_public_host,
+    )
+
+    assert _is_safe_public_host("127.0.0.1") is False
+    assert _is_safe_public_host("169.254.169.254") is False  # cloud metadata
+    assert _is_safe_public_host("10.0.0.5") is False
+    assert _is_safe_public_host("100.64.0.1") is False  # shared/CGNAT space
+    assert _is_safe_public_host("no-such-host.invalid") is False
+    assert _is_safe_public_host("one.one.one.one") is True
 
 
 def test_discovery_rejects_non_http_scheme() -> None:

@@ -1,3 +1,5 @@
+import ipaddress
+import socket
 from typing import Optional, cast, Any, Dict
 from urllib.parse import urlparse
 
@@ -42,6 +44,18 @@ def _same_origin(a: str, b: str) -> bool:
     """True when both are absolute HTTP(S) URLs sharing scheme, host and port."""
     origin_a = _origin(a)
     return origin_a is not None and origin_a == _origin(b)
+
+
+def _is_safe_public_host(hostname: str) -> bool:
+    """True if every address `hostname` resolves to is public, i.e. not private/loopback/link-local/reserved -- blocks SSRF to internal services and cloud metadata endpoints without a hand-maintained domain list."""
+    try:
+        addr_infos = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False
+    return all(
+        ipaddress.ip_address(sockaddr[0]).is_global
+        for *_, sockaddr in addr_infos
+    )
 
 
 class TokenHelper:
@@ -111,12 +125,27 @@ class TokenHelper:
         timeout_seconds: float = DEFAULT_AUTH_TIMEOUT_SECONDS,
         allow_redirects: bool = _FOLLOW_REDIRECTS,
         require_same_origin_token_endpoint: bool = True,
+        require_public_host: bool = True,
     ) -> Optional[str]:
-        """Resolve `token_endpoint` from an OIDC discovery document; returns None (logged) on any failure, including a cross-origin token_endpoint -- see `require_same_origin_token_endpoint`."""
+        """Resolve `token_endpoint` from an OIDC discovery document; returns None (logged) on any failure, including a cross-origin token_endpoint (see `require_same_origin_token_endpoint`) or a well_known_url that doesn't resolve to a public address (see `require_public_host`)."""
         # get_logger() installs a handler as a side effect, so call it here, not at module scope.
         logger = get_logger(__name__)
         try:
             _validate_url_scheme(well_known_url, parameter_name="well_known_url")
+
+            hostname = urlparse(well_known_url).hostname
+            if require_public_host and not (
+                hostname and _is_safe_public_host(hostname)
+            ):
+                logger.warning(
+                    f"Refusing well_known_url {well_known_url!r}: host does not"
+                    " resolve to a public address. This blocks SSRF to internal"
+                    " services and cloud metadata endpoints. Pass"
+                    " require_public_host=False only for trusted internal/test"
+                    " hosts."
+                )
+                return None
+
             well_known_response = requests.get(
                 well_known_url,
                 timeout=timeout_seconds,
