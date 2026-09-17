@@ -4,7 +4,7 @@ from spark_pipeline_framework.utilities.capture_parameters import capture_parame
 from pyspark.ml.param import Param
 from pyspark.sql import Column
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import explode, regexp_extract
+from pyspark.sql.functions import explode, get_json_object
 
 from spark_fhir_schemas.r4.resources.bundle import BundleSchema
 
@@ -68,11 +68,16 @@ class FhirResourceLoader(FrameworkTransformer):
             explode(df_entry.entry.resource).alias("resource")
         )
 
-        regex_output: Column = regexp_extract(
-            str=df_resources.resource, pattern=r'."resourceType":"(\w+)"', idx=1
-        )
+        # Read resourceType by parsing the JSON rather than pattern-matching its text.
+        # Spark 3 minified an object captured into a StringType field, so a regex expecting
+        # `"resourceType":"X"` worked. Spark 4 preserves the original source text, including
+        # whitespace and newlines, so that regex silently returns "" and every resourceType
+        # filter downstream matches zero rows.
+        resource_type: Column = get_json_object(df_resources.resource, "$.resourceType")
 
-        df_resources = df_resources.withColumn(colName="resourceType", col=regex_output)
+        df_resources = df_resources.withColumn(
+            colName="resourceType", col=resource_type
+        )
 
         if progress_logger:
             progress_logger.write_to_log(

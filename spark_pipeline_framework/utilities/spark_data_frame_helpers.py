@@ -72,13 +72,17 @@ def spark_is_data_frame_empty(df: DataFrame) -> bool:
     """
     Efficient way to check if the data frame is empty without getting the count of the whole data frame
     """
-    # from: https://stackoverflow.com/questions/32707620/how-to-check-if-spark-dataframe-is-empty
-    # Spark 3.3 adds native function: https://github.com/apache/spark/pull/34483
-    # Performance improvements
-    #  - from https://stackoverflow.com/questions/74904389/how-to-check-if-pyspark-dataframe-is-empty-quickly
-    #  - direct df.isEmpty() is a very expensive operation to perform lazy eval,
-    #    hence to be more performant, limiting to only 1 row and adding rdd before invoking the .isEmpty() method
-    return df.limit(1).rdd.isEmpty()
+    # Use the native DataFrame.isEmpty() (Spark 3.3+, https://github.com/apache/spark/pull/34483).
+    #
+    # Do NOT reintroduce `df.limit(1).rdd.isEmpty()`. That was faster on Spark 3, but on Spark 4
+    # it returns True for a NON-empty DataFrame whenever a selective filter feeds the limit.
+    # Verified on identical data/plan with local[2]:
+    #   Spark 3.5.4 -> limit(1).rdd.isEmpty() = False (correct)
+    #   Spark 4.2.0 -> limit(1).rdd.isEmpty() = True  (wrong; count() == 1)
+    # That silently inverts every nonzero_view_rowcount()/run_if_else() gate built on this helper,
+    # so pipelines skip stages and report success instead of processing their data.
+    # Going through .rdd also forces a Tungsten -> Python RDD conversion, so it is not even cheaper.
+    return df.isEmpty()
 
 
 def spark_get_execution_plan(df: DataFrame, extended: bool = False) -> Any:
