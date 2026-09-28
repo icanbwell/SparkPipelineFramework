@@ -177,7 +177,7 @@ class HelixHttpRequest:
                 response.raise_for_status()
             except HTTPError as e:
                 if self.logger:
-                    error_text = f"Request to {self.url} with arguments {json.dumps(arguments)} failed"
+                    error_text = f"Request to {self.url} failed"
                     if e.response:
                         error_text += (
                             f" with {e.response.status_code}: {e.response.content!r}."

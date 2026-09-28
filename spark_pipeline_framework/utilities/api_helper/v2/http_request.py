@@ -181,7 +181,7 @@ class HelixHttpRequest:
             response = await self._send_request_async(request_function, arguments)  # type: ignore[arg-type]
             if self.raise_error:
                 if response.status >= 400:
-                    error_text = f"Request to {self.url} with arguments {json.dumps(arguments)} failed with {response.status}: {await response.text()}."
+                    error_text = f"Request to {self.url} failed with {response.status}: {await response.text()}."
                     if self.logger:
                         self.logger.error(error_text)
                     raise ClientResponseError(
