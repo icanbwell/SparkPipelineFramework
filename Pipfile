@@ -23,7 +23,7 @@ furl = ">=2.1.3"
 # requests is needed for making HTTP requests
 requests = ">=2.34.0"
 # urllib3 is a transitive dependency (requests/botocore); pinned explicitly to force a patched version
-urllib3 = ">=2.7.0"
+urllib3 = ">=2.8.0"
 # boto3 is needed for interacting with AWS services
 boto3 = ">=1.34.140"
 # chardet is needed for detecting character encoding

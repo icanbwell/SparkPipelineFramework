@@ -53,7 +53,7 @@ setup(
         "furl>=2.1.3",
         "requests>=2.34.0",
         # pinned explicitly to force a patched transitive version (requests/botocore)
-        "urllib3>=2.7.0",
+        "urllib3>=2.8.0",
         "boto3>=1.34.140",
         "chardet",
         "slack-sdk>=3.22.0",
