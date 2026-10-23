@@ -53,7 +53,7 @@ setup(
         "furl>=2.1.3",
         "requests>=2.34.0",
         # pinned explicitly to force a patched transitive version (requests/botocore)
-        "urllib3>=2.7.0",
+        "urllib3>=2.8.0",
         "boto3>=1.34.140",
         "chardet",
         "slack-sdk>=3.22.0",
@@ -66,7 +66,7 @@ setup(
         "opensearch-py[async]>=2.6.0",
         "pyathena>=3.35.4",
         "spark-nlp>=5.5.0",
-        "pymongo>=4.16.0",
+        "pymongo>=4.18.2",
         "pandas>=2,<3",
         "structlog>=23.1.0",
         "usaddress>=0.5.10",
