@@ -23,7 +23,7 @@ furl = ">=2.1.3"
 # requests is needed for making HTTP requests
 requests = ">=2.34.0"
 # urllib3 is a transitive dependency (requests/botocore); pinned explicitly to force a patched version
-urllib3 = ">=2.7.0"
+urllib3 = ">=2.8.0"
 # boto3 is needed for interacting with AWS services
 boto3 = ">=1.34.140"
 # chardet is needed for detecting character encoding
@@ -49,7 +49,7 @@ pyathena = ">=3.35.4"
 # spark-nlp is needed for natural language processing (>=5.5.0 for Spark 4.x)
 spark-nlp = ">=5.5.0"
 # pymongo is needed for interacting with MongoDB
-pymongo=">=4.16.0"
+pymongo=">=4.18.2"
 # pandas is needed for Pandas UDF and mapInPandas
 # Capped below 3.0: PySpark 4.x officially supports pandas 2.x; pandas 3.x support is
 # still in progress upstream. pandas-stubs in [dev-packages] also tracks the 2.x series.
