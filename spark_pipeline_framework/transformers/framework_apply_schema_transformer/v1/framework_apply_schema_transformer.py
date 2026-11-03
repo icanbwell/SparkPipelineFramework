@@ -4,8 +4,8 @@ from typing import Dict, Any, Optional
 from spark_pipeline_framework.utilities.capture_parameters import capture_parameters
 from pyspark.ml.param import Param
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col
 from pyspark.sql.types import StructType, StructField, DataType
+from pyspark.sql.functions import lit
 from spark_pipeline_framework.logger.yarn_logger import get_logger
 from spark_pipeline_framework.progress_logger.progress_logger import ProgressLogger
 from spark_pipeline_framework.transformers.framework_transformer.v1.framework_transformer import (
@@ -19,13 +19,22 @@ class FrameworkApplySchemaTransformer(FrameworkTransformer):
     def __init__(
         self,
         *,
-        # add your parameters here (be sure to add them to setParams below too)
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
         view: str,
         schema: StructType,
-    ):
+    ) -> None:
+        """
+        Takes a schema and applies it to an existing view
+
+        :param name: a name for the transformer step
+        :param parameters: a dictionary of parameters
+        :param progress_logger: the logger object to be used for logging
+        :param view: the view that shall have the schema applied
+        :param schema: a schema StructType object that shall be applied
+        :return: None (modifies the view in place)
+        """
         super().__init__(
             name=name, parameters=parameters, progress_logger=progress_logger
         )
@@ -50,7 +59,8 @@ class FrameworkApplySchemaTransformer(FrameworkTransformer):
         for field in schema.fields:
             column_name: str = field.name
             column_type: DataType = field.dataType
-            df = df.withColumn(column_name, col(column_name).cast(column_type))
+            if column_name not in df.columns:
+                df = df.withColumn(column_name, lit(None).cast(column_type))
         df.createOrReplaceTempView(view)
         return df
 
