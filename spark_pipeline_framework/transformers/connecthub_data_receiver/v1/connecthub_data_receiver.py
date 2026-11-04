@@ -18,7 +18,66 @@ import pymongo
 from spark_pipeline_framework.utilities.spark_data_frame_helpers import sc
 
 import json
+import math
 from bson.json_util import dumps
+
+# parallelize() ships its data inside each task message, so every slice has to stay well under
+# spark.rpc.message.maxSize (128 MB by default)
+TARGET_SLICE_SIZE_BYTES = 32 * 1024 * 1024
+# size at which a staging file is closed and a new part file started
+TARGET_STAGING_FILE_SIZE_BYTES = 64 * 1024 * 1024
+# size of each chunk handed to the JVM output stream through py4j
+STAGING_WRITE_CHUNK_SIZE_BYTES = 8 * 1024 * 1024
+
+
+class StagingFileWriter:
+    """
+    Writes JSON lines to part files under a folder through the Hadoop FileSystem API, so the same code works for
+    local paths and s3a:// paths and uses the same credentials Spark uses to read the folder back.
+    """
+
+    def __init__(self, df: DataFrame, staging_path: str) -> None:
+        jvm = df.sparkSession._jvm
+        self.hadoop_path_class = jvm.org.apache.hadoop.fs.Path
+        self.staging_path = staging_path.rstrip("/")
+        root = self.hadoop_path_class(self.staging_path)
+        self.fs = root.getFileSystem(df.sparkSession._jsc.hadoopConfiguration())
+        # clear out anything left from a previous run with the same path
+        self.fs.delete(root, True)
+        self.part_number = 0
+        self.buffer: List[bytes] = []
+        self.buffer_size = 0
+
+    def write(self, rows: List[str]) -> None:
+        for row in rows:
+            line = (row + "\n").encode("utf-8")
+            self.buffer.append(line)
+            self.buffer_size += len(line)
+            if self.buffer_size >= TARGET_STAGING_FILE_SIZE_BYTES:
+                self.flush()
+
+    def flush(self) -> None:
+        if not self.buffer:
+            return
+        path = self.hadoop_path_class(
+            f"{self.staging_path}/part-{self.part_number:05d}.json"
+        )
+        out = self.fs.create(path, True)
+        try:
+            chunk: List[bytes] = []
+            chunk_size = 0
+            for line in self.buffer:
+                chunk.append(line)
+                chunk_size += len(line)
+                if chunk_size >= STAGING_WRITE_CHUNK_SIZE_BYTES:
+                    out.write(bytearray(b"".join(chunk)))
+                    chunk, chunk_size = [], 0
+            if chunk:
+                out.write(bytearray(b"".join(chunk)))
+        finally:
+            out.close()
+        self.part_number += 1
+        self.buffer, self.buffer_size = [], 0
 
 
 class ConnectHubDataReceiver(FrameworkTransformer):
@@ -34,6 +93,7 @@ class ConnectHubDataReceiver(FrameworkTransformer):
             int
         ] = 0,  # setting to 0 ignores limit and will return all results
         query_parameters=Optional[Dict[str, Any]],
+        staging_path: Optional[str] = None,
         name: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
         progress_logger: Optional[ProgressLogger] = None,
@@ -52,6 +112,9 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         Setting to 0 (which is the default) will ignore paging and all documents (within the query parameters) will
         get pulled at once.
         :param query_parameters: Dict of key, value pairs which respects document query
+        :param staging_path: (Optional) folder (local or s3a://) to write the documents to as JSON lines. Spark then
+        reads the folder, so the data never travels inside task messages. Anything already in the folder is deleted.
+        If not set, the documents are loaded with parallelize(), sliced so no task exceeds spark.rpc.message.maxSize.
         :param name: (Optional) name of transformer
         :param parameters: (Optional) parameters
         :param progress_logger: (Optional) progress logger
@@ -84,11 +147,15 @@ class ConnectHubDataReceiver(FrameworkTransformer):
         self.db_name: Param[str] = Param(self, "db_name", "")
         self._setDefault(db_name=db_name)
 
+        self.staging_path: Param[Optional[str]] = Param(self, "staging_path", "")
+        self._setDefault(staging_path=staging_path)
+
     def _transform(self, df: DataFrame) -> DataFrame:
         view_name = self.get_view_name()
         conn_string = self.get_conn_string()
         db_name = self.get_db_name()
         query_parameters = self.get_query_parameters()
+        staging_path = self.get_staging_path()
         client = pymongo.MongoClient(conn_string)  # type: ignore
 
         try:
@@ -102,7 +169,13 @@ class ConnectHubDataReceiver(FrameworkTransformer):
                 f"{client_connection.count_documents({})}"
             )
 
-            converted_data: List[Any] = []
+            staging_writer = (
+                StagingFileWriter(df=df, staging_path=staging_path)
+                if staging_path
+                else None
+            )
+            converted_data: List[str] = []
+            total_documents = 0
             last_seen = None
             while True:
                 data, last_seen = self.pagination(
@@ -110,21 +183,47 @@ class ConnectHubDataReceiver(FrameworkTransformer):
                 )
                 if not data:
                     break
-                converted_data.extend(data)
+                rows = [json.dumps(r) for r in data]
+                total_documents += len(rows)
+                if staging_writer:
+                    staging_writer.write(rows)
+                else:
+                    converted_data.extend(rows)
 
             self.logger.info(
-                f"the total number of documents about to be loaded into Spark: {len(converted_data)}"
+                f"the total number of documents about to be loaded into Spark: {total_documents}"
             )
 
-            df2 = df.sparkSession.read.json(
-                sc(df).parallelize([json.dumps(r) for r in converted_data])
-            )
+            if staging_writer and total_documents > 0:
+                staging_writer.flush()
+                self.logger.info(
+                    f"wrote {staging_writer.part_number} staging file(s) to {staging_path}"
+                )
+                df2 = df.sparkSession.read.json(staging_path)
+            else:
+                df2 = self.read_json_from_driver(df=df, rows=converted_data)
             df2.createOrReplaceTempView(view_name)
 
         finally:
             client.close()
 
         return df
+
+    def read_json_from_driver(self, df: DataFrame, rows: List[str]) -> DataFrame:
+        """
+        Loads JSON rows held on the driver with parallelize(). The number of slices comes from the data size, not
+        just defaultParallelism: defaultParallelism is the number of executor cores registered at this moment, so
+        when executors start slowly the slices can exceed spark.rpc.message.maxSize and the job fails.
+        """
+        total_bytes = sum(len(row.encode("utf-8")) for row in rows)
+        num_slices = max(
+            sc(df).defaultParallelism,
+            math.ceil(total_bytes / TARGET_SLICE_SIZE_BYTES),
+        )
+        self.logger.info(
+            f"loading {len(rows)} documents ({total_bytes} bytes) with parallelize in {num_slices} slices"
+        )
+        return df.sparkSession.read.json(sc(df).parallelize(rows, numSlices=num_slices))
 
     def pagination(
         self, client: Any, query_parameters: Optional[Dict[str, Any]], last_seen  # type: ignore
@@ -173,12 +272,13 @@ class ConnectHubDataReceiver(FrameworkTransformer):
 
         self.logger.info(f"returned # of documents: {len(data)}")
 
-        # this appears to be unique, since it takes more than a ms between updates to generate this timestamp
-        last_seen_string = data[-1][LAST_UPDATED_ON_DATE]["$date"]
-        last_seen_date = datetime.strptime(last_seen_string, "%Y-%m-%dT%H:%M:%S.%fZ")
+        # this appears to be unique, since it takes more than a ms between updates to generate this timestamp.
+        # Read it from the raw document: the extended JSON string drops the milliseconds when they are .000,
+        # so parsing it with a fixed format fails for those documents
+        last_seen_date: datetime = list_cur[-1][LAST_UPDATED_ON_DATE]
 
         self.logger.info(
-            f"the {LAST_UPDATED_ON_DATE} of the last returned document: {last_seen_string}"
+            f"the {LAST_UPDATED_ON_DATE} of the last returned document: {last_seen_date.isoformat()}"
         )
 
         return data, last_seen_date
@@ -200,3 +300,6 @@ class ConnectHubDataReceiver(FrameworkTransformer):
 
     def get_query_parameters(self) -> Optional[Dict[str, Any]]:
         return self.getOrDefault(self.query_parameters)
+
+    def get_staging_path(self) -> Optional[str]:
+        return self.getOrDefault(self.staging_path)
