@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "1f28e6633e1d0600fbac78f85c498c0e3d5c51143daac654ce620a7628b92e29"
+            "sha256": "daa86c4e582886882d130a3f65f1e6985c4027d462a176474ebe05c43f069da0"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -989,11 +989,11 @@
         },
         "helix.fhir.client.sdk": {
             "hashes": [
-                "sha256:d924c15083de8f07826b5466b36f9a252600878a6f0639dab757ba5612f6c0d6",
-                "sha256:fec44ec3a806b433e369095e5cc40525f87e376992035ffb06baf53d105e1711"
+                "sha256:24de4ab4cca13aa0bb774c0e44f4c8fae4a8765589ee0386d8521ce12d4cbb27",
+                "sha256:74e45841a609ac497afc85f0344eea5aa5f4637e05c494c3898115d5c803ba10"
             ],
             "markers": "python_version >= '3.12'",
-            "version": "==5.0.14"
+            "version": "==5.0.25"
         },
         "helixtelemetry": {
             "hashes": [
