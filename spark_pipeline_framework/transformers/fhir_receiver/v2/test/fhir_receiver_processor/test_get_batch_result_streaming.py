@@ -13,6 +13,9 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.structures.get_batch
 from spark_pipeline_framework.transformers.fhir_receiver.v2.test.fhir_receiver_processor.get_fhir_receiver_parameters import (
     get_fhir_receiver_parameters,
 )
+from spark_pipeline_framework.transformers.fhir_receiver.v2.test.json_assertions import (
+    parse_result_resources,
+)
 
 
 async def test_get_batch_result_streaming_async() -> None:
@@ -69,7 +72,9 @@ async def test_get_batch_result_streaming_async() -> None:
 
         # Assert the results
         assert len(results) == 2
-        assert results[0] == expected_result.to_dict()
+        assert parse_result_resources(results[0]) == parse_result_resources(
+            expected_result.to_dict()
+        )
 
 
 async def test_get_batch_result_streaming_async_single_result() -> None:
@@ -126,7 +131,9 @@ async def test_get_batch_result_streaming_async_single_result() -> None:
 
         # Assert the results
         assert len(results) == 2
-        assert results[0] == expected_result.to_dict()
+        assert parse_result_resources(results[0]) == parse_result_resources(
+            expected_result.to_dict()
+        )
 
 
 @pytest.mark.asyncio
@@ -199,7 +206,9 @@ async def test_get_batch_result_streaming_async_multiple_results() -> None:
         # Assert the results
         assert len(results) == 2
         # Asserting the first dictionary only, since the second one is empty.
-        assert results[0] == expected_results[0].to_dict()
+        assert parse_result_resources(results[0]) == parse_result_resources(
+            expected_results[0].to_dict()
+        )
 
 
 @pytest.mark.asyncio

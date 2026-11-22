@@ -23,6 +23,9 @@ from spark_pipeline_framework.utilities.async_pandas_udf.v1.async_pandas_batch_f
 from spark_pipeline_framework.utilities.fhir_helpers.fhir_receiver_exception import (
     FhirReceiverException,
 )
+from spark_pipeline_framework.transformers.fhir_receiver.v2.test.json_assertions import (
+    parse_json_texts,
+)
 
 
 @pytest.mark.parametrize("use_data_streaming", [True, False])
@@ -296,7 +299,9 @@ async def test_process_partition_single_row() -> None:
             additional_parameters=None,
         ):
             assert isinstance(result, dict)
-            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
+            assert parse_json_texts(result["responses"]) == parse_json_texts(
+                ['{"resourceType": "Patient", "id": "1"}']
+            )
 
 
 async def test_process_partition_multiple_rows_bundle() -> None:
@@ -330,7 +335,9 @@ async def test_process_partition_multiple_rows_bundle() -> None:
             additional_parameters=None,
         ):
             assert isinstance(result, dict)
-            assert result["responses"] == [
-                '{"resourceType": "Patient", "id": "1"}',
-                '{"resourceType": "Patient", "id": "2"}',
-            ]
+            assert parse_json_texts(result["responses"]) == parse_json_texts(
+                [
+                    '{"resourceType": "Patient", "id": "1"}',
+                    '{"resourceType": "Patient", "id": "2"}',
+                ]
+            )

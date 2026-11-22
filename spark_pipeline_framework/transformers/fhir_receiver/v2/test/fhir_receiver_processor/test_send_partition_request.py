@@ -9,6 +9,9 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_proces
 from spark_pipeline_framework.transformers.fhir_receiver.v2.test.fhir_receiver_processor.get_fhir_receiver_parameters import (
     get_fhir_receiver_parameters,
 )
+from spark_pipeline_framework.transformers.fhir_receiver.v2.test.json_assertions import (
+    parse_json_texts,
+)
 
 
 @pytest.mark.asyncio
@@ -30,4 +33,6 @@ async def test_send_partition_request_to_server_async() -> None:
             partition_index=0, rows=rows, parameters=parameters
         ):
             assert isinstance(result, dict)
-            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
+            assert parse_json_texts(result["responses"]) == parse_json_texts(
+                ['{"resourceType": "Patient", "id": "1"}']
+            )

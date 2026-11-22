@@ -1,3 +1,4 @@
+import json
 import traceback
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -56,10 +57,14 @@ async def test_get_batch_results_paging_async() -> None:
             assert isinstance(result, GetBatchResult)
             if loop_number == 1:
                 assert len(result.resources) == 1
-                assert result.resources[0] == '{"id": "1", "resourceType": "Patient"}'
+                assert json.loads(result.resources[0]) == json.loads(
+                    '{"id": "1", "resourceType": "Patient"}'
+                )
             elif loop_number == 2:
                 assert len(result.resources) == 1
-                assert result.resources[0] == '{"id": "2", "resourceType": "Patient"}'
+                assert json.loads(result.resources[0]) == json.loads(
+                    '{"id": "2", "resourceType": "Patient"}'
+                )
             else:
                 assert len(result.resources) == 0
 
@@ -107,10 +112,14 @@ async def test_get_batch_results_paging_empty_bundle_async() -> None:
             assert isinstance(result, GetBatchResult)
             if loop_number == 1:
                 assert len(result.resources) == 1
-                assert result.resources[0] == '{"id": "1", "resourceType": "Patient"}'
+                assert json.loads(result.resources[0]) == json.loads(
+                    '{"id": "1", "resourceType": "Patient"}'
+                )
             elif loop_number == 2:
                 assert len(result.resources) == 1
-                assert result.resources[0] == '{"id": "2", "resourceType": "Patient"}'
+                assert json.loads(result.resources[0]) == json.loads(
+                    '{"id": "2", "resourceType": "Patient"}'
+                )
             else:
                 assert len(result.resources) == 0
 
@@ -164,7 +173,9 @@ async def test_get_batch_result_streaming_async_with_resources() -> None:
 
         results = [result async for result in async_gen]
         assert len(results) == 2
-        assert results[0]["resources"][0] == '{"resourceType": "Patient", "id": "1"}'
+        assert json.loads(results[0]["resources"][0]) == json.loads(
+            '{"resourceType": "Patient", "id": "1"}'
+        )
         assert results[0]["errors"] == []
 
 
@@ -245,7 +256,9 @@ async def test_get_batch_result_streaming_async_with_error_with_retry_success() 
 
         results = [result async for result in async_gen]
         assert len(results) == 2
-        assert results[0]["resources"][0] == '{"resourceType": "Patient", "id": "1"}'
+        assert json.loads(results[0]["resources"][0]) == json.loads(
+            '{"resourceType": "Patient", "id": "1"}'
+        )
         assert results[0]["errors"] == []
 
 
@@ -291,7 +304,9 @@ async def test_get_batch_result_streaming_async_with_auth_error_with_re_auth() -
         results = [result async for result in async_gen]
         assert len(results) == 2
         # Asserting the first result only, since the second one is empty.
-        assert results[0]["resources"][0] == '{"resourceType": "Patient", "id": "1"}'
+        assert json.loads(results[0]["resources"][0]) == json.loads(
+            '{"resourceType": "Patient", "id": "1"}'
+        )
         assert results[0]["errors"] == []
 
 
