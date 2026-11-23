@@ -94,7 +94,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.10",
+    python_requires=">=3.12",
     dependency_links=[],
     include_package_data=True,
     zip_safe=False,
