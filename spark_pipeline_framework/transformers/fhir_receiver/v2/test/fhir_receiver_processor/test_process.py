@@ -8,6 +8,9 @@ from spark_pipeline_framework.transformers.fhir_receiver.v2.fhir_receiver_proces
 from spark_pipeline_framework.transformers.fhir_receiver.v2.test.fhir_receiver_processor.get_fhir_receiver_parameters import (
     get_fhir_receiver_parameters,
 )
+from spark_pipeline_framework.transformers.fhir_receiver.v2.test.json_assertions import (
+    parse_json_texts,
+)
 
 
 @pytest.mark.asyncio
@@ -31,7 +34,9 @@ async def test_process_with_token_async() -> None:
             parameters=parameters,
         ):
             assert isinstance(result, dict)
-            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
+            assert parse_json_texts(result["responses"]) == parse_json_texts(
+                ['{"resourceType": "Patient", "id": "1"}']
+            )
 
 
 @pytest.mark.asyncio
@@ -57,7 +62,9 @@ async def test_process_one_by_one_async() -> None:
             parameters=parameters,
         ):
             assert isinstance(result, dict)
-            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
+            assert parse_json_texts(result["responses"]) == parse_json_texts(
+                ['{"resourceType": "Patient", "id": "1"}']
+            )
 
 
 @pytest.mark.asyncio
@@ -81,7 +88,9 @@ async def test_process_single_row_async() -> None:
             parameters=parameters,
         ):
             assert isinstance(result, dict)
-            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
+            assert parse_json_texts(result["responses"]) == parse_json_texts(
+                ['{"resourceType": "Patient", "id": "1"}']
+            )
 
 
 @pytest.mark.asyncio
@@ -107,4 +116,6 @@ async def test_process_batch_async() -> None:
             parameters=parameters,
         ):
             assert isinstance(result, dict)
-            assert result["responses"] == ['{"resourceType": "Patient", "id": "1"}']
+            assert parse_json_texts(result["responses"]) == parse_json_texts(
+                ['{"resourceType": "Patient", "id": "1"}']
+            )

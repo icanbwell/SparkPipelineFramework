@@ -99,7 +99,11 @@ async def test_automapper_to_fhir_transformer_async(
     mock_client.expect(
         request=mock_request(
             path=f"/{test_name}/Patient/1/$merge",
-            body=json.dumps(expected_json),
+            body={
+                "type": "JSON",
+                "json": json.dumps(expected_json),
+                "matchType": "STRICT",
+            },
             method="POST",
         ),
         response=mock_response(code=200, body=json.dumps(merge_response)),

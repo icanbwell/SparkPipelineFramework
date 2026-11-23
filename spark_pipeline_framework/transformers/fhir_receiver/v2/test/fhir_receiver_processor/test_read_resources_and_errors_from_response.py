@@ -46,8 +46,12 @@ async def test_read_resources_and_errors_from_response_success() -> None:
 
     # Assert the results
     assert len(result.resources) == 2
-    assert result.resources[0] == '{"resourceType": "Patient", "id": "1"}'
-    assert result.resources[1] == '{"resourceType": "Patient", "id": "2"}'
+    assert json.loads(result.resources[0]) == json.loads(
+        '{"resourceType": "Patient", "id": "1"}'
+    )
+    assert json.loads(result.resources[1]) == json.loads(
+        '{"resourceType": "Patient", "id": "2"}'
+    )
     assert len(result.errors) == 0
 
 
@@ -92,13 +96,24 @@ async def test_read_resources_and_errors_from_response_with_errors() -> None:
 
     # Assert the results
     assert len(result.resources) == 1
-    assert result.resources[0] == '{"resourceType": "Patient", "id": "1"}'
+    assert json.loads(result.resources[0]) == json.loads(
+        '{"resourceType": "Patient", "id": "1"}'
+    )
     assert len(result.errors) == 1
-    print(json.dumps(result.errors[0].to_dict()))
-    assert result.errors[0].to_dict() == {
+    error = result.errors[0].to_dict()
+    assert json.loads(error.pop("error_text")) == {
+        "resourceType": "OperationOutcome",
+        "issue": [
+            {
+                "severity": "error",
+                "code": "processing",
+                "diagnostics": "Error message",
+            }
+        ],
+    }
+    assert error == {
         "url": "http://fhir-server",
         "status_code": 200,
-        "error_text": '{"resourceType": "OperationOutcome", "issue": [{"severity": "error", "code": "processing", "diagnostics": "Error message"}]}',
         "request_id": "test_request_id",
     }
 
